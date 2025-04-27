@@ -1,10 +1,6 @@
 # FastAgent
 ![Status](https://img.shields.io/badge/status-In%20Development%20–%20Experimental%20%26%20Aspirational-blue)
 
-A low-latency FastAPI bridge integrating telephony for stateful, intelligent real-time voice agents.
-
-## Overview
-
 FastAgent is a high-performance framework designed to integrate telephony systems with intelligent, real-time voice agents. It leverages FastAPI for HTTP/WebSocket communication and introduces the concept of Agentic Finite State Machines (AFSM) to provide structured, controllable, and dynamic conversational flows.
 
 ## Key Features
