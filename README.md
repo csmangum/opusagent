@@ -63,20 +63,6 @@ For detailed documentation on FastAgent concepts and implementation:
 - Retail: Intelligent order management and support
 - Enterprise: Internal hotline assistants with compliance-driven behavior
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the terms of the license included in the repository.
-
-## Contact
-
-- GitHub: https://github.com/yourusername/fastagent
-- Email: your.email@example.com
-- Website: https://yoursitehere.com
-
 ---
 
 *"Structured minds, dynamic voices."*
