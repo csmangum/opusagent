@@ -108,15 +108,5 @@ FastAgent represents a new approach to real-time voice agent development: combin
 
 ---
 
-## Contact
-
-For more information or to contribute to FastAgent:
-
-- GitHub: [Your GitHub Link]
-- Email: [Your Email]
-- Website: [Your Project Website]
-
----
-
 *"Structured minds, dynamic voices."*
 
