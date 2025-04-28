@@ -45,3 +45,10 @@ between callers and AI voice agents powered by OpenAI's models.
 
 # This file is intentionally left empty
 # It makes the app directory a proper Python package 
+
+"""
+FastAgent - A framework for building low-latency conversational agents 
+using Agentic Finite State Machines (AFSM).
+"""
+
+__version__ = "0.1.0" 
