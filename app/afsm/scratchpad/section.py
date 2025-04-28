@@ -3,8 +3,9 @@ ReasoningSection - Specialized containers for different aspects of reasoning
 """
 
 from enum import Enum
-from typing import Dict, List, Optional, Any, Set
-from app.scratchpad.content import ScratchpadContent
+from typing import Any, Dict, List, Optional, Set
+
+from app.afsm.scratchpad.content import ScratchpadContent
 
 
 class SectionType(Enum):

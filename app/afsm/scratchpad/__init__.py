@@ -42,7 +42,7 @@ manager.write("Starting a new conversation about product features")
 
 # Integrate with AFSM states
 from app.states import AFSMState
-from app.scratchpad.integration import ScratchpadStateMixin
+from app.afsm.scratchpad.integration import ScratchpadStateMixin
 
 class ReasoningState(AFSMState, ScratchpadStateMixin):
     async def process(self, input_text, context):
@@ -59,9 +59,9 @@ class ReasoningState(AFSMState, ScratchpadStateMixin):
 ```
 """
 
-from app.scratchpad.content import ScratchpadContent
-from app.scratchpad.manager import ScratchpadManager
-from app.scratchpad.section import ReasoningSection
+from app.afsm.scratchpad.content import ScratchpadContent
+from app.afsm.scratchpad.manager import ScratchpadManager
+from app.afsm.scratchpad.section import ReasoningSection
 
 __all__ = [
     "ScratchpadContent",

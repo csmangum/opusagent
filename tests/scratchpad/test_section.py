@@ -3,7 +3,8 @@ Unit tests for ReasoningSection class.
 """
 
 import pytest
-from app.scratchpad.section import ReasoningSection, SectionType
+
+from app.afsm.scratchpad.section import ReasoningSection, SectionType
 
 
 class TestReasoningSection:

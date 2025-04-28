@@ -4,8 +4,8 @@ Integration - Connect the scratchpad system with the AFSM state system
 
 from typing import Dict, Optional, Any
 
-from app.scratchpad.manager import ScratchpadManager
-from app.scratchpad.section import SectionType
+from app.afsm.scratchpad.manager import ScratchpadManager
+from app.afsm.scratchpad.section import SectionType
 
 
 class StateScratchpadIntegration:

@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Any, Set
 from pathlib import Path
 import os
 
-from app.scratchpad.content import ScratchpadContent
-from app.scratchpad.section import ReasoningSection, SectionType
+from app.afsm.scratchpad.content import ScratchpadContent
+from app.afsm.scratchpad.section import ReasoningSection, SectionType
 
 
 class ScratchpadManager:
