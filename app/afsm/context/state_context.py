@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 import json
 import time
 
-from app.context.context_item import ContextItem, ContextCategory, ExpirationPolicy
+from app.afsm.context.context_item import ContextItem, ContextCategory, ExpirationPolicy
 
 
 class StateContext:

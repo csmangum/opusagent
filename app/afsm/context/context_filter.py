@@ -2,8 +2,8 @@
 ContextFilter for determining what context should persist across state transitions.
 """
 from typing import Any, Dict, List, Optional, Set
-from app.context.context_item import ContextItem
-from app.context.state_context import StateContext
+from app.afsm.context.context_item import ContextItem
+from app.afsm.context.state_context import StateContext
 
 
 class ContextFilter:

@@ -7,9 +7,9 @@ import time
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import uuid
 
-from app.context.context_item import ContextItem, ContextCategory, ExpirationPolicy
-from app.context.state_context import StateContext
-from app.context.context_filter import ContextFilter
+from app.afsm.context.context_item import ContextItem, ContextCategory, ExpirationPolicy
+from app.afsm.context.state_context import StateContext
+from app.afsm.context.context_filter import ContextFilter
 
 
 class ContextManager:

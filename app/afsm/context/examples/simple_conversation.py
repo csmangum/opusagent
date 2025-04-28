@@ -9,7 +9,7 @@ from typing import Dict, Any
 # Add the app directory to sys.path if needed
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 
-from app.context import ContextManager, StateContext, ContextItem, ContextCategory, ContextFilter
+from app.afsm.context import ContextManager, StateContext, ContextItem, ContextCategory, ContextFilter
 
 
 def simulate_conversation():

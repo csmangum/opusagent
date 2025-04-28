@@ -19,8 +19,8 @@ of critical information across the agent's operational flow.
 Usage examples:
 ```python
 # Basic context management
-from app.context import ContextItem, ContextCategory, ContextManager
-from app.context.context_item import ExpirationPolicy
+from app.afsm.context import ContextItem, ContextCategory, ContextManager
+from app.afsm.context.context_item import ExpirationPolicy
 
 # Create context items
 user_info = ContextItem(
@@ -70,10 +70,10 @@ relevant_items = context_filter.filter_items(
 ```
 """
 
-from app.context.context_item import ContextItem, ContextCategory
-from app.context.state_context import StateContext
-from app.context.context_manager import ContextManager
-from app.context.context_filter import ContextFilter
+from app.afsm.context.context_item import ContextItem, ContextCategory
+from app.afsm.context.state_context import StateContext
+from app.afsm.context.context_manager import ContextManager
+from app.afsm.context.context_filter import ContextFilter
 
 __all__ = [
     'ContextItem', 

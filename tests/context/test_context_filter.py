@@ -1,8 +1,8 @@
 import pytest
 
-from app.context.context_filter import ContextFilter
-from app.context.context_item import ContextItem, ExpirationPolicy
-from app.context.state_context import StateContext
+from app.afsm.context.context_filter import ContextFilter
+from app.afsm.context.context_item import ContextItem, ExpirationPolicy
+from app.afsm.context.state_context import StateContext
 
 
 class TestContextFilter:

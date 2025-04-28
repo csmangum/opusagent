@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from app.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
+from app.afsm.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
 
 
 class TestContextItem:
