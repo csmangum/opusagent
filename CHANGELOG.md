@@ -26,3 +26,18 @@ All notable changes to FastAgent will be documented in this file.
     - `TransitionEvaluator`: Evaluates and selects the best available transition based on context
   - Support for pre/post-conditions, priority-based selection, and confidence scoring
   - Validation tools to detect potential issues in transition configurations
+
+- **Scratchpad Module**: Structured system for agent reasoning and thought tracking
+  - Core components for recording and managing structured reasoning:
+    - `ScratchpadContent`: Fundamental container for reasoning data with timestamps and metadata
+    - `ReasoningSection`: Specialized containers for different types of reasoning content
+    - `ScratchpadManager`: Central orchestrator for managing multiple scratchpads and sections
+    - `StateScratchpadIntegration`: Integration layer connecting scratchpads with AFSM states
+  - Dedicated section types for structured reasoning workflow:
+    - Facts: Objective observations from input
+    - Hypotheses: Potential interpretations based on facts
+    - Calculations: Intermediate reasoning steps
+    - Conclusions: Actionable insights from reasoning
+  - Integration with AFSM states through `ScratchpadStateMixin`
+  - Support for context preservation across state transitions
+  - Optional persistence for storing reasoning processes
