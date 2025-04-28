@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from app.config.constants import LOGGER_NAME
 from app.models.conversation import ConversationManager
-from app.models.message_schemas import (
+from app.models.audiocodes import (
     ConnectionValidatedResponse,
     ConnectionValidateMessage,
     SessionAcceptedResponse,

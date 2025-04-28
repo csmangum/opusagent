@@ -5,7 +5,7 @@ import pytest
 
 from app.handlers.activity_handlers import handle_activities, send_activities, hangup_call
 from app.models.conversation import ConversationManager
-from app.models.message_schemas import ActivityEvent, ActivitiesMessage
+from app.models.audiocodes import ActivityEvent, ActivitiesMessage
 from pydantic import ValidationError
 
 @pytest.mark.asyncio
