@@ -3,13 +3,13 @@ import unittest
 
 import pytest
 
-from app.states import StateContext, StateManager
-from app.states.examples import (
+from app.afsm.states.examples import (
     AccountVerificationState,
     AuthenticationState,
     GeneralInquiryState,
     GreetingState,
 )
+from app.afsm.states.manager import StateManager
 
 
 class TestConversationFlows(unittest.TestCase):

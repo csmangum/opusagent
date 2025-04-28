@@ -4,7 +4,7 @@ import unittest
 
 import pytest
 
-from app.states import AFSMState, StateManager, StateTransition
+from app.afsm.states import AFSMState, StateManager, StateTransition
 
 
 class FastMockState(AFSMState):

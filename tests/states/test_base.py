@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from app.states import AFSMState, StateContext, StateTransition
+from app.afsm.states import AFSMState, StateContext, StateTransition
 
 
 class TestStateTransition(unittest.TestCase):
