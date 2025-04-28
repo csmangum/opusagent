@@ -2,8 +2,8 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from app.transitions.base import BaseTransition
-from app.transitions.hybrid import HybridTransition
+from app.afsm.transitions.base import BaseTransition
+from app.afsm.transitions.hybrid import HybridTransition
 
 
 class MockTransition(BaseTransition):

@@ -2,9 +2,9 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from app.transitions.base import BaseTransition
-from app.transitions.evaluator import TransitionEvaluator
-from app.transitions.registry import TransitionRegistry
+from app.afsm.transitions.base import BaseTransition
+from app.afsm.transitions.evaluator import TransitionEvaluator
+from app.afsm.transitions.registry import TransitionRegistry
 
 
 class MockTransition(BaseTransition):

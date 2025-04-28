@@ -2,7 +2,7 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from app.transitions.rule_based import Condition, RuleBasedTransition
+from app.afsm.transitions.rule_based import Condition, RuleBasedTransition
 
 
 class TestCondition(unittest.TestCase):

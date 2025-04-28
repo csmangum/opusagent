@@ -2,9 +2,9 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from app.transitions.conditions import PostCondition, PreCondition
-from app.transitions.conditions.post_conditions import clear_variable, log_transition
-from app.transitions.conditions.pre_conditions import merge_variables, set_variable
+from app.afsm.transitions.conditions import PostCondition, PreCondition
+from app.afsm.transitions.conditions.post_conditions import clear_variable, log_transition
+from app.afsm.transitions.conditions.pre_conditions import merge_variables, set_variable
 
 
 class TestPreCondition(unittest.TestCase):
