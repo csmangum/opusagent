@@ -13,6 +13,7 @@ class TransitionRegistry:
         """Initialize an empty transition registry."""
         self._transitions: Dict[str, Dict[str, List[BaseTransition]]] = {}
         self._all_transitions: List[BaseTransition] = []
+        self._terminal_states: Set[str] = set()
 
     def register(self, transition: BaseTransition) -> None:
         """
@@ -111,6 +112,27 @@ class TransitionRegistry:
 
         return states
 
+    def is_terminal_state(self, state: str) -> bool:
+        """
+        Check if a state is a terminal state.
+        
+        Args:
+            state: The state to check
+            
+        Returns:
+            True if the state is a terminal state, False otherwise
+        """
+        return state in self._terminal_states
+        
+    def mark_as_terminal_state(self, state: str) -> None:
+        """
+        Mark a state as a terminal state.
+        
+        Args:
+            state: The state to mark as terminal
+        """
+        self._terminal_states.add(state)
+        
     def validate(self) -> List[str]:
         """
         Validate the transition registry for common issues.
