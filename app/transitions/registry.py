@@ -122,8 +122,10 @@ class TransitionRegistry:
 
         # Check for states with no outgoing transitions
         for state in self.get_all_states():
+            # Skip terminal states if they are expected
             if state not in self._transitions or not self._transitions[state]:
-                errors.append(f"State '{state}' has no outgoing transitions")
+                if not self.is_terminal_state(state):
+                    errors.append(f"State '{state}' has no outgoing transitions")
 
         # Check for circular references with high priority
         # Track cycles we've already reported to avoid duplicates
