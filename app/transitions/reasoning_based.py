@@ -49,7 +49,7 @@ class ReasoningBasedTransition(BaseTransition):
             return max(0.0, min(1.0, confidence))
         except Exception as e:
             # If reasoning fails, don't trigger the transition
-            print(f"Error in reasoning function: {e}")
+            logger.error(f"Error in reasoning function: {e}", exc_info=True)
             return 0.0
             
     def apply_post_conditions(self, context: Dict[str, Any]) -> Dict[str, Any]:
