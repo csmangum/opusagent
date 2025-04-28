@@ -222,12 +222,3 @@ class TestAFSMState(unittest.TestCase):
         # This is just testing that transitions with priorities can be added and retrieved
         valid_transitions = state.get_valid_transitions(context)
         self.assertEqual(len(valid_transitions), 3)
-
-
-# To run the tests with pytest you need event loop for async tests
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
