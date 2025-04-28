@@ -173,7 +173,7 @@ class StateScratchpadIntegration:
                 section.clear()
                 
             # Clear main scratchpad
-            self.manager.get_scratchpad_by_id(pad_id).clear()
+            self.manager.scratchpads[pad_id].clear()
 
 
 # Example AFSMState mixin

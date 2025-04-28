@@ -27,6 +27,25 @@ All notable changes to FastAgent will be documented in this file.
   - Support for pre/post-conditions, priority-based selection, and confidence scoring
   - Validation tools to detect potential issues in transition configurations
 
+- **Context Module**: Comprehensive context management framework for agent memory
+  - Core components for managing conversation context and memory:
+    - `ContextItem`: Base unit of context with content and metadata
+    - `ContextCategory`: Named collections of related context items with retention policies
+    - `StateContext`: Primary container for organizing categorized context data
+    - `ContextManager`: Central orchestrator for context operations and persistence
+    - `ContextFilter`: Intelligent filtering system for context transitions
+  - Specialized context categories for different information types:
+    - Salient Context: High-priority, immediately relevant information
+    - Historical Memory: Time-ordered interaction history
+    - Session Metadata: User information and conversation parameters
+    - State-Specific Data: Context relevant only to particular states
+  - Advanced features:
+    - Configurable expiration policies for context items
+    - Relevance scoring with multi-factor prioritization
+    - Context pruning to prevent memory pollution
+    - State transition handling with selective context preservation
+  - Seamless integration with AFSM states and transitions
+
 - **Scratchpad Module**: Structured system for agent reasoning and thought tracking
   - Core components for recording and managing structured reasoning:
     - `ScratchpadContent`: Fundamental container for reasoning data with timestamps and metadata
