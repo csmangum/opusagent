@@ -15,7 +15,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-from app.bot.realtime_api import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeAudioClient
 
 
 @pytest.fixture

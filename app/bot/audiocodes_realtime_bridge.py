@@ -15,7 +15,7 @@ from typing import Dict, Optional
 
 from fastapi import WebSocket
 
-from app.bot.realtime_api import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeAudioClient
 from app.config.constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)

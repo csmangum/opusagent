@@ -7,9 +7,16 @@ the AudioCodes VoiceAI Connect Enterprise platform. The manager handles conversa
 lifecycle including tracking, retrieving, and removing conversation state.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import WebSocket
+
+# Import the AFSM executor for concurrent task management
+try:
+    from app.afsm.executor import fsm_executor
+    _has_afsm_executor = True
+except ImportError:
+    _has_afsm_executor = False
 
 
 class ConversationManager:
@@ -42,7 +49,7 @@ class ConversationManager:
             "media_format": media_format,
         }
 
-    def get_conversation(self, conversation_id: str) -> Dict[str, Any]:
+    def get_conversation(self, conversation_id: str) -> Optional[Dict[str, Any]]:
         """
         Get an active conversation by its ID.
 
@@ -57,12 +64,23 @@ class ConversationManager:
 
     def remove_conversation(self, conversation_id: str):
         """
-        Remove a conversation from active conversations registry.
+        Remove a conversation from active conversations registry and clean up any
+        associated concurrent tasks.
 
         Args:
             conversation_id: Unique identifier for the conversation to remove
         """
         if conversation_id in self.active_conversations:
+            # Clean up any concurrent AFSM tasks associated with this conversation
+            if _has_afsm_executor:
+                cleaned_tasks = fsm_executor.cleanup_conversation_tasks(conversation_id)
+                if cleaned_tasks:
+                    import logging
+                    from app.config.constants import LOGGER_NAME
+                    logger = logging.getLogger(LOGGER_NAME)
+                    logger.info(f"Cleaned up {len(cleaned_tasks)} concurrent tasks for conversation {conversation_id}")
+            
+            # Remove the conversation from active conversations
             del self.active_conversations[conversation_id]
 
     def get_all_conversations(self) -> Dict[str, Dict[str, Any]]:
