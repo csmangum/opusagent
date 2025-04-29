@@ -7,7 +7,7 @@ from fastapi import WebSocket
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     ConnectionValidateMessage,
     SessionInitiateMessage,
     SessionEndMessage

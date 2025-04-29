@@ -19,7 +19,7 @@ from pydantic import ValidationError
 from app.config.constants import LOGGER_NAME
 from app.handlers.stream_handlers import send_play_stream
 from app.models.conversation import ConversationManager
-from app.models.audiocodes import ActivitiesMessage, ActivityEvent
+from app.models.audiocodes_api import ActivitiesMessage, ActivityEvent
 
 logger = logging.getLogger(LOGGER_NAME)
 

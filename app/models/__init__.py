@@ -5,9 +5,9 @@ This module provides structured data models and state management classes for the
 defining the schemas and interfaces for both AudioCodes VoiceAI Connect and OpenAI Realtime API.
 
 Key components:
-- message_schemas: Pydantic models for validating and serializing messages in the 
+- audiocodes_api: Pydantic models for validating and serializing messages in the 
   AudioCodes Bot API WebSocket protocol, ensuring consistent communication.
-- openai_schemas: Type-safe models for the OpenAI Realtime API message structures,
+- openai_api: Type-safe models for the OpenAI Realtime API message structures,
   supporting the real-time speech, chat functionality, and function calling capabilities.
   Includes models for session management, conversation items, client-server events,
   and audio streaming in the OpenAI Realtime API.
@@ -33,7 +33,7 @@ conversation_manager.add_conversation(
 )
 
 # Validate and parse incoming messages
-from app.models.audiocodes import SessionInitiateMessage
+from app.models.audiocodes_api import SessionInitiateMessage
 
 # Parse and validate a message from AudioCodes
 message_data = {
@@ -47,7 +47,7 @@ message_data = {
 session_message = SessionInitiateMessage(**message_data)
 
 # Create response messages
-from app.models.audiocodes import SessionAcceptedResponse
+from app.models.audiocodes_api import SessionAcceptedResponse
 
 response = SessionAcceptedResponse(
     type="session.accepted",
@@ -57,7 +57,7 @@ response = SessionAcceptedResponse(
 await websocket.send_text(response.json())
 
 # Using OpenAI Realtime API models
-from app.models.openai import SessionConfig, ResponseCreateEvent
+from app.models.openai_api import SessionConfig, ResponseCreateEvent
 
 # Configure a new OpenAI Realtime session
 session_config = SessionConfig(
@@ -73,7 +73,7 @@ response_event = ResponseCreateEvent()
 """
 
 from app.models.conversation import ConversationManager
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,
     BaseMessage,
@@ -97,7 +97,7 @@ from app.models.audiocodes import (
     UserStreamStoppedResponse,
 )
 
-from app.models.openai import (
+from app.models.openai_api import (
     MessageRole,
     OpenAIMessage,
     SessionConfig,

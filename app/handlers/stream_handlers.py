@@ -17,7 +17,7 @@ from pydantic import ValidationError
 
 from app.config.constants import LOGGER_NAME
 from app.models.conversation import ConversationManager
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
     PlayStreamStopMessage,

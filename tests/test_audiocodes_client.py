@@ -17,7 +17,7 @@ import pytest
 import websockets
 
 from app.services.websocket_client import AudioCodesClient
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,
     SessionInitiateMessage,

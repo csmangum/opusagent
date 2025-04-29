@@ -34,7 +34,7 @@ from app.handlers.stream_handlers import (
     handle_user_stream_stop,
 )
 from app.models.conversation import ConversationManager
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     ActivitiesMessage,
     ConnectionValidateMessage,
     IncomingMessage,

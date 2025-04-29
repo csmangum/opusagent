@@ -11,7 +11,7 @@ from app.handlers.stream_handlers import (
     send_play_stream,
 )
 from app.models.conversation import ConversationManager
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
     PlayStreamStopMessage,

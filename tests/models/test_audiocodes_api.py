@@ -9,7 +9,7 @@ import base64
 import pytest
 from pydantic import ValidationError
 
-from app.models.audiocodes import (
+from app.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,
     BaseMessage,
