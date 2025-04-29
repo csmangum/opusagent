@@ -15,7 +15,7 @@ import pytest
 from fastapi import WebSocket
 
 from app.bot.audiocodes_realtime_bridge import AudiocodesRealtimeBridge
-from app.bot.realtime_client import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeClient
 import app.bot.audiocodes_realtime_bridge as bridge_module
 
 
@@ -28,8 +28,8 @@ def mock_websocket():
 
 @pytest.fixture
 def mock_client():
-    """Create a mock RealtimeAudioClient for testing."""
-    mock = AsyncMock(spec=RealtimeAudioClient)
+    """Create a mock RealtimeClient for testing."""
+    mock = AsyncMock(spec=RealtimeClient)
     mock.connect.return_value = True
     return mock
 
@@ -41,8 +41,8 @@ def bridge():
 
 
 @pytest.mark.asyncio
-@patch.object(RealtimeAudioClient, '__init__', return_value=None)
-@patch.object(RealtimeAudioClient, 'connect')
+@patch.object(RealtimeClient, '__init__', return_value=None)
+@patch.object(RealtimeClient, 'connect')
 @patch('asyncio.create_task')
 async def test_create_client(mock_create_task, mock_connect, mock_init, bridge, mock_websocket):
     """Test creating a new client."""
@@ -53,7 +53,7 @@ async def test_create_client(mock_create_task, mock_connect, mock_init, bridge, 
         with patch.object(bridge_module, 'OPENAI_API_KEY', 'test-api-key'):
             await bridge.create_client(conversation_id, mock_websocket)
     
-    # Verify RealtimeAudioClient was created and connected
+    # Verify RealtimeClient was created and connected
     mock_init.assert_called_once()
     mock_connect.assert_called_once()
     

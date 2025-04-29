@@ -15,7 +15,7 @@ from typing import Dict, Optional
 
 from fastapi import WebSocket
 
-from app.bot.realtime_client import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeClient
 from app.config.constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -38,7 +38,7 @@ class AudiocodesRealtimeBridge:
     """
     
     def __init__(self):
-        self.clients: Dict[str, RealtimeAudioClient] = {}
+        self.clients: Dict[str, RealtimeClient] = {}
         self.stream_ids: Dict[str, int] = {}  # Track stream IDs per conversation
         self.websockets: Dict[str, WebSocket] = {}
         self.response_tasks: Dict[str, asyncio.Task] = {}  # Track response handling tasks
@@ -59,7 +59,7 @@ class AudiocodesRealtimeBridge:
             raise ValueError("OPENAI_API_KEY environment variable not set")
         
         # Create and connect client
-        client = RealtimeAudioClient(OPENAI_API_KEY, model)
+        client = RealtimeClient(OPENAI_API_KEY, model)
         
         # Store references before connecting to capture all responses
         self.clients[conversation_id] = client

@@ -29,8 +29,8 @@ from typing import List, Optional
 # Import dotenv for environment variable loading
 from dotenv import load_dotenv
 
-# Import the RealtimeAudioClient from our project
-from app.bot.realtime_client import RealtimeAudioClient
+# Import the RealtimeClient from our project
+from app.bot.realtime_client import RealtimeClient
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Test OpenAI Realtime API for text-to-voice conversion")
@@ -82,7 +82,7 @@ def get_websocket_url(model: str) -> str:
     return url
 
 
-class ProxyRealtimeAudioClient(RealtimeAudioClient):
+class ProxyRealtimeClient(RealtimeClient):
     """Extended client that can use a WebSocket proxy for debugging"""
     
     def __init__(self, api_key: str, model: str, use_proxy: bool = False, proxy_url: str = "ws://localhost:8765"):
@@ -219,12 +219,12 @@ class ProxyRealtimeAudioClient(RealtimeAudioClient):
             return False
 
 
-async def send_text_message(client: RealtimeAudioClient, text: str) -> bool:
+async def send_text_message(client: RealtimeClient, text: str) -> bool:
     """
     Send a text message to OpenAI Realtime API.
 
     Args:
-        client: The RealtimeAudioClient instance
+        client: The RealtimeClient instance
         text: The text to send
 
     Returns:
@@ -256,12 +256,12 @@ async def send_text_message(client: RealtimeAudioClient, text: str) -> bool:
         return False
 
 
-async def save_audio_chunks(client: RealtimeAudioClient, timeout: int = 10) -> Optional[str]:
+async def save_audio_chunks(client: RealtimeClient, timeout: int = 10) -> Optional[str]:
     """
     Collect audio chunks from OpenAI and save them to a WAV file.
 
     Args:
-        client: The RealtimeAudioClient instance
+        client: The RealtimeClient instance
         timeout: Maximum seconds to wait for audio
 
     Returns:
@@ -419,11 +419,11 @@ async def main() -> None:
         logger.info(f"Using WebSocket proxy at {args.proxy_url}")
         logger.info("Make sure the proxy server is running with: python ws_capture.py")
         # Create client that can use proxy
-        client = ProxyRealtimeAudioClient(api_key, model, use_proxy=True, proxy_url=args.proxy_url)
+        client = ProxyRealtimeClient(api_key, model, use_proxy=True, proxy_url=args.proxy_url)
     else:
         logger.info("Connecting directly to OpenAI Realtime API")
         # Use regular client
-        client = RealtimeAudioClient(api_key, model)
+        client = RealtimeClient(api_key, model)
     
     # Try to connect, with a few retries
     max_connect_attempts = 3

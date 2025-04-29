@@ -1,7 +1,7 @@
 """
 Additional unit tests for the OpenAI Realtime API client.
 
-These tests verify the extended functionality of the RealtimeAudioClient class,
+These tests verify the extended functionality of the RealtimeClient class,
 focusing on connection handlers, heartbeat functionality, and edge cases.
 """
 
@@ -15,7 +15,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-from app.bot.realtime_client import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeClient
 
 
 @pytest.fixture
@@ -32,8 +32,8 @@ def mock_model():
 
 @pytest.fixture
 def realtime_client(mock_api_key, mock_model):
-    """Create a RealtimeAudioClient instance for testing."""
-    return RealtimeAudioClient(mock_api_key, mock_model)
+    """Create a RealtimeClient instance for testing."""
+    return RealtimeClient(mock_api_key, mock_model)
 
 
 @pytest.mark.asyncio
