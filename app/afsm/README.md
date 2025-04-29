@@ -1,4 +1,4 @@
-# Agent Finite State Machine (AFSM)
+# Agentic Finite State Machine (AFSM)
 
 The AFSM module implements an advanced state machine architecture designed specifically for building structured, controllable, and dynamic conversational agents. It enhances traditional finite state machines with embedded agent reasoning capabilities, context management, and transition logic.
 

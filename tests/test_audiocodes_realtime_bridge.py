@@ -15,7 +15,7 @@ import pytest
 from fastapi import WebSocket
 
 from app.bot.audiocodes_realtime_bridge import AudiocodesRealtimeBridge
-from app.bot.realtime_api import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeAudioClient
 import app.bot.audiocodes_realtime_bridge as bridge_module
 
 
