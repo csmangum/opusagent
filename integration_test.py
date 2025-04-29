@@ -32,7 +32,7 @@ from fastapi import WebSocket
 from websockets.exceptions import ConnectionClosedError
 
 from app.bot.audiocodes_realtime_bridge import AudiocodesRealtimeBridge
-from app.bot.realtime_client import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeClient
 
 # Load environment variables from .env file
 load_dotenv()
@@ -117,7 +117,7 @@ async def test_bridge_integration():
         
         # Step 2: Send a text message to the OpenAI client directly
         logger.info("Step 2: Sending text message")
-        client: RealtimeAudioClient = bridge.clients[conversation_id]
+        client: RealtimeClient = bridge.clients[conversation_id]
         
         # Create a JSON message with text
         text_message = {
@@ -210,7 +210,7 @@ async def test_direct_client():
     logger.info(f"Testing direct client connection with model: {model}")
     
     # Create and connect client
-    client = RealtimeAudioClient(api_key, model)
+    client = RealtimeClient(api_key, model)
     connected = await client.connect()
     
     if not connected:

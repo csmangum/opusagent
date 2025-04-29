@@ -9,6 +9,9 @@ from app.afsm.states.examples import (
     AccountVerificationState
 )
 
+# Add this import at the top
+import pytest_asyncio
+
 
 class TestGreetingState(unittest.TestCase):
     """Tests for the GreetingState implementation"""
@@ -213,13 +216,4 @@ class TestAccountVerificationState(unittest.TestCase):
             self.assertEqual(next_state, "transaction_request")
             
             # Verify that the response offers transaction assistance
-            self.assertIn("transaction", response.lower())
-
-
-# Fixture for async tests
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close() 
+            self.assertIn("transaction", response.lower()) 

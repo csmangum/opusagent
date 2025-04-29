@@ -5,7 +5,7 @@ This module provides components for real-time speech-to-speech conversations
 by connecting the AudioCodes WebSocket protocol with OpenAI's Realtime API.
 
 Key components:
-- RealtimeAudioClient: Client for connecting to OpenAI's Realtime API over WebSockets
+- RealtimeClient: Client for connecting to OpenAI's Realtime API over WebSockets
   to stream audio in both directions with features like auto-reconnection and heartbeats.
 - AudiocodesRealtimeBridge: Bidirectional bridge that handles protocol conversion between
   AudioCodes VoiceAI Connect platform and OpenAI's Realtime API, including audio format
@@ -30,15 +30,15 @@ async def handle_new_conversation(conversation_id, websocket):
     # Clean up when conversation ends
     await bridge.close_client(conversation_id)
 
-# Direct usage of RealtimeAudioClient (for custom implementations)
-from app.bot import RealtimeAudioClient
+# Direct usage of RealtimeClient (for custom implementations)
+from app.bot import RealtimeClient
 import os
 
 async def custom_client_usage():
     # Create and connect client
     api_key = os.getenv("OPENAI_API_KEY")
     model = "gpt-4o-realtime-preview-2024-12-17"
-    client = RealtimeAudioClient(api_key, model)
+    client = RealtimeClient(api_key, model)
     await client.connect()
     
     # Send and receive audio
@@ -50,7 +50,7 @@ async def custom_client_usage():
 ```
 """
 
-from app.bot.realtime_client import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeClient
 from app.bot.audiocodes_realtime_bridge import bridge, AudiocodesRealtimeBridge
 
-__all__ = ["RealtimeAudioClient", "bridge", "AudiocodesRealtimeBridge"]
+__all__ = ["RealtimeClient", "bridge", "AudiocodesRealtimeBridge"]

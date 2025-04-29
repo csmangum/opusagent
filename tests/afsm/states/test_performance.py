@@ -3,6 +3,7 @@ import time
 import unittest
 
 import pytest
+import pytest_asyncio
 
 from app.afsm.states import AFSMState, StateManager, StateTransition
 
@@ -191,12 +192,3 @@ class TestStatePerformance(unittest.TestCase):
         # but significantly less than sequential execution (50 * avg_delay = 50 * 30ms = 1.5s)
         self.assertLess(elapsed, 0.2)  # Should take less than 200ms total
         print(f"50 concurrent processes took {elapsed:.3f} seconds")
-
-
-# Fixture for async tests
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
