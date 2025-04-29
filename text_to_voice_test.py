@@ -30,7 +30,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 # Import the RealtimeAudioClient from our project
-from app.bot.realtime_api import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeAudioClient
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Test OpenAI Realtime API for text-to-voice conversion")

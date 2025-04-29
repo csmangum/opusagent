@@ -32,7 +32,7 @@ from fastapi import WebSocket
 from websockets.exceptions import ConnectionClosedError
 
 from app.bot.audiocodes_realtime_bridge import AudiocodesRealtimeBridge
-from app.bot.realtime_api import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeAudioClient
 
 # Load environment variables from .env file
 load_dotenv()
