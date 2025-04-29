@@ -2,6 +2,7 @@ import asyncio
 import unittest
 
 import pytest
+import pytest_asyncio
 
 from app.afsm.states.examples import (
     AccountVerificationState,
@@ -191,12 +192,3 @@ class TestConversationFlows(unittest.TestCase):
         response4 = await self.manager.process_input("")
         # Should still be in authentication
         self.assertEqual(self.manager.current_state_name, "authentication")
-
-
-# Fixture for async tests
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()

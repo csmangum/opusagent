@@ -233,8 +233,8 @@ async def test_recv_loop_json_parsing(realtime_client):
     """Test that _recv_loop correctly processes JSON messages."""
     # Setup
     test_message = json.dumps({
-        "type": "playStream.chunk",
-        "audioChunk": "c3RyZWFtIGF1ZGlv"  # base64 encoded "stream audio"
+        "type": "response.audio.delta",
+        "audio": "c3RyZWFtIGF1ZGlv"  # base64 encoded "stream audio"
     })
     
     mock_ws = AsyncMock()
@@ -269,7 +269,9 @@ async def test_recv_loop_error_message(realtime_client):
     }
     
     mock_ws = AsyncMock()
-    mock_ws.__aiter__.return_value = [json.dumps(error_message)]
+    # Instead of using __aiter__, directly mock the recv method to return the error message
+    # and then raise CancelledError to exit the loop
+    mock_ws.recv = AsyncMock(side_effect=[json.dumps(error_message), asyncio.CancelledError])
     
     realtime_client.ws = mock_ws
     realtime_client._connection_active = True
@@ -277,15 +279,11 @@ async def test_recv_loop_error_message(realtime_client):
     # Run the receive loop with proper cancellation
     with patch.object(realtime_client, 'reconnect', return_value=False):
         with patch('logging.getLogger') as mock_logger:
-            # Create a task for the receive loop
-            task = asyncio.create_task(realtime_client._recv_loop())
-            # Allow some time for processing
-            await asyncio.sleep(0.1)
-            # Cancel the task to prevent it from running indefinitely
-            task.cancel()
             try:
-                await task
+                # Run recv_loop with timeout
+                await asyncio.wait_for(realtime_client._recv_loop(), timeout=1.0)
             except asyncio.CancelledError:
+                # This is expected when the mock.recv raises CancelledError
                 pass
     
     # Verify error handling behavior - no audio should be queued
