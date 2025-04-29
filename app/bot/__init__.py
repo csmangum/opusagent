@@ -50,7 +50,7 @@ async def custom_client_usage():
 ```
 """
 
-from app.bot.realtime_api import RealtimeAudioClient
+from app.bot.realtime_client import RealtimeAudioClient
 from app.bot.audiocodes_realtime_bridge import bridge, AudiocodesRealtimeBridge
 
 __all__ = ["RealtimeAudioClient", "bridge", "AudiocodesRealtimeBridge"]
