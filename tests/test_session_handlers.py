@@ -8,7 +8,7 @@ from app.handlers.session_handlers import (
     handle_connection_validate
 )
 from app.models.conversation import ConversationManager
-from app.models.message_schemas import (
+from app.models.audiocodes_api import (
     SessionInitiateMessage,
     SessionResumeMessage,
     SessionEndMessage,

@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, Optional
 import websockets
 
 from app.config.constants import LOGGER_NAME
-from app.models.message_schemas import (
+from app.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,
     SessionInitiateMessage,

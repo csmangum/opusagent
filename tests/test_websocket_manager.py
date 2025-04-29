@@ -6,7 +6,7 @@ from fastapi import WebSocket
 
 from app.websocket_manager import WebSocketManager
 from app.models.conversation import ConversationManager
-from app.models.message_schemas import (
+from app.models.audiocodes_api import (
     ConnectionValidateMessage,
     SessionInitiateMessage,
     SessionResumeMessage,

@@ -5,10 +5,12 @@ This module provides structured data models and state management classes for the
 defining the schemas and interfaces for both AudioCodes VoiceAI Connect and OpenAI Realtime API.
 
 Key components:
-- message_schemas: Pydantic models for validating and serializing messages in the 
+- audiocodes_api: Pydantic models for validating and serializing messages in the 
   AudioCodes Bot API WebSocket protocol, ensuring consistent communication.
-- openai_schemas: Type-safe models for the OpenAI Realtime API message structures,
-  supporting the real-time speech and chat functionality.
+- openai_api: Type-safe models for the OpenAI Realtime API message structures,
+  supporting the real-time speech, chat functionality, and function calling capabilities.
+  Includes models for session management, conversation items, client-server events,
+  and audio streaming in the OpenAI Realtime API.
 - conversation: State management for active voice conversations, tracking WebSocket
   connections and media formats throughout the call lifecycle.
 
@@ -31,7 +33,7 @@ conversation_manager.add_conversation(
 )
 
 # Validate and parse incoming messages
-from app.models.message_schemas import SessionInitiateMessage
+from app.models.audiocodes_api import SessionInitiateMessage
 
 # Parse and validate a message from AudioCodes
 message_data = {
@@ -45,7 +47,7 @@ message_data = {
 session_message = SessionInitiateMessage(**message_data)
 
 # Create response messages
-from app.models.message_schemas import SessionAcceptedResponse
+from app.models.audiocodes_api import SessionAcceptedResponse
 
 response = SessionAcceptedResponse(
     type="session.accepted",
@@ -53,11 +55,25 @@ response = SessionAcceptedResponse(
     mediaFormat="raw/lpcm16"
 )
 await websocket.send_text(response.json())
+
+# Using OpenAI Realtime API models
+from app.models.openai_api import SessionConfig, ResponseCreateEvent
+
+# Configure a new OpenAI Realtime session
+session_config = SessionConfig(
+    modalities=["text", "audio"],
+    model="gpt-4",
+    voice="alloy",
+    input_audio_format="pcm16"
+)
+
+# Create a response event
+response_event = ResponseCreateEvent()
 ```
 """
 
 from app.models.conversation import ConversationManager
-from app.models.message_schemas import (
+from app.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,
     BaseMessage,
@@ -79,4 +95,43 @@ from app.models.message_schemas import (
     UserStreamStartMessage,
     UserStreamStopMessage,
     UserStreamStoppedResponse,
+)
+
+from app.models.openai_api import (
+    MessageRole,
+    OpenAIMessage,
+    SessionConfig,
+    RealtimeSessionResponse,
+    ConversationItemType,
+    ConversationItemStatus,
+    ConversationItemContentParam,
+    ConversationItemParam,
+    ConversationItem,
+    ClientEventType,
+    ServerEventType,
+    ClientEvent,
+    ServerEvent,
+    RealtimeFunctionCall,
+    RealtimeFunctionCallOutput,
+    SessionUpdateEvent,
+    InputAudioBufferAppendEvent,
+    InputAudioBufferCommitEvent,
+    ConversationItemCreateEvent,
+    ResponseCreateEvent,
+    ErrorEvent,
+    SessionCreatedEvent,
+    ConversationItemCreatedEvent,
+    ResponseTextDeltaEvent,
+    ResponseAudioDeltaEvent,
+    ResponseFunctionCallArgumentsDeltaEvent,
+    ResponseDoneEvent,
+    RealtimeBaseMessage,
+    RealtimeTranscriptMessage,
+    RealtimeTurnMessage,
+    RealtimeErrorMessage,
+    RealtimeMessageContent,
+    RealtimeMessage,
+    RealtimeStreamMessage,
+    RealtimeFunctionMessage,
+    WebSocketErrorResponse,
 )
