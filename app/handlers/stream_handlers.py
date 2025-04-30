@@ -27,7 +27,7 @@ from app.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
-from app.bot.audiocodes_realtime_bridge import bridge
+from app.bot.telephony_realtime_bridge import bridge
 
 logger = logging.getLogger(LOGGER_NAME)
 

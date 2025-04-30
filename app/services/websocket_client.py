@@ -1,9 +1,9 @@
 """
-WebSocket client utilities for connecting to AudioCodes VoiceAI Connect.
+WebSocket client utilities for connecting to telephony platforms.
 
-This module provides client-side utilities for connecting to the AudioCodes VoiceAI
-Connect Enterprise platform. It handles message formatting, validation, and
-connection management using Pydantic models for type safety.
+This module provides client-side utilities for connecting to telephony platforms.
+It handles message formatting, validation, and connection management using
+Pydantic models for type safety.
 """
 
 import json
@@ -25,20 +25,20 @@ from app.models.audiocodes_api import (
 logger = logging.getLogger(LOGGER_NAME)
 
 
-class AudioCodesClient:
+class TelephonyClient:
     """
-    Client for interacting with AudioCodes VoiceAI Connect via WebSocket.
+    Client for interacting with telephony platforms via WebSocket.
 
-    This class provides methods to connect to AudioCodes, send formatted messages,
+    This class provides methods to connect to telephony services, send formatted messages,
     and receive responses. It uses Pydantic models to ensure message validity.
     """
 
     def __init__(self, url: str):
         """
-        Initialize the AudioCodes WebSocket client.
+        Initialize the telephony WebSocket client.
 
         Args:
-            url: The WebSocket URL of the AudioCodes service
+            url: The WebSocket URL of the telephony service
         """
         self.url = url
         self.websocket = None
@@ -48,24 +48,24 @@ class AudioCodesClient:
 
     async def connect(self) -> bool:
         """
-        Establish a connection to the AudioCodes WebSocket server.
+        Establish a connection to the telephony WebSocket server.
 
         Returns:
             True if connection was successful, False otherwise
         """
         try:
             self.websocket = await websockets.connect(self.url)
-            logger.info(f"Connected to AudioCodes WebSocket at {self.url}")
+            logger.info(f"Connected to telephony WebSocket at {self.url}")
             return True
         except Exception as e:
-            logger.error(f"Failed to connect to AudioCodes: {e}")
+            logger.error(f"Failed to connect to telephony: {e}")
             return False
 
     async def initiate_session(
         self, bot_name: str, caller: str = "unknown"
     ) -> Optional[str]:
         """
-        Initiate a new session with AudioCodes.
+        Initiate a new session with telephony.
 
         Args:
             bot_name: The name of the bot
@@ -140,7 +140,7 @@ class AudioCodesClient:
 
     async def send_audio_chunk(self, audio_data: bytes) -> None:
         """
-        Send an audio chunk to AudioCodes.
+        Send an audio chunk to telephony.
 
         Args:
             audio_data: The raw audio data to send (will be base64 encoded)
@@ -228,7 +228,7 @@ class AudioCodesClient:
 
     async def listen(self, message_handler: Callable[[Dict[str, Any]], None]) -> None:
         """
-        Listen for incoming messages from AudioCodes.
+        Listen for incoming messages from telephony.
 
         Args:
             message_handler: Callback function to handle incoming messages
@@ -263,7 +263,7 @@ class AudioCodesClient:
 # Example usage of the client:
 #
 # async def main():
-#     client = AudioCodesClient("wss://audiocodes-server.example.com/ws")
+#     client = TelephonyClient("wss://telephony-server.example.com/ws")
 #
 #     if await client.connect():
 #         conversation_id = await client.initiate_session("MyBot", "+1234567890")

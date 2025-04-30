@@ -6,9 +6,9 @@ communicating with external services and APIs. It handles connection management,
 authentication, messaging protocols, and error handling for third-party services.
 
 Key components:
-- websocket_client: Client implementation for connecting to AudioCodes VoiceAI
-  Connect Enterprise platform via WebSocket, handling message formatting and
-  connection management with support for the complete AudioCodes Bot API protocol.
+- websocket_client: Client implementation for connecting to telephony platforms
+  via WebSocket, handling message formatting and connection management with
+  support for various telephony protocols.
 
 The services module abstracts the complexity of external API integrations,
 providing clean interfaces for the rest of the application to interact with
@@ -16,13 +16,13 @@ these services while handling connection management and protocol details.
 
 Usage examples:
 ```python
-# Create and use the AudioCodes WebSocket client
-from app.services.websocket_client import AudioCodesClient
+# Create and use the telephony WebSocket client
+from app.services.websocket_client import TelephonyClient
 import asyncio
 
-async def connect_to_audiocodes():
+async def connect_to_telephony():
     # Initialize the client with the WebSocket URL
-    client = AudioCodesClient("wss://audiocodes-server.example.com/ws")
+    client = TelephonyClient("wss://telephony-server.example.com/ws")
     
     # Connect to the server
     if await client.connect():
@@ -46,7 +46,7 @@ async def connect_to_audiocodes():
     await client.close()
 
 # Run the async function
-asyncio.run(connect_to_audiocodes())
+asyncio.run(connect_to_telephony())
 ```
 """
 

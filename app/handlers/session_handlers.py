@@ -24,7 +24,7 @@ from app.models.audiocodes_api import (
     SessionInitiateMessage,
     SessionResumeMessage,
 )
-from app.bot.audiocodes_realtime_bridge import bridge
+from app.bot.telephony_realtime_bridge import bridge
 
 logger = logging.getLogger(LOGGER_NAME)
 

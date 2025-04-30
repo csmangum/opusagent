@@ -1,6 +1,6 @@
 import base64
 import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -21,12 +21,14 @@ from app.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
+from app.bot.telephony_realtime_bridge import bridge
 
 
 @pytest.mark.asyncio
 class TestStreamHandlers:
 
-    async def test_handle_user_stream_start(self):
+    @patch.object(bridge, 'create_client', new_callable=AsyncMock)
+    async def test_handle_user_stream_start(self, mock_create_client):
         # Setup
         websocket = AsyncMock()
         conversation_manager = MagicMock(spec=ConversationManager)
@@ -44,6 +46,7 @@ class TestStreamHandlers:
             type="userStream.started", conversationId="test-conversation-id"
         )
         assert response.model_dump() == expected_response.model_dump()
+        mock_create_client.assert_called_once_with("test-conversation-id", websocket)
 
     async def test_handle_user_stream_start_validation_error(self):
         # Setup
