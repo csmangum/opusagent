@@ -1,18 +1,18 @@
 """
-Bot module for integrating OpenAI Realtime API with AudioCodes VoiceAI Connect.
+Bot module for integrating OpenAI Realtime API with telephony platforms.
 
 This module provides components for real-time speech-to-speech conversations
-by connecting the AudioCodes WebSocket protocol with OpenAI's Realtime API.
+by connecting telephony WebSocket protocols (like AudioCodes, Twilio, etc.) with OpenAI's Realtime API.
 
 Key components:
 - RealtimeClient: Client for connecting to OpenAI's Realtime API over WebSockets
   to stream audio in both directions with features like auto-reconnection and heartbeats.
-- AudiocodesRealtimeBridge: Bidirectional bridge that handles protocol conversion between
-  AudioCodes VoiceAI Connect platform and OpenAI's Realtime API, including audio format
+- TelephonyRealtimeBridge: Bidirectional bridge that handles protocol conversion between
+  telephony platforms and OpenAI's Realtime API, including audio format
   conversion and stream management.
 
 This module is the core of the voice agent system, enabling real-time voice conversations
-with OpenAI's models through AudioCodes telephony infrastructure.
+with OpenAI's models through telephony infrastructure.
 
 Usage examples:
 ```python
@@ -51,6 +51,6 @@ async def custom_client_usage():
 """
 
 from app.bot.realtime_client import RealtimeClient
-from app.bot.telephony_realtime_bridge import bridge, AudiocodesRealtimeBridge
+from app.bot.telephony_realtime_bridge import bridge, TelephonyRealtimeBridge
 
-__all__ = ["RealtimeClient", "bridge", "AudiocodesRealtimeBridge"]
+__all__ = ["RealtimeClient", "bridge", "TelephonyRealtimeBridge"]

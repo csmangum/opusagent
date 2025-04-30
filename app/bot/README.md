@@ -17,7 +17,7 @@ A robust WebSocket client for OpenAI's Realtime API that handles:
 - Voice Activity Detection (VAD) support
 - Function calling capabilities
 
-### AudiocodesRealtimeBridge
+### TelephonyRealtimeBridge
 
 A bidirectional bridge that:
 

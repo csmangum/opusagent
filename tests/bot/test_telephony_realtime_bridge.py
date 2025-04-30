@@ -1,7 +1,7 @@
 """
 Unit tests for the AudioCodes Realtime Bridge.
 
-These tests verify the functionality of the AudiocodesRealtimeBridge class,
+These tests verify the functionality of the TelephonyRealtimeBridge class,
 which connects AudioCodes WebSocket protocol with OpenAI Realtime API.
 """
 
@@ -15,8 +15,8 @@ import pytest
 from fastapi import WebSocket
 
 import app.bot.telephony_realtime_bridge as bridge_module
-from app.bot.telephony_realtime_bridge import AudiocodesRealtimeBridge
 from app.bot.realtime_client import RealtimeClient
+from app.bot.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 
 @pytest.fixture
@@ -36,8 +36,8 @@ def mock_client():
 
 @pytest.fixture
 def bridge():
-    """Create an AudiocodesRealtimeBridge instance for testing."""
-    return AudiocodesRealtimeBridge()
+    """Create an TelephonyRealtimeBridge instance for testing."""
+    return TelephonyRealtimeBridge()
 
 
 @pytest.mark.asyncio
@@ -60,7 +60,7 @@ async def test_create_client(
 
             # Patch RealtimeClient to return our mock
             with patch(
-                "app.bot.audiocodes_realtime_bridge.RealtimeClient",
+                "app.bot.telephony_realtime_bridge.RealtimeClient",
                 return_value=mock_client,
             ):
                 await bridge.create_client(conversation_id, mock_websocket)
@@ -258,3 +258,128 @@ async def test_close_client_nonexistent(bridge):
 
     # This should not raise an exception
     await bridge.close_client(conversation_id)
+
+
+@pytest.mark.asyncio
+async def test_handle_connection_lost(bridge, mock_client):
+    """Test handling connection loss."""
+    conversation_id = "test-conv-123"
+    bridge.clients[conversation_id] = mock_client
+
+    await bridge._handle_connection_lost(conversation_id)
+    # Verify appropriate logging and state handling
+    # TODO: Add assertions once reconnection logic is implemented
+
+
+@pytest.mark.asyncio
+async def test_handle_connection_restored(bridge, mock_client):
+    """Test handling connection restoration."""
+    conversation_id = "test-conv-123"
+    bridge.clients[conversation_id] = mock_client
+
+    await bridge._handle_connection_restored(conversation_id)
+    # Verify appropriate logging and state handling
+
+
+@pytest.mark.asyncio
+async def test_cleanup_failed_client(bridge):
+    """Test cleanup after client creation failure."""
+    conversation_id = "test-conv-123"
+
+    # Setup partial state
+    bridge.clients[conversation_id] = MagicMock()
+    bridge.websockets[conversation_id] = MagicMock()
+    bridge.stream_ids[conversation_id] = 1
+    bridge.response_tasks[conversation_id] = MagicMock()
+    bridge.audio_latencies[conversation_id] = 0.0
+
+    await bridge._cleanup_failed_client(conversation_id)
+
+    # Verify all state was cleaned up
+    assert conversation_id not in bridge.clients
+    assert conversation_id not in bridge.websockets
+    assert conversation_id not in bridge.stream_ids
+    assert conversation_id not in bridge.response_tasks
+    assert conversation_id not in bridge.audio_latencies
+
+
+@pytest.mark.asyncio
+async def test_send_audio_chunk_invalid_data(bridge, mock_client):
+    """Test handling invalid audio data."""
+    conversation_id = "test-conv-123"
+    bridge.clients[conversation_id] = mock_client
+
+    # Test with invalid base64 data
+    invalid_chunk = "not-a-valid-base64-string"
+    await bridge.send_audio_chunk(conversation_id, invalid_chunk)
+
+    # Verify error was logged and handled gracefully
+    # TODO: Add assertions for error logging
+
+
+@pytest.mark.asyncio
+async def test_handle_openai_responses_error_handling(bridge, mock_client):
+    """Test error handling in response processing."""
+    conversation_id = "test-conv-123"
+    stream_id = 1
+
+    # Setup test
+    bridge.clients[conversation_id] = mock_client
+    bridge.websockets[conversation_id] = MockWebSocket()
+    bridge.stream_ids[conversation_id] = stream_id
+
+    # Mock client to raise an exception
+    async def mock_receive_audio_chunk():
+        raise Exception("Test error")
+
+    mock_client.receive_audio_chunk = mock_receive_audio_chunk
+
+    # This should not raise an exception
+    await bridge._handle_openai_responses(conversation_id)
+
+    # Verify cleanup was performed
+    # TODO: Add assertions for cleanup
+
+
+@pytest.mark.asyncio
+async def test_close_client_error_handling(bridge, mock_client, caplog):
+    """Test error handling during client closure."""
+    conversation_id = "test-conv-123"
+
+    # Setup test
+    bridge.clients[conversation_id] = mock_client
+    bridge.websockets[conversation_id] = MagicMock()
+    bridge.stream_ids[conversation_id] = 1
+
+    # Mock client to raise an exception during close
+    mock_client.close.side_effect = Exception("Test error")
+
+    # This should not raise an exception
+    await bridge.close_client(conversation_id)
+
+    # Verify state was cleaned up despite error
+    assert conversation_id not in bridge.clients
+    assert conversation_id not in bridge.websockets
+    assert conversation_id not in bridge.stream_ids
+
+    # Verify error was logged
+    assert any(
+        f"Error closing client for conversation {conversation_id}" in record.message
+        for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+async def test_audio_latency_tracking(bridge, mock_client):
+    """Test audio latency tracking functionality."""
+    conversation_id = "test-conv-123"
+    bridge.clients[conversation_id] = mock_client
+
+    # Send multiple audio chunks
+    for _ in range(3):
+        audio_chunk = base64.b64encode(b"test audio data").decode("utf-8")
+        await bridge.send_audio_chunk(conversation_id, audio_chunk)
+
+    # Verify latency was tracked
+    assert conversation_id in bridge.audio_latencies
+    assert isinstance(bridge.audio_latencies[conversation_id], float)
