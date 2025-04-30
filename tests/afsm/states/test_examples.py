@@ -1,8 +1,8 @@
 import unittest
 import pytest
 import asyncio
-from app.afsm.states.base import StateContext
-from app.afsm.states.examples import (
+from fastagent.afsm.states.base import StateContext
+from fastagent.afsm.states.examples import (
     GreetingState,
     AuthenticationState,
     GeneralInquiryState,

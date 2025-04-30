@@ -1,5 +1,5 @@
-from app.transitions.registry import TransitionRegistry
-from app.transitions.base import BaseTransition
+from fastagent.transitions.registry import TransitionRegistry
+from fastagent.transitions.base import BaseTransition
 
 class MockTransition(BaseTransition):
     def __init__(self, source_state, target_state, priority=0, description=''):

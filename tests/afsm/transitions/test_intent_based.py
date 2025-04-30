@@ -2,7 +2,7 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from app.afsm.transitions.intent_based import IntentBasedTransition
+from fastagent.afsm.transitions.intent_based import IntentBasedTransition
 
 
 class TestIntentBasedTransition(unittest.TestCase):

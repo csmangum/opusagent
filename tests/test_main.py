@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 
-from app.main import app, websocket_manager
+from fastagent.main import app, websocket_manager
 
 client = TestClient(app)
 

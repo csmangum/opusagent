@@ -6,8 +6,8 @@ import asyncio
 from fastapi import WebSocket
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.models.audiocodes_api import (
+from fastagent.main import app
+from fastagent.models.audiocodes_api import (
     ConnectionValidateMessage,
     SessionInitiateMessage,
     SessionEndMessage

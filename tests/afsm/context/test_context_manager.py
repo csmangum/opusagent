@@ -3,9 +3,9 @@ import os
 import json
 import tempfile
 import shutil
-from app.afsm.context.context_manager import ContextManager
-from app.afsm.context.state_context import StateContext
-from app.afsm.context.context_item import ContextItem
+from fastagent.afsm.context.context_manager import ContextManager
+from fastagent.afsm.context.state_context import StateContext
+from fastagent.afsm.context.context_item import ContextItem
 
 
 class TestContextManager:

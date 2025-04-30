@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from app.afsm.states import AFSMState, StateManager, StateTransition
+from fastagent.afsm.states import AFSMState, StateManager, StateTransition
 
 
 class MockState(AFSMState):

@@ -24,7 +24,7 @@ FastAgent employs a hybrid architecture:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/fastagent.git
+git clone https://github.com/csmangum/fastagent.git
 cd fastagent
 
 # Create and activate virtual environment (optional)

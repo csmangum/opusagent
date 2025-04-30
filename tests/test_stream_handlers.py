@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.handlers.stream_handlers import (
+from fastagent.handlers.stream_handlers import (
     handle_user_stream_chunk,
     handle_user_stream_start,
     handle_user_stream_stop,
     send_play_stream,
 )
-from app.models.conversation import ConversationManager
-from app.models.audiocodes_api import (
+from fastagent.models.conversation import ConversationManager
+from fastagent.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
     PlayStreamStopMessage,
@@ -21,7 +21,7 @@ from app.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
-from app.bot.telephony_realtime_bridge import bridge
+from fastagent.bot.telephony_realtime_bridge import bridge
 
 
 @pytest.mark.asyncio

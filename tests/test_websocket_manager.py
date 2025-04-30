@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch, call
 
 from fastapi import WebSocket
 
-from app.websocket_manager import WebSocketManager
-from app.models.conversation import ConversationManager
-from app.models.audiocodes_api import (
+from fastagent.websocket_manager import WebSocketManager
+from fastagent.models.conversation import ConversationManager
+from fastagent.models.audiocodes_api import (
     ConnectionValidateMessage,
     SessionInitiateMessage,
     SessionResumeMessage,
@@ -171,7 +171,7 @@ async def test_handle_user_stream_start():
         mock_handler.return_value = mock_response
         
         # Call handler
-        from app.handlers.stream_handlers import handle_user_stream_start
+        from fastagent.handlers.stream_handlers import handle_user_stream_start
         response = await handle_user_stream_start(json.loads(msg.json()), websocket, conversation_manager)
         
         # Verify
@@ -198,7 +198,7 @@ async def test_handle_user_stream_chunk():
         mock_handler.return_value = None  # No response for chunk messages
         
         # Call handler
-        from app.handlers.stream_handlers import handle_user_stream_chunk
+        from fastagent.handlers.stream_handlers import handle_user_stream_chunk
         response = await handle_user_stream_chunk(json.loads(msg.json()), websocket, conversation_manager)
         
         # Verify
@@ -222,7 +222,7 @@ async def test_handle_session_resume():
         mock_handler.return_value = mock_response
         
         # Call handler
-        from app.handlers.session_handlers import handle_session_resume
+        from fastagent.handlers.session_handlers import handle_session_resume
         response = await handle_session_resume(json.loads(msg.json()), websocket, conversation_manager)
         
         # Verify
@@ -256,7 +256,7 @@ async def test_handle_activities():
         mock_handler.return_value = mock_response
         
         # Call handler
-        from app.handlers.activity_handlers import handle_activities
+        from fastagent.handlers.activity_handlers import handle_activities
         response = await handle_activities(json.loads(msg.json()), websocket, conversation_manager)
         
         # Verify

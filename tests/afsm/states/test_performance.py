@@ -5,7 +5,7 @@ import unittest
 import pytest
 import pytest_asyncio
 
-from app.afsm.states import AFSMState, StateManager, StateTransition
+from fastagent.afsm.states import AFSMState, StateManager, StateTransition
 
 
 class FastMockState(AFSMState):

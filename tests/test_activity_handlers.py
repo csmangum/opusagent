@@ -3,9 +3,9 @@ import json
 from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 
-from app.handlers.activity_handlers import handle_activities, send_activities, hangup_call
-from app.models.conversation import ConversationManager
-from app.models.audiocodes_api import ActivityEvent, ActivitiesMessage
+from fastagent.handlers.activity_handlers import handle_activities, send_activities, hangup_call
+from fastagent.models.conversation import ConversationManager
+from fastagent.models.audiocodes_api import ActivityEvent, ActivitiesMessage
 from pydantic import ValidationError
 
 @pytest.mark.asyncio

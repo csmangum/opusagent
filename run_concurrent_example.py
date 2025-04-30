@@ -16,7 +16,7 @@ project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 
 # Import the demo function
-from app.examples.concurrent_task_example import demonstrate_concurrent_execution
+from fastagent.examples.concurrent_task_example import demonstrate_concurrent_execution
 
 if __name__ == "__main__":
     # Configure logging
