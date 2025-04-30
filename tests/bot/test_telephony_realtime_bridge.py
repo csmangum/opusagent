@@ -14,8 +14,8 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 from fastapi import WebSocket
 
-import app.bot.audiocodes_realtime_bridge as bridge_module
-from app.bot.audiocodes_realtime_bridge import AudiocodesRealtimeBridge
+import app.bot.telephony_realtime_bridge as bridge_module
+from app.bot.telephony_realtime_bridge import AudiocodesRealtimeBridge
 from app.bot.realtime_client import RealtimeClient
 
 

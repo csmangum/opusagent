@@ -205,7 +205,11 @@ class AudiocodesRealtimeBridge:
             # Decode base64 audio chunk
             # Using faster decoding approach for performance
             binary_chunk = base64.b64decode(audio_chunk)
+        except Exception as e:
+            logger.error(f"Error decoding base64 audio chunk: {e}", exc_info=True)
+            return
             
+        try:
             # Forward to OpenAI immediately
             await client.send_audio_chunk(binary_chunk)
             
@@ -220,7 +224,7 @@ class AudiocodesRealtimeBridge:
                 )
                 
         except Exception as e:
-            logger.error(f"Error processing audio chunk: {e}", exc_info=True)
+            logger.error(f"Error sending audio chunk to OpenAI: {e}", exc_info=True)
     
     async def _handle_connection_lost(self, conversation_id: str) -> None:
         """
