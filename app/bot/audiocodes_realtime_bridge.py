@@ -168,7 +168,7 @@ class AudiocodesRealtimeBridge:
         except Exception as e:
             # Clean up on failure
             await self._cleanup_failed_client(conversation_id)
-            raise RuntimeError(f"Failed to create client: {str(e)}")
+            raise RuntimeError(f"Failed to create client: {str(e)}") from e
     
     async def send_audio_chunk(self, conversation_id: str, audio_chunk: str) -> None:
         """
