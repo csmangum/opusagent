@@ -1137,20 +1137,14 @@ class RealtimeClient:
 
             # Check queue size and implement backpressure
             current_size = self.audio_queue.qsize()
-            if (
-                current_size >= self._audio_queue_warning_threshold
-                and not self._audio_queue_full
-            ):
+            if current_size >= self._audio_queue_warning_threshold:
+                self._audio_queue_full = True
                 self.logger.warning(
                     f"Audio queue approaching capacity: {current_size}/{self._audio_queue_size}"
                 )
-                self._audio_queue_full = True
-            elif (
-                current_size < self._audio_queue_warning_threshold
-                and self._audio_queue_full
-            ):
-                self.logger.info("Audio queue pressure relieved")
+            elif current_size < self._audio_queue_warning_threshold:
                 self._audio_queue_full = False
+                self.logger.info("Audio queue pressure relieved")
 
             if self._audio_queue_full:
                 # Wait briefly to allow queue to drain
