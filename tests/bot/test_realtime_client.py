@@ -135,7 +135,8 @@ async def test_reconnect(realtime_client):
 @pytest.mark.asyncio
 async def test_close(realtime_client):
     """Test closing the client."""
-    realtime_client.ws = AsyncMock()
+    mock_ws = AsyncMock()
+    realtime_client.ws = mock_ws
     realtime_client._recv_task = AsyncMock()
     realtime_client._heartbeat_task = AsyncMock()
     
@@ -145,4 +146,4 @@ async def test_close(realtime_client):
     assert realtime_client._connection_active is False
     realtime_client._recv_task.cancel.assert_called_once()
     realtime_client._heartbeat_task.cancel.assert_called_once()
-    realtime_client.ws.close.assert_called_once() 
+    mock_ws.close.assert_called_once()  # Verify close was called on the mock 
