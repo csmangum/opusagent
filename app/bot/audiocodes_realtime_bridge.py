@@ -24,10 +24,6 @@ Security Notes:
 - API keys are managed through environment variables
 - WebSocket connections are authenticated
 - Audio data is handled securely in memory
-
-Author: Chris Mangum
-Date: 2025-04-29
-Version: 1.0.0
 """
 
 import asyncio
