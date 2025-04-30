@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
-from app.models.conversation import ConversationManager
+from fastagent.models.conversation import ConversationManager
 
 class TestConversationManager(unittest.TestCase):
     

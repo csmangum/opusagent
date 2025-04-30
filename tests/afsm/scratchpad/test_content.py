@@ -4,7 +4,7 @@ Unit tests for ScratchpadContent class.
 
 import time
 import pytest
-from app.afsm.scratchpad.content import ScratchpadContent, Entry
+from fastagent.afsm.scratchpad.content import ScratchpadContent, Entry
 
 
 class TestScratchpadContent:

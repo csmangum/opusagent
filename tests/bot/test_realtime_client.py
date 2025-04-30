@@ -15,7 +15,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError
 
-from app.bot.realtime_client import RealtimeClient
+from fastagent.bot.realtime_client import RealtimeClient
 
 
 @pytest.fixture

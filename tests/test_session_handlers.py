@@ -1,14 +1,14 @@
 from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 
-from app.handlers.session_handlers import (
+from fastagent.handlers.session_handlers import (
     handle_session_initiate,
     handle_session_resume,
     handle_session_end,
     handle_connection_validate
 )
-from app.models.conversation import ConversationManager
-from app.models.audiocodes_api import (
+from fastagent.models.conversation import ConversationManager
+from fastagent.models.audiocodes_api import (
     SessionInitiateMessage,
     SessionResumeMessage,
     SessionEndMessage,

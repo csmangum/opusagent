@@ -18,7 +18,7 @@ import uvicorn
 # Import constants from app (will also load environment variables)
 sys.path.append(str(Path(__file__).parent))
 
-from app.config.logging_config import configure_logging
+from fastagent.config.logging_config import configure_logging
 
 # Configure logging
 logger = configure_logging()

@@ -10,7 +10,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from app.models.openai_api import (
+from fastagent.models.openai_api import (
     # Message models
     MessageRole,
     OpenAIMessage,

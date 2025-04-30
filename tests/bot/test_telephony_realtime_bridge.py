@@ -14,9 +14,9 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 from fastapi import WebSocket
 
-import app.bot.telephony_realtime_bridge as bridge_module
-from app.bot.realtime_client import RealtimeClient
-from app.bot.telephony_realtime_bridge import TelephonyRealtimeBridge
+import fastagent.bot.telephony_realtime_bridge as bridge_module
+from fastagent.bot.realtime_client import RealtimeClient
+from fastagent.bot.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@ Unit tests for ReasoningSection class.
 
 import pytest
 
-from app.afsm.scratchpad.section import ReasoningSection, SectionType
+from fastagent.afsm.scratchpad.section import ReasoningSection, SectionType
 
 
 class TestReasoningSection:

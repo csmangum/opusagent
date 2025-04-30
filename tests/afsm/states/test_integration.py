@@ -4,13 +4,13 @@ import unittest
 import pytest
 import pytest_asyncio
 
-from app.afsm.states.examples import (
+from fastagent.afsm.states.examples import (
     AccountVerificationState,
     AuthenticationState,
     GeneralInquiryState,
     GreetingState,
 )
-from app.afsm.states.manager import StateManager
+from fastagent.afsm.states.manager import StateManager
 
 
 class TestConversationFlows(unittest.TestCase):

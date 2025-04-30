@@ -1,6 +1,6 @@
 import unittest
 import logging
-from app.config.logging_config import configure_logging
+from fastagent.config.logging_config import configure_logging
 
 class TestLoggingConfig(unittest.TestCase):
     def test_configure_logging(self):

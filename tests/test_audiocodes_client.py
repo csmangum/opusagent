@@ -16,14 +16,14 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 import websockets
 
-from app.models.audiocodes_api import (
+from fastagent.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,
     SessionInitiateMessage,
     UserStreamStartMessage,
     UserStreamStopMessage,
 )
-from app.services.websocket_client import TelephonyClient
+from fastagent.services.websocket_client import TelephonyClient
 
 
 @pytest.fixture

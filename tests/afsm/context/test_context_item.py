@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from app.afsm.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
+from fastagent.afsm.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
 
 
 class TestContextItem:
