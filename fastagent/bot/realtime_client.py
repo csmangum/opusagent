@@ -424,7 +424,6 @@ class RealtimeClient:
                     additional_headers=headers,
                     # Additional performance optimizations
                     max_queue=32,  # Small queue to prevent buffering
-                    read_limit=WS_MAX_SIZE,
                     write_limit=WS_MAX_SIZE,
                     # SSL configuration for security
                     ssl=True,
