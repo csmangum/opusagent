@@ -45,7 +45,7 @@ A bidirectional bridge that:
 ### Basic Usage with Bridge (Recommended)
 
 ```python
-from app.bot import bridge
+from fastagent.bot import bridge
 import asyncio
 
 async def handle_new_conversation(conversation_id, websocket):
@@ -62,7 +62,7 @@ async def handle_new_conversation(conversation_id, websocket):
 ### Direct RealtimeClient Usage
 
 ```python
-from app.bot import RealtimeClient
+from fastagent.bot import RealtimeClient
 import os
 
 async def custom_client_usage():

@@ -38,7 +38,7 @@ State management for active voice conversations, including:
 
 ```python
 # Create and use conversation management
-from app.models.conversation import ConversationManager
+from fastagent.models.conversation import ConversationManager
 
 # Initialize conversation tracking
 conversation_manager = ConversationManager()
@@ -51,7 +51,7 @@ conversation_manager.add_conversation(
 )
 
 # Using OpenAI Realtime API models
-from app.models.openai_api import SessionConfig, ResponseCreateEvent
+from fastagent.models.openai_api import SessionConfig, ResponseCreateEvent
 
 # Configure a new OpenAI Realtime session
 session_config = SessionConfig(

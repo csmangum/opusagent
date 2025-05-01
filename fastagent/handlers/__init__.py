@@ -19,8 +19,8 @@ connects AudioCodes telephony with OpenAI's Realtime API for speech-to-speech co
 Usage examples:
 ```python
 # In a FastAPI WebSocket endpoint
-from app.handlers import session_handlers, stream_handlers, activity_handlers
-from app.models.conversation import ConversationManager
+from fastagent.handlers import session_handlers, stream_handlers, activity_handlers
+from fastagent.models.conversation import ConversationManager
 
 # Create a conversation manager to track active calls
 conversation_manager = ConversationManager()

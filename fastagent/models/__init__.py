@@ -20,7 +20,7 @@ across the application, helping ensure robust communication with external servic
 Usage examples:
 ```python
 # Create and use conversation management
-from app.models.conversation import ConversationManager
+from fastagent.models.conversation import ConversationManager
 
 # Initialize conversation tracking
 conversation_manager = ConversationManager()
@@ -33,7 +33,7 @@ conversation_manager.add_conversation(
 )
 
 # Validate and parse incoming messages
-from app.models.audiocodes_api import SessionInitiateMessage
+from fastagent.models.audiocodes_api import SessionInitiateMessage
 
 # Parse and validate a message from AudioCodes
 message_data = {
@@ -47,7 +47,7 @@ message_data = {
 session_message = SessionInitiateMessage(**message_data)
 
 # Create response messages
-from app.models.audiocodes_api import SessionAcceptedResponse
+from fastagent.models.audiocodes_api import SessionAcceptedResponse
 
 response = SessionAcceptedResponse(
     type="session.accepted",
@@ -57,7 +57,7 @@ response = SessionAcceptedResponse(
 await websocket.send_text(response.json())
 
 # Using OpenAI Realtime API models
-from app.models.openai_api import SessionConfig, ResponseCreateEvent
+from fastagent.models.openai_api import SessionConfig, ResponseCreateEvent
 
 # Configure a new OpenAI Realtime session
 session_config = SessionConfig(

@@ -1,6 +1,7 @@
 import pytest
 import logging
 import asyncio
+import os
 
 """
 Pytest configuration file for the FastAgent framework test suite.
@@ -25,4 +26,9 @@ def event_loop():
     asyncio.set_event_loop(loop)
     yield loop
     loop.close()
-    asyncio.set_event_loop(None) 
+    asyncio.set_event_loop(None)
+
+@pytest.fixture(autouse=True)
+def skip_integration_when_no_api_key(request):
+    if request.node.get_closest_marker("integration") and not os.environ.get("OPENAI_API_KEY"):
+        pytest.skip("Skipping integration tests: OPENAI_API_KEY not set") 

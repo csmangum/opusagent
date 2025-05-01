@@ -60,7 +60,7 @@ async def test_create_client(
 
             # Patch RealtimeClient to return our mock
             with patch(
-                "app.bot.telephony_realtime_bridge.RealtimeClient",
+                "fastagent.bot.telephony_realtime_bridge.RealtimeClient",
                 return_value=mock_client,
             ):
                 await bridge.create_client(conversation_id, mock_websocket)

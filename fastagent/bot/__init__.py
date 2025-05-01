@@ -17,7 +17,7 @@ with OpenAI's models through telephony infrastructure.
 Usage examples:
 ```python
 # Using the singleton bridge instance (recommended for most cases)
-from app.bot import bridge
+from fastagent.bot import bridge
 import asyncio
 
 async def handle_new_conversation(conversation_id, websocket):
@@ -31,7 +31,7 @@ async def handle_new_conversation(conversation_id, websocket):
     await bridge.close_client(conversation_id)
 
 # Direct usage of RealtimeClient (for custom implementations)
-from app.bot import RealtimeClient
+from fastagent.bot import RealtimeClient
 import os
 
 async def custom_client_usage():

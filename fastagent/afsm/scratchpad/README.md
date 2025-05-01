@@ -11,7 +11,7 @@ The Scratchpad module provides a structured system for agent reasoning and thoug
 The fundamental container for reasoning data, providing mechanisms to add, retrieve, and manage timestamped entries.
 
 ```python
-from app.afsm.scratchpad import ScratchpadContent
+from fastagent.afsm.scratchpad import ScratchpadContent
 
 content = ScratchpadContent(name="reasoning_process")
 content.append("The user seems to be asking about product pricing.")
@@ -24,8 +24,8 @@ print(content.get_content())
 Specialized containers for different types of reasoning content, allowing for structured categorization of thoughts.
 
 ```python
-from app.afsm.scratchpad import ReasoningSection
-from app.afsm.scratchpad.section import SectionType
+from fastagent.afsm.scratchpad import ReasoningSection
+from fastagent.afsm.scratchpad.section import SectionType
 
 facts = ReasoningSection(SectionType.FACTS)
 facts.add("User requested information about the premium plan.")
@@ -37,7 +37,7 @@ facts.add("User mentioned a budget constraint of $50/month.")
 Central orchestrator that manages multiple scratchpads and their sections, handling persistence and retrieval.
 
 ```python
-from app.afsm.scratchpad import ScratchpadManager
+from fastagent.afsm.scratchpad import ScratchpadManager
 from pathlib import Path
 
 manager = ScratchpadManager(storage_dir=Path("./scratchpad_data"))
@@ -50,7 +50,7 @@ manager.write("Starting a new conversation about product features")
 Integration layer connecting the scratchpad system with the AFSM state architecture.
 
 ```python
-from app.afsm.scratchpad.integration import StateScratchpadIntegration
+from fastagent.afsm.scratchpad.integration import StateScratchpadIntegration
 
 integration = StateScratchpadIntegration()
 integration.write_to_state_scratchpad("greeting_state", "User has initiated conversation")
@@ -61,8 +61,8 @@ integration.write_to_state_scratchpad("greeting_state", "User has initiated conv
 The module integrates with AFSM states through the `ScratchpadStateMixin` class:
 
 ```python
-from app.states import AFSMState
-from app.afsm.scratchpad.integration import ScratchpadStateMixin
+from fastagent.afsm.states import AFSMState
+from fastagent.afsm.scratchpad.integration import ScratchpadStateMixin
 
 class ReasoningState(AFSMState, ScratchpadStateMixin):
     async def process(self, input_text, context):
@@ -122,4 +122,4 @@ See the complete example in `app/scratchpad/examples/reasoning_state.py` showing
 2. **Clear Transitions**: Transfer only relevant insights between states
 3. **Incremental Recording**: Document reasoning steps as they occur
 4. **Relationship Tracking**: Connect related facts, hypotheses, and conclusions
-5. **Periodic Summarization**: Summarize lengthy reasoning chains for efficiency 
+5. **Periodic Summarization**: Summarize lengthy reasoning chains for efficiency

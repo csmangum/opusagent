@@ -87,7 +87,7 @@ class TestContextManager:
             called_with["to_state"] = to_state
             context.on_state_transition(from_state, to_state)
         
-        monkeypatch.setattr("app.afsm.context.context_filter.ContextFilter.apply_to_context", mock_apply)
+        monkeypatch.setattr("fastagent.afsm.context.context_filter.ContextFilter.apply_to_context", mock_apply)
         
         # Test with non-existent context
         result = manager.handle_state_transition("non_existent", "state1", "state2")
@@ -145,7 +145,7 @@ class TestContextManager:
         def mock_filter_items(self, context, state_name, min_relevance=None):
             return relevant_items
         
-        monkeypatch.setattr("app.afsm.context.context_filter.ContextFilter.filter_items", mock_filter_items)
+        monkeypatch.setattr("fastagent.afsm.context.context_filter.ContextFilter.filter_items", mock_filter_items)
         
         # Test with non-existent context
         result = manager.get_context_for_state("non_existent", "test_state")

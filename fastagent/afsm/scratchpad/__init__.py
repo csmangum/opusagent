@@ -18,8 +18,8 @@ the agent's thought processes.
 Usage examples:
 ```python
 # Basic scratchpad usage
-from app.scratchpad import ScratchpadContent, ReasoningSection
-from app.scratchpad.section import SectionType
+from fastagent.afsm.scratchpad import ScratchpadContent, ReasoningSection
+from fastagent.afsm.scratchpad.section import SectionType
 
 # Create a simple reasoning container
 content = ScratchpadContent(name="reasoning_process")
@@ -33,7 +33,7 @@ facts.add("User requested information about the premium plan.")
 facts.add("User mentioned a budget constraint of $50/month.")
 
 # Create a manager to handle multiple scratchpads
-from app.scratchpad import ScratchpadManager
+from fastagent.afsm.scratchpad import ScratchpadManager
 from pathlib import Path
 
 manager = ScratchpadManager(storage_dir=Path("./scratchpad_data"))
@@ -41,8 +41,8 @@ pad_id = manager.create_scratchpad(name="conversation_123")
 manager.write("Starting a new conversation about product features")
 
 # Integrate with AFSM states
-from app.states import AFSMState
-from app.afsm.scratchpad.integration import ScratchpadStateMixin
+from fastagent.afsm.states import AFSMState
+from fastagent.afsm.scratchpad.integration import ScratchpadStateMixin
 
 class ReasoningState(AFSMState, ScratchpadStateMixin):
     async def process(self, input_text, context):

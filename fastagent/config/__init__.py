@@ -16,16 +16,16 @@ across the application, enabling easy maintenance and configuration changes.
 Usage examples:
 ```python
 # Import and use constants
-from app.config.constants import LOGGER_NAME, DEFAULT_REALTIME_MODEL
-from app.config.constants import MESSAGE_TYPE_USER_STREAM_CHUNK
+from fastagent.config.constants import LOGGER_NAME, DEFAULT_REALTIME_MODEL
+from fastagent.config.constants import MESSAGE_TYPE_USER_STREAM_CHUNK
 
 # Set up logging for your module
-from app.config.logging_config import configure_logging
+from fastagent.config.logging_config import configure_logging
 logger = configure_logging()
 logger.info("Application started")
 
 # Access audio format constants
-from app.config.constants import AUDIO_FORMAT_RAW_LPCM16
+from fastagent.config.constants import AUDIO_FORMAT_RAW_LPCM16
 audio_format = AUDIO_FORMAT_RAW_LPCM16
 ```
 """

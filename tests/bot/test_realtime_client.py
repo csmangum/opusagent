@@ -40,16 +40,18 @@ def realtime_client(mock_api_key, mock_model):
 async def test_connect_success(realtime_client):
     """Test successful connection to the OpenAI Realtime API."""
     mock_ws = AsyncMock()
-    
+
     with patch("websockets.connect", return_value=mock_ws):
         with patch("asyncio.wait_for", return_value=mock_ws) as mock_wait_for:
             with patch("asyncio.create_task") as mock_create_task:
                 # Patch _initialize_session to return True
-                with patch.object(realtime_client, "_initialize_session", return_value=True):
+                with patch.object(
+                    realtime_client, "_initialize_session", return_value=True
+                ):
                     result = await realtime_client.connect()
-                
+
                     assert result is True
-                    assert realtime_client.ws == mock_ws
+                    assert realtime_client._ws == mock_ws
                     assert realtime_client._connection_active is True
                     assert mock_create_task.call_count == 2  # _recv_loop and _heartbeat
 
@@ -59,7 +61,7 @@ async def test_connect_failure(realtime_client):
     """Test connection failure to the OpenAI Realtime API."""
     with patch("websockets.connect", side_effect=Exception("Connection error")):
         result = await realtime_client.connect()
-        
+
         assert result is False
         assert realtime_client._connection_active is False
 
@@ -67,21 +69,25 @@ async def test_connect_failure(realtime_client):
 @pytest.mark.asyncio
 async def test_send_audio_chunk_success(realtime_client):
     """Test sending an audio chunk successfully."""
-    realtime_client.ws = AsyncMock()
+    realtime_client._ws = AsyncMock()
     realtime_client._connection_active = True
-    realtime_client.ws.closed = False
-    
+    realtime_client._ws.closed = False
+    realtime_client._rate_limit = MagicMock()
+    realtime_client._rate_limit.is_allowed.return_value = True
+
     mock_chunk = b"test audio data"
     result = await realtime_client.send_audio_chunk(mock_chunk)
-    
+
     assert result is True
     # Check that send was called once with a JSON string containing base64-encoded audio
-    realtime_client.ws.send.assert_called_once()
-    call_args = realtime_client.ws.send.call_args[0][0]
+    realtime_client._ws.send.assert_called_once()
+    call_args = realtime_client._ws.send.call_args[0][0]
     assert isinstance(call_args, str)
     json_data = json.loads(call_args)
     assert json_data["type"] == "input_audio_buffer.append"
-    assert json_data["audio"] == "dGVzdCBhdWRpbyBkYXRh"  # base64 encoded "test audio data"
+    assert (
+        json_data["audio"] == "dGVzdCBhdWRpbyBkYXRh"
+    )  # base64 encoded "test audio data"
     assert "event_id" in json_data
 
 
@@ -91,11 +97,11 @@ async def test_send_audio_chunk_connection_closed(realtime_client):
     realtime_client.ws = AsyncMock()
     realtime_client.ws.send.side_effect = ConnectionClosedError(None, None)
     realtime_client._connection_active = True
-    
+
     with patch.object(realtime_client, "reconnect", return_value=False):
         mock_chunk = b"test audio data"
         result = await realtime_client.send_audio_chunk(mock_chunk)
-        
+
         assert result is False
 
 
@@ -103,10 +109,10 @@ async def test_send_audio_chunk_connection_closed(realtime_client):
 async def test_receive_audio_chunk(realtime_client):
     """Test receiving an audio chunk."""
     mock_chunk = b"received audio data"
-    
+
     # Put the mock chunk in the queue
     await realtime_client.audio_queue.put(mock_chunk)
-    
+
     # Check that receive_audio_chunk returns the chunk
     result = await realtime_client.receive_audio_chunk()
     assert result == mock_chunk
@@ -116,19 +122,58 @@ async def test_receive_audio_chunk(realtime_client):
 async def test_reconnect(realtime_client):
     """Test reconnection logic."""
     # Mock successful connection
-    with patch.object(realtime_client, "connect", return_value=True):
-        result = await realtime_client.reconnect()
-        
-        assert result is True
-        assert realtime_client._reconnect_attempts == 1
-    
+    mock_ws = AsyncMock()
+    mock_ws.closed = False
+    mock_ws.close = AsyncMock()
+    mock_ws.ping = AsyncMock()
+    mock_ws.pong = AsyncMock()
+    mock_ws.recv = AsyncMock(return_value="{}")
+    mock_ws.send = AsyncMock()
+    mock_ws.sock = MagicMock()
+
+    # Set initial state
+    realtime_client._reconnect_attempts = 0
+    realtime_client._reconnecting = False
+    realtime_client._ws = None  # Ensure WebSocket is None initially
+    realtime_client._connection_active = True  # Set connection as active
+    realtime_client._is_connected = False
+
+    # Create an awaitable mock for websockets.connect
+    async def mock_connect(*args, **kwargs):
+        return mock_ws
+
+    # Mock the task creation to prevent stalling
+    mock_task = AsyncMock()
+    mock_create_task = MagicMock(return_value=mock_task)
+
+    # Mock websockets.connect to return our mock_ws
+    with patch("websockets.connect", side_effect=mock_connect):
+        # Mock _initialize_session to return True
+        with patch.object(realtime_client, "_initialize_session", return_value=True):
+            # Mock sleep to avoid delays
+            with patch("asyncio.sleep"):
+                # Mock create_task to prevent stalling
+                with patch("asyncio.create_task", mock_create_task):
+                    # Start reconnection
+                    result = await realtime_client.reconnect()
+
+                    # Check that reconnection was successful
+                    assert result is True
+                    # Check that reconnecting flag was reset
+                    assert realtime_client._reconnecting is False
+                    # Check that tasks were created
+                    assert mock_create_task.call_count == 2  # _recv_loop and _heartbeat
+                    # Check that connection was restored
+                    assert realtime_client._is_connected is True
+
     # Reset reconnect attempts
     realtime_client._reconnect_attempts = 0
-    
+    realtime_client._reconnecting = False
+
     # Test max reconnect attempts
     realtime_client._reconnect_attempts = 5  # MAX_RECONNECT_ATTEMPTS
     result = await realtime_client.reconnect()
-    
+
     assert result is False
 
 
@@ -136,14 +181,15 @@ async def test_reconnect(realtime_client):
 async def test_close(realtime_client):
     """Test closing the client."""
     mock_ws = AsyncMock()
-    realtime_client.ws = mock_ws
+    realtime_client._ws = mock_ws
     realtime_client._recv_task = AsyncMock()
     realtime_client._heartbeat_task = AsyncMock()
-    
+    realtime_client._connection_active = True
+
     await realtime_client.close()
-    
+
     assert realtime_client._is_closing is True
     assert realtime_client._connection_active is False
     realtime_client._recv_task.cancel.assert_called_once()
     realtime_client._heartbeat_task.cancel.assert_called_once()
-    mock_ws.close.assert_called_once()  # Verify close was called on the mock 
+    mock_ws.close.assert_called_once()  # Verify close was called on the mock

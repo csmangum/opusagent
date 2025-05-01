@@ -11,7 +11,7 @@ The States module implements an Agentic Finite State Machine (AFSM) architecture
 Base class for all states in the AFSM system. Each state represents a discrete phase in a conversation flow with its own processing logic.
 
 ```python
-from app.states import AFSMState
+from fastagent.afsm.states import AFSMState
 
 class CustomState(AFSMState):
     def __init__(self):
@@ -37,7 +37,7 @@ class CustomState(AFSMState):
 Represents a possible transition from one state to another, with optional conditions.
 
 ```python
-from app.states import StateTransition
+from fastagent.afsm.states import StateTransition
 
 transition = StateTransition(
     target_state="next_state",
@@ -51,7 +51,7 @@ transition = StateTransition(
 Container for maintaining context across state transitions, including conversation history and metadata.
 
 ```python
-from app.states import StateContext
+from fastagent.afsm.states import StateContext
 
 context = StateContext(
     session_id="unique_session_id",
@@ -65,7 +65,7 @@ context = StateContext(
 Orchestrates the state machine, managing states, transitions, and context.
 
 ```python
-from app.states import StateManager
+from fastagent.afsm.states import StateManager
 
 manager = StateManager(initial_state="greeting")
 manager.register_state(GreetingState())

@@ -18,7 +18,7 @@ language models.
 Usage examples:
 ```python
 # Define a custom state
-from app.afsm.states import AFSMState, StateTransition, StateContext
+from fastagent.afsm.states import AFSMState, StateTransition, StateContext
 
 class GreetingState(AFSMState):
     def __init__(self):
@@ -38,7 +38,7 @@ class GreetingState(AFSMState):
         return response, []
 
 # Use the state manager to handle conversations
-from app.afsm.states import StateManager
+from fastagent.afsm.states import StateManager
 
 async def conversation_handler():
     manager = StateManager()

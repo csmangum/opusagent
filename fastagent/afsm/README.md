@@ -58,10 +58,10 @@ Structured system for agent reasoning and thought tracking:
 ## Example Usage
 
 ```python
-from app.afsm.states import AFSMState, StateManager
-from app.afsm.transitions import RuleBasedTransition
-from app.afsm.context import ContextManager
-from app.afsm.scratchpad.integration import ScratchpadStateMixin
+from fastagent.afsm.states import AFSMState, StateManager
+from fastagent.afsm.transitions import RuleBasedTransition
+from fastagent.afsm.context import ContextManager
+from fastagent.afsm.scratchpad.integration import ScratchpadStateMixin
 
 # Define a state with reasoning capabilities
 class ProductInfoState(AFSMState, ScratchpadStateMixin):

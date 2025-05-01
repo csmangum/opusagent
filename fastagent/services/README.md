@@ -36,7 +36,7 @@ The `AFSMExecutor` class integrates the concurrent execution service with AFSM s
 ### Basic Background Task
 
 ```python
-from app.services.concurrent_executor import executor
+from fastagent.services.concurrent_executor import executor
 
 # Submit a simple task
 async def my_task():
@@ -55,7 +55,7 @@ result = executor.get_task_result(task_id)
 ### AFSM Task Execution
 
 ```python
-from app.afsm.executor import fsm_executor
+from fastagent.services.afsm_executor import fsm_executor
 
 # Define states for a structured task
 state_map = {

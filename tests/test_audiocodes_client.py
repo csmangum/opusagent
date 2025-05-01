@@ -58,7 +58,7 @@ async def test_connect_success(audio_client):
 async def test_connect_failure(audio_client):
     """Test connection failure to AudioCodes."""
     with patch(
-        "app.services.websocket_client.websockets.connect",
+        "fastagent.services.websocket_client.websockets.connect",
         side_effect=Exception("Connection error"),
     ):
         result = await audio_client.connect()
@@ -77,7 +77,7 @@ async def test_initiate_session_success(audio_client):
 
     # Patch uuid to return a consistent value
     mock_uuid = "test-conv-123"
-    with patch("app.services.websocket_client.uuid.uuid4", return_value=mock_uuid):
+    with patch("fastagent.services.websocket_client.uuid.uuid4", return_value=mock_uuid):
         conversation_id = await audio_client.initiate_session("TestBot", "test-caller")
 
         # Verify session was initiated correctly
@@ -104,7 +104,7 @@ async def test_initiate_session_rejected(audio_client):
 
     # Patch uuid to return a consistent value
     mock_uuid = "test-conv-123"
-    with patch("app.services.websocket_client.uuid.uuid4", return_value=mock_uuid):
+    with patch("fastagent.services.websocket_client.uuid.uuid4", return_value=mock_uuid):
         conversation_id = await audio_client.initiate_session("TestBot", "test-caller")
 
         # Verify session was rejected

@@ -19,8 +19,8 @@ of critical information across the agent's operational flow.
 Usage examples:
 ```python
 # Basic context management
-from app.afsm.context import ContextItem, ContextCategory, ContextManager
-from app.afsm.context.context_item import ExpirationPolicy
+from fastagent.afsm.context import ContextItem, ContextCategory, ContextManager
+from fastagent.afsm.context.context_item import ExpirationPolicy
 
 # Create context items
 user_info = ContextItem(
@@ -61,7 +61,7 @@ context_manager.handle_state_transition(
 )
 
 # Filter context based on relevance
-from app.context import ContextFilter
+from fastagent.afsm.context import ContextFilter
 context_filter = ContextFilter(default_min_relevance=0.3)
 relevant_items = context_filter.filter_items(
     context,
