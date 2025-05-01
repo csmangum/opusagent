@@ -26,7 +26,7 @@ The Transitions module provides a flexible framework for defining and managing s
 
 ```python
 # Creating a rule-based transition
-from app.afsm.transitions import RuleBasedTransition, Condition, TransitionRegistry
+from fastagent.afsm.transitions import RuleBasedTransition, Condition, TransitionRegistry
 
 # Define conditions
 has_error = Condition(

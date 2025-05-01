@@ -97,7 +97,7 @@ Each transition includes:
 You can run the demo using the `example.py` script:
 
 ```python
-python -m app.afsm.bop.example
+python -m fastagent.afsm.bop.example
 ```
 
 The example script simulates several conversation flows to demonstrate the transitions between states.

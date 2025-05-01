@@ -165,7 +165,7 @@ async def test_handle_user_stream_start():
     conversation_manager.add_conversation("test-id", websocket, "raw/lpcm16")
     
     # Test with patched handlers
-    with patch('app.handlers.stream_handlers.handle_user_stream_start') as mock_handler:
+    with patch('fastagent.handlers.stream_handlers.handle_user_stream_start') as mock_handler:
         # Create expected response
         mock_response = {"type": "userStream.started", "conversationId": "test-id"}
         mock_handler.return_value = mock_response
@@ -194,7 +194,7 @@ async def test_handle_user_stream_chunk():
     conversation_manager.add_conversation("test-id", websocket, "raw/lpcm16")
     
     # Test with patched handlers
-    with patch('app.handlers.stream_handlers.handle_user_stream_chunk') as mock_handler:
+    with patch('fastagent.handlers.stream_handlers.handle_user_stream_chunk') as mock_handler:
         mock_handler.return_value = None  # No response for chunk messages
         
         # Call handler
@@ -217,7 +217,7 @@ async def test_handle_session_resume():
     )
     
     # Test with patched handlers
-    with patch('app.handlers.session_handlers.handle_session_resume') as mock_handler:
+    with patch('fastagent.handlers.session_handlers.handle_session_resume') as mock_handler:
         mock_response = {"type": "session.resumed", "conversationId": "test-id"}
         mock_handler.return_value = mock_response
         
@@ -251,7 +251,7 @@ async def test_handle_activities():
     conversation_manager.add_conversation("test-id", websocket, "raw/lpcm16")
     
     # Test with patched handlers
-    with patch('app.handlers.activity_handlers.handle_activities') as mock_handler:
+    with patch('fastagent.handlers.activity_handlers.handle_activities') as mock_handler:
         mock_response = {"type": "activities.processed", "conversationId": "test-id"}
         mock_handler.return_value = mock_response
         
@@ -365,7 +365,7 @@ async def test_multiple_messages_handling():
         websocket_manager.handlers[handler_name] = AsyncMock(return_value=None)
     
     # We need to patch the function in the websocket_manager module where it's used directly
-    with patch('app.websocket_manager.handle_user_stream_chunk', AsyncMock(return_value=None)) as mock_chunk_handler:
+    with patch('fastagent.websocket_manager.handle_user_stream_chunk', AsyncMock(return_value=None)) as mock_chunk_handler:
         # Run test
         await websocket_manager.handle_websocket(websocket)
         

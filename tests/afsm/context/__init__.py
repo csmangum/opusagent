@@ -1,3 +1,3 @@
 """
-Test suite for the app.context module.
+Test suite for the fastagent.afsm.context module.
 """ 

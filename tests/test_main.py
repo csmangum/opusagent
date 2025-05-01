@@ -44,7 +44,7 @@ def test_websocket_endpoint_initialization():
 @pytest.mark.asyncio
 async def test_websocket_endpoint():
     """Test that websocket endpoint calls the handle_websocket method"""
-    with patch('app.websocket_manager.WebSocketManager.handle_websocket') as mock_handle:
+    with patch('fastagent.websocket_manager.WebSocketManager.handle_websocket') as mock_handle:
         # This is a limited test as we can't easily test WebSockets with TestClient
         # In a real scenario, we'd use something like websockets library for a more comprehensive test
         mock_handle.return_value = None

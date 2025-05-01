@@ -6,9 +6,12 @@ including both incoming and outgoing message formats.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Literal
 
 from pydantic import BaseModel, Field
+
+# Define constants for event types
+SESSION_CONFIG = "session.config"
 
 
 class MessageRole(str, Enum):
@@ -93,6 +96,7 @@ class ConversationItem(BaseModel):
 class ClientEventType(str, Enum):
     """Types of events that can be sent to the server."""
     SESSION_UPDATE = "session.update"
+    GET_SESSION_CONFIG = "session.get_config"
     INPUT_AUDIO_BUFFER_APPEND = "input_audio_buffer.append"
     INPUT_AUDIO_BUFFER_COMMIT = "input_audio_buffer.commit"
     INPUT_AUDIO_BUFFER_CLEAR = "input_audio_buffer.clear"
@@ -108,6 +112,7 @@ class ServerEventType(str, Enum):
     ERROR = "error"
     SESSION_CREATED = "session.created"
     SESSION_UPDATED = "session.updated"
+    SESSION_CONFIG = "session.config"
     CONVERSATION_CREATED = "conversation.created"
     CONVERSATION_ITEM_CREATED = "conversation.item.created"
     CONVERSATION_ITEM_TRUNCATED = "conversation.item.truncated"
@@ -123,8 +128,15 @@ class ServerEventType(str, Enum):
     RESPONSE_TEXT_DONE = "response.text.done"
     RESPONSE_AUDIO_DELTA = "response.audio.delta"
     RESPONSE_AUDIO_DONE = "response.audio.done"
+    RESPONSE_AUDIO_TRANSCRIPT_DELTA = "response.audio_transcript.delta"
+    RESPONSE_AUDIO_TRANSCRIPT_DONE = "response.audio_transcript.done"
     RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA = "response.function_call_arguments.delta"
     RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE = "response.function_call_arguments.done"
+    RATE_LIMITS_UPDATED = "rate_limits.updated"
+    RESPONSE_OUTPUT_ITEM_ADDED = "response.output_item.added"
+    RESPONSE_OUTPUT_ITEM_DONE = "response.output_item.done"
+    RESPONSE_CONTENT_PART_DONE = "response.content_part.done"
+    RESPONSE_CONTENT_PART_ADDED = "response.content_part.added"
 
 
 class ClientEvent(BaseModel):
@@ -227,6 +239,42 @@ class ResponseDoneEvent(ServerEvent):
     type: str = "response.done"
 
 
+class RateLimitsUpdatedEvent(ServerEvent):
+    """Event indicating rate limits have been updated."""
+    type: Literal["rate_limits.updated"] = "rate_limits.updated"
+    event_id: str
+    rate_limits: List[Dict[str, Any]] = Field(..., description="List of rate limit updates")
+
+
+class ResponseOutputItemAddedEvent(ServerEvent):
+    """Event indicating a new output item has been added to the response."""
+    type: str = "response.output_item.added"
+    item: Dict[str, Any]
+
+
+class ResponseContentPartDoneEvent(ServerEvent):
+    """Event sent when a response content part is completed"""
+    type: str = "response.content_part.done"
+    event_id: str
+    response_id: str
+    item_id: str
+    output_index: int
+    content_index: int
+    part_id: Optional[str] = None
+    status: Optional[str] = None
+    part: Dict[str, Any]  # The completed content part
+
+
+class ResponseContentPartAddedEvent(ServerEvent):
+    """Event sent when a new content part is added to a response"""
+    type: str = "response.content_part.added"
+    response_id: str
+    item_id: str
+    output_index: int
+    content_index: int
+    part: Dict[str, Any]  # The added content part
+
+
 # Legacy/compatibility models
 
 class RealtimeBaseMessage(BaseModel):
@@ -283,4 +331,7 @@ class RealtimeFunctionMessage(RealtimeBaseMessage):
 
 class WebSocketErrorResponse(BaseModel):
     """Error response from OpenAI WebSocket connection."""
-    error: Dict[str, Any] 
+    error: Dict[str, Any]
+
+
+# Remove the duplicate RateLimitsUpdatedEvent definition 

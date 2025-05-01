@@ -17,7 +17,7 @@ these services while handling connection management and protocol details.
 Usage examples:
 ```python
 # Create and use the telephony WebSocket client
-from app.services.websocket_client import TelephonyClient
+from fastagent.services.websocket_client import TelephonyClient
 import asyncio
 
 async def connect_to_telephony():

@@ -63,7 +63,7 @@ async def test_websocket_endpoint_integration(mock_websocket):
 async def test_full_conversation_flow():
     """Test a complete conversation flow with patched handlers"""
     # Mock the WebSocketManager.handle_websocket method
-    with patch('app.websocket_manager.WebSocketManager.handle_websocket') as mock_handler:
+    with patch('fastagent.websocket_manager.WebSocketManager.handle_websocket') as mock_handler:
         # Set up the mock WebSocket
         websocket = AsyncMock(spec=WebSocket)
         
@@ -95,13 +95,13 @@ async def test_full_conversation_flow():
                 break
         
         # Create a conversation flow sequence
-        with patch('app.handlers.session_handlers.handle_session_initiate', mock_session_initiate), \
-             patch('app.handlers.session_handlers.handle_connection_validate', mock_connection_validate), \
-             patch('app.handlers.session_handlers.handle_session_end', mock_session_end), \
-             patch('app.handlers.stream_handlers.handle_user_stream_start', mock_user_stream_start), \
-             patch('app.handlers.stream_handlers.handle_user_stream_chunk', mock_user_stream_chunk), \
-             patch('app.handlers.stream_handlers.handle_user_stream_stop', mock_user_stream_stop), \
-             patch('app.handlers.activity_handlers.handle_activities', mock_activities):
+        with patch('fastagent.handlers.session_handlers.handle_session_initiate', mock_session_initiate), \
+             patch('fastagent.handlers.session_handlers.handle_connection_validate', mock_connection_validate), \
+             patch('fastagent.handlers.session_handlers.handle_session_end', mock_session_end), \
+             patch('fastagent.handlers.stream_handlers.handle_user_stream_start', mock_user_stream_start), \
+             patch('fastagent.handlers.stream_handlers.handle_user_stream_chunk', mock_user_stream_chunk), \
+             patch('fastagent.handlers.stream_handlers.handle_user_stream_stop', mock_user_stream_stop), \
+             patch('fastagent.handlers.activity_handlers.handle_activities', mock_activities):
             
             # Call the endpoint
             await websocket_endpoint(websocket)
@@ -171,9 +171,9 @@ async def test_parallel_conversations():
     assert websocket_endpoint is not None, "WebSocket endpoint not found"
     
     # Run the conversations in parallel
-    with patch('app.models.conversation.ConversationManager.add_conversation') as mock_add_conv, \
-         patch('app.models.conversation.ConversationManager.get_conversation') as mock_get_conv, \
-         patch('app.models.conversation.ConversationManager.remove_conversation') as mock_remove_conv:
+    with patch('fastagent.models.conversation.ConversationManager.add_conversation') as mock_add_conv, \
+         patch('fastagent.models.conversation.ConversationManager.get_conversation') as mock_get_conv, \
+         patch('fastagent.models.conversation.ConversationManager.remove_conversation') as mock_remove_conv:
         
         # Mock the conversation manager methods
         mock_get_conv.side_effect = lambda conv_id: MagicMock(conversation_id=conv_id)
