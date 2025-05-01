@@ -13,7 +13,7 @@ The FastAgent Architecture, built with FastAPI, powers a high-performance conver
 ### Agentic Finite State Machines (AFSM):
 - When a task is triggered (e.g., "Book an appointment"), OpenAI initiates a function call, and FastAgent deploys an AFSM agent to manage structured steps (e.g., collecting date, time, confirmation).
 - Agents operate efficiently, ensuring precise task execution.
-- For detailed documentation on the Agentic Finite State Machine (AFSM) architecture, see [AFSM Documentation](app/afsm/README.md).
+- For detailed documentation on the Agentic Finite State Machine (AFSM) architecture, see [AFSM Documentation](fastagent/afsm/README.md).
 
 ### Concurrent Execution:
 - The conversation flows uninterrupted while FSM agents handle tasks, allowing users to ask questions or pivot topics.
