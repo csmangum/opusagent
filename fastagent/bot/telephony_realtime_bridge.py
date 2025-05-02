@@ -34,10 +34,13 @@ import os
 import time
 from typing import Any, Dict, Optional
 
+from dotenv import load_dotenv
 from fastapi import WebSocket
 
 from fastagent.bot.realtime_client import RealtimeClient
 from fastagent.config.constants import LOGGER_NAME
+
+load_dotenv()
 
 # Configure logging with detailed format
 logger = logging.getLogger(LOGGER_NAME)
@@ -139,39 +142,45 @@ class TelephonyRealtimeBridge:
             raise ValueError(error_msg)
 
         try:
+            logger.info(f"Creating OpenAI Realtime client with model: {model}")
             # Create and connect client
-            # Note: We store references before connecting to ensure we capture all responses
             client = RealtimeClient(OPENAI_API_KEY, model)
+            logger.info("RealtimeClient instance created successfully")
 
             # Initialize state tracking
             self.clients[conversation_id] = client
             self.websockets[conversation_id] = websocket
             self.stream_ids[conversation_id] = 1  # Start with stream ID 1
             self.audio_latencies[conversation_id] = 0.0
+            logger.info("State tracking initialized")
 
             # Connect client with error handling
-            await client.connect()
+            logger.info("Attempting to connect OpenAI client...")
+            try:
+                await client.connect()
+                logger.info("OpenAI client connected successfully")
+            except Exception as connect_error:
+                logger.error(f"Failed to connect OpenAI client: {str(connect_error)}")
+                await self._cleanup_failed_client(conversation_id)
+                raise RuntimeError(f"OpenAI client connection failed: {str(connect_error)}") from connect_error
 
             # Set up connection event handlers
-            # These handlers manage connection state and recovery
             client.set_connection_handlers(
                 lost_handler=lambda: self._handle_connection_lost(conversation_id),
-                restored_handler=lambda: self._handle_connection_restored(
-                    conversation_id
-                ),
+                restored_handler=lambda: self._handle_connection_restored(conversation_id),
             )
+            logger.info("Connection handlers set up")
 
             # Start response handling task
-            # This task runs in the background and handles incoming audio
             self.response_tasks[conversation_id] = asyncio.create_task(
                 self._handle_openai_responses(conversation_id)
             )
+            logger.info("Response handling task started")
 
-            logger.info(
-                f"Created OpenAI Realtime client for conversation: {conversation_id}"
-            )
+            logger.info(f"Created OpenAI Realtime client for conversation: {conversation_id}")
 
         except Exception as e:
+            logger.error(f"Failed to create client: {str(e)}")
             # Clean up on failure
             await self._cleanup_failed_client(conversation_id)
             raise RuntimeError(f"Failed to create client: {str(e)}") from e

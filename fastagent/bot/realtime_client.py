@@ -276,6 +276,21 @@ class RealtimeClient:
         """Get the rate limit instance."""
         return self._rate_limit
 
+    @property
+    def ws_url(self) -> str:
+        """Get the WebSocket URL for the current model."""
+        return f"{self._api_base}?model={self._model}"
+
+    @property
+    def ws(self) -> Optional[websockets.WebSocketClientProtocol]:
+        """Get the WebSocket connection."""
+        return self._ws
+
+    @ws.setter
+    def ws(self, value: Optional[websockets.WebSocketClientProtocol]) -> None:
+        """Set the WebSocket connection."""
+        self._ws = value
+
     def __init__(
         self,
         api_key: str,
@@ -368,262 +383,135 @@ class RealtimeClient:
 
     async def connect(self) -> bool:
         """
-        Connect to the OpenAI Realtime WebSocket endpoint.
-
-        This method establishes a secure WebSocket connection to OpenAI's Realtime API,
-        configures it for low latency, and initializes the session. It includes
-        comprehensive error handling and automatic reconnection logic.
+        Connect to the OpenAI Realtime API WebSocket server.
 
         Returns:
-            bool: True if connection was successful, False otherwise
-
-        Raises:
-            ConnectionError: If connection fails after all retry attempts
-            RateLimitError: If rate limits are exceeded
-            AuthenticationError: If API key is invalid
+            bool: True if connection and session initialization successful, False otherwise.
         """
-        if self._is_closing:
-            self._logger.warning("Cannot connect - client is closing")
+        if self._ws is not None:
+            logger.warning("Already connected or connecting")
             return False
-
-        # Check rate limits before attempting connection
-        if not self._rate_limit.is_allowed():
-            self._logger.error("Rate limit exceeded for connection attempts")
-            return False
-        self._rate_limit.add_request()
-
-        # Reset connection active flag during connection attempt
-        self._is_connected = False
-
-        # Cancel any existing tasks with proper cleanup
-        if self._recv_task and not self._recv_task.done():
-            self._logger.debug("Cancelling existing receive task")
-            self._recv_task.cancel()
-            try:
-                await self._recv_task
-            except asyncio.CancelledError:
-                self._logger.debug("Previous receive task cancelled successfully")
-            except Exception as e:
-                self._logger.warning(
-                    f"Error while cancelling previous receive task: {e}"
-                )
-
-        # Close existing WebSocket if any
-        if self._ws:
-            try:
-                self._logger.debug("Closing existing WebSocket connection")
-                await self._ws.close()
-            except Exception as e:
-                self._logger.warning(f"Error closing existing WebSocket: {e}")
-            self._ws = None
-
-        url = f"wss://api.openai.com/v1/realtime?model={self._model}"
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "OpenAI-Beta": "realtime=v1",
-        }
 
         try:
-            self._logger.info(
-                f"Connecting to OpenAI Realtime API with model: {self._model}"
-            )
+            logger.info("Connecting to OpenAI Realtime API...")
+            # Configure WebSocket connection
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = True
+            ssl_context.verify_mode = ssl.CERT_REQUIRED
 
-            # Configure WebSocket for low latency
-            connection_start = time.time()
-            self._ws = await asyncio.wait_for(
-                websockets.connect(
-                    url,
+            # Create WebSocket connection with proper error handling
+            try:
+                self._ws = await websockets.connect(
+                    self.ws_url,
+                    additional_headers=self._headers,
                     max_size=WS_MAX_SIZE,
                     ping_interval=WS_PING_INTERVAL,
-                    ping_timeout=10,
-                    compression=None,  # Disable compression for lower latency
-                    additional_headers=headers,
-                    # Additional performance optimizations
-                    max_queue=32,  # Small queue to prevent buffering
-                    write_limit=WS_MAX_SIZE,
-                    # SSL configuration for security
-                    ssl=True,
-                    ssl_handshake_timeout=10,
-                ),
-                timeout=CONNECTION_TIMEOUT,
-            )
-            connection_time = time.time() - connection_start
-            self._logger.debug(
-                f"WebSocket connection established in {connection_time:.2f} seconds"
-            )
-
-            # Try to optimize the socket at the TCP level
-            if hasattr(self._ws, "sock") and self._ws.sock:
-                import socket
-
-                try:
-                    # Disable Nagle's algorithm to send packets immediately
-                    self._ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                    # Set TCP keepalive
-                    self._ws.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                    # Set keepalive parameters
-                    self._ws.sock.setsockopt(
-                        socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30
-                    )
-                    self._ws.sock.setsockopt(
-                        socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10
-                    )
-                    self._ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3)
-                    self._logger.info(
-                        "Optimized OpenAI socket: TCP_NODELAY and keepalive enabled"
-                    )
-                except Exception as e:
-                    self._logger.warning(f"Could not optimize OpenAI socket: {e}")
-
-            self._is_connected = True
-            self._connection_active = True
-            self._reconnect_attempts = 0
-            self._last_activity = time.time()
-
-            # Start listening for responses
-            self._logger.debug("Starting WebSocket receive loop")
-            self._recv_task = asyncio.create_task(self._recv_loop())
-
-            # Start heartbeat
-            if self._heartbeat_task and not self._heartbeat_task.done():
-                self._heartbeat_task.cancel()
-                try:
-                    await self._heartbeat_task
-                except asyncio.CancelledError:
-                    self._logger.debug("Previous heartbeat task cancelled successfully")
-                except Exception:
-                    pass
-
-            self._logger.debug("Starting heartbeat task")
-            self._heartbeat_task = asyncio.create_task(self._heartbeat())
+                    ssl=ssl_context,
+                    open_timeout=CONNECTION_TIMEOUT,
+                )
+                logger.info("WebSocket connection established")
+                self._connection_active = True  # Set connection as active
+            except Exception as e:
+                logger.error(f"Failed to establish WebSocket connection: {str(e)}")
+                return False
 
             # Initialize session
             if not await self._initialize_session():
-                self._logger.error("Failed to initialize session")
+                logger.error("Failed to initialize session")
                 await self.close()
                 return False
 
-            self._logger.info("Successfully connected to OpenAI Realtime API")
-
-            # Call the connection restored handler if this was a reconnection
-            if self._connection_restored_handler and self._reconnect_attempts > 0:
-                self._logger.debug("Calling connection restored handler")
-                await self._connection_restored_handler()
-
+            # Start background tasks
+            self._start_background_tasks()
+            logger.info("Connection and session initialization successful")
             return True
 
-        except asyncio.TimeoutError:
-            self._logger.error(
-                f"Timeout while connecting to OpenAI Realtime API (after {CONNECTION_TIMEOUT}s)"
-            )
-            self._is_connected = False
-            return False
-
-        except websockets.exceptions.InvalidStatusCode as e:
-            self._logger.error(f"Invalid status code from OpenAI: {e.status_code}")
-            self._is_connected = False
-            if e.status_code == 401:
-                raise AuthenticationError("Invalid API key") from None
-            elif e.status_code == 403:
-                raise AuthenticationError(
-                    "API key does not have access to this resource"
-                ) from None
-            elif e.status_code == 429:
-                self._logger.error("Rate limit exceeded")
-            return False
-
         except Exception as e:
-            self._logger.error(f"Failed to connect to OpenAI Realtime API: {e}")
-            self._logger.debug(f"Connection error details: {traceback.format_exc()}")
-            self._is_connected = False
+            logger.error(f"Connection failed: {str(e)}")
+            if self._ws:
+                await self._ws.close()
+                self._ws = None
             return False
 
     async def _initialize_session(self) -> bool:
         """
-        Initialize a new session with the Realtime API.
-
-        This method handles session initialization with proper error handling
-        and validation. It ensures the session is properly configured before
-        allowing communication.
+        Initialize the session with OpenAI Realtime API.
 
         Returns:
-            bool: True if session initialization was successful, False otherwise
-
-        Raises:
-            SessionError: If session initialization fails
+            bool: True if session initialization successful, False otherwise.
         """
         try:
-            # Default session configuration
-            session_config = SessionConfig(
-                modalities=["text", "audio"],
-                model=self._model,
-                voice=self._voice,
-                input_audio_format="pcm16",
-                output_audio_format="pcm16",
-                turn_detection={"type": "server_vad"},
+            logger.info("Initializing session...")
+            # Generate session ID
+            self._session_id = str(uuid.uuid4())
+            logger.info(f"Generated session ID: {self._session_id}")
+
+            # Create session configuration
+            session_config = {
+                "model": self._model,
+                "voice": self._voice,
+                "modalities": ["text", "audio"],
+                "turn_detection": {
+                    "type": "server_vad",
+                    "threshold": 0.5,
+                    "prefix_padding_ms": 300,
+                    "silence_duration_ms": 200,
+                    "create_response": True,
+                    "interrupt_response": True
+                }
+            }
+            logger.info(f"Session config: {json.dumps(session_config, indent=2)}")
+
+            # Send session creation event
+            event = SessionUpdateEvent(
+                event=ClientEventType.SESSION_UPDATE,
+                session_id=self._session_id,
+                session=session_config  # Changed from config to session
             )
-
-            # Create session update event
-            update_event = SessionUpdateEvent(session=session_config)
-
-            # Send session configuration
-            event_id = await self.send_event(update_event)
-
-            # Wait for session.created event with timeout
-            session_created = asyncio.Future()
-
-            def on_session_created(event: Dict[str, Any]):
-                if not session_created.done():
-                    # Check if session data exists before setting result
-                    if event and isinstance(event, dict):
-                        session_created.set_result(event)
-                    else:
-                        # If event is None or invalid, set a default value to avoid NoneType errors
-                        session_created.set_result({"session": {"id": None}})
-
-            # Register temporary handler for session.created event
-            self.on(ServerEventType.SESSION_CREATED, on_session_created)
 
             try:
-                # Wait for session created with increased timeout (20s instead of 10s)
-                session_data = await asyncio.wait_for(session_created, timeout=20.0)
-                if session_data:
-                    # Safely extract session ID - conversation ID may not be directly available
-                    # in the initial session response
-                    session = session_data.get("session", {})
-                    self._session_id = session.get("id")
+                await self.send_event(event)
+                logger.info("Session creation event sent")
+            except Exception as e:
+                logger.error(f"Failed to send session creation event: {str(e)}")
+                return False
 
-                    # Set conversation ID from session data if available
-                    if "conversation" in session and "id" in session["conversation"]:
-                        self._conversation_id = session["conversation"]["id"]
-                    else:
-                        # Generate a conversation ID if not present
-                        self._conversation_id = f"conv_{str(uuid.uuid4())[:8]}"
+            # Wait for session created event
+            try:
+                response = await asyncio.wait_for(
+                    self._ws.recv(), timeout=CONNECTION_TIMEOUT
+                )
+                event_data = json.loads(response)
+                logger.info(f"Received response: {json.dumps(event_data, indent=2)}")
 
-                    if not self._session_id:
-                        raise SessionError("Invalid session data: Missing session ID")
-
-                    self._logger.info(
-                        f"Session initialized: {self._session_id}, conversation: {self._conversation_id}"
-                    )
+                if event_data.get("type") == ServerEventType.SESSION_CREATED:
+                    logger.info("Session created successfully")
+                    # Start background tasks after successful session creation
+                    self._start_background_tasks()
                     return True
                 else:
-                    raise SessionError("No session data received")
+                    logger.error(f"Unexpected event type: {event_data.get('type')}")
+                    return False
 
             except asyncio.TimeoutError:
-                self._logger.error("Timeout waiting for session initialization")
-                raise SessionError("Timeout waiting for session initialization")
-
-            finally:
-                # Remove temporary handler
-                self.off(ServerEventType.SESSION_CREATED, on_session_created)
+                logger.error("Timeout waiting for session creation response")
+                return False
+            except Exception as e:
+                logger.error(f"Error processing session creation response: {str(e)}")
+                return False
 
         except Exception as e:
-            self._logger.error(f"Error initializing session: {e}")
-            self._logger.debug(
-                f"Session initialization error details: {traceback.format_exc()}"
-            )
-            raise SessionError(f"Session initialization failed: {str(e)}") from None
+            logger.error(f"Session initialization failed: {str(e)}")
+            return False
+
+    def _start_background_tasks(self) -> None:
+        """Start background tasks for maintaining the connection."""
+        if not self._recv_task:
+            self._recv_task = asyncio.create_task(self._recv_loop())
+        if not self._heartbeat_task:
+            self._heartbeat_task = asyncio.create_task(self._heartbeat())
+        self._is_connected = True
+        self._last_activity = time.time()
 
     async def reconnect(self) -> bool:
         """
@@ -1187,12 +1075,12 @@ class RealtimeClient:
                     f"No activity detected for {inactivity_period:.1f} seconds, checking connection"
                 )
 
-                if self.ws:
+                if self._ws:
                     try:
                         # Send a ping to test the connection
                         self._logger.debug("Sending ping to test connection")
                         ping_start = time.time()
-                        pong_waiter = await self.ws.ping()
+                        pong_waiter = await self._ws.ping()
                         await asyncio.wait_for(pong_waiter, timeout=5)
                         ping_time = time.time() - ping_start
                         self._logger.debug(

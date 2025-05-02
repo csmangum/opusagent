@@ -121,6 +121,8 @@ class WebSocketManager:
         await self._optimize_socket(websocket)
         logger.info("WebSocket connection established and optimized for low latency")
         conversation_id = None
+        
+        #! Add bridge client??? Or just the RealtimeClient???
 
         try:
             while True:
@@ -150,28 +152,6 @@ class WebSocketManager:
                         else ""
                     )
                 )
-
-                # Try to parse as a valid message model
-                typed_message = None
-                try:
-                    if message_type == "session.initiate":
-                        typed_message = SessionInitiateMessage(**message_dict)
-                    elif message_type == "session.resume":
-                        typed_message = SessionResumeMessage(**message_dict)
-                    elif message_type == "userStream.start":
-                        typed_message = UserStreamStartMessage(**message_dict)
-                    elif message_type == "userStream.stop":
-                        typed_message = UserStreamStopMessage(**message_dict)
-                    elif message_type == "activities":
-                        typed_message = ActivitiesMessage(**message_dict)
-                    elif message_type == "session.end":
-                        typed_message = SessionEndMessage(**message_dict)
-                    elif message_type == "connection.validate":
-                        typed_message = ConnectionValidateMessage(**message_dict)
-                    else:
-                        logger.warning(f"Unknown message type received: {message_type}")
-                except ValidationError as e:
-                    logger.error(f"Message validation error: {e}")
 
                 # Process the message using the appropriate handler
                 if message_type in self.handlers:
