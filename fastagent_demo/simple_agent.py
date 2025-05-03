@@ -2,12 +2,10 @@ import os
 import asyncio
 import random
 import json
-
+from dotenv import load_dotenv
 # Import the necessary components from the agents SDK
-from agents import Agent, function_tool
-
-# Set your OpenAI API key
-os.environ["OPENAI_API_KEY"] = "your-api-key-here"  # Replace with your actual key
+from agents import Agent, function_tool, Runner
+load_dotenv()
 
 # Define a simple weather tool
 @function_tool
@@ -27,13 +25,20 @@ agent = Agent(
 
 # Test the agent
 async def test_agent():
-    result = await agent.run("What's the weather like in Seattle?")
+    # Create a simple agent
+    agent = Agent(
+        name="Assistant",
+        instructions="You're a helpful assistant. You can provide weather information.",
+        model="gpt-4o-mini",  # You can change this to the model you prefer
+        tools=[get_weather],
+    )
+    result = await Runner.run(agent, "What's the weather like in Dallas?")
     print("\nAgent response:")
-    print(result.content)
+    print(result.final_output)  # Use response.text instead of content
     
     # Print the full result structure for reference
     print("\nFull result structure:")
-    print(json.dumps(result.model_dump(), indent=2))
+    print(result)
 
 # Run the test
 if __name__ == "__main__":

@@ -3,11 +3,10 @@ import asyncio
 import random
 import json
 import datetime
-
+from dotenv import load_dotenv
 from agents import Agent, function_tool
 
-# Set your OpenAI API key
-os.environ["OPENAI_API_KEY"] = "your-api-key-here"  # Replace with your actual key
+load_dotenv()
 
 # Basic weather tool
 @function_tool

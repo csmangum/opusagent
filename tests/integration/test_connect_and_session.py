@@ -2,7 +2,7 @@ import os
 import logging
 import pytest
 from dotenv import load_dotenv
-from fastagent.bot.realtime_client import RealtimeClient
+from fastagent.realtime.realtime_client import RealtimeClient
 
 # Load environment variables (including OPENAI_API_KEY)
 load_dotenv()

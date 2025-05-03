@@ -30,8 +30,8 @@ from dotenv import load_dotenv
 from fastapi import WebSocket
 from websockets.exceptions import ConnectionClosedError
 
-from fastagent.bot.realtime_client import RealtimeClient
-from fastagent.bot.telephony_realtime_bridge import TelephonyRealtimeBridge
+from fastagent.realtime.realtime_client import RealtimeClient
+from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 # Load environment variables from .env file
 load_dotenv()
@@ -120,16 +120,15 @@ async def test_bridge_integration():
         logger.info("Step 2: Sending text message")
         client: RealtimeClient = bridge.clients[conversation_id]
 
-        # Create a JSON message with text
-        text_message = {
-            "type": "text",
-            "text": "Hello, this is a test of the integration between OpenAI Realtime API and AudioCodes bridge.",
-        }
-        message_json = json.dumps(text_message)
-        message_bytes = message_json.encode("utf-8")
+        # Send text message using proper method
+        text = "Hello, this is a test of the integration between OpenAI Realtime API and AudioCodes bridge."
+        sent = await client.send_text_message(text)
+        if not sent:
+            logger.error("Failed to send text message")
+            return False
 
-        # Send text to OpenAI
-        await client.send_audio_chunk(message_bytes)
+        # Create a response request with both text and audio
+        await client.create_response(modalities=["text", "audio"])
 
         # Step 3: Wait for audio responses
         logger.info("Step 3: Waiting for audio responses")
@@ -143,23 +142,25 @@ async def test_bridge_integration():
                 logger.info(
                     f"Received {len(mock_websocket.audio_chunks)} audio chunks so far"
                 )
+                # If we've received chunks and then nothing for 2 seconds, probably done
+                if time.time() - audio_start_time > 2:
+                    logger.info("Response appears complete")
+                    break
 
-            # If we've received chunks and then nothing for 2 seconds, probably done
-            if (
-                len(mock_websocket.audio_chunks) > 0
-                and time.time() - audio_start_time > 2
-                and len(mock_websocket.sent_messages) > 5
-            ):  # Some arbitrary threshold
-                logger.info("Response appears complete")
-                break
-
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.1)
 
         # Step 4: Send simulated audio from AudioCodes
         logger.info("Step 4: Sending simulated audio chunk from AudioCodes")
 
-        # Create a silent audio chunk (1024 bytes of zeros)
-        silent_audio = bytes(1024)
+        # Create a properly formatted silent audio chunk (24kHz PCM16 mono)
+        # Each sample is 2 bytes (16-bit), and we need 24000 samples per second
+        # For a 50ms chunk, we need 24000 * 0.05 = 1200 samples
+        sample_rate = 24000
+        duration_ms = 50
+        num_samples = int(sample_rate * duration_ms / 1000)
+        
+        # Create silent PCM16 audio (all zeros)
+        silent_audio = bytearray(num_samples * 2)  # 2 bytes per sample for PCM16
         audio_base64 = base64.b64encode(silent_audio).decode("utf-8")
 
         # Send through bridge
@@ -225,30 +226,34 @@ async def test_direct_client():
     try:
         # Send a text message
         logger.info("Sending text message directly to OpenAI")
-        text_message = {
-            "type": "text",
-            "text": "Hello, this is a direct test of the OpenAI Realtime API client. Please respond with voice.",
-        }
-        message_json = json.dumps(text_message)
-        message_bytes = message_json.encode("utf-8")
-
-        sent = await client.send_audio_chunk(message_bytes)
+        text = "Hello, this is a direct test of the OpenAI Realtime API client. Please respond with voice."
+        
+        # Use the proper text message method
+        sent = await client.send_text_message(text)
         if not sent:
             logger.error("Failed to send text message")
             return False
 
+        # Create a response request with both text and audio
+        await client.create_response(modalities=["text", "audio"])
+
         # Wait for responses
-        logger.info("Waiting for responses (5 seconds)")
+        logger.info("Waiting for responses (10 seconds)")
         start_time = time.time()
         chunks_received = 0
+        max_wait_time = 10  # seconds
 
-        while time.time() - start_time < 5:
-            chunk = await client.receive_audio_chunk()
-            if chunk:
-                chunks_received += 1
-                logger.info(f"Received audio chunk: {len(chunk)} bytes")
-            else:
-                await asyncio.sleep(0.1)
+        while time.time() - start_time < max_wait_time:
+            try:
+                chunk = await asyncio.wait_for(client.receive_audio_chunk(), timeout=0.5)
+                if chunk:
+                    chunks_received += 1
+                    logger.info(f"Received audio chunk: {len(chunk)} bytes")
+                else:
+                    await asyncio.sleep(0.1)
+            except asyncio.TimeoutError:
+                # This is expected - just continue the loop
+                continue
 
         logger.info(f"Received {chunks_received} audio chunks in direct test")
         return chunks_received > 0

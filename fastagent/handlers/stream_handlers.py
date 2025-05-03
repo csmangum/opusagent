@@ -27,7 +27,7 @@ from fastagent.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
-from fastagent.bot.telephony_realtime_bridge import bridge
+
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -64,13 +64,6 @@ async def handle_user_stream_start(
         # Signal that the bot is ready to receive audio chunks
         logger.info(f"User stream starting for conversation: {conversation_id}")
 
-        # Ensure OpenAI client is initialized for this conversation
-        if conversation_id not in bridge.clients:
-            try:
-                await bridge.create_client(conversation_id, websocket)
-                logger.info(f"Created OpenAI Realtime client for conversation: {conversation_id}")
-            except Exception as e:
-                logger.error(f"Failed to initialize OpenAI client: {e}", exc_info=True)
 
         # Create response immediately to start receiving audio as soon as possible
         return UserStreamStartedResponse(

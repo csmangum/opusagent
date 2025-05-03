@@ -33,7 +33,6 @@ from fastagent.handlers.stream_handlers import (
     handle_user_stream_start,
     handle_user_stream_stop,
 )
-from fastagent.models.conversation import ConversationManager
 from fastagent.models.audiocodes_api import (
     ActivitiesMessage,
     ConnectionValidateMessage,
@@ -46,6 +45,8 @@ from fastagent.models.audiocodes_api import (
     UserStreamStartMessage,
     UserStreamStopMessage,
 )
+from fastagent.models.conversation import ConversationManager
+from fastagent.telephony_realtime_bridge import bridge
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -86,7 +87,7 @@ class WebSocketManager:
     async def _optimize_socket(self, websocket: WebSocket) -> None:
         """
         Optimize the WebSocket's underlying TCP socket for low-latency transmission.
-        
+
         Args:
             websocket: The FastAPI WebSocket connection
         """
@@ -150,28 +151,6 @@ class WebSocketManager:
                         else ""
                     )
                 )
-
-                # Try to parse as a valid message model
-                typed_message = None
-                try:
-                    if message_type == "session.initiate":
-                        typed_message = SessionInitiateMessage(**message_dict)
-                    elif message_type == "session.resume":
-                        typed_message = SessionResumeMessage(**message_dict)
-                    elif message_type == "userStream.start":
-                        typed_message = UserStreamStartMessage(**message_dict)
-                    elif message_type == "userStream.stop":
-                        typed_message = UserStreamStopMessage(**message_dict)
-                    elif message_type == "activities":
-                        typed_message = ActivitiesMessage(**message_dict)
-                    elif message_type == "session.end":
-                        typed_message = SessionEndMessage(**message_dict)
-                    elif message_type == "connection.validate":
-                        typed_message = ConnectionValidateMessage(**message_dict)
-                    else:
-                        logger.warning(f"Unknown message type received: {message_type}")
-                except ValidationError as e:
-                    logger.error(f"Message validation error: {e}")
 
                 # Process the message using the appropriate handler
                 if message_type in self.handlers:

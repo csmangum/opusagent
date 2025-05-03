@@ -6,7 +6,7 @@ including both incoming and outgoing message formats.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Literal
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -14,8 +14,22 @@ from pydantic import BaseModel, Field
 SESSION_CONFIG = "session.config"
 
 
+class LogEventType(str, Enum):
+    """Event types that should be logged in the bridge implementation."""
+
+    ERROR = "error"
+    RESPONSE_CONTENT_DONE = "response.content.done"
+    RATE_LIMITS_UPDATED = "rate_limits.updated"
+    RESPONSE_DONE = "response.done"
+    INPUT_AUDIO_BUFFER_COMMITTED = "input_audio_buffer.committed"
+    INPUT_AUDIO_BUFFER_SPEECH_STOPPED = "input_audio_buffer.speech_stopped"
+    INPUT_AUDIO_BUFFER_SPEECH_STARTED = "input_audio_buffer.speech_started"
+    SESSION_CREATED = "session.created"
+
+
 class MessageRole(str, Enum):
     """Role of a participant in a conversation."""
+
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
@@ -24,14 +38,17 @@ class MessageRole(str, Enum):
 
 class OpenAIMessage(BaseModel):
     """Base model for OpenAI messages."""
+
     role: MessageRole
     content: str
 
 
 # Session-related models
 
+
 class SessionConfig(BaseModel):
     """Configuration for a Realtime API Session."""
+
     modalities: List[str] = Field(default=["text"])  # e.g. ["text", "audio"]
     model: Optional[str] = None
     instructions: Optional[str] = None
@@ -44,6 +61,7 @@ class SessionConfig(BaseModel):
 
 class RealtimeSessionResponse(BaseModel):
     """Response from session creation endpoint."""
+
     client_secret: Dict[str, str]
     expires_at: int
     id: str
@@ -51,15 +69,18 @@ class RealtimeSessionResponse(BaseModel):
 
 # Conversation-related models
 
+
 class ConversationItemType(str, Enum):
     """Type of conversation item."""
+
     MESSAGE = "message"
-    FUNCTION_CALL = "function_call" 
+    FUNCTION_CALL = "function_call"
     FUNCTION_CALL_OUTPUT = "function_call_output"
 
 
 class ConversationItemStatus(str, Enum):
     """Status of a conversation item."""
+
     COMPLETED = "completed"
     IN_PROGRESS = "in_progress"
     INTERRUPTED = "interrupted"
@@ -67,6 +88,7 @@ class ConversationItemStatus(str, Enum):
 
 class ConversationItemContentParam(BaseModel):
     """Parameter for creating content in a conversation item."""
+
     type: str  # "input_text", "input_audio", etc.
     text: Optional[str] = None
     audio: Optional[str] = None  # Base64 encoded audio
@@ -74,6 +96,7 @@ class ConversationItemContentParam(BaseModel):
 
 class ConversationItemParam(BaseModel):
     """Parameter for creating a conversation item."""
+
     type: str  # "message", "function_call", "function_call_output"
     role: Optional[MessageRole] = None
     content: Optional[List[ConversationItemContentParam]] = None
@@ -82,6 +105,7 @@ class ConversationItemParam(BaseModel):
 
 class ConversationItem(BaseModel):
     """An item in the conversation."""
+
     id: str
     object: str = "realtime.item"
     type: ConversationItemType
@@ -93,14 +117,17 @@ class ConversationItem(BaseModel):
 
 # Event models for client-server communication
 
+
 class ClientEventType(str, Enum):
     """Types of events that can be sent to the server."""
+
     SESSION_UPDATE = "session.update"
     GET_SESSION_CONFIG = "session.get_config"
     INPUT_AUDIO_BUFFER_APPEND = "input_audio_buffer.append"
     INPUT_AUDIO_BUFFER_COMMIT = "input_audio_buffer.commit"
     INPUT_AUDIO_BUFFER_CLEAR = "input_audio_buffer.clear"
     CONVERSATION_ITEM_CREATE = "conversation.item.create"
+    CONVERSATION_ITEM_RETRIEVE = "conversation.item.retrieve"
     CONVERSATION_ITEM_TRUNCATE = "conversation.item.truncate"
     CONVERSATION_ITEM_DELETE = "conversation.item.delete"
     RESPONSE_CREATE = "response.create"
@@ -109,12 +136,14 @@ class ClientEventType(str, Enum):
 
 class ServerEventType(str, Enum):
     """Types of events received from the server."""
+
     ERROR = "error"
     SESSION_CREATED = "session.created"
     SESSION_UPDATED = "session.updated"
     SESSION_CONFIG = "session.config"
     CONVERSATION_CREATED = "conversation.created"
     CONVERSATION_ITEM_CREATED = "conversation.item.created"
+    CONVERSATION_ITEM_RETRIEVED = "conversation.item.retrieved"
     CONVERSATION_ITEM_TRUNCATED = "conversation.item.truncated"
     CONVERSATION_ITEM_DELETED = "conversation.item.deleted"
     INPUT_AUDIO_BUFFER_COMMITTED = "input_audio_buffer.committed"
@@ -141,63 +170,203 @@ class ServerEventType(str, Enum):
 
 class ClientEvent(BaseModel):
     """Base model for events sent to the server."""
+
     type: str
 
 
 class ServerEvent(BaseModel):
     """Base model for events received from the server."""
+
     type: str
+
+
+# Legacy OpenAI message models
+
+class RealtimeBaseMessage(BaseModel):
+    """Base model for Realtime API messages."""
+
+    type: str
+
+
+class RealtimeErrorMessage(RealtimeBaseMessage):
+    """Error message from OpenAI Realtime API."""
+
+    type: str = "error"
+    code: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+
+class RealtimeTranscriptMessage(RealtimeBaseMessage):
+    """Transcript message from OpenAI Realtime API."""
+
+    type: str = "transcript"
+    text: str
+    final: bool = False
+    created_at: Optional[int] = None
+
+
+class RealtimeTurnMessage(RealtimeBaseMessage):
+    """Turn message from OpenAI Realtime API."""
+
+    type: str = "turn"
+    action: str  # "start" or "end"
+    created_at: Optional[int] = None
+
+
+class RealtimeMessageContent(BaseModel):
+    """Content of a message in OpenAI Realtime API."""
+
+    type: str  # "text" or other content types
+    text: Optional[str] = None
+
+
+class RealtimeMessage(RealtimeBaseMessage):
+    """Message model for OpenAI Realtime API."""
+
+    type: str = "message"
+    role: str
+    content: Union[str, List[RealtimeMessageContent]]
+    name: Optional[str] = None
+    function_call: Optional[Dict[str, str]] = None
+    created_at: Optional[int] = None
+
+
+class RealtimeStreamMessage(RealtimeBaseMessage):
+    """Stream message from OpenAI Realtime API."""
+
+    type: str = "stream"
+    content: str
+    role: str = "assistant"
+    end: bool = False
+    created_at: Optional[int] = None
+
+
+class RealtimeFunctionMessage(RealtimeBaseMessage):
+    """Function message for OpenAI Realtime API."""
+
+    type: str = "function"
+    function: Dict[str, str]
+    created_at: Optional[int] = None
+
+
+class WebSocketErrorResponse(BaseModel):
+    """Error response for WebSocket errors."""
+
+    error: str
+    message: str
 
 
 # Function/Tool calling models
 
+
 class RealtimeFunctionCall(BaseModel):
     """Function call structure in OpenAI Realtime API."""
+
     name: str
     arguments: str
 
 
 class RealtimeFunctionCallOutput(BaseModel):
     """Output from a function call."""
+
     name: str
     output: str
 
 
 # Specific client event implementations
 
+
 class SessionUpdateEvent(ClientEvent):
     """Event to update session configuration."""
+
     type: str = "session.update"
     session: SessionConfig
 
 
 class InputAudioBufferAppendEvent(ClientEvent):
     """Event to append audio to the input buffer."""
+
     type: str = "input_audio_buffer.append"
     audio: str  # Base64 encoded audio
 
 
 class InputAudioBufferCommitEvent(ClientEvent):
     """Event to commit the audio buffer to the conversation."""
+
     type: str = "input_audio_buffer.commit"
+
+
+class InputAudioBufferClearEvent(ClientEvent):
+    """Event to clear the audio buffer."""
+
+    type: str = "input_audio_buffer.clear"
 
 
 class ConversationItemCreateEvent(ClientEvent):
     """Event to create a conversation item."""
+
     type: str = "conversation.item.create"
     item: ConversationItemParam
 
 
+class ConversationItemRetrieveEvent(ClientEvent):
+    """Event to retrieve a conversation item."""
+
+    type: str = "conversation.item.retrieve"
+    item_id: str
+
+
+class ConversationItemTruncateEvent(ClientEvent):
+    """Event to truncate a conversation item's content."""
+
+    type: str = "conversation.item.truncate"
+    item_id: str
+
+
+class ConversationItemDeleteEvent(ClientEvent):
+    """Event to delete a conversation item."""
+
+    type: str = "conversation.item.delete"
+    item_id: str
+
+
+class ResponseCreateOptions(BaseModel):
+    """Options for creating a response"""
+
+    modalities: List[Literal["audio", "text"]] = ["text"]
+    voice: Optional[str] = None
+    instructions: Optional[str] = None
+    output_audio_format: Optional[Literal["pcm16"]] = None
+    tools: Optional[List[Dict[str, Any]]] = None
+    tool_choice: Optional[Literal["auto", "none"]] = "auto"
+    temperature: Optional[float] = None
+    max_output_tokens: Optional[int] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
 class ResponseCreateEvent(ClientEvent):
     """Event to create a model response."""
+
     type: str = "response.create"
-    response: Optional[Dict[str, Any]] = None  # Optional response parameters
+    event_id: Optional[str] = None
+    response: ResponseCreateOptions
+
+
+class ResponseCancelEvent(ClientEvent):
+    """Event to cancel an active model response."""
+
+    type: str = "response.cancel"
+    event_id: Optional[str] = None
+    response_id: Optional[str] = None
 
 
 # Specific server event implementations
 
+
 class ErrorEvent(ServerEvent):
     """Error message from OpenAI Realtime API."""
+
     type: str = "error"
     code: str
     message: str
@@ -206,54 +375,65 @@ class ErrorEvent(ServerEvent):
 
 class SessionCreatedEvent(ServerEvent):
     """Event indicating a session was created."""
+
     type: str = "session.created"
     session: Dict[str, Any]
 
 
 class ConversationItemCreatedEvent(ServerEvent):
     """Event indicating a conversation item was created."""
+
     type: str = "conversation.item.created"
     item: Dict[str, Any]
 
 
 class ResponseTextDeltaEvent(ServerEvent):
     """Event containing a text delta from the model."""
+
     type: str = "response.text.delta"
     delta: str
 
 
 class ResponseAudioDeltaEvent(ServerEvent):
     """Event containing an audio delta from the model."""
+
     type: str = "response.audio.delta"
     audio: str  # Base64 encoded audio chunk
 
 
 class ResponseFunctionCallArgumentsDeltaEvent(ServerEvent):
     """Event containing a function call arguments delta."""
+
     type: str = "response.function_call_arguments.delta"
     delta: str
 
 
 class ResponseDoneEvent(ServerEvent):
     """Event indicating the model response is complete."""
+
     type: str = "response.done"
 
 
 class RateLimitsUpdatedEvent(ServerEvent):
     """Event indicating rate limits have been updated."""
+
     type: Literal["rate_limits.updated"] = "rate_limits.updated"
     event_id: str
-    rate_limits: List[Dict[str, Any]] = Field(..., description="List of rate limit updates")
+    rate_limits: List[Dict[str, Any]] = Field(
+        ..., description="List of rate limit updates"
+    )
 
 
 class ResponseOutputItemAddedEvent(ServerEvent):
     """Event indicating a new output item has been added to the response."""
+
     type: str = "response.output_item.added"
     item: Dict[str, Any]
 
 
 class ResponseContentPartDoneEvent(ServerEvent):
     """Event sent when a response content part is completed"""
+
     type: str = "response.content_part.done"
     event_id: str
     response_id: str
@@ -267,71 +447,10 @@ class ResponseContentPartDoneEvent(ServerEvent):
 
 class ResponseContentPartAddedEvent(ServerEvent):
     """Event sent when a new content part is added to a response"""
+
     type: str = "response.content_part.added"
     response_id: str
     item_id: str
     output_index: int
     content_index: int
     part: Dict[str, Any]  # The added content part
-
-
-# Legacy/compatibility models
-
-class RealtimeBaseMessage(BaseModel):
-    """Base model for Realtime API messages (legacy)."""
-    type: str
-
-
-class RealtimeTranscriptMessage(RealtimeBaseMessage):
-    """Transcription message from OpenAI Realtime API (legacy)."""
-    type: str = "transcript"
-    text: str
-    is_final: bool = Field(default=True)
-    confidence: Optional[float] = None
-
-
-class RealtimeTurnMessage(RealtimeBaseMessage):
-    """Turn detection message from OpenAI Realtime API (legacy)."""
-    type: str = "turn"
-    trigger: str  # 'vad', 'timeout', etc.
-
-
-class RealtimeErrorMessage(RealtimeBaseMessage):
-    """Error message from OpenAI Realtime API (legacy)."""
-    type: str = "error"
-    code: str
-    message: str
-    details: Optional[Dict[str, Any]] = None
-
-
-class RealtimeMessageContent(BaseModel):
-    """Content part of a message within a conversation (legacy)."""
-    type: str = "text"
-    text: str
-
-
-class RealtimeMessage(BaseModel):
-    """Message within a conversation (legacy)."""
-    role: MessageRole
-    content: Union[str, List[RealtimeMessageContent]]
-    name: Optional[str] = None
-
-
-class RealtimeStreamMessage(RealtimeBaseMessage):
-    """Stream message for chat responses from OpenAI Realtime API (legacy)."""
-    type: str = "message"
-    message: RealtimeMessage
-
-
-class RealtimeFunctionMessage(RealtimeBaseMessage):
-    """Function call message from OpenAI Realtime API (legacy)."""
-    type: str = "function_call"
-    function_call: RealtimeFunctionCall
-
-
-class WebSocketErrorResponse(BaseModel):
-    """Error response from OpenAI WebSocket connection."""
-    error: Dict[str, Any]
-
-
-# Remove the duplicate RateLimitsUpdatedEvent definition 
