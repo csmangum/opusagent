@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.websockets import WebSocketState
 
-from fastagent.bot.telephony_realtime_bridge import TelephonyRealtimeBridge
+from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 from fastagent.config.constants import LOGGER_NAME
 
 load_dotenv()

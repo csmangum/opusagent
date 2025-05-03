@@ -21,7 +21,7 @@ from fastagent.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
-from fastagent.bot.telephony_realtime_bridge import bridge
+from fastagent.telephony_realtime_bridge import bridge
 
 
 @pytest.mark.asyncio

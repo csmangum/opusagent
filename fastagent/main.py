@@ -19,7 +19,7 @@ from fastapi import FastAPI, WebSocket
 
 from fastagent.config.logging_config import configure_logging
 from fastagent.websocket_manager import WebSocketManager
-from fastagent.bot.telephony_realtime_bridge import bridge
+from fastagent.telephony_realtime_bridge import bridge
 
 # Load environment variables from .env file if it exists
 env_path = Path(".") / ".env"

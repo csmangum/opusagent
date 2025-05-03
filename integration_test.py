@@ -31,7 +31,7 @@ from fastapi import WebSocket
 from websockets.exceptions import ConnectionClosedError
 
 from fastagent.realtime.realtime_client import RealtimeClient
-from fastagent.bot.telephony_realtime_bridge import TelephonyRealtimeBridge
+from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 # Load environment variables from .env file
 load_dotenv()
