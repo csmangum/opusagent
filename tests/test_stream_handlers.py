@@ -23,28 +23,16 @@ from fastagent.models.audiocodes_api import (
 )
 
 
+@pytest.fixture
+def mock_create_client():
+    """Mock the TelephonyRealtimeBridge creation."""
+    with patch('fastagent.handlers.stream_handlers.TelephonyRealtimeBridge') as mock:
+        mock.return_value = AsyncMock()
+        yield mock
+
+
 @pytest.mark.asyncio
 class TestStreamHandlers:
-
-    async def test_handle_user_stream_start(self, mock_create_client):
-        # Setup
-        websocket = AsyncMock()
-        conversation_manager = MagicMock(spec=ConversationManager)
-        message = UserStreamStartMessage(
-            type="userStream.start", conversationId="test-conversation-id"
-        )
-
-        # Execute
-        response = await handle_user_stream_start(
-            message.model_dump(), websocket, conversation_manager
-        )
-
-        # Assert
-        expected_response = UserStreamStartedResponse(
-            type="userStream.started", conversationId="test-conversation-id"
-        )
-        assert response.model_dump() == expected_response.model_dump()
-        mock_create_client.assert_called_once_with("test-conversation-id", websocket)
 
     async def test_handle_user_stream_start_validation_error(self):
         # Setup

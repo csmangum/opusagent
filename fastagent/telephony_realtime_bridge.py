@@ -225,7 +225,7 @@ async def send_initial_conversation_item(realtime_websocket):
             modalities=["text", "audio"],
             voice=VOICE,
             instructions=SYSTEM_MESSAGE,
-            output_audio_format="pcm16"
+            output_audio_format="pcm16",
         )
     )
     await realtime_websocket.send(response_create.model_dump_json())

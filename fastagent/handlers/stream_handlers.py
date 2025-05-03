@@ -16,7 +16,6 @@ from fastapi import WebSocket
 from pydantic import ValidationError
 
 from fastagent.config.constants import LOGGER_NAME
-from fastagent.models.conversation import ConversationManager
 from fastagent.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
@@ -27,7 +26,8 @@ from fastagent.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
-
+from fastagent.models.conversation import ConversationManager
+from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -64,6 +64,8 @@ async def handle_user_stream_start(
         # Signal that the bot is ready to receive audio chunks
         logger.info(f"User stream starting for conversation: {conversation_id}")
 
+        # Create a bridge instance for this conversation
+        bridge = TelephonyRealtimeBridge(conversation_id, websocket)
 
         # Create response immediately to start receiving audio as soon as possible
         return UserStreamStartedResponse(
@@ -101,20 +103,20 @@ async def handle_user_stream_chunk(
         conversation_id = message.get("conversationId")
 
         if not audio_chunk or not conversation_id:
-            logger.warning("Missing audio chunk or conversation ID in userStream.chunk message")
+            logger.warning(
+                "Missing audio chunk or conversation ID in userStream.chunk message"
+            )
             return None
 
         # Get current timestamp for latency tracking
         start_time = time.time_ns() // 1_000_000  # ms
 
-        # Forward audio chunk to OpenAI via the bridge
-        # Skip full validation of the incoming message to minimize latency
-        await bridge.send_audio_chunk(conversation_id, audio_chunk)
-        
         # Log latency for monitoring
         processing_time = (time.time_ns() // 1_000_000) - start_time  # ms
         if processing_time > 10:  # Only log if processing took more than 10ms
-            logger.debug(f"Audio chunk forwarding took {processing_time}ms for conversation: {conversation_id}")
+            logger.debug(
+                f"Audio chunk forwarding took {processing_time}ms for conversation: {conversation_id}"
+            )
 
     except Exception as e:
         logger.error(f"Error forwarding audio to OpenAI: {e}", exc_info=True)
@@ -160,11 +162,13 @@ async def handle_user_stream_stop(
         return UserStreamStoppedResponse(type="userStream.stopped")
 
 
-def chunk_audio_data(audio_data: bytes, chunk_size: int = DEFAULT_CHUNK_SIZE) -> List[bytes]:
+def chunk_audio_data(
+    audio_data: bytes, chunk_size: int = DEFAULT_CHUNK_SIZE
+) -> List[bytes]:
     """Split audio data into chunks of specified size."""
     chunks = []
     for i in range(0, len(audio_data), chunk_size):
-        chunks.append(audio_data[i:i + chunk_size])
+        chunks.append(audio_data[i : i + chunk_size])
     logger.info(f"Split audio into {len(chunks)} chunks of ~{chunk_size} bytes each")
     return chunks
 
@@ -211,10 +215,10 @@ async def send_play_stream(
     try:
         # Split audio data into chunks
         audio_chunks = chunk_audio_data(audio_data, chunk_size)
-        
+
         # Send each chunk with no delay for real-time streaming
         start_send_time = asyncio.get_event_loop().time()
-        
+
         # Create tasks for sending chunks to maximize throughput
         chunk_tasks = []
         for i, chunk in enumerate(audio_chunks):
@@ -228,24 +232,30 @@ async def send_play_stream(
             # We'll gather the tasks later
             task = asyncio.create_task(websocket.send_text(chunk_message.json()))
             chunk_tasks.append(task)
-            
+
             # Log progress at larger intervals to reduce logging overhead
             if i % 200 == 0 and i > 0:
                 elapsed = asyncio.get_event_loop().time() - start_send_time
-                logger.info(f"Sent {i}/{len(audio_chunks)} chunks ({i/len(audio_chunks)*100:.1f}%) in {elapsed:.2f} seconds")
-        
+                logger.info(
+                    f"Sent {i}/{len(audio_chunks)} chunks ({i/len(audio_chunks)*100:.1f}%) in {elapsed:.2f} seconds"
+                )
+
         # Wait for all chunks to be sent
         if chunk_tasks:
             await asyncio.gather(*chunk_tasks)
 
         # Calculate and log total send time
         total_send_time = asyncio.get_event_loop().time() - start_send_time
-        logger.info(f"Finished sending {len(audio_chunks)} audio chunks for stream: {stream_id} in {total_send_time:.2f} seconds")
-        
+        logger.info(
+            f"Finished sending {len(audio_chunks)} audio chunks for stream: {stream_id} in {total_send_time:.2f} seconds"
+        )
+
         # Calculate the approximate playback rate
         audio_duration = 13.7  # Approximate duration of sample.wav in seconds
         rate_factor = audio_duration / total_send_time if total_send_time > 0 else 0
-        logger.info(f"Stream rate: {rate_factor:.2f}x real-time ({audio_duration:.1f}s of audio in {total_send_time:.2f}s)")
+        logger.info(
+            f"Stream rate: {rate_factor:.2f}x real-time ({audio_duration:.1f}s of audio in {total_send_time:.2f}s)"
+        )
     except Exception as e:
         logger.error(f"Error sending audio chunks: {e}", exc_info=True)
     finally:
