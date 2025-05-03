@@ -1,9 +1,14 @@
-import argparse
+"""Bridge between telephony WebSocket and OpenAI Realtime API for handling real-time audio communication.
+
+This module provides functionality to bridge between a telephony WebSocket connection
+and the OpenAI Realtime API, enabling real-time audio communication with AI agents.
+It handles bidirectional audio streaming, session management, and event processing.
+"""
+
 import json
 import os
 from typing import Optional
 
-import uvicorn
 import websockets
 from dotenv import load_dotenv
 from fastapi import WebSocket
@@ -47,32 +52,70 @@ LOG_EVENT_TYPES = [
 
 
 class TelephonyRealtimeBridge:
+    """Bridge class for handling bidirectional communication between telephony and OpenAI Realtime API.
+
+    This class manages the WebSocket connections between a telephony system and the OpenAI Realtime API,
+    handling audio streaming, session management, and event processing in both directions.
+
+    Attributes:
+        telephony_websocket (WebSocket): FastAPI WebSocket connection for telephony communication
+        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        stream_sid (Optional[str]): Unique identifier for the current audio stream
+        _closed (bool): Flag indicating whether the bridge connections are closed
+    """
+
     def __init__(
-        self, websocket: WebSocket, openai_ws: websockets.WebSocketClientProtocol
+        self,
+        telephony_websocket: WebSocket,
+        realtime_websocket: websockets.WebSocketClientProtocol,
     ):
-        self.websocket = websocket
-        self.openai_ws = openai_ws
+        """Initialize the bridge with WebSocket connections.
+
+        Args:
+            telephony_websocket (WebSocket): FastAPI WebSocket connection for telephony
+            realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        """
+        self.telephony_websocket = telephony_websocket
+        self.realtime_websocket = realtime_websocket
         self.stream_sid: Optional[str] = None
         self._closed = False
 
     async def close(self):
-        """Safely close both WebSocket connections."""
+        """Safely close both WebSocket connections.
+
+        This method ensures both the telephony and OpenAI Realtime API WebSocket connections
+        are properly closed, handling any exceptions that may occur during the process.
+        """
         if not self._closed:
             self._closed = True
             try:
-                if self.openai_ws.close_code is None:
-                    await self.openai_ws.close()
+                if self.realtime_websocket.close_code is None:
+                    await self.realtime_websocket.close()
             except Exception as e:
                 print(f"Error closing OpenAI connection: {e}")
             try:
-                await self.websocket.close()
+                await self.telephony_websocket.close()
             except Exception as e:
                 print(f"Error closing telephony connection: {e}")
 
     async def receive_from_telephony(self):
-        """Receive audio data from telephony and send it to the OpenAI Realtime API."""
+        """Receive and process audio data from the telephony WebSocket.
+
+        This method continuously listens for messages from the telephony WebSocket,
+        processes audio data, and forwards it to the OpenAI Realtime API. It handles
+        various events including media streaming, stream start/stop, and disconnections.
+
+        The method processes the following events:
+        - 'media': Audio data to be sent to OpenAI
+        - 'start': Stream initialization with streamSid
+        - 'stop': Stream termination
+
+        Raises:
+            WebSocketDisconnect: When the telephony client disconnects
+            Exception: For any other errors during processing
+        """
         try:
-            async for message in self.websocket.iter_text():
+            async for message in self.telephony_websocket.iter_text():
                 if self._closed:
                     break
 
@@ -80,13 +123,13 @@ class TelephonyRealtimeBridge:
                 if (
                     data["event"] == "media"
                     and not self._closed
-                    and self.openai_ws.close_code is None
+                    and self.realtime_websocket.close_code is None
                 ):
                     # Use our Pydantic model for buffer append
                     audio_append = InputAudioBufferAppendEvent(
                         audio=data["media"]["payload"]
                     )
-                    await self.openai_ws.send(audio_append.model_dump_json())
+                    await self.realtime_websocket.send(audio_append.model_dump_json())
                 elif data["event"] == "start":
                     self.stream_sid = data["start"]["streamSid"]
                     print(f"Incoming stream has started {self.stream_sid}")
@@ -102,9 +145,22 @@ class TelephonyRealtimeBridge:
             await self.close()
 
     async def send_to_telephony(self):
-        """Receive events from the OpenAI Realtime API, send audio back to the telephony."""
+        """Process and forward events from OpenAI Realtime API to telephony.
+
+        This method continuously listens for messages from the OpenAI Realtime API,
+        processes various events including audio responses, and forwards them to the
+        telephony WebSocket. It handles audio streaming, session updates, and logging.
+
+        The method processes the following event types:
+        - response.audio.delta: Audio data to be sent to telephony
+        - session.updated: Session configuration updates
+        - Various log events for monitoring and debugging
+
+        Raises:
+            Exception: For any errors during processing
+        """
         try:
-            async for openai_message in self.openai_ws:
+            async for openai_message in self.realtime_websocket:
                 if self._closed:
                     break
 
@@ -125,7 +181,7 @@ class TelephonyRealtimeBridge:
                                 "streamSid": self.stream_sid,
                                 "media": {"payload": response.delta},
                             }
-                            await self.websocket.send_json(audio_delta)
+                            await self.telephony_websocket.send_json(audio_delta)
                             print("Sent audio delta to client")
                     except Exception as e:
                         print(f"Error processing audio data: {e}")
@@ -136,8 +192,15 @@ class TelephonyRealtimeBridge:
             await self.close()
 
 
-async def send_initial_conversation_item(openai_ws):
-    """Send initial conversation so AI talks first."""
+async def send_initial_conversation_item(realtime_websocket):
+    """Send the initial conversation item to start the AI interaction.
+
+    This function creates and sends the first conversation item to the OpenAI Realtime API,
+    initiating the conversation with a greeting and request for an introduction and joke.
+
+    Args:
+        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+    """
     # Create initial conversation item using our model
     initial_conversation = ConversationItemCreateEvent(
         item=ConversationItemParam(
@@ -153,15 +216,23 @@ async def send_initial_conversation_item(openai_ws):
     )
 
     print("Sending initial conversation item:", initial_conversation.model_dump_json())
-    await openai_ws.send(initial_conversation.model_dump_json())
+    await realtime_websocket.send(initial_conversation.model_dump_json())
 
     # Create response using our model
     response_create = ResponseCreateEvent()
-    await openai_ws.send(response_create.model_dump_json())
+    await realtime_websocket.send(response_create.model_dump_json())
 
 
-async def initialize_session(openai_ws):
-    """Control initial session with OpenAI."""
+async def initialize_session(realtime_websocket):
+    """Initialize the OpenAI Realtime API session with configuration.
+
+    This function sets up the initial session configuration for the OpenAI Realtime API,
+    including audio format settings, voice selection, system instructions, and other
+    session parameters. It also triggers the initial conversation.
+
+    Args:
+        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+    """
     # Use our SessionConfig and SessionUpdateEvent models
     session_config = SessionConfig(
         turn_detection={"type": "server_vad"},
@@ -176,7 +247,7 @@ async def initialize_session(openai_ws):
     session_update = SessionUpdateEvent(session=session_config)
 
     print("Sending session update:", session_update.model_dump_json())
-    await openai_ws.send(session_update.model_dump_json())
+    await realtime_websocket.send(session_update.model_dump_json())
 
     # Have the AI speak first
-    await send_initial_conversation_item(openai_ws)
+    await send_initial_conversation_item(realtime_websocket)
