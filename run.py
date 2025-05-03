@@ -91,7 +91,7 @@ def main():
 
         # Configure uvicorn with optimized WebSocket settings for low latency
         config = uvicorn.Config(
-            "fastagent.bridge:app",
+            "fastagent.main:app",
             host=args.host,
             port=args.port,
             log_level=args.log_level.lower(),

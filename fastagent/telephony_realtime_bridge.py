@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import json
 import os
 from typing import Optional
@@ -7,9 +6,22 @@ from typing import Optional
 import uvicorn
 import websockets
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket
-from fastapi.responses import JSONResponse
+from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
+
+# Import our model definitions
+from fastagent.models.openai_api import (
+    ConversationItemContentParam,
+    ConversationItemCreateEvent,
+    ConversationItemParam,
+    InputAudioBufferAppendEvent,
+    LogEventType,
+    MessageRole,
+    ResponseAudioDeltaEvent,
+    ResponseCreateEvent,
+    SessionConfig,
+    SessionUpdateEvent,
+)
 
 load_dotenv()
 
@@ -18,29 +30,20 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 PORT = int(os.getenv("PORT", 6060))
 SYSTEM_MESSAGE = (
-    "You are a helpful and bubbly AI assistant who loves to chat about "
-    "anything the user is interested in and is prepared to offer them facts. "
-    "You have a penchant for dad jokes, owl jokes, and rickrolling – subtly. "
-    "Always stay positive, but work in a joke when appropriate."
+    "You are a banking agent. You are able to answer questions about the bank and the services they offer. "
+    "You are also able to help with general banking questions and provide information about the bank's products and services."
 )
 VOICE = "alloy"
 LOG_EVENT_TYPES = [
-    "error",
-    "response.content.done",
-    "rate_limits.updated",
-    "response.done",
-    "input_audio_buffer.committed",
-    "input_audio_buffer.speech_stopped",
-    "input_audio_buffer.speech_started",
-    "session.created",
+    LogEventType.ERROR,
+    LogEventType.RESPONSE_CONTENT_DONE,
+    LogEventType.RATE_LIMITS_UPDATED,
+    LogEventType.RESPONSE_DONE,
+    LogEventType.INPUT_AUDIO_BUFFER_COMMITTED,
+    LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
+    LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
+    LogEventType.SESSION_CREATED,
 ]
-
-app = FastAPI()
-
-
-@app.get("/", response_class=JSONResponse)
-async def index_page():
-    return {"message": "Telephony Bridge is running!"}
 
 
 class TelephonyRealtimeBridge:
@@ -79,11 +82,11 @@ class TelephonyRealtimeBridge:
                     and not self._closed
                     and self.openai_ws.close_code is None
                 ):
-                    audio_append = {
-                        "type": "input_audio_buffer.append",
-                        "audio": data["media"]["payload"],
-                    }
-                    await self.openai_ws.send(json.dumps(audio_append))
+                    # Use our Pydantic model for buffer append
+                    audio_append = InputAudioBufferAppendEvent(
+                        audio=data["media"]["payload"]
+                    )
+                    await self.openai_ws.send(audio_append.model_dump_json())
                 elif data["event"] == "start":
                     self.stream_sid = data["start"]["streamSid"]
                     print(f"Incoming stream has started {self.stream_sid}")
@@ -105,18 +108,22 @@ class TelephonyRealtimeBridge:
                 if self._closed:
                     break
 
-                response = json.loads(openai_message)
-                if response["type"] in LOG_EVENT_TYPES:
-                    print(f"Received event: {response['type']}", response)
-                if response["type"] == "session.updated":
-                    print("Session updated successfully:", response)
-                if response["type"] == "response.audio.delta" and response.get("delta"):
+                response_dict = json.loads(openai_message)
+                response_type = response_dict["type"]
+
+                if response_type in [event.value for event in LOG_EVENT_TYPES]:
+                    print(f"Received event: {response_type}", response_dict)
+                if response_type == "session.updated":
+                    print("Session updated successfully:", response_dict)
+                if response_type == "response.audio.delta" and "delta" in response_dict:
                     try:
+                        # Parse using our model
+                        response = ResponseAudioDeltaEvent(**response_dict)
                         if not self._closed and self.stream_sid:
                             audio_delta = {
                                 "event": "media",
                                 "streamSid": self.stream_sid,
-                                "media": {"payload": response["delta"]},
+                                "media": {"payload": response.delta},
                             }
                             await self.websocket.send_json(audio_delta)
                             print("Sent audio delta to client")
@@ -129,84 +136,47 @@ class TelephonyRealtimeBridge:
             await self.close()
 
 
-@app.websocket("/media-stream")
-async def handle_media_stream(websocket: WebSocket):
-    """Handle WebSocket connections between telephony provider and OpenAI."""
-    print("Client connected")
-    await websocket.accept()
-
-    try:
-        #! Make RealtimeClient work like this
-        async with websockets.connect(
-            "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
-            subprotocols=["realtime"],
-            additional_headers={
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                "OpenAI-Beta": "realtime=v1",
-            },
-        ) as openai_ws:
-            bridge = TelephonyRealtimeBridge(websocket, openai_ws)
-            await initialize_session(openai_ws)
-
-            # Run both tasks and handle cleanup
-            try:
-                await asyncio.gather(
-                    bridge.receive_from_telephony(), bridge.send_to_telephony()
-                )
-            except Exception as e:
-                print(f"Error in main connection loop: {e}")
-            finally:
-                await bridge.close()
-    except Exception as e:
-        print(f"Error establishing OpenAI connection: {e}")
-        await websocket.close()
-
-
 async def send_initial_conversation_item(openai_ws):
     """Send initial conversation so AI talks first."""
-    initial_conversation_item = {
-        "type": "conversation.item.create",
-        "item": {
-            "type": "message",
-            "role": "user",
-            "content": [
-                {
-                    "type": "input_text",
-                    "text": "Hello! Please introduce yourself and tell me a joke.",
-                }
+    # Create initial conversation item using our model
+    initial_conversation = ConversationItemCreateEvent(
+        item=ConversationItemParam(
+            type="message",
+            role=MessageRole.USER,
+            content=[
+                ConversationItemContentParam(
+                    type="input_text",
+                    text="Hello! Please introduce yourself and tell me a joke.",
+                )
             ],
-        },
-    }
-    print("Sending initial conversation item:", json.dumps(initial_conversation_item))
-    await openai_ws.send(json.dumps(initial_conversation_item))
-    await openai_ws.send(json.dumps({"type": "response.create"}))
+        )
+    )
+
+    print("Sending initial conversation item:", initial_conversation.model_dump_json())
+    await openai_ws.send(initial_conversation.model_dump_json())
+
+    # Create response using our model
+    response_create = ResponseCreateEvent()
+    await openai_ws.send(response_create.model_dump_json())
 
 
 async def initialize_session(openai_ws):
     """Control initial session with OpenAI."""
-    session_update = {
-        "type": "session.update",
-        "session": {
-            "turn_detection": {"type": "server_vad"},
-            "input_audio_format": "g711_ulaw",
-            "output_audio_format": "g711_ulaw",
-            "voice": VOICE,
-            "instructions": SYSTEM_MESSAGE,
-            "modalities": ["text", "audio"],
-            "temperature": 0.8,
-        },
-    }
-    print("Sending session update:", json.dumps(session_update))
-    await openai_ws.send(json.dumps(session_update))
+    # Use our SessionConfig and SessionUpdateEvent models
+    session_config = SessionConfig(
+        turn_detection={"type": "server_vad"},
+        input_audio_format="pcm16",
+        output_audio_format="pcm16",
+        voice=VOICE,
+        instructions=SYSTEM_MESSAGE,
+        modalities=["text", "audio"],
+        temperature=0.8,
+    )
+
+    session_update = SessionUpdateEvent(session=session_config)
+
+    print("Sending session update:", session_update.model_dump_json())
+    await openai_ws.send(session_update.model_dump_json())
 
     # Have the AI speak first
     await send_initial_conversation_item(openai_ws)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Telephony Media Stream Server")
-    parser.add_argument(
-        "--port", type=int, default=PORT, help="Port to run the server on"
-    )
-    args = parser.parse_args()
-    uvicorn.run(app, host="0.0.0.0", port=args.port)

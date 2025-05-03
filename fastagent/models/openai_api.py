@@ -14,6 +14,19 @@ from pydantic import BaseModel, Field
 SESSION_CONFIG = "session.config"
 
 
+class LogEventType(str, Enum):
+    """Event types that should be logged in the bridge implementation."""
+
+    ERROR = "error"
+    RESPONSE_CONTENT_DONE = "response.content.done"
+    RATE_LIMITS_UPDATED = "rate_limits.updated"
+    RESPONSE_DONE = "response.done"
+    INPUT_AUDIO_BUFFER_COMMITTED = "input_audio_buffer.committed"
+    INPUT_AUDIO_BUFFER_SPEECH_STOPPED = "input_audio_buffer.speech_stopped"
+    INPUT_AUDIO_BUFFER_SPEECH_STARTED = "input_audio_buffer.speech_started"
+    SESSION_CREATED = "session.created"
+
+
 class MessageRole(str, Enum):
     """Role of a participant in a conversation."""
 
@@ -167,6 +180,83 @@ class ServerEvent(BaseModel):
     type: str
 
 
+# Legacy OpenAI message models
+
+class RealtimeBaseMessage(BaseModel):
+    """Base model for Realtime API messages."""
+
+    type: str
+
+
+class RealtimeErrorMessage(RealtimeBaseMessage):
+    """Error message from OpenAI Realtime API."""
+
+    type: str = "error"
+    code: str
+    message: str
+    details: Optional[Dict[str, Any]] = None
+
+
+class RealtimeTranscriptMessage(RealtimeBaseMessage):
+    """Transcript message from OpenAI Realtime API."""
+
+    type: str = "transcript"
+    text: str
+    final: bool = False
+    created_at: Optional[int] = None
+
+
+class RealtimeTurnMessage(RealtimeBaseMessage):
+    """Turn message from OpenAI Realtime API."""
+
+    type: str = "turn"
+    action: str  # "start" or "end"
+    created_at: Optional[int] = None
+
+
+class RealtimeMessageContent(BaseModel):
+    """Content of a message in OpenAI Realtime API."""
+
+    type: str  # "text" or other content types
+    text: Optional[str] = None
+
+
+class RealtimeMessage(RealtimeBaseMessage):
+    """Message model for OpenAI Realtime API."""
+
+    type: str = "message"
+    role: str
+    content: Union[str, List[RealtimeMessageContent]]
+    name: Optional[str] = None
+    function_call: Optional[Dict[str, str]] = None
+    created_at: Optional[int] = None
+
+
+class RealtimeStreamMessage(RealtimeBaseMessage):
+    """Stream message from OpenAI Realtime API."""
+
+    type: str = "stream"
+    content: str
+    role: str = "assistant"
+    end: bool = False
+    created_at: Optional[int] = None
+
+
+class RealtimeFunctionMessage(RealtimeBaseMessage):
+    """Function message for OpenAI Realtime API."""
+
+    type: str = "function"
+    function: Dict[str, str]
+    created_at: Optional[int] = None
+
+
+class WebSocketErrorResponse(BaseModel):
+    """Error response for WebSocket errors."""
+
+    error: str
+    message: str
+
+
 # Function/Tool calling models
 
 
@@ -243,6 +333,7 @@ class ConversationItemDeleteEvent(ClientEvent):
 
 class ResponseCreateOptions(BaseModel):
     """Options for creating a response"""
+
     modalities: List[Literal["audio", "text"]] = ["text"]
     voice: Optional[str] = None
     instructions: Optional[str] = None
@@ -256,6 +347,7 @@ class ResponseCreateOptions(BaseModel):
 
 class ResponseCreateEvent(ClientEvent):
     """Event to create a model response."""
+
     type: str = "response.create"
     event_id: Optional[str] = None
     response: ResponseCreateOptions
@@ -263,6 +355,7 @@ class ResponseCreateEvent(ClientEvent):
 
 class ResponseCancelEvent(ClientEvent):
     """Event to cancel an active model response."""
+
     type: str = "response.cancel"
     event_id: Optional[str] = None
     response_id: Optional[str] = None
@@ -361,75 +454,3 @@ class ResponseContentPartAddedEvent(ServerEvent):
     output_index: int
     content_index: int
     part: Dict[str, Any]  # The added content part
-
-
-# Legacy/compatibility models
-
-
-class RealtimeBaseMessage(BaseModel):
-    """Base model for Realtime API messages (legacy)."""
-
-    type: str
-
-
-class RealtimeTranscriptMessage(RealtimeBaseMessage):
-    """Transcription message from OpenAI Realtime API (legacy)."""
-
-    type: str = "transcript"
-    text: str
-    is_final: bool = Field(default=True)
-    confidence: Optional[float] = None
-
-
-class RealtimeTurnMessage(RealtimeBaseMessage):
-    """Turn detection message from OpenAI Realtime API (legacy)."""
-
-    type: str = "turn"
-    trigger: str  # 'vad', 'timeout', etc.
-
-
-class RealtimeErrorMessage(RealtimeBaseMessage):
-    """Error message from OpenAI Realtime API (legacy)."""
-
-    type: str = "error"
-    code: str
-    message: str
-    details: Optional[Dict[str, Any]] = None
-
-
-class RealtimeMessageContent(BaseModel):
-    """Content part of a message within a conversation (legacy)."""
-
-    type: str = "text"
-    text: str
-
-
-class RealtimeMessage(BaseModel):
-    """Message within a conversation (legacy)."""
-
-    role: MessageRole
-    content: Union[str, List[RealtimeMessageContent]]
-    name: Optional[str] = None
-
-
-class RealtimeStreamMessage(RealtimeBaseMessage):
-    """Stream message for chat responses from OpenAI Realtime API (legacy)."""
-
-    type: str = "message"
-    message: RealtimeMessage
-
-
-class RealtimeFunctionMessage(RealtimeBaseMessage):
-    """Function call message from OpenAI Realtime API (legacy)."""
-
-    type: str = "function_call"
-    function_call: RealtimeFunctionCall
-
-
-class WebSocketErrorResponse(BaseModel):
-    """Error response from OpenAI WebSocket connection."""
-
-    error: Dict[str, Any]
-
-
-# Remove the duplicate RateLimitsUpdatedEvent definition

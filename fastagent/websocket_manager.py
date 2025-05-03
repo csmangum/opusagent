@@ -33,7 +33,6 @@ from fastagent.handlers.stream_handlers import (
     handle_user_stream_start,
     handle_user_stream_stop,
 )
-from fastagent.models.conversation import ConversationManager
 from fastagent.models.audiocodes_api import (
     ActivitiesMessage,
     ConnectionValidateMessage,
@@ -46,7 +45,7 @@ from fastagent.models.audiocodes_api import (
     UserStreamStartMessage,
     UserStreamStopMessage,
 )
-
+from fastagent.models.conversation import ConversationManager
 from fastagent.telephony_realtime_bridge import bridge
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -88,7 +87,7 @@ class WebSocketManager:
     async def _optimize_socket(self, websocket: WebSocket) -> None:
         """
         Optimize the WebSocket's underlying TCP socket for low-latency transmission.
-        
+
         Args:
             websocket: The FastAPI WebSocket connection
         """
