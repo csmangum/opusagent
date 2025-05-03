@@ -16,7 +16,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-from fastagent.bot.realtime_client import (
+from fastagent.realtime.realtime_client import (
     MAX_DATA_PER_WINDOW,
     MAX_REQUESTS_PER_WINDOW,
     RATE_LIMIT_WINDOW,

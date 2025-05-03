@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from fastagent.realtime.handlers.cllient.session_update_handler import (
+from fastagent.realtime.handlers.client.session_update_handler import (
     SessionUpdateHandler,
 )
 

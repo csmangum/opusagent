@@ -114,6 +114,31 @@ from fastagent.models.openai_api import (  # Session-related; Event types; Base 
     SessionUpdateEvent,
 )
 
+# Import client handlers
+from fastagent.realtime.handlers.client import (
+    SessionUpdateHandler,
+    SessionGetConfigHandler,
+    InputAudioBufferHandler,
+    ConversationItemHandler,
+    ResponseHandler,
+    TranscriptionSessionHandler,
+    registry as client_registry
+)
+
+# Import server handlers
+from fastagent.realtime.handlers.server import (
+    SessionHandler,
+    ConversationHandler,
+    ConversationItemHandler as ServerConversationItemHandler,
+    InputAudioBufferHandler as ServerInputAudioBufferHandler,
+    ResponseHandler as ServerResponseHandler,
+    TranscriptionSessionHandler as ServerTranscriptionSessionHandler,
+    RateLimitsHandler,
+    OutputAudioBufferHandler,
+    ErrorHandler,
+    registry as server_registry
+)
+
 logger = logging.getLogger(LOGGER_NAME)
 
 # Connection settings for WebSocket
@@ -256,41 +281,6 @@ class RealtimeClient:
     - Graceful degradation
     """
 
-    @property
-    def session_id(self) -> Optional[str]:
-        """Get the current session ID."""
-        return getattr(self, "_session_id", None)
-
-    @property
-    def conversation_id(self) -> Optional[str]:
-        """Get the current conversation ID."""
-        return getattr(self, "_conversation_id", None)
-
-    @property
-    def audio_queue(self) -> asyncio.Queue:
-        """Get the audio queue."""
-        return self._audio_queue
-
-    @property
-    def rate_limit(self) -> RateLimit:
-        """Get the rate limit instance."""
-        return self._rate_limit
-
-    @property
-    def ws_url(self) -> str:
-        """Get the WebSocket URL for the current model."""
-        return f"{self._api_base}?model={self._model}"
-
-    @property
-    def ws(self) -> Optional[websockets.WebSocketClientProtocol]:
-        """Get the WebSocket connection."""
-        return self._ws
-
-    @ws.setter
-    def ws(self, value: Optional[websockets.WebSocketClientProtocol]) -> None:
-        """Set the WebSocket connection."""
-        self._ws = value
-
     def __init__(
         self,
         api_key: str,
@@ -317,7 +307,6 @@ class RealtimeClient:
             "Authorization": f"Bearer {api_key}",
             "OpenAI-Beta": "realtime=v1",
         }
-        self._event_handlers = {}
         self._ws = None
         self._session_id = None
         self._conversation_id = None
@@ -341,6 +330,9 @@ class RealtimeClient:
         )
         self._logger = logging.getLogger("voice_agent")
         self._logger.setLevel(log_level)
+
+        # Initialize client handlers
+        self._initialize_handlers()
 
         # Audio handling with backpressure
         self._audio_queue_size = queue_size
@@ -368,6 +360,18 @@ class RealtimeClient:
         # Session configuration
         self._session_config = None
         self._session_config_event = asyncio.Event()
+
+    def _initialize_handlers(self) -> None:
+        """Initialize all client handlers."""
+        # Initialize each handler with the send_event callback
+        self._handlers = {
+            'session_update': SessionUpdateHandler(self.send_event),
+            'session_get_config': SessionGetConfigHandler(self.send_event),
+            'input_audio_buffer': InputAudioBufferHandler(self.send_event),
+            'conversation_item': ConversationItemHandler(self.send_event),
+            'response': ResponseHandler(self.send_event),
+            'transcription_session': TranscriptionSessionHandler(self.send_event)
+        }
 
     def set_log_level(self, level: int) -> None:
         """
@@ -918,9 +922,6 @@ class RealtimeClient:
                     # Fallback for error events that don't follow the standard structure
                     error_event = ErrorEvent(**data)
 
-                # Call any registered error handlers
-                await self._call_event_handlers(ServerEventType.ERROR, data)
-
                 # Log the error
                 self._logger.error(
                     f"Error from server: {error_event.code}: {error_event.message}"
@@ -928,28 +929,39 @@ class RealtimeClient:
                 if error_event.details:
                     self._logger.debug(f"Error details: {error_event.details}")
 
-            # Handle other event types
-            elif event_type in [e.value for e in ServerEventType]:
-                # Create appropriate event object based on type
-                event_obj = None
-                if event_type == ServerEventType.RATE_LIMITS_UPDATED:
-                    event_obj = RateLimitsUpdatedEvent(**data)
-                elif event_type == ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED:
-                    event_obj = ResponseOutputItemAddedEvent(**data)
-                elif event_type == ServerEventType.RESPONSE_CONTENT_PART_DONE:
-                    event_obj = ResponseContentPartDoneEvent(**data)
-                elif event_type == ServerEventType.SESSION_UPDATED:
-                    # Set the session config event to signal that the update is complete
-                    self._session_config_event.set()
-                    # Update the session config
-                    if "session" in data:
-                        self._session_config = data["session"]
-
-                # Call event handlers with either the created event object or raw data
-                await self._call_event_handlers(
-                    event_type, event_obj if event_obj else data
-                )
-            else:
+            # Import server handlers registry
+            from fastagent.realtime.handlers.server import registry as server_registry
+            
+            # Process server events using the server handlers
+            if event_type in server_registry:
+                handler_class = server_registry[event_type]
+                
+                # Create a handler instance with this client's send_event as callback
+                handler = handler_class(callback=self.send_event)
+                
+                # Process the event
+                try:
+                    await handler.handle_event(event_type, data)
+                except Exception as e:
+                    self._logger.error(f"Error in server handler for {event_type}: {e}")
+                    self._logger.debug(f"Handler error details: {traceback.format_exc()}")
+            
+            # Also process with client handlers if available
+            # Client handlers are for outgoing events, but they may need to react to incoming events
+            if event_type in self._handlers:
+                handler = self._handlers[event_type]
+                try:
+                    # Get the appropriate handler method based on the event type
+                    handler_method = getattr(handler, f"handle_{event_type.split('.')[-1]}")
+                    await handler_method(data)
+                except AttributeError:
+                    self._logger.warning(f"No client handler method found for event type: {event_type}")
+                except Exception as e:
+                    self._logger.error(f"Error in client handler for {event_type}: {e}")
+                    self._logger.debug(f"Client handler error details: {traceback.format_exc()}")
+            
+            # If no handler was found in either registry
+            if event_type not in server_registry and event_type not in self._handlers:
                 self._logger.warning(f"Unknown event type received: {event_type}")
 
         except Exception as e:
@@ -1112,328 +1124,6 @@ class RealtimeClient:
 
         self._logger.debug("Heartbeat task exited")
 
-    def on(
-        self, event_type: str, handler: Callable[[Dict[str, Any]], Awaitable[None]]
-    ) -> None:
-        """
-        Register an event handler for a specific event type.
-
-        Args:
-            event_type: The type of event to listen for
-            handler: Async function to call when event is received
-        """
-        if event_type not in self._event_handlers:
-            self._event_handlers[event_type] = []
-
-        self._event_handlers[event_type].append(handler)
-        self._logger.debug(f"Registered handler for event type: {event_type}")
-
-    def off(
-        self, event_type: str, handler: Callable[[Dict[str, Any]], Awaitable[None]]
-    ) -> None:
-        """
-        Remove an event handler for a specific event type.
-
-        Args:
-            event_type: The type of event to stop listening for
-            handler: The handler to remove
-        """
-        if event_type in self._event_handlers:
-            try:
-                self._event_handlers[event_type].remove(handler)
-                self._logger.debug(f"Removed handler for event type: {event_type}")
-            except ValueError:
-                # Handler wasn't registered
-                pass
-
-    async def send_audio_chunk(self, audio_data: bytes) -> bool:
-        """
-        Send raw audio data to OpenAI.
-
-        This method handles audio data validation, rate limiting, and error recovery
-        for sending audio chunks to the OpenAI Realtime API. Implements backpressure
-        to prevent overwhelming the server.
-
-        Args:
-            audio_data: Raw PCM16 audio bytes to send
-
-        Returns:
-            bool: True if the chunk was sent successfully, False otherwise
-
-        Raises:
-            ValueError: If audio data is invalid
-            ConnectionError: If connection is not active
-            MemoryError: If memory usage is too high
-            AudioError: If audio processing fails
-            RateLimitError: If rate limits are exceeded
-        """
-        if not self._connection_active:
-            self._logger.warning("Cannot send audio - connection not active")
-            return False
-
-        if not isinstance(audio_data, bytes):
-            raise ValueError("Audio data must be bytes")
-
-        if len(audio_data) == 0:
-            raise ValueError("Audio data cannot be empty")
-
-        if len(audio_data) > WS_MAX_SIZE:
-            raise ValueError(f"Audio chunk too large (max {WS_MAX_SIZE} bytes)")
-
-        try:
-            # Check memory usage periodically
-            now = time.time()
-            if now - self._last_memory_check > self._memory_check_interval:
-                if not await self._check_memory_usage():
-                    raise MemoryError("Memory usage too high")
-                self._last_memory_check = now
-
-            # Check rate limits with data size
-            if not self._rate_limit.is_allowed(len(audio_data)):
-                self._logger.error("Rate limit exceeded for audio chunks (data size)")
-                raise RateLimitError("Data size rate limit exceeded")
-            self._rate_limit.add_request(len(audio_data))
-
-            # Check queue size and implement backpressure
-            current_size = self._audio_queue.qsize()
-            if current_size >= self._audio_queue_warning_threshold:
-                self._audio_queue_full = True
-                self._logger.warning(
-                    f"Audio queue approaching capacity: {current_size}/{self._audio_queue_size}"
-                )
-            elif current_size < self._audio_queue_warning_threshold:
-                self._audio_queue_full = False
-                self._logger.info("Audio queue pressure relieved")
-
-            if self._audio_queue_full:
-                # Wait briefly to allow queue to drain
-                await asyncio.sleep(0.1)
-                if self._audio_queue.qsize() >= self._audio_queue_size:
-                    self._logger.warning("Audio queue full, dropping chunk")
-                    return False
-
-            # Convert binary audio to base64
-            try:
-                audio_base64 = base64.b64encode(audio_data).decode("utf-8")
-            except Exception as e:
-                raise AudioError(f"Failed to encode audio data: {str(e)}") from None
-
-            # Create and send event
-            try:
-                audio_event = InputAudioBufferAppendEvent(audio=audio_base64)
-                await self.send_event(audio_event)
-                return True
-            except Exception as e:
-                raise AudioError(f"Failed to send audio event: {str(e)}") from None
-
-        except MemoryError as e:
-            self._logger.error(f"Memory error while sending audio: {e}")
-            return False
-        except RateLimitError as e:
-            self._logger.error(f"Rate limit error while sending audio: {e}")
-            return False
-        except AudioError as e:
-            self._logger.error(f"Audio error while sending audio: {e}")
-            return False
-        except Exception as e:
-            self._logger.error(f"Error sending audio chunk: {e}")
-            self._logger.debug(f"Audio send error details: {traceback.format_exc()}")
-            return False
-
-    async def commit_audio_buffer(self) -> bool:
-        """
-        Commit the current audio buffer to create a user input item.
-
-        This is used when VAD is disabled to manually indicate
-        the end of user speech.
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            commit_event = InputAudioBufferCommitEvent()
-            await self.send_event(commit_event)
-            return True
-        except Exception as e:
-            self._logger.error(f"Error committing audio buffer: {e}")
-            return False
-
-    async def send_text_message(self, text: str, role: str = "user") -> bool:
-        """
-        Send a text message to the conversation.
-
-        Args:
-            text: The text message to send
-            role: The role of the message sender (usually "user")
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            # Create text content
-            content = [ConversationItemContentParam(type="input_text", text=text)]
-
-            # Create conversation item
-            item = ConversationItemParam(type="message", role=role, content=content)
-
-            # Create and send event
-            event = ConversationItemCreateEvent(item=item)
-            await self.send_event(event)
-            return True
-        except Exception as e:
-            self._logger.error(f"Error sending text message: {e}")
-            return False
-
-    async def create_response(
-        self, modalities: Optional[List[str]] = None, instructions: Optional[str] = None
-    ) -> bool:
-        """
-        Request a response from the model.
-
-        Args:
-            modalities: List of response modalities ("text", "audio")
-            instructions: Optional override instructions for this response
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        try:
-            response_params = {}
-
-            if modalities:
-                response_params["modalities"] = modalities
-
-            if instructions:
-                response_params["instructions"] = instructions
-
-            event = ResponseCreateEvent(response=response_params or None)
-            await self.send_event(event)
-            return True
-        except Exception as e:
-            self._logger.error(f"Error creating response: {e}")
-            return False
-
-    async def update_session(
-        self,
-        instructions: Optional[str] = None,
-        voice: Optional[str] = None,
-        tools: Optional[List[Dict[str, Any]]] = None,
-        modalities: Optional[List[str]] = None,
-        turn_detection: Optional[Dict[str, Any]] = None,
-        merge: bool = True,
-        tool_choice: Optional[str] = None,
-    ) -> bool:
-        """
-        Update the session configuration.
-
-        Args:
-            instructions: New instructions for the session
-            voice: New voice to use
-            tools: List of tools to enable
-            modalities: List of modalities to enable
-            turn_detection: Turn detection settings
-            merge: Whether to merge with existing config
-            tool_choice: Tool choice strategy
-
-        Returns:
-            bool: True if update was successful
-        """
-        try:
-            # Prepare update data
-            update_data = {}
-
-            if instructions is not None:
-                update_data["instructions"] = instructions
-            if voice is not None:
-                update_data["voice"] = voice
-            if tools is not None:
-                # Format tools correctly for the API
-                formatted_tools = []
-                for i, tool in enumerate(tools):
-                    if "type" not in tool:
-                        tool["type"] = "function"
-                    if "name" not in tool:
-                        tool["name"] = f"tool_{i}"
-                    # Ensure the function parameter is at the root level
-                    if "function" in tool:
-                        tool.update(tool.pop("function"))
-                    formatted_tools.append(tool)
-                update_data["tools"] = formatted_tools
-            if modalities is not None:
-                update_data["modalities"] = modalities
-            if turn_detection is not None:
-                update_data["turn_detection"] = turn_detection
-            if tool_choice is not None:
-                update_data["tool_choice"] = tool_choice
-
-            # If merge is True, get current config and merge
-            if merge and self._session_config:
-                current_config = self._session_config.copy()
-                current_config.update(update_data)
-                update_data = current_config
-
-            # Create and send the update event
-            event = SessionUpdateEvent(session=update_data)
-            await self.send_event(event)
-
-            # Wait for session.updated event
-            await self._session_config_event.wait()
-            self._session_config_event.clear()
-
-            return True
-
-        except Exception as e:
-            self._logger.error(f"Error updating session: {e}")
-            self._logger.debug(
-                f"Session update error details: {traceback.format_exc()}"
-            )
-            return False
-
-    async def _get_current_session_config(self) -> Dict[str, Any]:
-        """
-        Get the current session configuration from the server.
-
-        Returns:
-            Dict[str, Any]: The current session configuration or an empty dict if failed
-        """
-        if not self.session_id:
-            self._logger.warning("Cannot get session config - no active session")
-            return {}
-
-        try:
-            # Instead of using GET_SESSION_CONFIG, we'll use the session.updated event
-            # that we receive after session creation/update
-            session_config = {}
-
-            # Set up a future to wait for the session config response
-            config_future = asyncio.Future()
-
-            # Define a handler for the session updated event
-            async def on_session_updated(data: Dict[str, Any]) -> None:
-                if "session" in data:
-                    config_future.set_result(data["session"])
-
-            # Register a temporary handler for the session updated event
-            self.on(ServerEventType.SESSION_UPDATED, on_session_updated)
-
-            try:
-                # Wait for the config with a timeout
-                session_config = await asyncio.wait_for(config_future, timeout=5.0)
-                return session_config
-            except asyncio.TimeoutError:
-                self._logger.warning("Timeout waiting for session config")
-                return {}
-            finally:
-                # Remove the temporary handler
-                self.off(ServerEventType.SESSION_UPDATED, on_session_updated)
-
-        except Exception as e:
-            self._logger.error(f"Error getting session config: {e}")
-            self._logger.debug(
-                f"Session config error details: {traceback.format_exc()}"
-            )
-            return {}
-
     def set_connection_handlers(
         self,
         lost_handler: Optional[Callable[[], Awaitable[None]]] = None,
@@ -1537,28 +1227,3 @@ class RealtimeClient:
         except Exception as e:
             self._logger.warning(f"Could not check memory usage: {e}")
             return True  # Assume OK if we can't check
-
-    async def _call_event_handlers(self, event_type: str, data: Dict[str, Any]) -> None:
-        """
-        Call all registered handlers for a specific event type.
-
-        Args:
-            event_type: The type of event
-            data: Event data to pass to handlers
-        """
-        self._logger.debug(f"Processing event of type: {event_type}")
-
-        handlers = self._event_handlers.get(event_type, [])
-        if not handlers:
-            return
-
-        for handler in handlers:
-            try:
-                if callable(handler):
-                    result = handler(data)
-                    if asyncio.iscoroutine(result):
-                        await result
-            except Exception as e:
-                self._logger.error(f"Error in event handler for {event_type}: {e}")
-                self._logger.debug(f"Handler error details: {traceback.format_exc()}")
-                # Continue processing other handlers despite the error

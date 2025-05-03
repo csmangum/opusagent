@@ -11,11 +11,15 @@ from .session_get_config_handler import SessionGetConfigHandler
 from .input_audio_buffer_handler import InputAudioBufferHandler
 from .conversation_item_handler import ConversationItemHandler
 from .response_handler import ResponseHandler
+from .transcription_session_handler import TranscriptionSessionHandler
+from .handler_registry import registry
 
 __all__ = [
     'SessionUpdateHandler',
     'SessionGetConfigHandler',
     'InputAudioBufferHandler',
     'ConversationItemHandler',
-    'ResponseHandler'
+    'ResponseHandler',
+    'TranscriptionSessionHandler',
+    'registry'
 ]

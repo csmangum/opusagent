@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 import base64
-from fastagent.realtime.handlers.cllient.input_audio_buffer_handler import InputAudioBufferHandler
+from fastagent.realtime.handlers.client.input_audio_buffer_handler import InputAudioBufferHandler
 
 @pytest.fixture
 def mock_send_event():

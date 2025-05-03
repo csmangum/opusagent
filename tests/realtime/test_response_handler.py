@@ -3,7 +3,7 @@
 import asyncio
 from typing import Dict, Any, List
 import pytest
-from fastagent.realtime.handlers.cllient.response_handler import ResponseHandler
+from fastagent.realtime.handlers.client.response_handler import ResponseHandler
 from fastagent.models.openai_api import ResponseCreateOptions
 
 class MockSendEvent:

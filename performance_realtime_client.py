@@ -23,7 +23,7 @@ import psutil
 import pytest
 from dotenv import load_dotenv
 
-from fastagent.bot.realtime_client import RealtimeClient
+from fastagent.realtime.realtime_client import RealtimeClient
 from fastagent.models.openai_api import ServerEventType
 from tests.bot.test_logging import logger
 

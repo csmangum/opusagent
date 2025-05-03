@@ -42,15 +42,34 @@ Handles session configuration requests, including:
 - Managing configuration state
 - Processing configuration updates
 
+### `transcription_session_handler.py`
+
+Manages transcription-specific session settings, including:
+- Input audio format configuration (pcm16, g711_ulaw, g711_alaw)
+- Transcription model settings (model, prompt, language)
+- Turn detection configuration (server_vad, semantic_vad)
+- Noise reduction settings
+- Additional field inclusion settings
+
+### `handler_registry.py`
+
+Provides a centralized registry for all client-side event handlers, including:
+- Dictionary-like interface for accessing handlers by event type
+- Singleton pattern for global access
+- Type-safe handler registration and retrieval
+- Support for all handler types (response, audio, conversation, session, transcription)
+
 ## Usage Example
 
 ```python
-from fastagent.realtime.handlers.cllient import (
+from fastagent.realtime.handlers.client import (
     ResponseHandler,
     InputAudioBufferHandler,
     ConversationItemHandler,
     SessionUpdateHandler,
-    SessionGetConfigHandler
+    SessionGetConfigHandler,
+    TranscriptionSessionHandler,
+    registry  # Import the handler registry
 )
 
 # Initialize handlers with a callback for sending events
@@ -64,13 +83,44 @@ audio_handler = InputAudioBufferHandler(send_event)
 conversation_handler = ConversationItemHandler(send_event)
 session_update_handler = SessionUpdateHandler(send_event)
 config_handler = SessionGetConfigHandler(send_event)
+transcription_handler = TranscriptionSessionHandler(send_event)
 
-# Handle incoming events
+# Using the handler registry
 async def handle_event(event: dict) -> None:
     event_type = event.get("type")
-    if event_type == "response.create":
-        await response_handler.handle_create(event)
-    elif event_type == "input_audio_buffer":
-        await audio_handler.handle(event)
-    # ... handle other event types
+    if event_type in registry:
+        handler_class = registry[event_type]
+        handler = handler_class(send_event)
+        await handler.handle(event)
+    else:
+        print(f"No handler found for event type: {event_type}")
+
+# Example transcription session update
+transcription_config = {
+    "input_audio_format": "pcm16",
+    "input_audio_transcription": {
+        "model": "gpt-4o-transcribe",
+        "prompt": "Transcribe the following audio:",
+        "language": "en"
+    },
+    "turn_detection": {
+        "type": "server_vad",
+        "threshold": 0.5,
+        "prefix_padding_ms": 300,
+        "silence_duration_ms": 500,
+        "create_response": True
+    },
+    "input_audio_noise_reduction": {
+        "type": "near_field"
+    },
+    "include": [
+        "item.input_audio_transcription.logprobs"
+    ]
+}
+
+await transcription_handler.handle({
+    "type": "transcription_session.update",
+    "event_id": "event_123",
+    "session": transcription_config
+})
 ``` 

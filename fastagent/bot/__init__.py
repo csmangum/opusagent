@@ -50,7 +50,7 @@ async def custom_client_usage():
 ```
 """
 
-from fastagent.bot.realtime_client import RealtimeClient
+from fastagent.realtime.realtime_client import RealtimeClient
 from fastagent.bot.telephony_realtime_bridge import bridge, TelephonyRealtimeBridge
 
 __all__ = ["RealtimeClient", "bridge", "TelephonyRealtimeBridge"]

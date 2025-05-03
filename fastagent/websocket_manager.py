@@ -47,6 +47,8 @@ from fastagent.models.audiocodes_api import (
     UserStreamStopMessage,
 )
 
+from fastagent.bot.telephony_realtime_bridge import bridge
+
 logger = logging.getLogger(LOGGER_NAME)
 
 # Type hint for handler functions
@@ -121,8 +123,6 @@ class WebSocketManager:
         await self._optimize_socket(websocket)
         logger.info("WebSocket connection established and optimized for low latency")
         conversation_id = None
-        
-        #! Add bridge client??? Or just the RealtimeClient???
 
         try:
             while True:

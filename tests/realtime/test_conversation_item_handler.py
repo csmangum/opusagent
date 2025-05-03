@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 import time
 
-from fastagent.realtime.handlers.cllient.conversation_item_handler import (
+from fastagent.realtime.handlers.client.conversation_item_handler import (
     ConversationItemHandler,
 )
 
