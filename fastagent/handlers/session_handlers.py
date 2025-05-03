@@ -24,7 +24,6 @@ from fastagent.models.audiocodes_api import (
     SessionInitiateMessage,
     SessionResumeMessage,
 )
-from fastagent.telephony_realtime_bridge import bridge
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -179,13 +178,6 @@ async def handle_session_end(
         logger.info(
             f"Session ended: {reason_code} - {reason} for conversation: {conversation_id}"
         )
-
-        # Close the OpenAI Realtime client for this conversation
-        try:
-            await bridge.close_client(conversation_id)
-            logger.info(f"Closed OpenAI Realtime client for conversation: {conversation_id}")
-        except Exception as e:
-            logger.error(f"Error closing OpenAI client: {e}", exc_info=True)
 
         # Remove the conversation from the manager
         if conversation_id:

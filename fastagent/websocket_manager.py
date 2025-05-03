@@ -46,7 +46,6 @@ from fastagent.models.audiocodes_api import (
     UserStreamStopMessage,
 )
 from fastagent.models.conversation import ConversationManager
-from fastagent.telephony_realtime_bridge import bridge
 
 logger = logging.getLogger(LOGGER_NAME)
 
