@@ -26,7 +26,9 @@ def mock_openai_ws():
 
 @pytest.fixture
 def bridge(mock_websocket, mock_openai_ws):
-    return TelephonyRealtimeBridge(websocket=mock_websocket, openai_ws=mock_openai_ws)
+    return TelephonyRealtimeBridge(
+        telephony_websocket=mock_websocket, realtime_websocket=mock_openai_ws
+    )
 
 
 @pytest.mark.asyncio
@@ -35,8 +37,8 @@ async def test_close_method(bridge):
     await bridge.close()
 
     # Verify both connections were closed
-    bridge.openai_ws.close.assert_called_once()
-    bridge.websocket.close.assert_called_once()
+    bridge.realtime_websocket.close.assert_called_once()
+    bridge.telephony_websocket.close.assert_called_once()
     assert bridge._closed is True
 
 
@@ -46,7 +48,9 @@ async def test_close_method_with_errors(mock_websocket, mock_openai_ws):
     mock_openai_ws.close.side_effect = Exception("OpenAI close error")
     mock_websocket.close.side_effect = Exception("WebSocket close error")
 
-    bridge = TelephonyRealtimeBridge(mock_websocket, mock_openai_ws)
+    bridge = TelephonyRealtimeBridge(
+        telephony_websocket=mock_websocket, realtime_websocket=mock_openai_ws
+    )
 
     # Should handle exceptions gracefully
     await bridge.close()
@@ -62,8 +66,8 @@ async def test_close_method_already_closed(bridge):
     await bridge.close()
 
     # Verify no additional close attempts
-    bridge.openai_ws.close.assert_not_called()
-    bridge.websocket.close.assert_not_called()
+    bridge.realtime_websocket.close.assert_not_called()
+    bridge.telephony_websocket.close.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -73,8 +77,11 @@ async def test_receive_from_telephony_start_event(bridge):
         {"event": "start", "start": {"streamSid": "test-stream-id"}}
     )
 
-    # Configure the mock
-    bridge.websocket.iter_text.return_value = [start_message]
+    # Set up the mock to return the message
+    async def mock_iter():
+        yield start_message
+
+    bridge.telephony_websocket.iter_text = mock_iter
 
     # Run the method
     await bridge.receive_from_telephony()
@@ -82,7 +89,7 @@ async def test_receive_from_telephony_start_event(bridge):
     # Verify stream_sid was set
     assert bridge.stream_sid == "test-stream-id"
     # No audio should be sent
-    bridge.openai_ws.send.assert_not_called()
+    bridge.realtime_websocket.send.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -91,43 +98,43 @@ async def test_receive_from_telephony_stop_event(bridge):
     stop_message = json.dumps({"event": "stop"})
 
     # Configure the mock
-    bridge.websocket.iter_text.return_value = [stop_message]
+    bridge.telephony_websocket.iter_text.return_value = [stop_message]
 
     # Run the method
     await bridge.receive_from_telephony()
 
     # Verify bridge was closed
     assert bridge._closed is True
-    bridge.openai_ws.close.assert_called_once()
-    bridge.websocket.close.assert_called_once()
+    bridge.realtime_websocket.close.assert_called_once()
+    bridge.telephony_websocket.close.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_receive_from_telephony_disconnect(bridge):
     # Simulate WebSocket disconnect
-    bridge.websocket.iter_text.side_effect = WebSocketDisconnect()
+    bridge.telephony_websocket.iter_text.side_effect = WebSocketDisconnect()
 
     # Run the method
     await bridge.receive_from_telephony()
 
     # Verify bridge was closed
     assert bridge._closed is True
-    bridge.openai_ws.close.assert_called_once()
-    bridge.websocket.close.assert_called_once()
+    bridge.realtime_websocket.close.assert_called_once()
+    bridge.telephony_websocket.close.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_receive_from_telephony_exception(bridge):
     # Simulate a generic exception
-    bridge.websocket.iter_text.side_effect = Exception("Test error")
+    bridge.telephony_websocket.iter_text.side_effect = Exception("Test error")
 
     # Run the method
     await bridge.receive_from_telephony()
 
     # Verify bridge was closed
     assert bridge._closed is True
-    bridge.openai_ws.close.assert_called_once()
-    bridge.websocket.close.assert_called_once()
+    bridge.realtime_websocket.close.assert_called_once()
+    bridge.telephony_websocket.close.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -137,11 +144,15 @@ async def test_send_to_telephony_audio_delta(bridge):
 
     # Create mock response from OpenAI
     audio_delta_message = json.dumps(
-        {"type": "response.audio.delta", "delta": "base64audio"}
+        {"type": "response.audio.delta", "audio": "base64audio"}
     )
 
-    # Configure the mock
-    bridge.openai_ws.__aiter__.return_value = [audio_delta_message]
+    # Set up the mock to return the message
+    async def mock_iter(self):
+        yield audio_delta_message
+
+    bridge.realtime_websocket = AsyncMock()
+    bridge.realtime_websocket.__aiter__ = mock_iter
 
     # Run the method
     await bridge.send_to_telephony()
@@ -152,7 +163,7 @@ async def test_send_to_telephony_audio_delta(bridge):
         "streamSid": "test-stream-id",
         "media": {"payload": "base64audio"},
     }
-    bridge.websocket.send_json.assert_called_once_with(expected_audio_delta)
+    bridge.telephony_websocket.send_json.assert_called_once_with(expected_audio_delta)
 
 
 @pytest.mark.asyncio
@@ -163,13 +174,13 @@ async def test_send_to_telephony_log_events(bridge):
     )
 
     # Configure the mock
-    bridge.openai_ws.__aiter__.return_value = [log_event_message]
+    bridge.realtime_websocket.__aiter__.return_value = [log_event_message]
 
     # Run the method
     await bridge.send_to_telephony()
 
     # Verify no audio was sent to telephony for log events
-    bridge.websocket.send_json.assert_not_called()
+    bridge.telephony_websocket.send_json.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -179,32 +190,32 @@ async def test_send_to_telephony_exception_processing_audio(bridge):
 
     # Create mock response from OpenAI
     audio_delta_message = json.dumps(
-        {"type": "response.audio.delta", "delta": "base64audio"}
+        {"type": "response.audio.delta", "audio": "base64audio"}
     )
 
     # Configure the mock to return the message
-    bridge.openai_ws.__aiter__.return_value = [audio_delta_message]
+    bridge.realtime_websocket.__aiter__.return_value = [audio_delta_message]
     # But make send_json raise an exception
-    bridge.websocket.send_json.side_effect = Exception("Error sending audio")
+    bridge.telephony_websocket.send_json.side_effect = Exception("Error sending audio")
 
     # Run the method
     await bridge.send_to_telephony()
 
     # Verify bridge was closed on error
     assert bridge._closed is True
-    bridge.openai_ws.close.assert_called_once()
-    bridge.websocket.close.assert_called_once()
+    bridge.realtime_websocket.close.assert_called_once()
+    bridge.telephony_websocket.close.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_send_to_telephony_general_exception(bridge):
     # Configure the mock to raise an exception
-    bridge.openai_ws.__aiter__.side_effect = Exception("General error")
+    bridge.realtime_websocket.__aiter__.side_effect = Exception("General error")
 
     # Run the method
     await bridge.send_to_telephony()
 
     # Verify bridge was closed on error
     assert bridge._closed is True
-    bridge.openai_ws.close.assert_called_once()
-    bridge.websocket.close.assert_called_once()
+    bridge.realtime_websocket.close.assert_called_once()
+    bridge.telephony_websocket.close.assert_called_once()

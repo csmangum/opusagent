@@ -21,13 +21,11 @@ from fastagent.models.audiocodes_api import (
     UserStreamStopMessage,
     UserStreamStoppedResponse,
 )
-from fastagent.telephony_realtime_bridge import bridge
 
 
 @pytest.mark.asyncio
 class TestStreamHandlers:
 
-    @patch.object(bridge, 'create_client', new_callable=AsyncMock)
     async def test_handle_user_stream_start(self, mock_create_client):
         # Setup
         websocket = AsyncMock()

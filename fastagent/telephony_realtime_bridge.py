@@ -24,6 +24,7 @@ from fastagent.models.openai_api import (
     MessageRole,
     ResponseAudioDeltaEvent,
     ResponseCreateEvent,
+    ResponseCreateOptions,
     SessionConfig,
     SessionUpdateEvent,
 )
@@ -171,7 +172,7 @@ class TelephonyRealtimeBridge:
                     print(f"Received event: {response_type}", response_dict)
                 if response_type == "session.updated":
                     print("Session updated successfully:", response_dict)
-                if response_type == "response.audio.delta" and "delta" in response_dict:
+                if response_type == "response.audio.delta" and "audio" in response_dict:
                     try:
                         # Parse using our model
                         response = ResponseAudioDeltaEvent(**response_dict)
@@ -179,7 +180,7 @@ class TelephonyRealtimeBridge:
                             audio_delta = {
                                 "event": "media",
                                 "streamSid": self.stream_sid,
-                                "media": {"payload": response.delta},
+                                "media": {"payload": response.audio},
                             }
                             await self.telephony_websocket.send_json(audio_delta)
                             print("Sent audio delta to client")
@@ -218,8 +219,15 @@ async def send_initial_conversation_item(realtime_websocket):
     print("Sending initial conversation item:", initial_conversation.model_dump_json())
     await realtime_websocket.send(initial_conversation.model_dump_json())
 
-    # Create response using our model
-    response_create = ResponseCreateEvent()
+    # Create response using our model with default options
+    response_create = ResponseCreateEvent(
+        response=ResponseCreateOptions(
+            modalities=["text", "audio"],
+            voice=VOICE,
+            instructions=SYSTEM_MESSAGE,
+            output_audio_format="pcm16"
+        )
+    )
     await realtime_websocket.send(response_create.model_dump_json())
 
 
