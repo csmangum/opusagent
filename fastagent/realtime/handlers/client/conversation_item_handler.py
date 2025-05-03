@@ -87,10 +87,10 @@ class ConversationItemHandler:
                         content_dict["text"] = item.text
                     if item.audio is not None:
                         content_dict["audio"] = item.audio
-                    if "audio_duration_ms" in event["item"]["content"][0]:
-                        content_dict["audio_duration_ms"] = event["item"]["content"][0][
-                            "audio_duration_ms"
-                        ]
+                    for content_item in event["item"]["content"]:
+                        if "audio_duration_ms" in content_item:
+                            content_dict["audio_duration_ms"] = content_item["audio_duration_ms"]
+                            break
                     content.append(content_dict)
 
             # Create the conversation item
