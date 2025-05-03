@@ -117,6 +117,7 @@ class TelephonyRealtimeBridge:
         """
         try:
             async for message in self.telephony_websocket.iter_text():
+                print(f"📨 Received telephony message: {message}")
                 if self._closed:
                     break
 
@@ -130,13 +131,17 @@ class TelephonyRealtimeBridge:
                     audio_append = InputAudioBufferAppendEvent(
                         audio=data["media"]["payload"]
                     )
+                    print(f"📨 Sending audio to realtime-websocket: {audio_append.model_dump_json()}")
                     await self.realtime_websocket.send(audio_append.model_dump_json())
+                    print(f"✅ Audio sent to realtime-websocket")
                 elif data["event"] == "start":
+                    print(f"📨 Incoming stream has started {data['start']['streamSid']}")
                     self.stream_sid = data["start"]["streamSid"]
-                    print(f"Incoming stream has started {self.stream_sid}")
+                    print(f"📨 Stream has started {self.stream_sid}")
                 elif data["event"] == "stop":
-                    print(f"Stream {self.stream_sid} stopped")
+                    print(f"📨 Stream {self.stream_sid} stopped")
                     await self.close()
+                    print(f"📨 Telephony-Realtime bridge closed")
                     break
         except WebSocketDisconnect:
             print("Client disconnected.")
@@ -146,20 +151,7 @@ class TelephonyRealtimeBridge:
             await self.close()
 
     async def send_to_telephony(self):
-        """Process and forward events from OpenAI Realtime API to telephony.
-
-        This method continuously listens for messages from the OpenAI Realtime API,
-        processes various events including audio responses, and forwards them to the
-        telephony WebSocket. It handles audio streaming, session updates, and logging.
-
-        The method processes the following event types:
-        - response.audio.delta: Audio data to be sent to telephony
-        - session.updated: Session configuration updates
-        - Various log events for monitoring and debugging
-
-        Raises:
-            Exception: For any errors during processing
-        """
+        """Process and forward events from OpenAI Realtime API to telephony."""
         try:
             async for openai_message in self.realtime_websocket:
                 if self._closed:
@@ -167,11 +159,12 @@ class TelephonyRealtimeBridge:
 
                 response_dict = json.loads(openai_message)
                 response_type = response_dict["type"]
+                print(f"📨 Received OpenAI message type: {response_type}")
 
                 if response_type in [event.value for event in LOG_EVENT_TYPES]:
-                    print(f"Received event: {response_type}", response_dict)
+                    print(f"📝 Log event: {response_type}")
                 if response_type == "session.updated":
-                    print("Session updated successfully:", response_dict)
+                    print("✅ Session updated successfully")
                 if response_type == "response.audio.delta" and "audio" in response_dict:
                     try:
                         # Parse using our model
@@ -183,13 +176,26 @@ class TelephonyRealtimeBridge:
                                 "media": {"payload": response.audio},
                             }
                             await self.telephony_websocket.send_json(audio_delta)
-                            print("Sent audio delta to client")
+                            print(f"✅ Sent audio delta to client (size: {len(response.audio)} bytes)")
                     except Exception as e:
-                        print(f"Error processing audio data: {e}")
+                        print(f"❌ Error processing audio data: {e}")
                         if not self._closed:
                             await self.close()
+                elif response_type == "response.audio.done":
+                    print("✅ Audio response completed")
+                elif response_type == "response.done":
+                    print("✅ Response completed")
+                    # Send a final empty audio chunk to signal end of response
+                    if not self._closed and self.stream_sid:
+                        audio_delta = {
+                            "event": "media",
+                            "streamSid": self.stream_sid,
+                            "media": {"payload": ""},
+                        }
+                        await self.telephony_websocket.send_json(audio_delta)
+                        print("✅ Sent end-of-response signal to client")
         except Exception as e:
-            print(f"Error in send_to_telephony: {e}")
+            print(f"❌ Error in send_to_telephony: {e}")
             await self.close()
 
 
@@ -210,9 +216,9 @@ async def send_initial_conversation_item(realtime_websocket):
             content=[
                 ConversationItemContentParam(
                     type="input_text",
-                    text="Hello! Please introduce yourself and tell me a joke.",
+                    text="Hello! Please introduce yourself and tell me a joke."
                 )
-            ],
+            ]
         )
     )
 
@@ -226,6 +232,9 @@ async def send_initial_conversation_item(realtime_websocket):
             voice=VOICE,
             instructions=SYSTEM_MESSAGE,
             output_audio_format="pcm16",
+            temperature=0.8,
+            max_output_tokens=4096,  # Maximum allowed value
+            tool_choice="none"  # Disable function calling
         )
     )
     await realtime_websocket.send(response_create.model_dump_json())
@@ -243,13 +252,26 @@ async def initialize_session(realtime_websocket):
     """
     # Use our SessionConfig and SessionUpdateEvent models
     session_config = SessionConfig(
-        turn_detection={"type": "server_vad"},
+        turn_detection={
+            "type": "server_vad",
+            "threshold": 0.5,
+            "prefix_padding_ms": 300,
+            "silence_duration_ms": 200,
+            "create_response": True,
+            "interrupt_response": True
+        },
         input_audio_format="pcm16",
         output_audio_format="pcm16",
         voice=VOICE,
         instructions=SYSTEM_MESSAGE,
         modalities=["text", "audio"],
         temperature=0.8,
+        model="gpt-4o-realtime-preview-2024-10-01",
+        tools=[],
+        input_audio_noise_reduction=True,
+        input_audio_transcription=True,
+        max_response_output_tokens=4096,  # Maximum allowed value
+        tool_choice="auto"
     )
 
     session_update = SessionUpdateEvent(session=session_config)
