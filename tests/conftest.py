@@ -2,6 +2,8 @@ import pytest
 import logging
 import asyncio
 import os
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 """
 Pytest configuration file for the FastAgent framework test suite.
@@ -31,4 +33,20 @@ def event_loop():
 @pytest.fixture(autouse=True)
 def skip_integration_when_no_api_key(request):
     if request.node.get_closest_marker("integration") and not os.environ.get("OPENAI_API_KEY"):
-        pytest.skip("Skipping integration tests: OPENAI_API_KEY not set") 
+        pytest.skip("Skipping integration tests: OPENAI_API_KEY not set")
+
+@pytest.fixture
+def app():
+    """Create a FastAPI application instance for testing."""
+    app = FastAPI()
+    
+    @app.get("/")
+    async def index():
+        return {"message": "Telephony Bridge is running!"}
+        
+    return app
+
+@pytest.fixture
+def test_client(app):
+    """Create a TestClient instance for testing FastAPI endpoints."""
+    return TestClient(app) 

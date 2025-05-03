@@ -10,7 +10,7 @@ import pyaudio
 import websocket
 from dotenv import load_dotenv
 
-from realtime_models import (
+from archive.realtime_models import (
     AudioBufferAppendEvent,
     InputAudioTranscription,
     SessionConfig,

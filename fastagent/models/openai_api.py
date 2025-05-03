@@ -99,7 +99,7 @@ class ConversationItemParam(BaseModel):
 
     type: str  # "message", "function_call", "function_call_output"
     role: Optional[MessageRole] = None
-    content: Optional[List[ConversationItemContentParam]] = None
+    content: List[ConversationItemContentParam] = Field(default_factory=list)  # Make content required and default to empty list
     function_call: Optional[Dict[str, str]] = None  # For function_call type
 
 
@@ -334,7 +334,7 @@ class ConversationItemDeleteEvent(ClientEvent):
 class ResponseCreateOptions(BaseModel):
     """Options for creating a response"""
 
-    modalities: List[Literal["audio", "text"]] = ["text"]
+    modalities: List[Literal["audio", "text"]] = Field(default_factory=lambda: ["text", "audio"])
     voice: Optional[str] = None
     instructions: Optional[str] = None
     output_audio_format: Optional[Literal["pcm16"]] = None
