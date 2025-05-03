@@ -70,7 +70,8 @@ class AudioCodesTestClient:
                 logger.info(f"Received playStream.start for streamId: {stream_id}")
             elif message_type == "playStream.chunk":
                 audio_chunk = data.get("audioChunk")
-                logger.info(f"Received playStream.chunk for streamId: {stream_id}, chunk size: {len(audio_chunk)}")
+                decoded_audio_chunk = base64.b64decode(audio_chunk)
+                logger.info(f"Received playStream.chunk for streamId: {stream_id}, chunk size (bytes): {len(decoded_audio_chunk)}")
             elif message_type == "playStream.stop":
                 logger.info(f"Received playStream.stop for streamId: {stream_id}")
                 self.running = False  # Stop sending audio
