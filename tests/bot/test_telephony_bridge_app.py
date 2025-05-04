@@ -22,6 +22,7 @@ def test_index_page(test_client):
 async def test_initialize_session():
     # Create mock websocket
     mock_ws = AsyncMock()
+    mock_ws.send = AsyncMock()
 
     # Call the function
     await initialize_session(mock_ws)
@@ -64,6 +65,7 @@ async def test_initialize_session():
 async def test_send_initial_conversation_item():
     # Create mock websocket
     mock_ws = AsyncMock()
+    mock_ws.send = AsyncMock()
 
     # Call the function
     await send_initial_conversation_item(mock_ws)
