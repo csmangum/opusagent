@@ -307,10 +307,10 @@ class RealtimeClient:
             "Authorization": f"Bearer {api_key}",
             "OpenAI-Beta": "realtime=v1",
         }
-        self._ws = None
+        self.ws = None
         self._session_id = None
         self._conversation_id = None
-        self._receive_task = None
+        self._recv_task = None
         self._heartbeat_task = None
         self._audio_queue = asyncio.Queue(maxsize=queue_size)
         self._is_connected = False
@@ -324,12 +324,27 @@ class RealtimeClient:
         self._rate_limit = RateLimit(
             requests=[],
             data_sizes=[],
-            window=timedelta(minutes=1),
-            max_requests=1000,
-            max_data=1000000,
+            window=timedelta(seconds=RATE_LIMIT_WINDOW),
+            max_requests=MAX_REQUESTS_PER_WINDOW,
+            max_data=MAX_DATA_PER_WINDOW
         )
         self._logger = logging.getLogger("voice_agent")
         self._logger.setLevel(log_level)
+
+        # Initialize session config
+        self._session_config = {
+            "model": self._model,
+            "voice": self._voice,
+            "modalities": ["text", "audio"],
+            "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.5,
+                "prefix_padding_ms": 300,
+                "silence_duration_ms": 200,
+                "create_response": True,
+                "interrupt_response": True
+            }
+        }
 
         # Initialize client handlers
         self._initialize_handlers()
@@ -358,19 +373,42 @@ class RealtimeClient:
         self._reconnecting = False
 
         # Session configuration
-        self._session_config = None
         self._session_config_event = asyncio.Event()
+
+    @property
+    def audio_queue(self) -> asyncio.Queue:
+        """Get the audio queue."""
+        return self._audio_queue
+
+    @property
+    def rate_limit(self) -> RateLimit:
+        """Get the rate limit object."""
+        return self._rate_limit
 
     def _initialize_handlers(self) -> None:
         """Initialize all client handlers."""
         # Initialize each handler with the send_event callback
         self._handlers = {
-            'session_update': SessionUpdateHandler(self.send_event),
-            'session_get_config': SessionGetConfigHandler(self.send_event),
-            'input_audio_buffer': InputAudioBufferHandler(self.send_event),
-            'conversation_item': ConversationItemHandler(self.send_event),
-            'response': ResponseHandler(self.send_event),
-            'transcription_session': TranscriptionSessionHandler(self.send_event)
+            'session_update': SessionUpdateHandler(
+                send_event_callback=self.send_event,
+                session_config=self._session_config
+            ),
+            'session_get_config': SessionGetConfigHandler(
+                send_event_callback=self.send_event,
+                session_config=self._session_config
+            ),
+            'input_audio_buffer': InputAudioBufferHandler(
+                send_event_callback=self.send_event
+            ),
+            'conversation_item': ConversationItemHandler(
+                send_event_callback=self.send_event
+            ),
+            'response': ResponseHandler(
+                send_event_callback=self.send_event
+            ),
+            'transcription_session': TranscriptionSessionHandler(
+                send_event_callback=self.send_event
+            )
         }
 
     def set_log_level(self, level: int) -> None:
@@ -392,7 +430,7 @@ class RealtimeClient:
         Returns:
             bool: True if connection and session initialization successful, False otherwise.
         """
-        if self._ws is not None:
+        if self.ws is not None:
             logger.warning("Already connected or connecting")
             return False
 
@@ -405,7 +443,7 @@ class RealtimeClient:
 
             # Create WebSocket connection with proper error handling
             try:
-                self._ws = await websockets.connect(
+                self.ws = await websockets.connect(
                     self.ws_url,
                     additional_headers=self._headers,
                     max_size=WS_MAX_SIZE,
@@ -432,9 +470,9 @@ class RealtimeClient:
 
         except Exception as e:
             logger.error(f"Connection failed: {str(e)}")
-            if self._ws:
-                await self._ws.close()
-                self._ws = None
+            if self.ws:
+                await self.ws.close()
+                self.ws = None
             return False
 
     async def _initialize_session(self) -> bool:
@@ -450,27 +488,11 @@ class RealtimeClient:
             self._session_id = str(uuid.uuid4())
             logger.info(f"Generated session ID: {self._session_id}")
 
-            # Create session configuration
-            session_config = {
-                "model": self._model,
-                "voice": self._voice,
-                "modalities": ["text", "audio"],
-                "turn_detection": {
-                    "type": "server_vad",
-                    "threshold": 0.5,
-                    "prefix_padding_ms": 300,
-                    "silence_duration_ms": 200,
-                    "create_response": True,
-                    "interrupt_response": True
-                }
-            }
-            logger.info(f"Session config: {json.dumps(session_config, indent=2)}")
-
             # Send session creation event
             event = SessionUpdateEvent(
                 event=ClientEventType.SESSION_UPDATE,
                 session_id=self._session_id,
-                session=session_config  # Changed from config to session
+                session=self._session_config  # Changed from config to session
             )
 
             try:
@@ -483,7 +505,7 @@ class RealtimeClient:
             # Wait for session created event
             try:
                 response = await asyncio.wait_for(
-                    self._ws.recv(), timeout=CONNECTION_TIMEOUT
+                    self.ws.recv(), timeout=CONNECTION_TIMEOUT
                 )
                 event_data = json.loads(response)
                 logger.info(f"Received response: {json.dumps(event_data, indent=2)}")
@@ -587,7 +609,7 @@ class RealtimeClient:
                 }
 
                 # Create the WebSocket connection
-                self._ws = await websockets.connect(
+                self.ws = await websockets.connect(
                     ws_url,
                     ping_interval=30.0,
                     ping_timeout=10.0,
@@ -674,7 +696,7 @@ class RealtimeClient:
         """
         Internal loop to receive and process messages from OpenAI.
         """
-        if not self._ws:
+        if not self.ws:
             self._logger.error("WebSocket not initialized for receive loop")
             self._is_connected = False
             return
@@ -686,7 +708,7 @@ class RealtimeClient:
                     # Use a timeout to prevent blocking indefinitely
                     self._logger.debug("Waiting for message from OpenAI...")
                     recv_start = time.time()
-                    message = await asyncio.wait_for(self._ws.recv(), timeout=5.0)
+                    message = await asyncio.wait_for(self.ws.recv(), timeout=5.0)
                     recv_time = time.time() - recv_start
                     self._last_activity = time.time()
 
@@ -985,7 +1007,7 @@ class RealtimeClient:
             self._logger.warning("Cannot send event - connection not active")
             raise ConnectionError("Connection not active")
 
-        if self._ws is None:
+        if self.ws is None:
             self._logger.warning("Cannot send event - WebSocket not initialized")
             raise ConnectionError("WebSocket not initialized")
 
@@ -1003,7 +1025,7 @@ class RealtimeClient:
                 **event.model_dump(exclude_none=True, exclude={"type"}),
             }
 
-            await self._ws.send(json.dumps(event_data))
+            await self.ws.send(json.dumps(event_data))
             self._rate_limit.add_request()
 
             self._logger.debug(f"Sent event: {event.type} (ID: {event_id})")
@@ -1073,56 +1095,39 @@ class RealtimeClient:
             raise ConnectionError(f"Failed to receive audio chunk: {str(e)}") from None
 
     async def _heartbeat(self) -> None:
-        """
-        Send periodic heartbeats to keep the connection alive and monitor health.
-        """
-        self._logger.debug("Heartbeat task started")
+        """Send periodic heartbeat messages to keep the connection alive."""
         while self._connection_active and not self._is_closing:
-            await asyncio.sleep(5)  # Check every 5 seconds
-
-            # Check if we haven't seen activity for too long
-            inactivity_period = time.time() - self._last_activity
-            if inactivity_period > 60:  # 60 seconds
-                self._logger.warning(
-                    f"No activity detected for {inactivity_period:.1f} seconds, checking connection"
-                )
-
-                if self._ws:
-                    try:
-                        # Send a ping to test the connection
-                        self._logger.debug("Sending ping to test connection")
-                        ping_start = time.time()
-                        pong_waiter = await self._ws.ping()
-                        await asyncio.wait_for(pong_waiter, timeout=5)
-                        ping_time = time.time() - ping_start
-                        self._logger.debug(
-                            f"Ping successful in {ping_time:.4f}s, connection is healthy"
-                        )
-                        self._last_activity = time.time()
-                    except Exception as e:
-                        self._logger.warning(
-                            f"Ping failed: {e}, connection appears to be dead"
-                        )
+            try:
+                # Check if we need to send a heartbeat
+                current_time = time.time()
+                if current_time - self._last_activity > self._heartbeat_interval:
+                    if self.ws and not self.ws.closed:
+                        try:
+                            # Send ping and wait for response
+                            pong_waiter = await self.ws.ping()
+                            await asyncio.wait_for(pong_waiter, timeout=5.0)
+                            self._last_activity = current_time
+                        except Exception as e:
+                            logger.error(f"Ping failed: {e}")
+                            self._connection_active = False
+                            if not self._is_closing:
+                                asyncio.create_task(self.reconnect())
+                            break
+                    else:
+                        # Connection is dead, attempt to reconnect
                         self._connection_active = False
-
-                        # Only attempt reconnection if not explicitly closing
                         if not self._is_closing:
-                            self._logger.debug(
-                                "Scheduling reconnection after failed ping"
-                            )
                             asyncio.create_task(self.reconnect())
-                else:
-                    self._logger.warning("WebSocket is closed, attempting to reconnect")
-                    self._connection_active = False
-
-                    # Only attempt reconnection if not explicitly closing
-                    if not self._is_closing:
-                        self._logger.debug(
-                            "Scheduling reconnection for closed WebSocket"
-                        )
-                        asyncio.create_task(self.reconnect())
-
-        self._logger.debug("Heartbeat task exited")
+                        break
+                
+                # Wait for the next heartbeat check
+                await asyncio.sleep(self._heartbeat_interval)
+            except Exception as e:
+                logger.error(f"Heartbeat error: {e}")
+                self._connection_active = False
+                if not self._is_closing:
+                    asyncio.create_task(self.reconnect())
+                break
 
     def set_connection_handlers(
         self,
@@ -1141,58 +1146,44 @@ class RealtimeClient:
         self._logger.debug("Connection event handlers registered")
 
     async def close(self) -> None:
-        """
-        Close the WebSocket connection and cancel all tasks.
+        """Close the WebSocket connection and clean up resources."""
+        if self._is_closing:
+            return
 
-        This method ensures proper cleanup of all resources and handles
-        any errors that occur during shutdown.
-
-        Raises:
-            ConnectionError: If cleanup fails
-        """
-        self._logger.info("Closing OpenAI Realtime client")
-
-        # Set closing flag first to prevent any new operations
         self._is_closing = True
         self._connection_active = False
+        self._is_connected = False
 
-        # Cancel tasks with proper cleanup
-        if self._recv_task:
-            self._logger.debug("Cancelling receive task")
+        # Cancel tasks
+        if self._recv_task and not self._recv_task.done():
             self._recv_task.cancel()
             try:
-                await self._recv_task
-            except asyncio.CancelledError:
-                self._logger.debug("Receive task cancelled successfully")
-            except Exception as e:
-                self._logger.warning(f"Error cancelling receive task: {e}")
+                await asyncio.wait_for(self._recv_task, timeout=1.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                pass
 
-        if self._heartbeat_task:
-            self._logger.debug("Cancelling heartbeat task")
+        if self._heartbeat_task and not self._heartbeat_task.done():
             self._heartbeat_task.cancel()
             try:
-                await self._heartbeat_task
-            except asyncio.CancelledError:
-                self._logger.debug("Heartbeat task cancelled successfully")
-            except Exception as e:
-                self._logger.warning(f"Error cancelling heartbeat task: {e}")
+                await asyncio.wait_for(self._heartbeat_task, timeout=1.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                pass
 
-        # Close WebSocket with proper cleanup
-        if self._ws:
-            try:
-                self._logger.debug("Closing WebSocket connection")
-                await self._ws.close()
-            except Exception as e:
-                self._logger.warning(f"Error closing WebSocket: {e}")
-            finally:
-                self._ws = None
+        # Close WebSocket
+        if self.ws and not self.ws.closed:
+            await self.ws.close()
 
-        # Clear any remaining audio chunks
+        # Clear queues
         while not self._audio_queue.empty():
             try:
                 self._audio_queue.get_nowait()
-            except Exception:
-                pass
+            except asyncio.QueueEmpty:
+                break
+
+        # Reset state
+        self.ws = None
+        self._recv_task = None
+        self._heartbeat_task = None
 
         # Reset state but maintain closing flag
         self._session_id = None
@@ -1227,3 +1218,28 @@ class RealtimeClient:
         except Exception as e:
             self._logger.warning(f"Could not check memory usage: {e}")
             return True  # Assume OK if we can't check
+
+    async def send_audio_chunk(self, audio_data: bytes) -> bool:
+        """Send a chunk of audio data to the server."""
+        if not self._connection_active or self._is_closing:
+            return False
+
+        # Check rate limit
+        if not self._rate_limit.is_allowed():
+            return False
+
+        # Check if queue is full
+        if self._audio_queue.qsize() >= self._audio_queue_size:
+            return False
+
+        try:
+            # Create and send the audio event
+            event = InputAudioBufferAppendEvent(
+                audio_data=base64.b64encode(audio_data).decode("utf-8")
+            )
+            await self.send_event(event)
+            self._rate_limit.add_request(len(audio_data))
+            return True
+        except Exception as e:
+            self._logger.error(f"Error sending audio chunk: {e}")
+            return False
