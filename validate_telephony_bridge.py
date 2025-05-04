@@ -45,16 +45,31 @@ async def simulate_telephony_client():
         async with websockets.connect(WS_URL, ping_interval=5, ping_timeout=20) as ws:
             print("✅ WebSocket connection established")
             
-            # 1. Send a stream start event
-            stream_sid = "test_stream_" + asyncio.current_task().get_name()[-6:]
-            start_event = {
-                "event": "start",
-                "start": {"streamSid": stream_sid}
+            # 1. Send a session initiate event (using AudioCodes model format)
+            conversation_id = "test_conversation_" + asyncio.current_task().get_name()[-6:]
+            session_initiate = {
+                "type": "session.initiate",
+                "conversationId": conversation_id,
+                "expectAudioMessages": True,
+                "botName": "TestBot",
+                "caller": "+15551234567",
+                "supportedMediaFormats": ["raw/lpcm16"]
             }
-            await ws.send(json.dumps(start_event))
-            print(f"✅ Sent start event with streamSid: {stream_sid}")
+            await ws.send(json.dumps(session_initiate))
+            print(f"✅ Sent session.initiate event with conversationId: {conversation_id}")
             
-            # 2. Wait for initial response from AI (should respond automatically)
+            # 2. Wait for session accepted response
+            print("Waiting for session.accepted response...")
+            
+            # 3. Send a stream start event (using AudioCodes model format)
+            user_stream_start = {
+                "type": "userStream.start",
+                "conversationId": conversation_id
+            }
+            await ws.send(json.dumps(user_stream_start))
+            print(f"✅ Sent userStream.start event for conversation: {conversation_id}")
+            
+            # 4. Wait for initial response from AI (should respond automatically)
             print("Waiting for initial AI greeting...")
             response_received = False
             audio_chunks_received = 0
@@ -83,9 +98,14 @@ async def simulate_telephony_client():
                         print(f"   Received message type: {response_data.get('type')}")
                         
                         # Check for session creation
-                        if response_data.get("type") == "session.created":
-                            print("✅ Session created successfully")
+                        if response_data.get("type") == "session.accepted":
+                            print("✅ Session accepted successfully")
                             session_created = True
+                            continue
+                        
+                        # Check for userStream.started response
+                        if response_data.get("type") == "userStream.started":
+                            print("✅ User stream started successfully")
                             continue
                         
                         # Check for response creation
@@ -99,14 +119,27 @@ async def simulate_telephony_client():
                             print(f"✅ Received audio response from OpenAI (size: {audio_size} bytes)")
                             continue
                         
+                        # Check for playStream messages
+                        if response_data.get("type") == "playStream.start":
+                            print("✅ Play stream started from server")
+                            continue
+                            
+                        if response_data.get("type") == "playStream.chunk":
+                            print(f"✅ Received audio chunk from server (stream: {response_data.get('streamId', 'unknown')})")
+                            audio_chunks_received += 1
+                            if not response_received:
+                                print("✅ Received first audio chunk from AI")
+                                response_received = True
+                            continue
+                        
                         # Check for response done
-                        if response_data.get("type") == "response.done":
+                        if response_data.get("type") == "response.done" or response_data.get("type") == "playStream.stop":
                             print("✅ Response completed")
                             break
                         
                         # Check for errors
-                        if response_data.get("type") == "error":
-                            print(f"❌ Error from OpenAI: {response_data.get('error', {}).get('message')}")
+                        if response_data.get("type") == "session.error":
+                            print(f"❌ Session error: {response_data.get('reason')}")
                             break
                             
                         # Print any other message types for debugging
@@ -119,7 +152,7 @@ async def simulate_telephony_client():
                         continue
                 
                 if not session_created:
-                    print("❌ Session was not created within the timeout period")
+                    print("❌ Session was not accepted within the timeout period")
                     return
                 
                 if not response_received:
@@ -129,18 +162,18 @@ async def simulate_telephony_client():
             except asyncio.TimeoutError:
                 print("⚠️ Timeout waiting for AI response after 60 seconds")
             
-            # 3. Send some audio data to simulate user speaking
+            # 5. Send some audio data to simulate user speaking
             if response_received:
                 # Send audio data continuously
                 print("Sending audio data...")
                 for i in range(20):  # Send more audio chunks
                     try:
-                        audio_event = {
-                            "event": "media",
-                            "streamSid": stream_sid,
-                            "media": {"payload": SILENCE_AUDIO}
+                        audio_chunk = {
+                            "type": "userStream.chunk",
+                            "conversationId": conversation_id,
+                            "audioChunk": SILENCE_AUDIO
                         }
-                        await ws.send(json.dumps(audio_event))
+                        await ws.send(json.dumps(audio_chunk))
                         print(f"   Sent audio chunk {i+1}")
                         await asyncio.sleep(0.1)  # Smaller delay between chunks
                     except websockets.exceptions.ConnectionClosed:
@@ -156,12 +189,12 @@ async def simulate_telephony_client():
                             response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                             response_data = json.loads(response)
                             
-                            if response_data.get("type") == "response.audio.delta" and "audio" in response_data:
+                            if response_data.get("type") == "playStream.chunk":
                                 audio_chunks_received += 1
                                 print(f"✅ Received audio chunk {audio_chunks_received} in response to our input")
                             
                             # Check for response done
-                            if response_data.get("type") == "response.done":
+                            if response_data.get("type") == "playStream.stop" or response_data.get("type") == "response.done":
                                 print("✅ Response completed")
                                 break
                             
@@ -174,14 +207,25 @@ async def simulate_telephony_client():
                 except asyncio.TimeoutError:
                     print("⚠️ Timeout waiting for AI response to our audio")
             
-            # 4. Send stop event
+            # 6. Send stream stop and session end
             try:
-                stop_event = {
-                    "event": "stop",
-                    "streamSid": stream_sid
+                # Stop the user stream
+                user_stream_stop = {
+                    "type": "userStream.stop",
+                    "conversationId": conversation_id
                 }
-                await ws.send(json.dumps(stop_event))
-                print("✅ Sent stop event")
+                await ws.send(json.dumps(user_stream_stop))
+                print("✅ Sent userStream.stop event")
+                
+                # End the session
+                session_end = {
+                    "type": "session.end",
+                    "conversationId": conversation_id,
+                    "reasonCode": "normal",
+                    "reason": "Test completed"
+                }
+                await ws.send(json.dumps(session_end))
+                print("✅ Sent session.end event")
             except websockets.exceptions.ConnectionClosed:
                 print("❌ Connection closed before sending stop event")
             
