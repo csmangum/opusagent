@@ -302,7 +302,7 @@ async def test_handle_truncate_non_assistant_message(handler, send_event_mock):
 
     # Try to truncate it
     await handler.handle_truncate(
-        {"event_id": "truncate_error", "item_id": "user_msg", "content_index": 0}
+        {"event_id": "truncate_error", "item_id": "user_msg", "content_index": 0, "audio_end_ms": 1000}
     )
 
     # Check that the error was sent
@@ -339,6 +339,7 @@ async def test_handle_truncate_invalid_content_index(handler, send_event_mock):
             "event_id": "truncate_index_error",
             "item_id": "assistant_msg",
             "content_index": 999,
+            "audio_end_ms": 1000
         }
     )
 

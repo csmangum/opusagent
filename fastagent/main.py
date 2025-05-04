@@ -53,23 +53,13 @@ app = FastAPI(
 @app.websocket("/voice-bot")
 async def handle_call(telephony_websocket: WebSocket):
     """Handle WebSocket connections between telephony provider and OpenAI."""
-    print(f"Incoming telephony connection from {telephony_websocket.client}")
+    client_address = telephony_websocket.client
+    logger.info(f"Incoming telephony connection from {client_address}")
     await telephony_websocket.accept()
-    print(f"Telephony connection accepted from {telephony_websocket.client}")
-
-    # Verify OpenAI API key
-    if not OPENAI_API_KEY:
-        print("❌ OpenAI API key is not set")
-        await telephony_websocket.close()
-        return
-    
-    if not OPENAI_API_KEY.startswith("sk-"):
-        print("❌ Invalid OpenAI API key format")
-        await telephony_websocket.close()
-        return
+    logger.info(f"Telephony connection accepted from {client_address}")
 
     try:
-        print("🔄 Attempting to connect to OpenAI Realtime API...")
+        logger.info("Attempting to connect to OpenAI Realtime API...")
         
         async with websockets.connect(
             "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
@@ -82,41 +72,41 @@ async def handle_call(telephony_websocket: WebSocket):
             ping_timeout=20,
             close_timeout=10,
         ) as realtime_websocket:
-            print(f"✅ OpenAI WebSocket connection created from {realtime_websocket.client}")
+            logger.info("OpenAI WebSocket connection established")
             bridge = TelephonyRealtimeBridge(telephony_websocket, realtime_websocket)
-            print(f"✅ Telephony-Realtime bridge created")
+            logger.info("Telephony-Realtime bridge created")
             
             try:
-                print("🔄 Initializing realtime-websocket session...")
+                logger.info("Initializing realtime-websocket session...")
                 await initialize_session(realtime_websocket)
-                print("✅ realtime-websocket session initialized")
+                logger.info("realtime-websocket session initialized")
             except Exception as e:
-                print(f"❌ Error initializing realtime-websocket session: {e}")
+                logger.error(f"Error initializing realtime-websocket session: {e}")
                 raise
 
             # Run both tasks and handle cleanup
             try:
-                print("🔄 Starting bridge tasks...")
+                logger.info("Starting bridge tasks...")
                 await asyncio.gather(
-                    bridge.receive_from_telephony(), bridge.send_to_telephony()
+                    bridge.receive_from_telephony(), bridge.receive_from_realtime()
                 )
             except Exception as e:
-                print(f"❌ Error in main connection loop: {e}")
+                logger.error(f"Error in main connection loop: {e}")
                 raise
             finally:
-                print("🔄 Closing bridge...")
+                logger.info("Closing bridge...")
                 await bridge.close()
     except websockets.exceptions.InvalidStatusCode as e:
-        print(f"❌ Invalid status code from OpenAI: {e}")
-        print(f"Response headers: {e.response_headers}")
+        logger.error(f"Invalid status code from OpenAI: {e}")
+        logger.error(f"Response headers: {e.response_headers}")
         await telephony_websocket.close()
     except websockets.exceptions.ConnectionClosed as e:
-        print(f"❌ OpenAI connection closed: {e}")
-        print(f"Close code: {e.code}")
-        print(f"Close reason: {e.reason}")
+        logger.error(f"OpenAI connection closed: {e}")
+        logger.error(f"Close code: {e.code}")
+        logger.error(f"Close reason: {e.reason}")
         await telephony_websocket.close()
     except Exception as e:
-        print(f"❌ Error establishing OpenAI connection: {e}")
+        logger.error(f"Error establishing OpenAI connection: {e}")
         await telephony_websocket.close()
 
 

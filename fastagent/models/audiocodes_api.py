@@ -3,6 +3,18 @@ Pydantic models for AudioCodes VoiceAI Connect Enterprise message schemas.
 
 This module defines structured data models for all incoming and outgoing messages
 in the AudioCodes Bot API WebSocket protocol, providing type validation and documentation.
+
+The AudioCodes Bot API in WebSocket mode allows a voice bot to communicate with the
+AudioCodes VoiceAI Connect Enterprise platform. A typical use case is implementing
+LLM AI agents for voice interactions.
+
+The communication flow involves:
+1. VoiceAI Connect initiates a WebSocket connection to the bot
+2. Messages are exchanged as JSON (with media encoded in base64)
+3. The connection remains active for the entire conversation session
+4. Authentication is handled via HTTP Authorization header with a shared token
+
+Note: WebSocket mode is supported only by VoiceAI Connect Enterprise v3.24 or later.
 """
 
 import base64
@@ -21,7 +33,12 @@ SUPPORTED_MEDIA_FORMATS = ["raw/lpcm16", "audio/wav", "audio/mp3", "audio/alaw"]
 
 # Base Models
 class BaseMessage(BaseModel):
-    """Base model for all WebSocket messages."""
+    """Base model for all WebSocket messages.
+
+    All messages exchanged between VoiceAI Connect Enterprise and the bot
+    must include at least the 'type' field, and messages from VoiceAI Connect
+    to the bot include a 'conversationId' field.
+    """
 
     type: str = Field(..., description="Message type identifier")
     conversationId: Optional[str] = Field(
@@ -45,15 +62,35 @@ class BaseMessage(BaseModel):
 
 # Session Messages
 class SessionInitiateMessage(BaseMessage):
-    """Model for session.initiate message from AudioCodes."""
+    """Model for session.initiate message from AudioCodes.
+
+    Sent upon establishment of the session. The bot should respond to this
+    message with a session.accepted message or a session.error message if
+    declining the conversation.
+
+    Example:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "session.initiate",
+      "botName": "my_bot_name",
+      "caller": "+1234567890",
+      "expectAudioMessages": true,
+      "supportedMediaFormats": [
+        "raw/lpcm16"
+      ]
+    }
+    """
 
     type: Literal["session.initiate"]
     expectAudioMessages: bool = Field(
-        ..., description="Whether the bot should send audio"
+        ...,
+        description="Whether the bot should send audio (set according to directTTS bot parameter)",
     )
     botName: str = Field(..., description="Configured name of the bot")
     caller: str = Field(..., description="Phone number of the caller")
-    supportedMediaFormats: List[str] = Field(..., description="Supported audio formats")
+    supportedMediaFormats: List[str] = Field(
+        ..., description="Supported audio formats (in order of preference)"
+    )
 
     @field_validator("botName")
     def validate_bot_name(cls, v):
@@ -86,13 +123,35 @@ class SessionInitiateMessage(BaseMessage):
 
 
 class SessionResumeMessage(BaseMessage):
-    """Model for session.resume message from AudioCodes."""
+    """Model for session.resume message from AudioCodes.
+
+    Sent when the WebSocket connection is lost and VoiceAI Connect attempts to reconnect.
+    The bot should respond with a session.accepted message, or session.error to decline.
+
+    Example:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "session.resume"
+    }
+    """
 
     type: Literal["session.resume"]
 
 
 class SessionEndMessage(BaseMessage):
-    """Model for session.end message from AudioCodes."""
+    """Model for session.end message from AudioCodes.
+
+    Sent by VoiceAI Connect to indicate the end of the conversation.
+    This is the final message in a conversation session.
+
+    Example:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "session.end",
+      "reasonCode": "client-disconnected",
+      "reason": "Client Side"
+    }
+    """
 
     type: Literal["session.end"]
     reasonCode: str = Field(..., description="Code indicating reason for session end")
@@ -100,10 +159,23 @@ class SessionEndMessage(BaseMessage):
 
 
 class SessionAcceptedResponse(BaseMessage):
-    """Model for session.accepted response to AudioCodes."""
+    """Model for session.accepted response to AudioCodes.
+
+    Sent in response to either session.initiate or session.resume messages
+    to accept the conversation.
+
+    Example:
+    {
+      "type": "session.accepted",
+      "mediaFormat": "raw/lpcm16"
+    }
+    """
 
     type: Literal["session.accepted"]
-    mediaFormat: str = Field(..., description="Selected audio format for the session")
+    mediaFormat: str = Field(
+        ...,
+        description="Selected audio format for the session (must be one of the formats specified in session.initiate)",
+    )
 
     @field_validator("mediaFormat")
     def validate_media_format(cls, v):
@@ -114,7 +186,18 @@ class SessionAcceptedResponse(BaseMessage):
 
 
 class SessionErrorResponse(BaseMessage):
-    """Model for session.error response to AudioCodes."""
+    """Model for session.error response to AudioCodes.
+
+    Sent by the bot to report a fatal error or decline a conversation.
+    Upon receiving this message, VoiceAI Connect disconnects the call and
+    closes the WebSocket connection.
+
+    Example:
+    {
+      "type": "session.error",
+      "reason": "Internal Server Error"
+    }
+    """
 
     type: Literal["session.error"]
     reason: str = Field(..., description="Reason for rejecting the session")
@@ -122,13 +205,36 @@ class SessionErrorResponse(BaseMessage):
 
 # Stream Messages
 class UserStreamStartMessage(BaseMessage):
-    """Model for userStream.start message from AudioCodes."""
+    """Model for userStream.start message from AudioCodes.
+
+    Sent by VoiceAI Connect to indicate a request to start audio streaming to the bot.
+    The bot should respond with a userStream.started message, after which
+    VoiceAI Connect starts sending audio chunks.
+
+    Example:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "userStream.start"
+    }
+    """
 
     type: Literal["userStream.start"]
 
 
 class UserStreamChunkMessage(BaseMessage):
-    """Model for userStream.chunk message from AudioCodes."""
+    """Model for userStream.chunk message from AudioCodes.
+
+    Sent by VoiceAI Connect to stream audio data to the bot.
+    These messages are sent continuously after a userStream.start
+    until userStream.stop is sent.
+
+    Example:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "userStream.chunk",
+      "audioChunk": "Base64EncodedAudioData"
+    }
+    """
 
     type: Literal["userStream.chunk"]
     audioChunk: str = Field(..., description="Base64-encoded audio data")
@@ -148,29 +254,71 @@ class UserStreamChunkMessage(BaseMessage):
 
 
 class UserStreamStopMessage(BaseMessage):
-    """Model for userStream.stop message from AudioCodes."""
+    """Model for userStream.stop message from AudioCodes.
+
+    Sent by VoiceAI Connect to indicate the end of audio streaming.
+    The bot should respond with a userStream.stopped message.
+
+    Example:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "userStream.stop"
+    }
+    """
 
     type: Literal["userStream.stop"]
 
 
 class UserStreamStartedResponse(BaseMessage):
-    """Model for userStream.started response to AudioCodes."""
+    """Model for userStream.started response to AudioCodes.
+
+    Sent in response to the userStream.start message to indicate that
+    the bot is ready to receive audio chunks.
+
+    Example:
+    {
+      "type": "userStream.started"
+    }
+    """
 
     type: Literal["userStream.started"]
 
 
 class UserStreamStoppedResponse(BaseMessage):
-    """Model for userStream.stopped response to AudioCodes."""
+    """Model for userStream.stopped response to AudioCodes.
+
+    Sent in response to the userStream.stop message to indicate that
+    the bot will not accept any more audio chunks.
+
+    Example:
+    {
+      "type": "userStream.stopped"
+    }
+    """
 
     type: Literal["userStream.stopped"]
 
 
 class UserStreamHypothesisResponse(BaseMessage):
-    """Model for userStream.speech.hypothesis response to AudioCodes."""
+    """Model for userStream.speech.hypothesis response to AudioCodes.
+
+    Sent by the bot to provide partial recognition results.
+    Using this message is recommended as VoiceAI Connect relies on it for barge-in.
+
+    Example:
+    {
+      "type": "userStream.speech.hypothesis",
+      "alternatives": [
+        {
+          "text": "How are"
+        }
+      ]
+    }
+    """
 
     type: Literal["userStream.speech.hypothesis"]
     alternatives: List[Dict[str, str]] = Field(
-        ..., description="List of recognition hypotheses"
+        ..., description="List of recognition hypotheses, each with a 'text' field"
     )
 
     @field_validator("alternatives")
@@ -186,11 +334,31 @@ class UserStreamHypothesisResponse(BaseMessage):
 
 # Play Stream Messages
 class PlayStreamStartMessage(BaseMessage):
-    """Model for playStream.start message to AudioCodes."""
+    """Model for playStream.start message to AudioCodes.
+
+    Sent by the bot to initiate a Play Stream to stream audio to the user.
+    After sending this message, the bot should stream audio data using playStream.chunk
+    and then send playStream.stop to end the stream.
+
+    Only one Play Stream can be active at a time. Before starting a new stream,
+    the bot must stop the current one with playStream.stop.
+
+    Example:
+    {
+      "type": "playStream.start",
+      "streamId": "1",
+      "mediaFormat": "raw/lpcm16"
+    }
+    """
 
     type: Literal["playStream.start"]
-    streamId: str = Field(..., description="Unique identifier for the stream")
-    mediaFormat: str = Field(..., description="Audio format of the stream")
+    streamId: str = Field(
+        ..., description="Unique identifier for the stream within the conversation"
+    )
+    mediaFormat: str = Field(
+        ...,
+        description="Audio format of the stream (must be one of the formats specified in session.initiate)",
+    )
 
     @field_validator("mediaFormat")
     def validate_media_format(cls, v):
@@ -201,10 +369,24 @@ class PlayStreamStartMessage(BaseMessage):
 
 
 class PlayStreamChunkMessage(BaseMessage):
-    """Model for playStream.chunk message to AudioCodes."""
+    """Model for playStream.chunk message to AudioCodes.
+
+    Sent by the bot to stream audio data to the user with a Play Stream.
+    Audio chunks can only be sent when a Play Stream is active.
+    To ensure smooth playback, audio data should be sent at a rate matching playback speed.
+
+    Example:
+    {
+      "type": "playStream.chunk",
+      "streamId": "1",
+      "audioChunk": "Base64EncodedAudioData"
+    }
+    """
 
     type: Literal["playStream.chunk"]
-    streamId: str = Field(..., description="Stream identifier")
+    streamId: str = Field(
+        ..., description="Stream identifier matching an active stream"
+    )
     audioChunk: str = Field(..., description="Base64-encoded audio data")
 
     @field_validator("audioChunk")
@@ -222,15 +404,30 @@ class PlayStreamChunkMessage(BaseMessage):
 
 
 class PlayStreamStopMessage(BaseMessage):
-    """Model for playStream.stop message to AudioCodes."""
+    """Model for playStream.stop message to AudioCodes.
+
+    Sent by the bot to stop a Play Stream.
+
+    Example:
+    {
+      "type": "playStream.stop",
+      "streamId": "1"
+    }
+    """
 
     type: Literal["playStream.stop"]
-    streamId: str = Field(..., description="Stream identifier")
+    streamId: str = Field(..., description="Stream identifier to stop")
 
 
 # Activity Messages
 class ActivityEvent(BaseModel):
-    """Model for activity event."""
+    """Model for activity event.
+
+    Activities represent various events in the conversation, such as:
+    - start: Call initiation
+    - dtmf: User pressed DTMF digits
+    - hangup: Request to disconnect the call
+    """
 
     type: Literal["event"]
     name: str = Field(..., description="Event name (start, dtmf, hangup)")
@@ -258,7 +455,47 @@ class ActivityEvent(BaseModel):
 
 
 class ActivitiesMessage(BaseMessage):
-    """Model for activities message from AudioCodes."""
+    """Model for activities message from AudioCodes.
+
+    Activities messages are used for various events like call initiation,
+    DTMF digit presses, or call hangup requests.
+
+    Example for call initiation:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "activities",
+      "activities": [
+        {
+          "type": "event",
+          "name": "start",
+          "id": "582bbc43-0ef7-47e9-97b4-1e6141625b01",
+          "timestamp": "2022-07-20T07:15:48.239Z",
+          "language": "en-US",
+          "parameters": {
+            "locale": "en-US",
+            "caller": "caller-id",
+            "callee": "my_bot_name"
+          }
+        }
+      ]
+    }
+
+    Example for DTMF:
+    {
+      "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
+      "type": "activities",
+      "activities": [
+        {
+          "type": "event",
+          "name": "dtmf",
+          "id": "582bbc43-0ef7-47e9-97b4-1e6141625b01",
+          "timestamp": "2022-07-20T07:15:48.239Z",
+          "language": "en-US",
+          "value": "123"
+        }
+      ]
+    }
+    """
 
     type: Literal["activities"]
     activities: List[ActivityEvent] = Field(..., description="List of activity events")
@@ -273,16 +510,75 @@ class ActivitiesMessage(BaseMessage):
 
 # Connection Messages
 class ConnectionValidateMessage(BaseMessage):
-    """Model for connection.validate message from AudioCodes."""
+    """Model for connection.validate message from AudioCodes.
+
+    Used to verify connectivity between the bot and AudioCodes Live Hub platform
+    during initial integration. This message is NOT part of the regular call flow.
+
+    Example:
+    {
+      "type": "connection.validate"
+    }
+    """
 
     type: Literal["connection.validate"]
 
 
 class ConnectionValidatedResponse(BaseMessage):
-    """Model for connection.validated response to AudioCodes."""
+    """Model for connection.validated response to AudioCodes.
+
+    Sent in response to connection.validate during connectivity verification.
+    This message is NOT part of the regular call flow.
+
+    Example:
+    {
+      "type": "connection.validated",
+      "success": true
+    }
+    """
 
     type: Literal["connection.validated"]
     success: bool = Field(..., description="Whether validation was successful")
+
+
+# Adding a model for userStream.speech.recognition that was in the docs
+class UserStreamRecognitionResponse(BaseMessage):
+    """Model for userStream.speech.recognition response to AudioCodes.
+
+    Sent by the bot to provide final recognition results.
+    Recommended mainly for logging purposes.
+
+    Example:
+    {
+      "type": "userStream.speech.recognition",
+      "alternatives": [
+        {
+          "text": "How are you.",
+          "confidence": 0.83
+        }
+      ]
+    }
+    """
+
+    type: Literal["userStream.speech.recognition"]
+    alternatives: List[Dict[str, Union[str, float]]] = Field(
+        ...,
+        description="List of recognition alternatives, each with 'text' and optional 'confidence' fields",
+    )
+
+    @field_validator("alternatives")
+    def validate_alternatives(cls, v):
+        """Validate that alternatives contain text."""
+        if not v:
+            raise ValueError("At least one recognition result required")
+        for alt in v:
+            if "text" not in alt:
+                raise ValueError("Each recognition result must contain 'text' field")
+            if "confidence" in alt and not (
+                isinstance(alt["confidence"], float) and 0 <= alt["confidence"] <= 1
+            ):
+                raise ValueError("Confidence must be a float between 0 and 1")
+        return v
 
 
 # Union type for all possible incoming messages
@@ -304,6 +600,7 @@ OutgoingMessage = Union[
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
     UserStreamHypothesisResponse,
+    UserStreamRecognitionResponse,
     PlayStreamStartMessage,
     PlayStreamChunkMessage,
     PlayStreamStopMessage,
