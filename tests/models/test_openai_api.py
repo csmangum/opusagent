@@ -14,18 +14,33 @@ from pydantic import ValidationError
 from fastagent.models.openai_api import (  # Message models; Session models; Conversation models; Event models; Client events; Server events; Function calling models; Legacy models; New models
     ClientEvent,
     ClientEventType,
+    ConversationCreatedEvent,
     ConversationItem,
     ConversationItemContentParam,
     ConversationItemCreatedEvent,
     ConversationItemCreateEvent,
+    ConversationItemDeletedEvent,
+    ConversationItemDeleteEvent,
+    ConversationItemInputAudioTranscriptionCompletedEvent,
+    ConversationItemInputAudioTranscriptionDeltaEvent,
+    ConversationItemInputAudioTranscriptionFailedEvent,
     ConversationItemParam,
+    ConversationItemRetrievedEvent,
+    ConversationItemRetrieveEvent,
     ConversationItemStatus,
+    ConversationItemTruncatedEvent,
+    ConversationItemTruncateEvent,
     ConversationItemType,
     ErrorEvent,
     InputAudioBufferAppendEvent,
+    InputAudioBufferClearedEvent,
+    InputAudioBufferClearEvent,
     InputAudioBufferCommitEvent,
+    InputAudioBufferSpeechStartedEvent,
+    InputAudioBufferSpeechStoppedEvent,
     MessageRole,
     OpenAIMessage,
+    RateLimitsUpdatedEvent,
     RealtimeBaseMessage,
     RealtimeErrorMessage,
     RealtimeFunctionCall,
@@ -38,16 +53,31 @@ from fastagent.models.openai_api import (  # Message models; Session models; Con
     RealtimeTranscriptMessage,
     RealtimeTurnMessage,
     ResponseAudioDeltaEvent,
+    ResponseAudioDoneEvent,
+    ResponseAudioTranscriptDeltaEvent,
+    ResponseAudioTranscriptDoneEvent,
+    ResponseCancelEvent,
+    ResponseCancelledEvent,
+    ResponseContentPartAddedEvent,
+    ResponseContentPartDoneEvent,
+    ResponseCreatedEvent,
     ResponseCreateEvent,
     ResponseCreateOptions,
     ResponseDoneEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
+    ResponseFunctionCallArgumentsDoneEvent,
+    ResponseOutputItemAddedEvent,
+    ResponseOutputItemDoneEvent,
     ResponseTextDeltaEvent,
+    ResponseTextDoneEvent,
     ServerEvent,
     ServerEventType,
     SessionConfig,
     SessionCreatedEvent,
+    SessionUpdatedEvent,
     SessionUpdateEvent,
+    TranscriptionSessionUpdatedEvent,
+    TranscriptionSessionUpdateEvent,
     WebSocketErrorResponse,
 )
 
@@ -256,6 +286,47 @@ class TestClientEventImplementations:
         assert event_with_params.response.voice == "alloy"
         assert event_with_params.response.instructions == "Test instructions"
 
+    def test_valid_input_audio_buffer_clear_event(self):
+        """Test that a valid input audio buffer clear event can be created."""
+        event = InputAudioBufferClearEvent()
+        assert event.type == "input_audio_buffer.clear"
+
+    def test_valid_conversation_item_retrieve_event(self):
+        """Test that a valid conversation item retrieve event can be created."""
+        event = ConversationItemRetrieveEvent(item_id="item-123")
+        assert event.type == "conversation.item.retrieve"
+        assert event.item_id == "item-123"
+
+    def test_valid_conversation_item_truncate_event(self):
+        """Test that a valid conversation item truncate event can be created."""
+        event = ConversationItemTruncateEvent(
+            item_id="item-123", content_index=0, audio_end_ms=1000
+        )
+        assert event.type == "conversation.item.truncate"
+        assert event.item_id == "item-123"
+        assert event.content_index == 0
+        assert event.audio_end_ms == 1000
+
+    def test_valid_conversation_item_delete_event(self):
+        """Test that a valid conversation item delete event can be created."""
+        event = ConversationItemDeleteEvent(item_id="item-123")
+        assert event.type == "conversation.item.delete"
+        assert event.item_id == "item-123"
+
+    def test_valid_response_cancel_event(self):
+        """Test that a valid response cancel event can be created."""
+        event = ResponseCancelEvent(response_id="resp-123")
+        assert event.type == "response.cancel"
+        assert event.response_id == "resp-123"
+
+    def test_valid_transcription_session_update_event(self):
+        """Test that a valid transcription session update event can be created."""
+        event = TranscriptionSessionUpdateEvent(
+            session={"language": "en", "model": "whisper-1"}
+        )
+        assert event.type == "transcription_session.update"
+        assert event.session == {"language": "en", "model": "whisper-1"}
+
 
 class TestServerEventImplementations:
     """Tests for specific server event implementations."""
@@ -298,27 +369,272 @@ class TestServerEventImplementations:
 
     def test_valid_response_text_delta_event(self):
         """Test that a valid response text delta event can be created."""
-        event = ResponseTextDeltaEvent(delta="Hello")
+        event = ResponseTextDeltaEvent(
+            delta="Hello",
+            response_id="resp_123",
+            item_id="item_123",
+            output_index=0,
+            content_index=0,
+        )
         assert event.type == "response.text.delta"
         assert event.delta == "Hello"
 
     def test_valid_response_audio_delta_event(self):
         """Test that a valid response audio delta event can be created."""
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
-        event = ResponseAudioDeltaEvent(audio=audio_data)
+        event = ResponseAudioDeltaEvent(
+            delta=audio_data,
+            response_id="resp_123",
+            item_id="item_123",
+            output_index=0,
+            content_index=0,
+        )
         assert event.type == "response.audio.delta"
-        assert event.audio == audio_data
+        assert event.delta == audio_data
 
     def test_valid_response_function_call_arguments_delta_event(self):
         """Test that a valid response function call arguments delta event can be created."""
-        event = ResponseFunctionCallArgumentsDeltaEvent(delta='{"key":')
+        event = ResponseFunctionCallArgumentsDeltaEvent(
+            delta='{"key":',
+            response_id="resp_123",
+            item_id="item_123",
+            output_index=0,
+            call_id="call_123",
+        )
         assert event.type == "response.function_call_arguments.delta"
         assert event.delta == '{"key":'
 
     def test_valid_response_done_event(self):
         """Test that a valid response done event can be created."""
-        event = ResponseDoneEvent()
+        event = ResponseDoneEvent(response={"id": "resp_123", "status": "completed"})
         assert event.type == "response.done"
+
+    def test_valid_session_updated_event(self):
+        """Test that a valid session updated event can be created."""
+        event = SessionUpdatedEvent(
+            session={"id": "session-123", "model": "gpt-4o", "updated_at": 1672531200}
+        )
+        assert event.type == "session.updated"
+        assert event.session["id"] == "session-123"
+        assert event.session["model"] == "gpt-4o"
+
+    def test_valid_conversation_created_event(self):
+        """Test that a valid conversation created event can be created."""
+        event = ConversationCreatedEvent(
+            conversation={"id": "conv-123", "created_at": 1672531200}
+        )
+        assert event.type == "conversation.created"
+        assert event.conversation["id"] == "conv-123"
+
+    def test_valid_conversation_item_retrieved_event(self):
+        """Test that a valid conversation item retrieved event can be created."""
+        event = ConversationItemRetrievedEvent(
+            item={"id": "item-123", "type": "message", "content": "Hello"}
+        )
+        assert event.type == "conversation.item.retrieved"
+        assert event.item["id"] == "item-123"
+
+    def test_valid_conversation_item_truncated_event(self):
+        """Test that a valid conversation item truncated event can be created."""
+        event = ConversationItemTruncatedEvent(
+            item_id="item-123", content_index=0, audio_end_ms=1000
+        )
+        assert event.type == "conversation.item.truncated"
+        assert event.item_id == "item-123"
+        assert event.content_index == 0
+        assert event.audio_end_ms == 1000
+
+    def test_valid_conversation_item_deleted_event(self):
+        """Test that a valid conversation item deleted event can be created."""
+        event = ConversationItemDeletedEvent(item_id="item-123")
+        assert event.type == "conversation.item.deleted"
+        assert event.item_id == "item-123"
+
+    def test_valid_input_audio_buffer_cleared_event(self):
+        """Test that a valid input audio buffer cleared event can be created."""
+        event = InputAudioBufferClearedEvent()
+        assert event.type == "input_audio_buffer.cleared"
+
+    def test_valid_input_audio_buffer_speech_started_event(self):
+        """Test that a valid input audio buffer speech started event can be created."""
+        event = InputAudioBufferSpeechStartedEvent(
+            audio_start_ms=1000, item_id="item-123"
+        )
+        assert event.type == "input_audio_buffer.speech_started"
+        assert event.audio_start_ms == 1000
+        assert event.item_id == "item-123"
+
+    def test_valid_input_audio_buffer_speech_stopped_event(self):
+        """Test that a valid input audio buffer speech stopped event can be created."""
+        event = InputAudioBufferSpeechStoppedEvent(
+            audio_end_ms=2000, item_id="item-123"
+        )
+        assert event.type == "input_audio_buffer.speech_stopped"
+        assert event.audio_end_ms == 2000
+        assert event.item_id == "item-123"
+
+    def test_valid_response_created_event(self):
+        """Test that a valid response created event can be created."""
+        event = ResponseCreatedEvent(
+            response={"id": "resp-123", "status": "in_progress"}
+        )
+        assert event.type == "response.created"
+        assert event.response["id"] == "resp-123"
+
+    def test_valid_response_cancelled_event(self):
+        """Test that a valid response cancelled event can be created."""
+        event = ResponseCancelledEvent(response_id="resp-123")
+        assert event.type == "response.cancelled"
+        assert event.response_id == "resp-123"
+
+    def test_valid_response_text_done_event(self):
+        """Test that a valid response text done event can be created."""
+        event = ResponseTextDoneEvent(
+            response_id="resp-123",
+            item_id="item-123",
+            output_index=0,
+            content_index=0,
+            text="Hello, world!",
+        )
+        assert event.type == "response.text.done"
+        assert event.text == "Hello, world!"
+
+    def test_valid_response_audio_done_event(self):
+        """Test that a valid response audio done event can be created."""
+        event = ResponseAudioDoneEvent(
+            response_id="resp-123", item_id="item-123", output_index=0, content_index=0
+        )
+        assert event.type == "response.audio.done"
+
+    def test_valid_response_audio_transcript_delta_event(self):
+        """Test that a valid response audio transcript delta event can be created."""
+        event = ResponseAudioTranscriptDeltaEvent(
+            response_id="resp-123",
+            item_id="item-123",
+            output_index=0,
+            content_index=0,
+            delta="Hello",
+        )
+        assert event.type == "response.audio_transcript.delta"
+        assert event.delta == "Hello"
+
+    def test_valid_response_audio_transcript_done_event(self):
+        """Test that a valid response audio transcript done event can be created."""
+        event = ResponseAudioTranscriptDoneEvent(
+            response_id="resp-123",
+            item_id="item-123",
+            output_index=0,
+            content_index=0,
+            transcript="Hello, world!",
+        )
+        assert event.type == "response.audio_transcript.done"
+        assert event.transcript == "Hello, world!"
+
+    def test_valid_response_function_call_arguments_done_event(self):
+        """Test that a valid response function call arguments done event can be created."""
+        event = ResponseFunctionCallArgumentsDoneEvent(
+            response_id="resp-123",
+            item_id="item-123",
+            output_index=0,
+            call_id="call-123",
+            arguments='{"key": "value"}',
+        )
+        assert event.type == "response.function_call_arguments.done"
+        assert event.arguments == '{"key": "value"}'
+
+    def test_valid_rate_limits_updated_event(self):
+        """Test that a valid rate limits updated event can be created."""
+        event = RateLimitsUpdatedEvent(
+            rate_limits=[{"type": "tokens", "limit": 1000, "remaining": 500}]
+        )
+        assert event.type == "rate_limits.updated"
+        assert event.rate_limits[0]["type"] == "tokens"
+
+    def test_valid_response_output_item_added_event(self):
+        """Test that a valid response output item added event can be created."""
+        event = ResponseOutputItemAddedEvent(
+            response_id="resp-123",
+            output_index=0,
+            item={"id": "item-123", "type": "message"},
+        )
+        assert event.type == "response.output_item.added"
+        assert event.item["id"] == "item-123"
+
+    def test_valid_response_output_item_done_event(self):
+        """Test that a valid response output item done event can be created."""
+        event = ResponseOutputItemDoneEvent(
+            response_id="resp-123",
+            output_index=0,
+            item={"id": "item-123", "type": "message"},
+        )
+        assert event.type == "response.output_item.done"
+        assert event.item["id"] == "item-123"
+
+    def test_valid_response_content_part_done_event(self):
+        """Test that a valid response content part done event can be created."""
+        event = ResponseContentPartDoneEvent(
+            response_id="resp-123",
+            item_id="item-123",
+            output_index=0,
+            content_index=0,
+            part_id="part-123",
+            status="completed",
+            part={"type": "text", "text": "Hello"},
+        )
+        assert event.type == "response.content_part.done"
+        assert event.part["text"] == "Hello"
+
+    def test_valid_response_content_part_added_event(self):
+        """Test that a valid response content part added event can be created."""
+        event = ResponseContentPartAddedEvent(
+            response_id="resp-123",
+            item_id="item-123",
+            output_index=0,
+            content_index=0,
+            part={"type": "text", "text": "Hello"},
+        )
+        assert event.type == "response.content_part.added"
+        assert event.part["text"] == "Hello"
+
+    def test_valid_transcription_session_updated_event(self):
+        """Test that a valid transcription session updated event can be created."""
+        event = TranscriptionSessionUpdatedEvent(
+            session={"id": "trans-123", "status": "active"}
+        )
+        assert event.type == "transcription_session.updated"
+        assert event.session["id"] == "trans-123"
+
+    def test_valid_conversation_item_input_audio_transcription_completed_event(self):
+        """Test that a valid conversation item input audio transcription completed event can be created."""
+        event = ConversationItemInputAudioTranscriptionCompletedEvent(
+            item_id="item-123",
+            content_index=0,
+            transcript="Hello, world!",
+            logprobs=[{"token": "Hello", "logprob": -0.5}],
+        )
+        assert event.type == "conversation.item.input_audio_transcription.completed"
+        assert event.transcript == "Hello, world!"
+
+    def test_valid_conversation_item_input_audio_transcription_delta_event(self):
+        """Test that a valid conversation item input audio transcription delta event can be created."""
+        event = ConversationItemInputAudioTranscriptionDeltaEvent(
+            item_id="item-123",
+            content_index=0,
+            delta="Hello",
+            logprobs=[{"token": "Hello", "logprob": -0.5}],
+        )
+        assert event.type == "conversation.item.input_audio_transcription.delta"
+        assert event.delta == "Hello"
+
+    def test_valid_conversation_item_input_audio_transcription_failed_event(self):
+        """Test that a valid conversation item input audio transcription failed event can be created."""
+        event = ConversationItemInputAudioTranscriptionFailedEvent(
+            item_id="item-123",
+            content_index=0,
+            error={"code": "transcription_failed", "message": "Failed to transcribe"},
+        )
+        assert event.type == "conversation.item.input_audio_transcription.failed"
+        assert event.error["code"] == "transcription_failed"
 
 
 class TestFunctionCallingModels:
@@ -339,3 +655,91 @@ class TestFunctionCallingModels:
         )
         assert function_output.name == "get_weather"
         assert function_output.output == '{"temperature": 22, "conditions": "sunny"}'
+
+
+class TestLegacyModels:
+    """Tests for legacy OpenAI message models."""
+
+    def test_valid_realtime_base_message(self):
+        """Test that a valid RealtimeBaseMessage can be created."""
+        message = RealtimeBaseMessage(type="test")
+        assert message.type == "test"
+
+    def test_valid_realtime_error_message(self):
+        """Test that a valid RealtimeErrorMessage can be created."""
+        message = RealtimeErrorMessage(
+            code="invalid_request",
+            message="The request was invalid",
+            details={"field": "audio", "reason": "Invalid format"},
+        )
+        assert message.type == "error"
+        assert message.code == "invalid_request"
+        assert message.message == "The request was invalid"
+        assert message.details == {"field": "audio", "reason": "Invalid format"}
+
+    def test_valid_realtime_transcript_message(self):
+        """Test that a valid RealtimeTranscriptMessage can be created."""
+        message = RealtimeTranscriptMessage(
+            text="Hello, world!", final=True, created_at=1672531200
+        )
+        assert message.type == "transcript"
+        assert message.text == "Hello, world!"
+        assert message.final is True
+        assert message.created_at == 1672531200
+
+    def test_valid_realtime_turn_message(self):
+        """Test that a valid RealtimeTurnMessage can be created."""
+        message = RealtimeTurnMessage(action="start", created_at=1672531200)
+        assert message.type == "turn"
+        assert message.action == "start"
+        assert message.created_at == 1672531200
+
+    def test_valid_realtime_message_content(self):
+        """Test that a valid RealtimeMessageContent can be created."""
+        content = RealtimeMessageContent(type="text", text="Hello, world!")
+        assert content.type == "text"
+        assert content.text == "Hello, world!"
+
+    def test_valid_realtime_message(self):
+        """Test that a valid RealtimeMessage can be created."""
+        message = RealtimeMessage(
+            role="user",
+            content="Hello, world!",
+            name="test_user",
+            function_call={"name": "get_weather", "arguments": "{}"},
+            created_at=1672531200,
+        )
+        assert message.type == "message"
+        assert message.role == "user"
+        assert message.content == "Hello, world!"
+        assert message.name == "test_user"
+        assert message.function_call == {"name": "get_weather", "arguments": "{}"}
+        assert message.created_at == 1672531200
+
+    def test_valid_realtime_stream_message(self):
+        """Test that a valid RealtimeStreamMessage can be created."""
+        message = RealtimeStreamMessage(
+            content="Hello, world!", role="assistant", end=True, created_at=1672531200
+        )
+        assert message.type == "stream"
+        assert message.content == "Hello, world!"
+        assert message.role == "assistant"
+        assert message.end is True
+        assert message.created_at == 1672531200
+
+    def test_valid_realtime_function_message(self):
+        """Test that a valid RealtimeFunctionMessage can be created."""
+        message = RealtimeFunctionMessage(
+            function={"name": "get_weather", "arguments": "{}"}, created_at=1672531200
+        )
+        assert message.type == "function"
+        assert message.function == {"name": "get_weather", "arguments": "{}"}
+        assert message.created_at == 1672531200
+
+    def test_valid_websocket_error_response(self):
+        """Test that a valid WebSocketErrorResponse can be created."""
+        response = WebSocketErrorResponse(
+            error="invalid_request", message="The request was invalid"
+        )
+        assert response.error == "invalid_request"
+        assert response.message == "The request was invalid"
