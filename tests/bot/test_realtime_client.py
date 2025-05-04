@@ -15,6 +15,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError
 
+from fastagent.models.openai_api import InputAudioBufferAppendEvent
 from fastagent.realtime.realtime_client import RealtimeClient
 
 
@@ -40,6 +41,21 @@ def realtime_client(mock_api_key, mock_model):
 async def test_connect_success(realtime_client):
     """Test successful connection to the OpenAI Realtime API."""
     mock_ws = AsyncMock()
+    mock_ws.closed = False
+    mock_ws.ping = AsyncMock()
+    mock_ws.pong = AsyncMock()
+    mock_ws.recv = AsyncMock(return_value="{}")
+    mock_ws.send = AsyncMock()
+    mock_ws.sock = MagicMock()
+
+    # Set up the client's URL and headers
+    realtime_client._api_base = "wss://api.openai.com/v1/realtime"
+    realtime_client._model = "gpt-4o-realtime-preview"
+    realtime_client._headers = {
+        "Authorization": f"Bearer {realtime_client._api_key}",
+        "OpenAI-Beta": "realtime=v1"
+    }
+    realtime_client._logger = MagicMock()
 
     with patch("websockets.connect", return_value=mock_ws):
         with patch("asyncio.wait_for", return_value=mock_ws) as mock_wait_for:
@@ -74,21 +90,22 @@ async def test_send_audio_chunk_success(realtime_client):
     realtime_client._ws.closed = False
     realtime_client._rate_limit = MagicMock()
     realtime_client._rate_limit.is_allowed.return_value = True
+    realtime_client._audio_queue = asyncio.Queue(maxsize=32)
+    realtime_client._audio_queue_size = 32
+    realtime_client._is_closing = False
+    realtime_client._logger = MagicMock()
 
-    mock_chunk = b"test audio data"
-    result = await realtime_client.send_audio_chunk(mock_chunk)
+    # Mock the send_event method
+    with patch.object(realtime_client, "send_event", return_value="test-event-id"):
+        mock_chunk = b"test audio data"
+        result = await realtime_client.send_audio_chunk(mock_chunk)
 
-    assert result is True
-    # Check that send was called once with a JSON string containing base64-encoded audio
-    realtime_client._ws.send.assert_called_once()
-    call_args = realtime_client._ws.send.call_args[0][0]
-    assert isinstance(call_args, str)
-    json_data = json.loads(call_args)
-    assert json_data["type"] == "input_audio_buffer.append"
-    assert (
-        json_data["audio"] == "dGVzdCBhdWRpbyBkYXRh"
-    )  # base64 encoded "test audio data"
-    assert "event_id" in json_data
+        assert result is True
+        # Check that send_event was called with the correct event
+        realtime_client.send_event.assert_called_once()
+        call_args = realtime_client.send_event.call_args[0][0]
+        assert isinstance(call_args, InputAudioBufferAppendEvent)
+        assert call_args.audio_data == "dGVzdCBhdWRpbyBkYXRh"  # base64 encoded "test audio data"
 
 
 @pytest.mark.asyncio
@@ -181,15 +198,28 @@ async def test_reconnect(realtime_client):
 async def test_close(realtime_client):
     """Test closing the client."""
     mock_ws = AsyncMock()
+    mock_ws.closed = False
+    mock_ws.close = AsyncMock()
     realtime_client._ws = mock_ws
-    realtime_client._recv_task = AsyncMock()
-    realtime_client._heartbeat_task = AsyncMock()
+    
+    # Create proper mock tasks
+    mock_recv_task = AsyncMock()
+    mock_recv_task.done.return_value = False
+    mock_heartbeat_task = AsyncMock()
+    mock_heartbeat_task.done.return_value = False
+    realtime_client._recv_task = mock_recv_task
+    realtime_client._heartbeat_task = mock_heartbeat_task
+    
     realtime_client._connection_active = True
+    realtime_client._is_closing = False
+    realtime_client._is_connected = True
+    realtime_client._audio_queue = asyncio.Queue(maxsize=32)
+    realtime_client._logger = MagicMock()
 
     await realtime_client.close()
 
     assert realtime_client._is_closing is True
     assert realtime_client._connection_active is False
-    realtime_client._recv_task.cancel.assert_called_once()
-    realtime_client._heartbeat_task.cancel.assert_called_once()
+    mock_recv_task.cancel.assert_called_once()
+    mock_heartbeat_task.cancel.assert_called_once()
     mock_ws.close.assert_called_once()  # Verify close was called on the mock
