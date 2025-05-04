@@ -139,7 +139,7 @@ class TelephonyRealtimeBridge:
         """
         try:
             async for message in self.telephony_websocket.iter_text():
-                print(f"Received telephony message: {message}")
+                logger.info(f"Received telephony message: {message}")
                 if self._closed:
                     break
 
