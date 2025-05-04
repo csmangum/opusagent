@@ -6,6 +6,7 @@ It handles bidirectional audio streaming, session management, and event processi
 """
 
 import json
+import logging
 import os
 import uuid
 from typing import Optional
@@ -14,6 +15,9 @@ import websockets
 from dotenv import load_dotenv
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Import AudioCodes models
 from fastagent.models.audiocodes_api import (
@@ -446,8 +450,8 @@ async def initialize_session(realtime_websocket):
         temperature=0.8,
         model="gpt-4o-realtime-preview-2024-10-01",
         tools=[],
-        input_audio_noise_reduction=True,
-        input_audio_transcription=True,
+        input_audio_noise_reduction={"enabled": True},
+        input_audio_transcription={"enabled": True},
         max_response_output_tokens=4096,  # Maximum allowed value
         tool_choice="auto",
     )
