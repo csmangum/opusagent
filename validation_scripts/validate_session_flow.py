@@ -149,7 +149,7 @@ async def validate_audio_stream_flow():
             session_accepted = False
             for _ in range(TIMEOUT_SECONDS * 2):
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                    response = await asyncio.wait_for(ws.recv(), timeout=SLEEP_INTERVAL_SECONDS)
                     response_data = json.loads(response)
                     if response_data.get("type") == "session.accepted":
                         session_accepted = True
