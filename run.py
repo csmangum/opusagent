@@ -66,7 +66,7 @@ def main():
         print("set OPENAI_API_KEY=your-api-key")
         print("\nMake sure to replace 'your-api-key' with your actual OpenAI API key.")
         sys.exit(1)
-    
+
     # Verify OpenAI API key format
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key.startswith("sk-"):
@@ -82,16 +82,19 @@ def main():
     logger.info(f"Log level: {args.log_level}")
     logger.info(f"Environment: {os.getenv('ENV', 'production')}")
     logger.info(f"OpenAI API key configured: {bool(os.getenv('OPENAI_API_KEY'))}")
-    logger.info(f"OpenAI API key format: {'Valid' if api_key.startswith('sk-') else 'Invalid'}")
+    logger.info(
+        f"OpenAI API key format: {'Valid' if api_key.startswith('sk-') else 'Invalid'}"
+    )
     logger.info("=========================")
 
     try:
         # Check if port is available
         import socket
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex((args.host, args.port))
         sock.close()
-        
+
         if result == 0:
             logger.error(f"Port {args.port} is already in use")
             print(f"\nError: Port {args.port} is already in use")

@@ -158,24 +158,20 @@ class TelephonyRealtimeBridge:
                     )
                     print(f"Conversation started: {self.conversation_id}")
 
-                    # Accept the session
+                    # Get media format
                     self.media_format = data.get(
                         "supportedMediaFormats", ["raw/lpcm16"]
                     )[0]
-                    session_accepted = SessionAcceptedResponse(
-                        type="session.accepted",
-                        conversationId=self.conversation_id,
-                        mediaFormat=self.media_format,
-                    )
-                    await self.telephony_websocket.send_json(
-                        session_accepted.model_dump()
-                    )
-                    print(f"Session accepted with format: {self.media_format}")
 
-                    # Initialize the OpenAI Realtime API session
+                    # Initialize the OpenAI Realtime API session and wait for SessionCreatedEvent
                     if not self.session_initialized:
                         await initialize_session(self.realtime_websocket)
+                        # We'll wait for SessionCreatedEvent in receive_from_realtime before continuing
+                        # Set a flag to indicate we're waiting for session acceptance
+                        self.waiting_for_session_creation = True
                         self.session_initialized = True
+
+                        # Don't send session.accepted here - it will be sent after SessionCreatedEvent is received
 
                 # Handle userStream.start
                 elif msg_type == "userStream.start":
@@ -271,11 +267,44 @@ class TelephonyRealtimeBridge:
                 if response_type in [event.value for event in LOG_EVENT_TYPES]:
                     print(f"Log event: {response_type}")
 
+                    # Enhanced error logging
+                    if response_type == "error":
+                        error_code = response_dict.get("code", "unknown")
+                        error_message = response_dict.get(
+                            "message", "No message provided"
+                        )
+                        error_details = response_dict.get("details", {})
+                        print(
+                            f"ERROR DETAILS: code={error_code}, message='{error_message}'"
+                        )
+                        if error_details:
+                            print(
+                                f"ERROR ADDITIONAL DETAILS: {json.dumps(error_details)}"
+                            )
+
+                        # Log the full error response for debugging
+                        print(f"FULL ERROR RESPONSE: {json.dumps(response_dict)}")
+
                 # Handle session updates
                 if response_type == ServerEventType.SESSION_UPDATED:
                     print("Session updated successfully")
                 elif response_type == ServerEventType.SESSION_CREATED:
                     print("Session created successfully")
+                    # Send session.accepted to telephony client now that OpenAI session is created
+                    if (
+                        hasattr(self, "waiting_for_session_creation")
+                        and self.waiting_for_session_creation
+                    ):
+                        session_accepted = SessionAcceptedResponse(
+                            type="session.accepted",
+                            conversationId=self.conversation_id,
+                            mediaFormat=self.media_format,
+                        )
+                        await self.telephony_websocket.send_json(
+                            session_accepted.model_dump()
+                        )
+                        print(f"Session accepted with format: {self.media_format}")
+                        self.waiting_for_session_creation = False
 
                 # Handle speech detection events
                 elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
@@ -450,8 +479,8 @@ async def initialize_session(realtime_websocket):
         temperature=0.8,
         model="gpt-4o-realtime-preview-2024-10-01",
         tools=[],
-        input_audio_noise_reduction={"enabled": True},
-        input_audio_transcription={"enabled": True},
+        input_audio_noise_reduction={"type": "near_field"},
+        input_audio_transcription={"model": "whisper-1"},
         max_response_output_tokens=4096,  # Maximum allowed value
         tool_choice="auto",
     )

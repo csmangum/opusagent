@@ -7,31 +7,6 @@ import pytest
 from fastapi.websockets import WebSocketDisconnect
 
 from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
-from fastagent.models.audiocodes_api import (
-    PlayStreamChunkMessage,
-    PlayStreamStartMessage,
-    PlayStreamStopMessage,
-    SessionAcceptedResponse,
-    UserStreamStartedResponse,
-    UserStreamStoppedResponse,
-)
-from fastagent.models.openai_api import (
-    ConversationItemContentParam,
-    ConversationItemCreateEvent,
-    ConversationItemParam,
-    InputAudioBufferAppendEvent,
-    InputAudioBufferCommitEvent,
-    LogEventType,
-    MessageRole,
-    ResponseAudioDeltaEvent,
-    ResponseCreateEvent,
-    ResponseCreateOptions,
-    ResponseDoneEvent,
-    ResponseTextDeltaEvent,
-    ServerEventType,
-    SessionConfig,
-    SessionUpdateEvent,
-)
 
 
 @pytest.fixture
@@ -135,9 +110,21 @@ async def test_receive_from_telephony_session_initiate(
     assert bridge.media_format == "raw/lpcm16"
     # Verify session was initialized
     assert bridge.session_initialized is True
+    # Verify waiting_for_session_creation flag is set
+    assert bridge.waiting_for_session_creation is True
     # Verify initialize_session was called
     mock_init_session.assert_called_once_with(bridge.realtime_websocket)
-    # Verify session response was sent
+    
+    # Simulate receiving a session.created event
+    session_created_event = {"type": "session.created"}
+    mock_iter = MagicMock()
+    mock_iter.__aiter__.return_value = [json.dumps(session_created_event)]
+    bridge.realtime_websocket = mock_iter
+    
+    # Process the session created event
+    await bridge.receive_from_realtime()
+    
+    # Now verify session response was sent
     bridge.telephony_websocket.send_json.assert_called_once_with(
         mock_response.model_dump()
     )
