@@ -265,7 +265,6 @@ class TelephonyRealtimeBridge:
 
                 # Handle log events
                 if response_type in [event.value for event in LOG_EVENT_TYPES]:
-                    print(f"Log event: {response_type}")
 
                     # Enhanced error logging
                     if response_type == "error":
