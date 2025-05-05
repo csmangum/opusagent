@@ -10,6 +10,7 @@ import logging
 import os
 import uuid
 from typing import Optional
+import asyncio
 
 import websockets
 from dotenv import load_dotenv
@@ -535,9 +536,18 @@ class TelephonyRealtimeBridge:
                 else:
                     logger.warning(f"Unknown OpenAI event type: {response_type}")
 
+        except websockets.exceptions.ConnectionClosed as e:
+            logger.error(f"OpenAI WebSocket connection closed: {e}")
+            await self.close()
+        except TypeError as e:
+            logger.error(f"Type error in receive_from_realtime: {e}")
+            # Don't attempt to close if there's a NoneType error
+            if not self._closed:
+                self._closed = True
         except Exception as e:
             logger.error(f"Error in receive_from_realtime: {e}")
-            await self.close()
+            if not self._closed:
+                await self.close()
 
 
 async def send_initial_conversation_item(realtime_websocket):
@@ -568,6 +578,9 @@ async def send_initial_conversation_item(realtime_websocket):
         "Sending initial conversation item: %s", initial_conversation.model_dump_json()
     )
     await realtime_websocket.send(initial_conversation.model_dump_json())
+
+    # Wait a moment to allow the item to be processed
+    await asyncio.sleep(1)
 
     # Create response using our model with default options
     response_create = ResponseCreateEvent(
@@ -624,5 +637,5 @@ async def initialize_session(realtime_websocket):
     logger.info("Sending session update: %s", session_update.model_dump_json())
     await realtime_websocket.send(session_update.model_dump_json())
 
-    # Have the AI speak first
-    await send_initial_conversation_item(realtime_websocket)
+    # Wait for the session to be updated before proceeding
+    # The initial conversation will be triggered by the client when needed
