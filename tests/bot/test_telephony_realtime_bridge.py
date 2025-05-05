@@ -1,7 +1,7 @@
 import asyncio
 import json
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from fastapi.websockets import WebSocketDisconnect
@@ -363,3 +363,174 @@ async def test_receive_from_realtime_exception(bridge):
     assert bridge._closed is True
     bridge.realtime_websocket.close.assert_called_once()
     bridge.telephony_websocket.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_handle_user_stream_start(bridge):
+    # Setup
+    bridge.conversation_id = "test-conversation-id"
+
+    # Call the handler
+    await bridge.handle_user_stream_start({})
+
+    # Verify userStream.started message was sent
+    bridge.telephony_websocket.send_json.assert_called_once()
+    sent_message = bridge.telephony_websocket.send_json.call_args[0][0]
+    assert sent_message["type"] == "userStream.started"
+    assert sent_message["conversationId"] == "test-conversation-id"
+
+
+@pytest.mark.asyncio
+async def test_handle_log_event_error(bridge):
+    # Setup
+    error_event = {
+        "type": "error",
+        "code": "test_error",
+        "message": "Test error message",
+        "details": {"additional": "info"},
+    }
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_log_event(error_event)
+
+        # Verify error was logged properly
+        mock_logger.error.assert_any_call(
+            "ERROR DETAILS: code=test_error, message='Test error message'"
+        )
+        mock_logger.error.assert_any_call(
+            'ERROR ADDITIONAL DETAILS: {"additional": "info"}'
+        )
+        mock_logger.error.assert_any_call(
+            f"FULL ERROR RESPONSE: {json.dumps(error_event)}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_handle_log_event_other(bridge):
+    # Setup
+    log_event = {"type": "other_log_type", "data": "some data"}
+
+    # Call the handler - should not raise an exception
+    await bridge.handle_log_event(log_event)
+
+
+@pytest.mark.asyncio
+@patch("fastagent.telephony_realtime_bridge.ResponseTextDeltaEvent")
+async def test_handle_text_delta(mock_text_delta, bridge):
+    # Setup
+    text_event = {"type": "response.text.delta", "delta": "Hello, how can I help?"}
+
+    # Mock the text delta event model
+    mock_event = MagicMock()
+    mock_event.delta = "Hello, how can I help?"
+    mock_text_delta.return_value = mock_event
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_text_and_transcript(text_event)
+
+        # Verify text delta was logged
+        mock_logger.info.assert_called_with(f"Text delta received: {mock_event.delta}")
+
+
+@pytest.mark.asyncio
+async def test_handle_transcript_delta(bridge):
+    # Setup
+    transcript_event = {
+        "type": ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA,
+        "delta": "Hello, I heard you say",
+    }
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_text_and_transcript(transcript_event)
+
+        # Verify transcript delta was logged - use assert_called_with instead of assert_called_once_with
+        # to check just the most recent call
+        mock_logger.info.assert_called_with(
+            f"Received audio transcript delta: {transcript_event.get('delta', '')}"
+        )
+
+
+@pytest.mark.asyncio
+@patch("fastagent.telephony_realtime_bridge.ResponseDoneEvent")
+@patch("fastagent.telephony_realtime_bridge.PlayStreamStopMessage")
+async def test_handle_response_completion(mock_stop_msg, mock_response_done, bridge):
+    # Setup
+    bridge.conversation_id = "test-conversation-id"
+    bridge.active_stream_id = "test-stream-id"
+
+    response_done_event = {"type": ServerEventType.RESPONSE_DONE}
+
+    # Mock the response done event model
+    mock_event = MagicMock()
+    mock_response_done.return_value = mock_event
+
+    # Mock the stop message
+    mock_stop = MagicMock()
+    mock_stop.model_dump.return_value = {
+        "type": "playStream.stop",
+        "conversationId": "test-conversation-id",
+        "streamId": "test-stream-id",
+    }
+    mock_stop_msg.return_value = mock_stop
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_response_completion(response_done_event)
+
+        # The method logs two messages, first "Response completed" and then about stopping the stream
+        # Check that the first call was for "Response completed"
+        calls = mock_logger.info.call_args_list
+        assert len(calls) >= 1  # Make sure there was at least one call
+        assert calls[0] == call("Response completed")
+
+        # Verify stream was stopped
+        bridge.telephony_websocket.send_json.assert_called_once_with(
+            mock_stop.model_dump()
+        )
+        assert bridge.active_stream_id is None
+
+
+@pytest.mark.asyncio
+async def test_handle_speech_detection_started(bridge):
+    # Setup
+    # Need to use the enum value from ServerEventType not the string literal
+    speech_started_event = {"type": ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED}
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_speech_detection(speech_started_event)
+
+        # Verify speech detection was logged
+        mock_logger.info.assert_called_with("Speech started detected")
+        assert bridge.speech_detected is True
+
+
+@pytest.mark.asyncio
+async def test_handle_speech_detection_stopped(bridge):
+    # Setup
+    # Need to use the enum value from ServerEventType not the string literal
+    speech_stopped_event = {"type": ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED}
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_speech_detection(speech_stopped_event)
+
+        # Verify speech detection was logged
+        mock_logger.info.assert_called_with("Speech stopped detected")
+        assert bridge.speech_detected is False
+
+
+@pytest.mark.asyncio
+async def test_handle_speech_detection_committed(bridge):
+    # Setup
+    buffer_committed_event = {"type": "input_audio_buffer.committed"}
+
+    # Call the handler
+    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+        await bridge.handle_speech_detection(buffer_committed_event)
+
+        # Verify commitment was logged
+        mock_logger.info.assert_called_with("Audio buffer committed")
