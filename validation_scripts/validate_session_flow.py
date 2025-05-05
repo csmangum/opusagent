@@ -31,6 +31,7 @@ HOST = os.getenv("HOST", "localhost")
 PORT = int(os.getenv("PORT", "8000"))
 WS_URL = f"ws://{HOST}:{PORT}/voice-bot"
 TIMEOUT_SECONDS = 15
+SLEEP_INTERVAL_SECONDS = 0.5
 
 # Sample PCM16 audio data (silence) - this is just a placeholder
 SILENCE_AUDIO = base64.b64encode(b"\x00" * 1024).decode("utf-8")
@@ -149,7 +150,9 @@ async def validate_audio_stream_flow():
             session_accepted = False
             for _ in range(TIMEOUT_SECONDS * 2):
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=SLEEP_INTERVAL_SECONDS)
+                    response = await asyncio.wait_for(
+                        ws.recv(), timeout=SLEEP_INTERVAL_SECONDS
+                    )
                     response_data = json.loads(response)
                     if response_data.get("type") == "session.accepted":
                         session_accepted = True
