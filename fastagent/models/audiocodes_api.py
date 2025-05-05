@@ -18,10 +18,46 @@ Note: WebSocket mode is supported only by VoiceAI Connect Enterprise v3.24 or la
 """
 
 import base64
+import enum
 import re
 from typing import Dict, List, Literal, Optional, Pattern, Union
 
 from pydantic import BaseModel, Field, field_validator
+
+
+class TelephonyEventType(str, enum.Enum):
+    """Enumeration of all supported Telephony (AudioCodes) message types.
+
+    This enum provides type-safe access to all event type strings used in
+    the AudioCodes VoiceAI Connect Enterprise WebSocket protocol.
+    """
+
+    # Session events
+    SESSION_INITIATE = "session.initiate"
+    SESSION_RESUME = "session.resume"
+    SESSION_END = "session.end"
+    SESSION_ACCEPTED = "session.accepted"
+    SESSION_ERROR = "session.error"
+
+    # User stream events
+    USER_STREAM_START = "userStream.start"
+    USER_STREAM_CHUNK = "userStream.chunk"
+    USER_STREAM_STOP = "userStream.stop"
+    USER_STREAM_STARTED = "userStream.started"
+    USER_STREAM_STOPPED = "userStream.stopped"
+    USER_STREAM_SPEECH_HYPOTHESIS = "userStream.speech.hypothesis"
+    USER_STREAM_SPEECH_RECOGNITION = "userStream.speech.recognition"
+
+    # Play stream events
+    PLAY_STREAM_START = "playStream.start"
+    PLAY_STREAM_CHUNK = "playStream.chunk"
+    PLAY_STREAM_STOP = "playStream.stop"
+
+    # Activity and connection events
+    ACTIVITIES = "activities"
+    CONNECTION_VALIDATE = "connection.validate"
+    CONNECTION_VALIDATED = "connection.validated"
+
 
 # Regular expression patterns for validation
 PHONE_PATTERN: Pattern = re.compile(r"^\+?[0-9\- ]{6,15}$")
@@ -81,7 +117,7 @@ class SessionInitiateMessage(BaseMessage):
     }
     """
 
-    type: Literal["session.initiate"]
+    type: Literal[TelephonyEventType.SESSION_INITIATE]
     expectAudioMessages: bool = Field(
         ...,
         description="Whether the bot should send audio (set according to directTTS bot parameter)",
@@ -135,7 +171,7 @@ class SessionResumeMessage(BaseMessage):
     }
     """
 
-    type: Literal["session.resume"]
+    type: Literal[TelephonyEventType.SESSION_RESUME]
 
 
 class SessionEndMessage(BaseMessage):
@@ -153,7 +189,7 @@ class SessionEndMessage(BaseMessage):
     }
     """
 
-    type: Literal["session.end"]
+    type: Literal[TelephonyEventType.SESSION_END]
     reasonCode: str = Field(..., description="Code indicating reason for session end")
     reason: str = Field(..., description="Description of why session ended")
 
@@ -171,7 +207,7 @@ class SessionAcceptedResponse(BaseMessage):
     }
     """
 
-    type: Literal["session.accepted"]
+    type: Literal[TelephonyEventType.SESSION_ACCEPTED]
     mediaFormat: str = Field(
         ...,
         description="Selected audio format for the session (must be one of the formats specified in session.initiate)",
@@ -199,7 +235,7 @@ class SessionErrorResponse(BaseMessage):
     }
     """
 
-    type: Literal["session.error"]
+    type: Literal[TelephonyEventType.SESSION_ERROR]
     reason: str = Field(..., description="Reason for rejecting the session")
 
 
@@ -218,7 +254,7 @@ class UserStreamStartMessage(BaseMessage):
     }
     """
 
-    type: Literal["userStream.start"]
+    type: Literal[TelephonyEventType.USER_STREAM_START]
 
 
 class UserStreamChunkMessage(BaseMessage):
@@ -236,7 +272,7 @@ class UserStreamChunkMessage(BaseMessage):
     }
     """
 
-    type: Literal["userStream.chunk"]
+    type: Literal[TelephonyEventType.USER_STREAM_CHUNK]
     audioChunk: str = Field(..., description="Base64-encoded audio data")
 
     @field_validator("audioChunk")
@@ -266,7 +302,7 @@ class UserStreamStopMessage(BaseMessage):
     }
     """
 
-    type: Literal["userStream.stop"]
+    type: Literal[TelephonyEventType.USER_STREAM_STOP]
 
 
 class UserStreamStartedResponse(BaseMessage):
@@ -281,7 +317,7 @@ class UserStreamStartedResponse(BaseMessage):
     }
     """
 
-    type: Literal["userStream.started"]
+    type: Literal[TelephonyEventType.USER_STREAM_STARTED]
 
 
 class UserStreamStoppedResponse(BaseMessage):
@@ -296,7 +332,7 @@ class UserStreamStoppedResponse(BaseMessage):
     }
     """
 
-    type: Literal["userStream.stopped"]
+    type: Literal[TelephonyEventType.USER_STREAM_STOPPED]
 
 
 class UserStreamHypothesisResponse(BaseMessage):
@@ -316,7 +352,7 @@ class UserStreamHypothesisResponse(BaseMessage):
     }
     """
 
-    type: Literal["userStream.speech.hypothesis"]
+    type: Literal[TelephonyEventType.USER_STREAM_SPEECH_HYPOTHESIS]
     alternatives: List[Dict[str, str]] = Field(
         ..., description="List of recognition hypotheses, each with a 'text' field"
     )
@@ -351,7 +387,7 @@ class PlayStreamStartMessage(BaseMessage):
     }
     """
 
-    type: Literal["playStream.start"]
+    type: Literal[TelephonyEventType.PLAY_STREAM_START]
     streamId: str = Field(
         ..., description="Unique identifier for the stream within the conversation"
     )
@@ -383,7 +419,7 @@ class PlayStreamChunkMessage(BaseMessage):
     }
     """
 
-    type: Literal["playStream.chunk"]
+    type: Literal[TelephonyEventType.PLAY_STREAM_CHUNK]
     streamId: str = Field(
         ..., description="Stream identifier matching an active stream"
     )
@@ -415,7 +451,7 @@ class PlayStreamStopMessage(BaseMessage):
     }
     """
 
-    type: Literal["playStream.stop"]
+    type: Literal[TelephonyEventType.PLAY_STREAM_STOP]
     streamId: str = Field(..., description="Stream identifier to stop")
 
 
@@ -497,7 +533,7 @@ class ActivitiesMessage(BaseMessage):
     }
     """
 
-    type: Literal["activities"]
+    type: Literal[TelephonyEventType.ACTIVITIES]
     activities: List[ActivityEvent] = Field(..., description="List of activity events")
 
     @field_validator("activities")
@@ -521,7 +557,7 @@ class ConnectionValidateMessage(BaseMessage):
     }
     """
 
-    type: Literal["connection.validate"]
+    type: Literal[TelephonyEventType.CONNECTION_VALIDATE]
 
 
 class ConnectionValidatedResponse(BaseMessage):
@@ -537,7 +573,7 @@ class ConnectionValidatedResponse(BaseMessage):
     }
     """
 
-    type: Literal["connection.validated"]
+    type: Literal[TelephonyEventType.CONNECTION_VALIDATED]
     success: bool = Field(..., description="Whether validation was successful")
 
 
@@ -560,7 +596,7 @@ class UserStreamRecognitionResponse(BaseMessage):
     }
     """
 
-    type: Literal["userStream.speech.recognition"]
+    type: Literal[TelephonyEventType.USER_STREAM_SPEECH_RECOGNITION]
     alternatives: List[Dict[str, Union[str, float]]] = Field(
         ...,
         description="List of recognition alternatives, each with 'text' and optional 'confidence' fields",

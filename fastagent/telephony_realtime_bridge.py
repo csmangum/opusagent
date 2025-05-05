@@ -25,6 +25,7 @@ from fastagent.models.audiocodes_api import (
     PlayStreamStartMessage,
     PlayStreamStopMessage,
     SessionAcceptedResponse,
+    TelephonyEventType,
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
 )
@@ -110,6 +111,35 @@ class TelephonyRealtimeBridge:
         self.speech_detected = False
         self._closed = False
 
+        # Create event handler mappings for telephony events
+        self.telephony_event_handlers = {
+            TelephonyEventType.SESSION_INITIATE: self.handle_session_initiate,
+            TelephonyEventType.USER_STREAM_START: self.handle_user_stream_start,
+            TelephonyEventType.USER_STREAM_CHUNK: self.handle_user_stream_chunk,
+            TelephonyEventType.USER_STREAM_STOP: self.handle_user_stream_stop,
+            TelephonyEventType.SESSION_END: self.handle_session_end,
+        }
+
+        # Create event handler mappings for realtime events
+        self.realtime_event_handlers = {
+            # Session events
+            ServerEventType.SESSION_UPDATED: self.handle_session_update,
+            ServerEventType.SESSION_CREATED: self.handle_session_update,
+            # Speech detection events
+            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED: self.handle_speech_detection,
+            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED: self.handle_speech_detection,
+            ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED: self.handle_speech_detection,
+            # Response events
+            ServerEventType.RESPONSE_CREATED: lambda x: print(
+                "Response creation started"
+            ),
+            ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
+            ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
+            ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA: self.handle_text_and_transcript,
+            ServerEventType.RESPONSE_DONE: self.handle_response_completion,
+        }
+
     async def close(self):
         """Safely close both WebSocket connections.
 
@@ -127,6 +157,297 @@ class TelephonyRealtimeBridge:
                 await self.telephony_websocket.close()
             except Exception as e:
                 print(f"Error closing telephony connection: {e}")
+
+    async def handle_session_initiate(self, data):
+        """Handle session.initiate message from telephony client.
+
+        This method processes the session initiation request, extracts necessary data,
+        initializes the conversation and sets up the OpenAI Realtime API session.
+
+        Args:
+            data (dict): Session initiate message data
+        """
+        print(f"Session initiate received: {data}")
+        self.conversation_id = data.get("conversationId") or str(uuid.uuid4())
+        print(f"Conversation started: {self.conversation_id}")
+
+        # Get media format
+        self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
+
+        # Initialize the OpenAI Realtime API session and wait for SessionCreatedEvent
+        if not self.session_initialized:
+            await initialize_session(self.realtime_websocket)
+            # We'll wait for SessionCreatedEvent in receive_from_realtime before continuing
+            # Set a flag to indicate we're waiting for session acceptance
+            self.waiting_for_session_creation = True
+            self.session_initialized = True
+
+            # Don't send session.accepted here - it will be sent after SessionCreatedEvent is received
+
+    async def handle_user_stream_start(self, data):
+        """Handle userStream.start message from telephony client.
+
+        This method processes the start of an audio stream from the client,
+        and sends the appropriate acknowledgment response.
+
+        Args:
+            data (dict): UserStream start message data
+        """
+        print(f"User stream start received: {data}")
+        # Send userStream.started response
+        stream_started = UserStreamStartedResponse(
+            type=TelephonyEventType.USER_STREAM_STARTED,
+            conversationId=self.conversation_id,
+        )
+        await self.telephony_websocket.send_json(stream_started.model_dump())
+        print(f"User stream started for conversation: {self.conversation_id}")
+
+    async def handle_user_stream_chunk(self, data):
+        """Handle userStream.chunk message containing audio data from telephony client.
+
+        This method processes audio chunks and forwards them to the OpenAI Realtime API
+        for processing. It only forwards the audio if the connection is still active.
+
+        Args:
+            data (dict): UserStream chunk message data containing audio
+        """
+        if not self._closed and self.realtime_websocket.close_code is None:
+            # Use our Pydantic model for buffer append
+            audio_append = InputAudioBufferAppendEvent(
+                type="input_audio_buffer.append", audio=data["audioChunk"]
+            )
+            print(
+                f"Sending audio to realtime-websocket (size: {len(data['audioChunk'])} bytes)"
+            )
+            await self.realtime_websocket.send(audio_append.model_dump_json())
+
+    async def handle_user_stream_stop(self, data):
+        """Handle userStream.stop message from telephony client.
+
+        This method processes the end of an audio stream from the client,
+        commits the audio buffer to OpenAI to signal end of speech,
+        and sends the appropriate acknowledgment response.
+
+        Args:
+            data (dict): UserStream stop message data
+        """
+        print(f"User stream stop received for conversation: {self.conversation_id}")
+        # Commit the audio buffer to signal end of speech
+        if not self._closed and self.realtime_websocket.close_code is None:
+            buffer_commit = InputAudioBufferCommitEvent(
+                type="input_audio_buffer.commit"
+            )
+            await self.realtime_websocket.send(buffer_commit.model_dump_json())
+            print("Audio buffer committed")
+
+            # Send userStream.stopped response
+            stream_stopped = UserStreamStoppedResponse(
+                type=TelephonyEventType.USER_STREAM_STOPPED,
+                conversationId=self.conversation_id,
+            )
+            await self.telephony_websocket.send_json(stream_stopped.model_dump())
+
+    async def handle_session_end(self, data):
+        """Handle session.end message from telephony client.
+
+        This method processes the end of a session, closes all connections,
+        and logs the reason for session termination.
+
+        Args:
+            data (dict): Session end message data
+        """
+        print(f"Session end received: {data.get('reason', 'No reason provided')}")
+        await self.close()
+        print(f"Telephony-Realtime bridge closed")
+
+    async def handle_log_event(self, response_dict):
+        """Handle log events from the OpenAI Realtime API.
+
+        This method processes log events, with special handling for error events
+        to provide detailed error information for debugging.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        response_type = response_dict["type"]
+
+        # Enhanced error logging
+        if response_type == "error":
+            error_code = response_dict.get("code", "unknown")
+            error_message = response_dict.get("message", "No message provided")
+            error_details = response_dict.get("details", {})
+            print(f"ERROR DETAILS: code={error_code}, message='{error_message}'")
+            if error_details:
+                print(f"ERROR ADDITIONAL DETAILS: {json.dumps(error_details)}")
+
+            # Log the full error response for debugging
+            print(f"FULL ERROR RESPONSE: {json.dumps(response_dict)}")
+
+    async def handle_session_update(self, response_dict):
+        """Handle session update events from the OpenAI Realtime API.
+
+        This method processes session created and updated events, and sends
+        the appropriate response to the telephony client when a session is created.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        response_type = response_dict["type"]
+
+        if response_type == ServerEventType.SESSION_UPDATED:
+            print("Session updated successfully")
+        elif response_type == ServerEventType.SESSION_CREATED:
+            print("Session created successfully")
+            # Send session.accepted to telephony client now that OpenAI session is created
+            if (
+                hasattr(self, "waiting_for_session_creation")
+                and self.waiting_for_session_creation
+            ):
+                session_accepted = SessionAcceptedResponse(
+                    type=TelephonyEventType.SESSION_ACCEPTED,
+                    conversationId=self.conversation_id,
+                    mediaFormat=self.media_format,
+                )
+                await self.telephony_websocket.send_json(session_accepted.model_dump())
+                print(f"Session accepted with format: {self.media_format}")
+                self.waiting_for_session_creation = False
+
+    async def handle_speech_detection(self, response_dict):
+        """Handle speech detection events from the OpenAI Realtime API.
+
+        This method processes speech detection events including speech started,
+        speech stopped, and audio buffer committed events.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        response_type = response_dict["type"]
+
+        if response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
+            print("Speech started detected")
+            self.speech_detected = True
+        elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
+            print("Speech stopped detected")
+            self.speech_detected = False
+        elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED:
+            print("Audio buffer committed")
+
+    async def handle_audio_response_delta(self, response_dict):
+        """Handle audio response delta events from the OpenAI Realtime API.
+
+        This method processes audio data chunks, creates audio streams when needed,
+        and forwards the audio to the telephony client.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API containing audio
+        """
+        try:
+            # Parse using our updated model - note the "delta" field instead of "audio"
+            audio_delta = ResponseAudioDeltaEvent(**response_dict)
+
+            if not self._closed and self.conversation_id:
+                # Start a new audio stream if needed
+                if not self.active_stream_id:
+                    # Start a new audio stream
+                    self.active_stream_id = str(uuid.uuid4())
+                    stream_start = PlayStreamStartMessage(
+                        type=TelephonyEventType.PLAY_STREAM_START,
+                        conversationId=self.conversation_id,
+                        streamId=self.active_stream_id,
+                        mediaFormat=self.media_format or "raw/lpcm16",
+                    )
+                    await self.telephony_websocket.send_json(stream_start.model_dump())
+                    print(f"Started play stream: {self.active_stream_id}")
+
+                # Send audio chunk with the delta value as the audio data
+                stream_chunk = PlayStreamChunkMessage(
+                    type=TelephonyEventType.PLAY_STREAM_CHUNK,
+                    conversationId=self.conversation_id,
+                    streamId=self.active_stream_id,
+                    audioChunk=audio_delta.delta,  # Use delta field for audio data
+                )
+                await self.telephony_websocket.send_json(stream_chunk.model_dump())
+                print(
+                    f"Sent audio chunk to client (size: {len(audio_delta.delta)} bytes)"
+                )
+        except Exception as e:
+            print(f"Error processing audio data: {e}")
+            if not self._closed:
+                await self.close()
+
+    async def handle_audio_response_completion(self, response_dict):
+        """Handle audio response completion events from the OpenAI Realtime API.
+
+        This method processes the completion of audio responses and stops
+        any active audio streams to the telephony client.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        print("Audio response completed")
+        # Stop the play stream
+        if self.active_stream_id and self.conversation_id:
+            stream_stop = PlayStreamStopMessage(
+                type=TelephonyEventType.PLAY_STREAM_STOP,
+                conversationId=self.conversation_id,
+                streamId=self.active_stream_id,
+            )
+            await self.telephony_websocket.send_json(stream_stop.model_dump())
+            print(f"Stopped play stream: {self.active_stream_id}")
+            self.active_stream_id = None
+
+    async def handle_text_and_transcript(self, response_dict):
+        """Handle text and transcript events from the OpenAI Realtime API.
+
+        This method processes text deltas and audio transcript deltas,
+        logging them for monitoring and debugging purposes.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        response_type = response_dict["type"]
+
+        if response_type == ServerEventType.RESPONSE_TEXT_DELTA:
+            text_delta = ResponseTextDeltaEvent(**response_dict)
+            print(f"Text delta received: {text_delta.delta}")
+        elif response_type == ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA:
+            print(f"Received audio transcript delta: {response_dict.get('delta', '')}")
+
+    async def handle_response_completion(self, response_dict):
+        """Handle response completion events from the OpenAI Realtime API.
+
+        This method processes the final completion of a response and ensures
+        that any active audio streams are properly stopped.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        response_done = ResponseDoneEvent(**response_dict)
+        print("Response completed")
+        # Stop the current play stream if active
+        if self.active_stream_id and self.conversation_id:
+            stream_stop = PlayStreamStopMessage(
+                type=TelephonyEventType.PLAY_STREAM_STOP,
+                conversationId=self.conversation_id,
+                streamId=self.active_stream_id,
+            )
+            await self.telephony_websocket.send_json(stream_stop.model_dump())
+            print(f"Stopped play stream at end of response: {self.active_stream_id}")
+            self.active_stream_id = None
+
+    def _get_telephony_event_type(self, msg_type_str):
+        """Convert a string message type to a TelephonyEventType enum value.
+
+        Args:
+            msg_type_str (str): The message type string from the raw message
+
+        Returns:
+            TelephonyEventType: The corresponding enum value or None if not found
+        """
+        try:
+            return TelephonyEventType(msg_type_str)
+        except ValueError:
+            return None
 
     async def receive_from_telephony(self):
         """Receive and process audio data from the telephony WebSocket.
@@ -148,92 +469,23 @@ class TelephonyRealtimeBridge:
                     break
 
                 data = json.loads(message)
-                msg_type = data["type"]
+                msg_type_str = data["type"]
 
-                # Handle session.initiate
-                if msg_type == "session.initiate":
-                    print(f"Session initiate received: {data}")
-                    self.conversation_id = data.get("conversationId") or str(
-                        uuid.uuid4()
-                    )
-                    print(f"Conversation started: {self.conversation_id}")
+                # Convert string message type to enum
+                msg_type = self._get_telephony_event_type(msg_type_str)
 
-                    # Get media format
-                    self.media_format = data.get(
-                        "supportedMediaFormats", ["raw/lpcm16"]
-                    )[0]
-
-                    # Initialize the OpenAI Realtime API session and wait for SessionCreatedEvent
-                    if not self.session_initialized:
-                        await initialize_session(self.realtime_websocket)
-                        # We'll wait for SessionCreatedEvent in receive_from_realtime before continuing
-                        # Set a flag to indicate we're waiting for session acceptance
-                        self.waiting_for_session_creation = True
-                        self.session_initialized = True
-
-                        # Don't send session.accepted here - it will be sent after SessionCreatedEvent is received
-
-                # Handle userStream.start
-                elif msg_type == "userStream.start":
-                    print(f"User stream start received: {data}")
-                    # Send userStream.started response
-                    stream_started = UserStreamStartedResponse(
-                        type="userStream.started", conversationId=self.conversation_id
-                    )
-                    await self.telephony_websocket.send_json(
-                        stream_started.model_dump()
-                    )
-                    print(
-                        f"User stream started for conversation: {self.conversation_id}"
-                    )
-
-                # Handle userStream.chunk (audio data)
-                elif (
-                    msg_type == "userStream.chunk"
-                    and not self._closed
-                    and self.realtime_websocket.close_code is None
-                ):
-                    # Use our Pydantic model for buffer append
-                    audio_append = InputAudioBufferAppendEvent(
-                        type="input_audio_buffer.append", audio=data["audioChunk"]
-                    )
-                    print(
-                        f"Sending audio to realtime-websocket (size: {len(data['audioChunk'])} bytes)"
-                    )
-                    await self.realtime_websocket.send(audio_append.model_dump_json())
-
-                # Handle userStream.stop
-                elif msg_type == "userStream.stop":
-                    print(
-                        f"User stream stop received for conversation: {self.conversation_id}"
-                    )
-                    # Commit the audio buffer to signal end of speech
-                    if not self._closed and self.realtime_websocket.close_code is None:
-                        buffer_commit = InputAudioBufferCommitEvent(
-                            type="input_audio_buffer.commit"
-                        )
-                        await self.realtime_websocket.send(
-                            buffer_commit.model_dump_json()
-                        )
-                        print("Audio buffer committed")
-
-                        # Send userStream.stopped response
-                        stream_stopped = UserStreamStoppedResponse(
-                            type="userStream.stopped",
-                            conversationId=self.conversation_id,
-                        )
-                        await self.telephony_websocket.send_json(
-                            stream_stopped.model_dump()
-                        )
-
-                # Handle session.end
-                elif msg_type == "session.end":
-                    print(
-                        f"Session end received: {data.get('reason', 'No reason provided')}"
-                    )
-                    await self.close()
-                    print(f"Telephony-Realtime bridge closed")
-                    break
+                if msg_type:
+                    # Dispatch to the appropriate event handler
+                    handler = self.telephony_event_handlers.get(msg_type)
+                    if handler:
+                        await handler(data)
+                        # Special case for session.end to break the loop
+                        if msg_type == TelephonyEventType.SESSION_END:
+                            break
+                    else:
+                        print(f"No handler for telephony message type: {msg_type}")
+                else:
+                    print(f"Unknown telephony message type: {msg_type_str}")
 
         except WebSocketDisconnect:
             print("Client disconnected.")
@@ -263,145 +515,18 @@ class TelephonyRealtimeBridge:
                 response_type = response_dict["type"]
                 print(f"Received OpenAI message type: {response_type}")
 
-                # Handle log events
+                # Handle log events first
                 if response_type in [event.value for event in LOG_EVENT_TYPES]:
+                    await self.handle_log_event(response_dict)
+                    continue
 
-                    # Enhanced error logging
-                    if response_type == "error":
-                        error_code = response_dict.get("code", "unknown")
-                        error_message = response_dict.get(
-                            "message", "No message provided"
-                        )
-                        error_details = response_dict.get("details", {})
-                        print(
-                            f"ERROR DETAILS: code={error_code}, message='{error_message}'"
-                        )
-                        if error_details:
-                            print(
-                                f"ERROR ADDITIONAL DETAILS: {json.dumps(error_details)}"
-                            )
+                # Dispatch to the appropriate event handler
+                handler = self.realtime_event_handlers.get(response_type)
+                if handler:
+                    await handler(response_dict)
+                else:
+                    print(f"Unknown OpenAI event type: {response_type}")
 
-                        # Log the full error response for debugging
-                        print(f"FULL ERROR RESPONSE: {json.dumps(response_dict)}")
-
-                # Handle session updates
-                if response_type == ServerEventType.SESSION_UPDATED:
-                    print("Session updated successfully")
-                elif response_type == ServerEventType.SESSION_CREATED:
-                    print("Session created successfully")
-                    # Send session.accepted to telephony client now that OpenAI session is created
-                    if (
-                        hasattr(self, "waiting_for_session_creation")
-                        and self.waiting_for_session_creation
-                    ):
-                        session_accepted = SessionAcceptedResponse(
-                            type="session.accepted",
-                            conversationId=self.conversation_id,
-                            mediaFormat=self.media_format,
-                        )
-                        await self.telephony_websocket.send_json(
-                            session_accepted.model_dump()
-                        )
-                        print(f"Session accepted with format: {self.media_format}")
-                        self.waiting_for_session_creation = False
-
-                # Handle speech detection events
-                elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
-                    print("Speech started detected")
-                    self.speech_detected = True
-                elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
-                    print("Speech stopped detected")
-                    self.speech_detected = False
-                elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED:
-                    print("Audio buffer committed")
-
-                # Handle response creation events
-                elif response_type == ServerEventType.RESPONSE_CREATED:
-                    print("Response creation started")
-
-                # Handle audio response delta
-                elif response_type == ServerEventType.RESPONSE_AUDIO_DELTA:
-                    try:
-                        # Parse using our updated model - note the "delta" field instead of "audio"
-                        audio_delta = ResponseAudioDeltaEvent(**response_dict)
-
-                        if not self._closed and self.conversation_id:
-                            # Start a new audio stream if needed
-                            if not self.active_stream_id:
-                                # Start a new audio stream
-                                self.active_stream_id = str(uuid.uuid4())
-                                stream_start = PlayStreamStartMessage(
-                                    type="playStream.start",
-                                    conversationId=self.conversation_id,
-                                    streamId=self.active_stream_id,
-                                    mediaFormat=self.media_format or "raw/lpcm16",
-                                )
-                                await self.telephony_websocket.send_json(
-                                    stream_start.model_dump()
-                                )
-                                print(f"Started play stream: {self.active_stream_id}")
-
-                            # Send audio chunk with the delta value as the audio data
-                            stream_chunk = PlayStreamChunkMessage(
-                                type="playStream.chunk",
-                                conversationId=self.conversation_id,
-                                streamId=self.active_stream_id,
-                                audioChunk=audio_delta.delta,  # Use delta field for audio data
-                            )
-                            await self.telephony_websocket.send_json(
-                                stream_chunk.model_dump()
-                            )
-                            print(
-                                f"Sent audio chunk to client (size: {len(audio_delta.delta)} bytes)"
-                            )
-                    except Exception as e:
-                        print(f"Error processing audio data: {e}")
-                        if not self._closed:
-                            await self.close()
-
-                # Handle audio response completion
-                elif response_type == ServerEventType.RESPONSE_AUDIO_DONE:
-                    print("Audio response completed")
-                    # Stop the play stream
-                    if self.active_stream_id and self.conversation_id:
-                        stream_stop = PlayStreamStopMessage(
-                            type="playStream.stop",
-                            conversationId=self.conversation_id,
-                            streamId=self.active_stream_id,
-                        )
-                        await self.telephony_websocket.send_json(
-                            stream_stop.model_dump()
-                        )
-                        print(f"Stopped play stream: {self.active_stream_id}")
-                        self.active_stream_id = None
-
-                # Handle text and transcript events
-                elif response_type == ServerEventType.RESPONSE_TEXT_DELTA:
-                    text_delta = ResponseTextDeltaEvent(**response_dict)
-                    print(f"Text delta received: {text_delta.delta}")
-                elif response_type == ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA:
-                    print(
-                        f"Received audio transcript delta: {response_dict.get('delta', '')}"
-                    )
-
-                # Handle response completion
-                elif response_type == ServerEventType.RESPONSE_DONE:
-                    response_done = ResponseDoneEvent(**response_dict)
-                    print("Response completed")
-                    # Stop the current play stream if active
-                    if self.active_stream_id and self.conversation_id:
-                        stream_stop = PlayStreamStopMessage(
-                            type="playStream.stop",
-                            conversationId=self.conversation_id,
-                            streamId=self.active_stream_id,
-                        )
-                        await self.telephony_websocket.send_json(
-                            stream_stop.model_dump()
-                        )
-                        print(
-                            f"Stopped play stream at end of response: {self.active_stream_id}"
-                        )
-                        self.active_stream_id = None
         except Exception as e:
             print(f"Error in receive_from_realtime: {e}")
             await self.close()
@@ -490,4 +615,4 @@ async def initialize_session(realtime_websocket):
     await realtime_websocket.send(session_update.model_dump_json())
 
     # Have the AI speak first
-    await send_initial_conversation_item(realtime_websocket)
+    # await send_initial_conversation_item(realtime_websocket)
