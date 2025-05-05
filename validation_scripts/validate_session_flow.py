@@ -15,6 +15,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import websockets
@@ -47,7 +48,7 @@ async def validate_session_flow():
             print("✅ WebSocket connection established")
 
             # Step 1: Send session.initiate
-            conversation_id = f"test_session_{int(time.time())}"
+            conversation_id = str(uuid.uuid4())
             session_initiate = {
                 "type": "session.initiate",
                 "conversationId": conversation_id,
@@ -133,7 +134,7 @@ async def validate_audio_stream_flow():
             print("✅ WebSocket connection established")
 
             # First establish a session
-            conversation_id = f"test_audio_{int(time.time())}"
+            conversation_id = str(uuid.uuid4())
             session_initiate = {
                 "type": "session.initiate",
                 "conversationId": conversation_id,

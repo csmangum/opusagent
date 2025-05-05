@@ -163,7 +163,7 @@ class TelephonyRealtimeBridge:
         """Handle session.initiate message from telephony client.
 
         This method processes the session initiation request, extracts necessary data,
-        initializes the conversation and sets up the OpenAI Realtime API session.
+        and sets up the conversation state.
 
         Args:
             data (dict): Session initiate message data
@@ -175,15 +175,19 @@ class TelephonyRealtimeBridge:
         # Get media format
         self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
 
-        # Initialize the OpenAI Realtime API session and wait for SessionCreatedEvent
-        if not self.session_initialized:
-            await initialize_session(self.realtime_websocket)
-            # We'll wait for SessionCreatedEvent in receive_from_realtime before continuing
-            # Set a flag to indicate we're waiting for session acceptance
-            self.waiting_for_session_creation = True
-            self.session_initialized = True
+        # Set flag to indicate we're waiting for session acceptance
+        self.waiting_for_session_creation = True
+        self.session_initialized = True
 
-            # Don't send session.accepted here - it will be sent after SessionCreatedEvent is received
+        # Send session.accepted response immediately since session is already initialized
+        session_accepted = SessionAcceptedResponse(
+            type=TelephonyEventType.SESSION_ACCEPTED,
+            conversationId=self.conversation_id,
+            mediaFormat=self.media_format,
+        )
+        await self.telephony_websocket.send_json(session_accepted.model_dump())
+        logger.info(f"Session accepted with format: {self.media_format}")
+        self.waiting_for_session_creation = False
 
     async def handle_user_stream_start(self, data):
         """Handle userStream.start message from telephony client.
@@ -289,8 +293,7 @@ class TelephonyRealtimeBridge:
     async def handle_session_update(self, response_dict):
         """Handle session update events from the OpenAI Realtime API.
 
-        This method processes session created and updated events, and sends
-        the appropriate response to the telephony client when a session is created.
+        This method processes session created and updated events.
 
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
@@ -301,19 +304,6 @@ class TelephonyRealtimeBridge:
             logger.info("Session updated successfully")
         elif response_type == ServerEventType.SESSION_CREATED:
             logger.info("Session created successfully")
-            # Send session.accepted to telephony client now that OpenAI session is created
-            if (
-                hasattr(self, "waiting_for_session_creation")
-                and self.waiting_for_session_creation
-            ):
-                session_accepted = SessionAcceptedResponse(
-                    type=TelephonyEventType.SESSION_ACCEPTED,
-                    conversationId=self.conversation_id,
-                    mediaFormat=self.media_format,
-                )
-                await self.telephony_websocket.send_json(session_accepted.model_dump())
-                logger.info(f"Session accepted with format: {self.media_format}")
-                self.waiting_for_session_creation = False
 
     async def handle_speech_detection(self, response_dict):
         """Handle speech detection events from the OpenAI Realtime API.
