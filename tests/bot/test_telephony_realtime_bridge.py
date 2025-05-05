@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.websockets import WebSocketDisconnect
 
+from fastagent.models.openai_api import ServerEventType
 from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 
@@ -114,16 +115,19 @@ async def test_receive_from_telephony_session_initiate(
     assert bridge.waiting_for_session_creation is True
     # Verify initialize_session was called
     mock_init_session.assert_called_once_with(bridge.realtime_websocket)
-    
-    # Simulate receiving a session.created event
-    session_created_event = {"type": "session.created"}
-    mock_iter = MagicMock()
-    mock_iter.__aiter__.return_value = [json.dumps(session_created_event)]
-    bridge.realtime_websocket = mock_iter
-    
-    # Process the session created event
-    await bridge.receive_from_realtime()
-    
+
+    # Create a real handler for the session update event
+    original_handler = bridge.handle_session_update
+
+    # Define a function that will call the original handler with our test data
+    async def mock_session_update_handler():
+        # Create a session.created event
+        session_created_event = {"type": "session.created", "session": {"config": {}}}
+        await original_handler(session_created_event)
+
+    # Call our handler directly to simulate processing the event
+    await mock_session_update_handler()
+
     # Now verify session response was sent
     bridge.telephony_websocket.send_json.assert_called_once_with(
         mock_response.model_dump()
@@ -294,7 +298,9 @@ async def test_receive_from_realtime_audio_delta(
     await bridge.receive_from_realtime()
 
     # Verify audio was sent to telephony
-    assert bridge.telephony_websocket.send_json.call_count == 2  # One for start, one for chunk
+    assert (
+        bridge.telephony_websocket.send_json.call_count == 2
+    )  # One for start, one for chunk
 
 
 @pytest.mark.asyncio

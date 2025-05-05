@@ -625,4 +625,4 @@ async def initialize_session(realtime_websocket):
     await realtime_websocket.send(session_update.model_dump_json())
 
     # Have the AI speak first
-    # await send_initial_conversation_item(realtime_websocket)
+    await send_initial_conversation_item(realtime_websocket)
