@@ -126,6 +126,8 @@ class TelephonyRealtimeBridge:
             # Session events
             ServerEventType.SESSION_UPDATED: self.handle_session_update,
             ServerEventType.SESSION_CREATED: self.handle_session_update,
+            # Conversation events
+            ServerEventType.CONVERSATION_ITEM_CREATED: lambda x: logger.info("Conversation item created"),
             # Speech detection events
             ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED: self.handle_speech_detection,
             ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED: self.handle_speech_detection,
@@ -522,7 +524,13 @@ class TelephonyRealtimeBridge:
                 # Dispatch to the appropriate event handler
                 handler = self.realtime_event_handlers.get(response_type)
                 if handler:
-                    await handler(response_dict)
+                    try:
+                        if asyncio.iscoroutinefunction(handler):
+                            await handler(response_dict)
+                        else:
+                            handler(response_dict)
+                    except Exception as e:
+                        logger.error(f"Error in event handler for {response_type}: {e}")
                 else:
                     logger.warning(f"Unknown OpenAI event type: {response_type}")
 

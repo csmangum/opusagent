@@ -19,9 +19,12 @@ import time
 import uuid
 import wave
 from pathlib import Path
+import numpy as np
+from datetime import datetime
 
 import websockets
 from dotenv import load_dotenv
+from scipy import signal
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -33,16 +36,16 @@ load_dotenv()
 HOST = os.getenv("HOST", "localhost")
 PORT = int(os.getenv("PORT", "8000"))
 WS_URL = f"ws://{HOST}:{PORT}/voice-bot"
-TIMEOUT_SECONDS = 15
-SLEEP_INTERVAL_SECONDS = 0.5
-AUDIO_CHUNK_SIZE = 4000  # Reduced chunk size for more frequent chunks
+TIMEOUT_SECONDS = 5  # Reduced from 15
+SLEEP_INTERVAL_SECONDS = 0.1  # Reduced from 0.5
+AUDIO_CHUNK_SIZE = 32000  # Larger chunk size (2 seconds of 16kHz 16-bit audio)
 
 # Sample PCM16 audio data (silence) - using a longer silence sample to ensure at least 100ms
 SILENCE_DURATION_MS =100  # 500ms of silence
 SAMPLE_RATE = 16000  # 16kHz
 BYTES_PER_SAMPLE = 2  # 16-bit PCM
-SILENCE_SAMPLES = int(SILENCE_DURATION_MS * SAMPLE_RATE / 1000)
-SILENCE_AUDIO = base64.b64encode(b"\x00" * (SILENCE_SAMPLES * BYTES_PER_SAMPLE)).decode("utf-8")
+# SILENCE_SAMPLES = int(SILENCE_DURATION_MS * SAMPLE_RATE / 1000)
+# SILENCE_AUDIO = base64.b64encode(b"\x00" * (SILENCE_SAMPLES * BYTES_PER_SAMPLE)).decode("utf-8")
 
 # Path to real audio file
 AUDIO_FILE_PATH = (
@@ -60,10 +63,6 @@ def load_audio_chunks(file_path, chunk_size=AUDIO_CHUNK_SIZE):
     Returns:
         List of base64 encoded audio chunks
     """
-    if not os.path.exists(file_path):
-        print(f"❌ Audio file not found: {file_path}")
-        # Return silence chunks as fallback
-        return [SILENCE_AUDIO] * 5
 
     try:
         with wave.open(str(file_path), "rb") as wav_file:
@@ -73,18 +72,25 @@ def load_audio_chunks(file_path, chunk_size=AUDIO_CHUNK_SIZE):
             frame_rate = wav_file.getframerate()
 
             print(f"Loading audio: {file_path}")
-            print(
-                f"  Format: {channels} channels, {sample_width * 8}-bit, {frame_rate}Hz"
-            )
+            print(f"  Format: {channels} channels, {sample_width * 8}-bit, {frame_rate}Hz")
 
             # Read all frames
             audio_data = wav_file.readframes(wav_file.getnframes())
             
-            # If audio is not 16kHz mono PCM16, we'd need to convert it
-            # For now, we'll just use it as is and log a warning if it's not in an ideal format
-            if channels != 1 or sample_width != 2 or frame_rate != 16000:
-                print(f"  ⚠️ Warning: Audio is not in ideal format (mono 16-bit 16kHz PCM)")
-                print(f"  ⚠️ This may cause issues with OpenAI's Realtime API")
+            # Convert to numpy array for resampling
+            audio_array = np.frombuffer(audio_data, dtype=np.int16)
+            
+            # Resample to 16kHz if needed
+            if frame_rate != 16000:
+                print(f"  Resampling from {frame_rate}Hz to 16000Hz...")
+                number_of_samples = round(len(audio_array) * 16000 / frame_rate)
+                audio_array = signal.resample(audio_array, number_of_samples)
+                audio_array = audio_array.astype(np.int16)
+                frame_rate = 16000
+                print(f"  Resampled to {frame_rate}Hz")
+            
+            # Convert back to bytes
+            audio_data = audio_array.tobytes()
 
             # Make sure we have enough audio data
             if len(audio_data) < 3200:  # At least 100ms of 16kHz 16-bit audio
@@ -104,15 +110,9 @@ def load_audio_chunks(file_path, chunk_size=AUDIO_CHUNK_SIZE):
             # Ensure we don't have empty chunks
             chunks = [c for c in chunks if len(c) > 0]
             
-            if not chunks:
-                print("❌ No valid audio chunks extracted, using silence instead")
-                return [SILENCE_AUDIO] * 5
-            
             return chunks
     except Exception as e:
         print(f"❌ Error loading audio file: {e}")
-        # Return silence chunks as fallback
-        return [SILENCE_AUDIO] * 5
 
 
 async def validate_session_flow():
@@ -248,7 +248,6 @@ async def validate_audio_stream_flow():
             audio_chunks = load_audio_chunks(AUDIO_FILE_PATH)
             if not audio_chunks:
                 print("❌ No audio chunks loaded, using silence instead")
-                audio_chunks = [SILENCE_AUDIO] * 5
 
             # Step 1: Send userStream.start
             user_stream_start = {
@@ -290,9 +289,12 @@ async def validate_audio_stream_flow():
                 await ws.send(json.dumps(audio_chunk))
                 if i % 5 == 0 or i == len(audio_chunks) - 1:
                     print(f"   Sent audio chunk {i+1}/{len(audio_chunks)}")
-                # Slow down sending to match real-time audio speed more closely
-                await asyncio.sleep(0.05)  # Send at ~20 chunks per second
+                # Add minimal delay to ensure buffer processing
+                await asyncio.sleep(0.01)  # 10ms delay between chunks
 
+            # Wait a moment before sending stop to ensure all audio is processed
+            await asyncio.sleep(0.1)  # 100ms wait to ensure buffer is processed
+            
             # Step 4: Send userStream.stop
             user_stream_stop = {
                 "type": "userStream.stop",
@@ -358,6 +360,19 @@ async def validate_bot_response_flow():
     print(f"\n[3/3] Testing bot response flow (playStream)...")
     print(f"Connecting to {WS_URL}...")
 
+    # Create output directory for saved audio
+    output_dir = Path("validation_output")
+    output_dir.mkdir(exist_ok=True)
+    
+    # Create a unique filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = output_dir / f"bot_response_{timestamp}.wav"
+    
+    # Initialize WAV file
+    sample_rate = 16000  # 16kHz
+    channels = 1  # Mono audio
+    wav_file = None
+
     try:
         async with websockets.connect(WS_URL, ping_interval=5, ping_timeout=20) as ws:
             print("✅ WebSocket connection established")
@@ -376,34 +391,29 @@ async def validate_bot_response_flow():
             await ws.send(json.dumps(session_initiate))
             print(f"Sent session.initiate with conversationId: {conversation_id}")
 
-            # Wait for session.accepted
+            # Wait for session.accepted with shorter timeout
             session_accepted = False
-            for _ in range(TIMEOUT_SECONDS * 2):
+            for _ in range(TIMEOUT_SECONDS):
                 try:
-                    response = await asyncio.wait_for(
-                        ws.recv(), timeout=SLEEP_INTERVAL_SECONDS
-                    )
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
                     response_data = json.loads(response)
                     if response_data.get("type") == "session.accepted":
                         session_accepted = True
                         print("✅ Session accepted")
                         break
                 except asyncio.TimeoutError:
-                    await ws.ping()
                     continue
 
             if not session_accepted:
                 print("❌ Session establishment failed")
                 return False
 
-            # Load audio chunks with a smaller chunk size for more frequent updates
-            audio_chunks = load_audio_chunks(AUDIO_FILE_PATH, chunk_size=AUDIO_CHUNK_SIZE)
+            # Load audio chunks
+            audio_chunks = load_audio_chunks(AUDIO_FILE_PATH)
             if not audio_chunks:
                 print("❌ No audio chunks loaded, using silence instead")
-                audio_chunks = [SILENCE_AUDIO] * 10  # Use more silence chunks to get enough audio
 
             # Send audio to trigger a bot response
-            # Step 1: Send userStream.start
             user_stream_start = {
                 "type": "userStream.start",
                 "conversationId": conversation_id,
@@ -411,28 +421,25 @@ async def validate_bot_response_flow():
             await ws.send(json.dumps(user_stream_start))
             print("✅ Sent userStream.start")
 
-            # Wait for userStream.started
+            # Wait for userStream.started with shorter timeout
             stream_started = False
-            for _ in range(TIMEOUT_SECONDS * 2):
+            for _ in range(TIMEOUT_SECONDS):
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
                     response_data = json.loads(response)
                     if response_data.get("type") == "userStream.started":
                         stream_started = True
                         print("✅ Received userStream.started")
                         break
                 except asyncio.TimeoutError:
-                    await ws.ping()
                     continue
 
             if not stream_started:
                 print("❌ ERROR: userStream.started was not received within timeout")
                 return False
 
-            # Send audio chunks
-            print(
-                f"Sending {len(audio_chunks)} audio chunks to trigger bot response..."
-            )
+            # Send audio chunks with minimal delay
+            print(f"Sending {len(audio_chunks)} audio chunks to trigger bot response...")
             for i, chunk in enumerate(audio_chunks):
                 audio_chunk = {
                     "type": "userStream.chunk",
@@ -440,14 +447,10 @@ async def validate_bot_response_flow():
                     "audioChunk": chunk,
                 }
                 await ws.send(json.dumps(audio_chunk))
-                if i % 5 == 0 or i == len(audio_chunks) - 1:
+                if i % 10 == 0 or i == len(audio_chunks) - 1:
                     print(f"   Sent audio chunk {i+1}/{len(audio_chunks)}")
-                # Slow down sending to match real-time audio speed more closely
-                await asyncio.sleep(0.05)  # Send at ~20 chunks per second
+                await asyncio.sleep(0.001)  # Minimal delay between chunks
 
-            # Wait a moment before sending stop to ensure all audio is processed
-            await asyncio.sleep(0.5)
-            
             # Send userStream.stop
             user_stream_stop = {
                 "type": "userStream.stop",
@@ -456,18 +459,17 @@ async def validate_bot_response_flow():
             await ws.send(json.dumps(user_stream_stop))
             print("✅ Sent userStream.stop")
 
-            # Wait for userStream.stopped
+            # Wait for userStream.stopped with shorter timeout
             stream_stopped = False
-            for _ in range(TIMEOUT_SECONDS * 2):
+            for _ in range(TIMEOUT_SECONDS):
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
                     response_data = json.loads(response)
                     if response_data.get("type") == "userStream.stopped":
                         stream_stopped = True
                         print("✅ Received userStream.stopped")
                         break
                 except asyncio.TimeoutError:
-                    await ws.ping()
                     continue
 
             if not stream_stopped:
@@ -479,23 +481,24 @@ async def validate_bot_response_flow():
             play_stream_started = False
             stream_id = None
 
-            # We'll wait for up to 30 seconds for a response
-            for _ in range(TIMEOUT_SECONDS * 4):
+            # Wait for playStream.start with shorter timeout
+            for _ in range(TIMEOUT_SECONDS * 2):
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
                     response_data = json.loads(response)
                     msg_type = response_data.get("type")
-                    print(f"   Received message: {msg_type}")
 
                     if msg_type == "playStream.start":
                         play_stream_started = True
                         stream_id = response_data.get("streamId")
-                        print(
-                            f"✅ Received playStream.start with streamId: {stream_id}"
-                        )
+                        print(f"✅ Received playStream.start with streamId: {stream_id}")
+                        # Initialize WAV file when we get the first stream
+                        wav_file = wave.open(str(output_file), 'wb')
+                        wav_file.setnchannels(channels)
+                        wav_file.setsampwidth(2)  # 16-bit audio
+                        wav_file.setframerate(sample_rate)
                         break
                 except asyncio.TimeoutError:
-                    await ws.ping()
                     continue
 
             if not play_stream_started:
@@ -507,10 +510,10 @@ async def validate_bot_response_flow():
             play_stream_chunks_received = False
             chunk_count = 0
 
-            # Look for chunks for up to 10 seconds
+            # Look for chunks with shorter timeout
             for _ in range(TIMEOUT_SECONDS * 2):
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
                     response_data = json.loads(response)
                     msg_type = response_data.get("type")
 
@@ -519,18 +522,24 @@ async def validate_bot_response_flow():
                             print(f"✅ Started receiving playStream.chunk messages")
                         chunk_count += 1
                         play_stream_chunks_received = True
+                        
+                        # Save the audio chunk immediately
+                        audio_chunk = response_data.get("audioChunk")
+                        if audio_chunk and wav_file:
+                            try:
+                                # Decode base64 audio chunk and write directly to file
+                                decoded_chunk = base64.b64decode(audio_chunk)
+                                wav_file.writeframes(decoded_chunk)
+                            except Exception as e:
+                                print(f"❌ Error processing audio chunk: {e}")
+                                
                     elif msg_type == "playStream.stop":
-                        print(
-                            f"✅ Received playStream.stop for streamId: {response_data.get('streamId')}"
-                        )
+                        print(f"✅ Received playStream.stop for streamId: {response_data.get('streamId')}")
                         break
                 except asyncio.TimeoutError:
-                    # If we've already received chunks but now there's a timeout,
-                    # we might be in the gap between chunks or done
                     if play_stream_chunks_received:
                         continue
-                    await ws.ping()
-                    continue
+                    break
 
             print(f"   Received {chunk_count} audio chunks from bot")
 
@@ -538,32 +547,10 @@ async def validate_bot_response_flow():
                 print("❌ ERROR: No playStream.chunk messages were received")
                 return False
 
-            # Wait specifically for playStream.stop if we haven't seen it yet
-            play_stream_stopped = False
-            if not play_stream_stopped:
-                print("Waiting for playStream.stop...")
-                for _ in range(TIMEOUT_SECONDS * 2):
-                    try:
-                        response = await asyncio.wait_for(ws.recv(), timeout=0.5)
-                        response_data = json.loads(response)
-                        msg_type = response_data.get("type")
-                        print(f"   Received message: {msg_type}")
-
-                        if msg_type == "playStream.stop":
-                            play_stream_stopped = True
-                            print(
-                                f"✅ Received playStream.stop for streamId: {response_data.get('streamId')}"
-                            )
-                            break
-                    except asyncio.TimeoutError:
-                        await ws.ping()
-                        continue
-
-            if not play_stream_stopped:
-                print(
-                    "❌ WARNING: playStream.stop was not explicitly received within timeout"
-                )
-                # This isn't a critical failure as some implementations might not send a separate stop
+            # Close the WAV file
+            if wav_file:
+                wav_file.close()
+                print(f"✅ Saved bot response audio to: {output_file}")
 
             # End the session gracefully
             try:
@@ -575,13 +562,9 @@ async def validate_bot_response_flow():
                 }
                 await ws.send(json.dumps(session_end))
                 print("✅ Sent session.end event")
-
-                # Allow a moment for clean shutdown
-                await asyncio.sleep(1)
             except websockets.exceptions.ConnectionClosed:
                 print("❌ Connection closed before ending session")
 
-            # Consider the test successful if we at least started a stream and got chunks
             return play_stream_started and play_stream_chunks_received
 
     except ConnectionRefusedError:
@@ -593,6 +576,10 @@ async def validate_bot_response_flow():
     except Exception as e:
         print(f"❌ Error during validation: {e}")
         return False
+    finally:
+        # Ensure WAV file is closed even if there's an error
+        if wav_file:
+            wav_file.close()
 
 
 async def main():
