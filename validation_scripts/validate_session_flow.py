@@ -38,7 +38,7 @@ SLEEP_INTERVAL_SECONDS = 0.5
 AUDIO_CHUNK_SIZE = 4000  # Reduced chunk size for more frequent chunks
 
 # Sample PCM16 audio data (silence) - using a longer silence sample to ensure at least 100ms
-SILENCE_DURATION_MS = 500  # 500ms of silence
+SILENCE_DURATION_MS =100  # 500ms of silence
 SAMPLE_RATE = 16000  # 16kHz
 BYTES_PER_SAMPLE = 2  # 16-bit PCM
 SILENCE_SAMPLES = int(SILENCE_DURATION_MS * SAMPLE_RATE / 1000)
