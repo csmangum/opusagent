@@ -15,7 +15,7 @@ from pathlib import Path
 from fastagent.config.constants import LOGGER_NAME
 
 # Log levels
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # Log file configuration

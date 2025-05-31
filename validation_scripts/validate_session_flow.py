@@ -41,11 +41,10 @@ SLEEP_INTERVAL_SECONDS = 0.1  # Reduced from 0.5
 AUDIO_CHUNK_SIZE = 32000  # Larger chunk size (2 seconds of 16kHz 16-bit audio)
 
 # Sample PCM16 audio data (silence) - using a longer silence sample to ensure at least 100ms
-SILENCE_DURATION_MS =100  # 500ms of silence
+SILENCE_DURATION_MS =10  # 500ms of silence
 SAMPLE_RATE = 16000  # 16kHz
 BYTES_PER_SAMPLE = 2  # 16-bit PCM
-# SILENCE_SAMPLES = int(SILENCE_DURATION_MS * SAMPLE_RATE / 1000)
-# SILENCE_AUDIO = base64.b64encode(b"\x00" * (SILENCE_SAMPLES * BYTES_PER_SAMPLE)).decode("utf-8")
+
 
 # Path to real audio file
 AUDIO_FILE_PATH = (
@@ -92,20 +91,35 @@ def load_audio_chunks(file_path, chunk_size=AUDIO_CHUNK_SIZE):
             # Convert back to bytes
             audio_data = audio_array.tobytes()
 
-            # Make sure we have enough audio data
-            if len(audio_data) < 3200:  # At least 100ms of 16kHz 16-bit audio
-                print(f"  ⚠️ Warning: Audio file is very short, padding with silence")
-                # Pad with silence
-                audio_data += b"\x00" * (3200 - len(audio_data))
+            # Calculate minimum chunk size for 100ms of audio
+            min_chunk_size = int(0.1 * frame_rate * sample_width)  # 100ms of audio
+            print(f"  Minimum chunk size for 100ms: {min_chunk_size} bytes")
+
+            # Ensure we have enough audio data
+            if len(audio_data) < min_chunk_size:
+                print(f"  ⚠️ Warning: Audio file is too short, padding with silence")
+                # Pad with silence to reach minimum size
+                audio_data += b"\x00" * (min_chunk_size - len(audio_data))
+
+            # Ensure chunk_size is at least the minimum required
+            if chunk_size < min_chunk_size:
+                print(f"  ⚠️ Warning: Chunk size too small, increasing to {min_chunk_size} bytes")
+                chunk_size = min_chunk_size
 
             # Chunk the audio data
             chunks = []
             for i in range(0, len(audio_data), chunk_size):
                 chunk = audio_data[i : i + chunk_size]
+                # Ensure each chunk is at least min_chunk_size
+                if len(chunk) < min_chunk_size and i + chunk_size > len(audio_data):
+                    # Pad the last chunk if it's too small
+                    chunk += b"\x00" * (min_chunk_size - len(chunk))
                 encoded_chunk = base64.b64encode(chunk).decode("utf-8")
                 chunks.append(encoded_chunk)
 
             print(f"  Split into {len(chunks)} chunks")
+            print(f"  Average chunk size: {len(audio_data) // len(chunks)} bytes")
+            print(f"  Total audio duration: {len(audio_data) / (frame_rate * sample_width):.2f} seconds")
             
             # Ensure we don't have empty chunks
             chunks = [c for c in chunks if len(c) > 0]
@@ -113,6 +127,7 @@ def load_audio_chunks(file_path, chunk_size=AUDIO_CHUNK_SIZE):
             return chunks
     except Exception as e:
         print(f"❌ Error loading audio file: {e}")
+        return None
 
 
 async def validate_session_flow():
@@ -248,6 +263,9 @@ async def validate_audio_stream_flow():
             audio_chunks = load_audio_chunks(AUDIO_FILE_PATH)
             if not audio_chunks:
                 print("❌ No audio chunks loaded, using silence instead")
+                # Create a minimum valid chunk of silence (100ms)
+                silence_chunk = base64.b64encode(b"\x00" * 3200).decode("utf-8")  # 100ms of 16kHz 16-bit silence
+                audio_chunks = [silence_chunk]
 
             # Step 1: Send userStream.start
             user_stream_start = {
@@ -293,7 +311,7 @@ async def validate_audio_stream_flow():
                 await asyncio.sleep(0.01)  # 10ms delay between chunks
 
             # Wait a moment before sending stop to ensure all audio is processed
-            await asyncio.sleep(0.1)  # 100ms wait to ensure buffer is processed
+            await asyncio.sleep(0.2)  # Increased from 0.1 to 0.2 seconds
             
             # Step 4: Send userStream.stop
             user_stream_stop = {
