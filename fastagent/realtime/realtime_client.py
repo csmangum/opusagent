@@ -365,6 +365,10 @@ class RealtimeClient:
         self._last_memory_check = 0
         self._memory_check_interval = 60  # Check every 60 seconds
 
+        # Heartbeat configuration
+        self._heartbeat_interval = 60  # 60 seconds between heartbeat checks
+        self._last_activity = time.time()
+
         self._logger.info(
             f"RealtimeClient initialized with model: {model}, voice: {voice}, queue_size: {queue_size}"
         )
@@ -384,6 +388,11 @@ class RealtimeClient:
     def rate_limit(self) -> RateLimit:
         """Get the rate limit object."""
         return self._rate_limit
+
+    @property
+    def ws_url(self):
+        """Return the websocket URL for the current model."""
+        return f"{self._api_base}?model={self._model}"
 
     def _initialize_handlers(self) -> None:
         """Initialize all client handlers."""
@@ -1235,7 +1244,7 @@ class RealtimeClient:
         try:
             # Create and send the audio event
             event = InputAudioBufferAppendEvent(
-                audio_data=base64.b64encode(audio_data).decode("utf-8")
+                audio=base64.b64encode(audio_data).decode("utf-8")
             )
             await self.send_event(event)
             self._rate_limit.add_request(len(audio_data))

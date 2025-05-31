@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, call, patch
+import types
 
 import pytest
 from fastapi.websockets import WebSocketDisconnect
@@ -15,6 +16,7 @@ def mock_websocket():
     mock = AsyncMock()
     mock.send_json = AsyncMock()
     mock.iter_text = AsyncMock()
+    mock.client_state = types.SimpleNamespace(DISCONNECTED=False)
     return mock
 
 
@@ -223,6 +225,7 @@ async def test_receive_from_telephony_session_end(bridge):
 @pytest.mark.asyncio
 async def test_receive_from_telephony_disconnect(bridge):
     # Simulate WebSocket disconnect
+    bridge.telephony_websocket.client_state.DISCONNECTED = False  # Ensure initially connected
     bridge.telephony_websocket.iter_text.side_effect = WebSocketDisconnect()
 
     # Run the method
@@ -237,6 +240,7 @@ async def test_receive_from_telephony_disconnect(bridge):
 @pytest.mark.asyncio
 async def test_receive_from_telephony_exception(bridge):
     # Simulate a generic exception
+    bridge.telephony_websocket.client_state.DISCONNECTED = False  # Ensure initially connected
     bridge.telephony_websocket.iter_text.side_effect = Exception("Test error")
 
     # Run the method
