@@ -6,7 +6,6 @@ It handles bidirectional audio streaming, session management, and event processi
 """
 
 import json
-import logging
 import os
 import uuid
 from typing import Optional
@@ -17,8 +16,7 @@ from dotenv import load_dotenv
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
-# Configure logging
-logger = logging.getLogger(__name__)
+from fastagent.config.logging_config import configure_logging
 
 # Import AudioCodes models
 from fastagent.models.audiocodes_api import (
@@ -53,6 +51,9 @@ from fastagent.models.openai_api import (
 )
 
 load_dotenv()
+
+# Configure logging
+logger = configure_logging()
 
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -126,6 +127,8 @@ class TelephonyRealtimeBridge:
             # Session events
             ServerEventType.SESSION_UPDATED: self.handle_session_update,
             ServerEventType.SESSION_CREATED: self.handle_session_update,
+            # Conversation events
+            ServerEventType.CONVERSATION_ITEM_CREATED: lambda x: logger.info("Conversation item created"),
             # Speech detection events
             ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED: self.handle_speech_detection,
             ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED: self.handle_speech_detection,
@@ -137,8 +140,17 @@ class TelephonyRealtimeBridge:
             ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
             ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
             ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA: self.handle_text_and_transcript,
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA: self.handle_audio_transcript_delta,
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE: self.handle_audio_transcript_done,
             ServerEventType.RESPONSE_DONE: self.handle_response_completion,
+            # Add new handlers for output item and content part events
+            ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED: self.handle_output_item_added,
+            ServerEventType.RESPONSE_CONTENT_PART_ADDED: self.handle_content_part_added,
+            ServerEventType.RESPONSE_CONTENT_PART_DONE: self.handle_content_part_done,
+            ServerEventType.RESPONSE_OUTPUT_ITEM_DONE: self.handle_output_item_done,
+            # Add handlers for input audio transcription events
+            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA: self.handle_input_audio_transcription_delta,
+            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED: self.handle_input_audio_transcription_completed,
         }
 
     async def close(self):
@@ -150,12 +162,13 @@ class TelephonyRealtimeBridge:
         if not self._closed:
             self._closed = True
             try:
-                if self.realtime_websocket.close_code is None:
+                if self.realtime_websocket and self.realtime_websocket.close_code is None:
                     await self.realtime_websocket.close()
             except Exception as e:
                 logger.error(f"Error closing OpenAI connection: {e}")
             try:
-                await self.telephony_websocket.close()
+                if self.telephony_websocket and not self.telephony_websocket.client_state.DISCONNECTED:
+                    await self.telephony_websocket.close()
             except Exception as e:
                 logger.error(f"Error closing telephony connection: {e}")
 
@@ -163,7 +176,7 @@ class TelephonyRealtimeBridge:
         """Handle session.initiate message from telephony client.
 
         This method processes the session initiation request, extracts necessary data,
-        initializes the conversation and sets up the OpenAI Realtime API session.
+        and sets up the conversation state.
 
         Args:
             data (dict): Session initiate message data
@@ -175,15 +188,19 @@ class TelephonyRealtimeBridge:
         # Get media format
         self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
 
-        # Initialize the OpenAI Realtime API session and wait for SessionCreatedEvent
-        if not self.session_initialized:
-            await initialize_session(self.realtime_websocket)
-            # We'll wait for SessionCreatedEvent in receive_from_realtime before continuing
-            # Set a flag to indicate we're waiting for session acceptance
-            self.waiting_for_session_creation = True
-            self.session_initialized = True
+        # Set flag to indicate we're waiting for session acceptance
+        self.waiting_for_session_creation = True
+        self.session_initialized = True
 
-            # Don't send session.accepted here - it will be sent after SessionCreatedEvent is received
+        # Send session.accepted response immediately since session is already initialized
+        session_accepted = SessionAcceptedResponse(
+            type=TelephonyEventType.SESSION_ACCEPTED,
+            conversationId=self.conversation_id,
+            mediaFormat=self.media_format,
+        )
+        await self.telephony_websocket.send_json(session_accepted.model_dump())
+        logger.info(f"Session accepted with format: {self.media_format}")
+        self.waiting_for_session_creation = False
 
     async def handle_user_stream_start(self, data):
         """Handle userStream.start message from telephony client.
@@ -289,8 +306,7 @@ class TelephonyRealtimeBridge:
     async def handle_session_update(self, response_dict):
         """Handle session update events from the OpenAI Realtime API.
 
-        This method processes session created and updated events, and sends
-        the appropriate response to the telephony client when a session is created.
+        This method processes session created and updated events.
 
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
@@ -301,19 +317,6 @@ class TelephonyRealtimeBridge:
             logger.info("Session updated successfully")
         elif response_type == ServerEventType.SESSION_CREATED:
             logger.info("Session created successfully")
-            # Send session.accepted to telephony client now that OpenAI session is created
-            if (
-                hasattr(self, "waiting_for_session_creation")
-                and self.waiting_for_session_creation
-            ):
-                session_accepted = SessionAcceptedResponse(
-                    type=TelephonyEventType.SESSION_ACCEPTED,
-                    conversationId=self.conversation_id,
-                    mediaFormat=self.media_format,
-                )
-                await self.telephony_websocket.send_json(session_accepted.model_dump())
-                logger.info(f"Session accepted with format: {self.media_format}")
-                self.waiting_for_session_creation = False
 
     async def handle_speech_detection(self, response_dict):
         """Handle speech detection events from the OpenAI Realtime API.
@@ -348,9 +351,19 @@ class TelephonyRealtimeBridge:
             # Parse using our updated model - note the "delta" field instead of "audio"
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
-            if not self._closed and self.conversation_id:
-                # Start a new audio stream if needed
-                if not self.active_stream_id:
+            # Check if connections are still active
+            if self._closed or not self.conversation_id:
+                logger.debug("Skipping audio delta - connection closed or no conversation ID")
+                return
+
+            # Check if telephony websocket is still connected
+            if not self.telephony_websocket or self.telephony_websocket.client_state.DISCONNECTED:
+                logger.debug("Skipping audio delta - telephony websocket disconnected")
+                return
+
+            # Start a new audio stream if needed
+            if not self.active_stream_id:
+                try:
                     # Start a new audio stream
                     self.active_stream_id = str(uuid.uuid4())
                     stream_start = PlayStreamStartMessage(
@@ -361,7 +374,12 @@ class TelephonyRealtimeBridge:
                     )
                     await self.telephony_websocket.send_json(stream_start.model_dump())
                     logger.info(f"Started play stream: {self.active_stream_id}")
+                except Exception as e:
+                    logger.error(f"Error starting audio stream: {e}")
+                    self.active_stream_id = None
+                    return
 
+            try:
                 # Send audio chunk with the delta value as the audio data
                 stream_chunk = PlayStreamChunkMessage(
                     type=TelephonyEventType.PLAY_STREAM_CHUNK,
@@ -373,10 +391,15 @@ class TelephonyRealtimeBridge:
                 logger.debug(
                     f"Sent audio chunk to client (size: {len(audio_delta.delta)} bytes)"
                 )
+            except Exception as e:
+                logger.error(f"Error sending audio chunk: {e}")
+                # Don't close the connection here, just log the error
+                # The connection will be closed by the main error handler if needed
+
         except Exception as e:
             logger.error(f"Error processing audio data: {e}")
-            if not self._closed:
-                await self.close()
+            # Don't close the connection here, just log the error
+            # The connection will be closed by the main error handler if needed
 
     async def handle_audio_response_completion(self, response_dict):
         """Handle audio response completion events from the OpenAI Realtime API.
@@ -442,6 +465,76 @@ class TelephonyRealtimeBridge:
             )
             self.active_stream_id = None
 
+    async def handle_output_item_added(self, response_dict):
+        """Handle response output item added events from the OpenAI Realtime API.
+
+        This method processes when a new output item is added to the response,
+        logging the event for monitoring purposes.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.info(f"Output item added: {response_dict.get('item', {})}")
+
+    async def handle_content_part_added(self, response_dict):
+        """Handle response content part added events from the OpenAI Realtime API.
+
+        This method processes when a new content part is added to a response,
+        logging the event for monitoring purposes.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.info(f"Content part added: {response_dict.get('part', {})}")
+
+    async def handle_audio_transcript_delta(self, response_dict):
+        """Handle audio transcript delta events from the OpenAI Realtime API.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.debug(f"Received audio transcript delta: {response_dict.get('delta', '')}")
+
+    async def handle_audio_transcript_done(self, response_dict):
+        """Handle audio transcript completion events from the OpenAI Realtime API.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.info("Audio transcript completed")
+
+    async def handle_content_part_done(self, response_dict):
+        """Handle content part completion events from the OpenAI Realtime API.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.info("Content part completed")
+
+    async def handle_output_item_done(self, response_dict):
+        """Handle output item completion events from the OpenAI Realtime API.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.info("Output item completed")
+
+    async def handle_input_audio_transcription_delta(self, response_dict):
+        """Handle input audio transcription delta events from the OpenAI Realtime API.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.debug(f"Received input audio transcription delta: {response_dict.get('delta', '')}")
+
+    async def handle_input_audio_transcription_completed(self, response_dict):
+        """Handle input audio transcription completion events from the OpenAI Realtime API.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        logger.info("Input audio transcription completed")
+
     def _get_telephony_event_type(self, msg_type_str):
         """Convert a string message type to a TelephonyEventType enum value.
 
@@ -471,7 +564,6 @@ class TelephonyRealtimeBridge:
         """
         try:
             async for message in self.telephony_websocket.iter_text():
-                logger.info(f"Received telephony message: {message}")
                 if self._closed:
                     break
 
@@ -482,6 +574,11 @@ class TelephonyRealtimeBridge:
                 msg_type = self._get_telephony_event_type(msg_type_str)
 
                 if msg_type:
+                    # Log only message type and audio chunk size if present
+                    if 'audioChunk' in data:
+                        logger.info(f"Received telephony message: {msg_type_str} with audio chunk size: {len(data['audioChunk'])} bytes")
+                    else:
+                        logger.info(f"Received telephony message: {msg_type_str}")
                     # Dispatch to the appropriate event handler
                     handler = self.telephony_event_handlers.get(msg_type)
                     if handler:
@@ -494,6 +591,7 @@ class TelephonyRealtimeBridge:
                             f"No handler for telephony message type: {msg_type}"
                         )
                 else:
+                    logger.info(f"Received telephony message: {message}")
                     logger.warning(f"Unknown telephony message type: {msg_type_str}")
 
         except WebSocketDisconnect:
@@ -532,7 +630,13 @@ class TelephonyRealtimeBridge:
                 # Dispatch to the appropriate event handler
                 handler = self.realtime_event_handlers.get(response_type)
                 if handler:
-                    await handler(response_dict)
+                    try:
+                        if asyncio.iscoroutinefunction(handler):
+                            await handler(response_dict)
+                        else:
+                            handler(response_dict)
+                    except Exception as e:
+                        logger.error(f"Error in event handler for {response_type}: {e}")
                 else:
                     logger.warning(f"Unknown OpenAI event type: {response_type}")
 

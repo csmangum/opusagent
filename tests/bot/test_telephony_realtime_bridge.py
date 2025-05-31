@@ -111,10 +111,8 @@ async def test_receive_from_telephony_session_initiate(
     assert bridge.media_format == "raw/lpcm16"
     # Verify session was initialized
     assert bridge.session_initialized is True
-    # Verify waiting_for_session_creation flag is set
-    assert bridge.waiting_for_session_creation is True
-    # Verify initialize_session was called
-    mock_init_session.assert_called_once_with(bridge.realtime_websocket)
+    # Verify waiting_for_session_creation flag is False after session is accepted
+    assert bridge.waiting_for_session_creation is False
 
     # Create a real handler for the session update event
     original_handler = bridge.handle_session_update

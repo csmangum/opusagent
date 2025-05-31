@@ -155,6 +155,7 @@ class ClientEventType(str, Enum):
     RESPONSE_CREATE = "response.create"
     RESPONSE_CANCEL = "response.cancel"
     TRANSCRIPTION_SESSION_UPDATE = "transcription_session.update"
+    CONVERSATION_ITEM_CREATED = "conversation.item.created"
 
 
 class ServerEventType(str, Enum):
