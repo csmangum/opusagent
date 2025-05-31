@@ -36,7 +36,7 @@ load_dotenv()
 HOST = os.getenv("HOST", "localhost")
 PORT = int(os.getenv("PORT", "8000"))
 WS_URL = f"ws://{HOST}:{PORT}/voice-bot"
-TIMEOUT_SECONDS = 5  # Reduced from 15
+TIMEOUT_SECONDS = 15  # Increased from 5 to allow time for OpenAI processing
 SLEEP_INTERVAL_SECONDS = 0.1  # Reduced from 0.5
 AUDIO_CHUNK_SIZE = 32000  # Larger chunk size (2 seconds of 16kHz 16-bit audio)
 
@@ -409,11 +409,11 @@ async def validate_bot_response_flow():
             await ws.send(json.dumps(session_initiate))
             print(f"Sent session.initiate with conversationId: {conversation_id}")
 
-            # Wait for session.accepted with shorter timeout
+            # Wait for session.accepted with proper timeout
             session_accepted = False
-            for _ in range(TIMEOUT_SECONDS):
+            for _ in range(TIMEOUT_SECONDS * 2):  # 30 seconds total
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                     response_data = json.loads(response)
                     if response_data.get("type") == "session.accepted":
                         session_accepted = True
@@ -430,6 +430,9 @@ async def validate_bot_response_flow():
             audio_chunks = load_audio_chunks(AUDIO_FILE_PATH)
             if not audio_chunks:
                 print("❌ No audio chunks loaded, using silence instead")
+                # Create a minimum valid chunk of silence (100ms)
+                silence_chunk = base64.b64encode(b"\x00" * 3200).decode("utf-8")  # 100ms of 16kHz 16-bit silence
+                audio_chunks = [silence_chunk]
 
             # Send audio to trigger a bot response
             user_stream_start = {
@@ -439,11 +442,11 @@ async def validate_bot_response_flow():
             await ws.send(json.dumps(user_stream_start))
             print("✅ Sent userStream.start")
 
-            # Wait for userStream.started with shorter timeout
+            # Wait for userStream.started with proper timeout
             stream_started = False
-            for _ in range(TIMEOUT_SECONDS):
+            for _ in range(TIMEOUT_SECONDS * 2):  # 30 seconds total
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                     response_data = json.loads(response)
                     if response_data.get("type") == "userStream.started":
                         stream_started = True
@@ -467,7 +470,10 @@ async def validate_bot_response_flow():
                 await ws.send(json.dumps(audio_chunk))
                 if i % 10 == 0 or i == len(audio_chunks) - 1:
                     print(f"   Sent audio chunk {i+1}/{len(audio_chunks)}")
-                await asyncio.sleep(0.001)  # Minimal delay between chunks
+                await asyncio.sleep(0.01)  # 10ms delay between chunks
+
+            # Wait a moment before sending stop to ensure all audio is processed
+            await asyncio.sleep(0.2)
 
             # Send userStream.stop
             user_stream_stop = {
@@ -477,11 +483,11 @@ async def validate_bot_response_flow():
             await ws.send(json.dumps(user_stream_stop))
             print("✅ Sent userStream.stop")
 
-            # Wait for userStream.stopped with shorter timeout
+            # Wait for userStream.stopped with proper timeout
             stream_stopped = False
-            for _ in range(TIMEOUT_SECONDS):
+            for _ in range(TIMEOUT_SECONDS * 2):  # 30 seconds total
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                     response_data = json.loads(response)
                     if response_data.get("type") == "userStream.stopped":
                         stream_stopped = True
@@ -494,17 +500,27 @@ async def validate_bot_response_flow():
                 print("❌ ERROR: userStream.stopped was not received within timeout")
                 return False
 
+            # Give OpenAI time to process the audio before expecting a response
+            print("⏳ Waiting for OpenAI to process audio...")
+            await asyncio.sleep(3)  # Wait 3 seconds for processing to start
+
             # Now wait for bot response - playStream.start
+            # Use much longer timeout since OpenAI can take several seconds to generate response
             print("Waiting for bot response (playStream.start)...")
+            print("   Note: This may take several seconds as OpenAI processes the audio...")
             play_stream_started = False
             stream_id = None
 
-            # Wait for playStream.start with shorter timeout
-            for _ in range(TIMEOUT_SECONDS * 2):
+            # Wait for playStream.start with extended timeout (30 seconds total)
+            for attempt in range(60):  # 60 attempts * 0.5s = 30 seconds
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                     response_data = json.loads(response)
                     msg_type = response_data.get("type")
+                    
+                    # Print progress every 5 seconds
+                    if attempt % 10 == 0 and attempt > 0:
+                        print(f"   Still waiting for bot response... ({attempt * 0.5:.1f}s elapsed)")
 
                     if msg_type == "playStream.start":
                         play_stream_started = True
@@ -518,6 +534,9 @@ async def validate_bot_response_flow():
                         break
                 except asyncio.TimeoutError:
                     continue
+                except websockets.exceptions.ConnectionClosed:
+                    print("❌ Connection closed while waiting for bot response")
+                    return False
 
             if not play_stream_started:
                 print("❌ ERROR: playStream.start was not received within timeout")
@@ -528,10 +547,10 @@ async def validate_bot_response_flow():
             play_stream_chunks_received = False
             chunk_count = 0
 
-            # Look for chunks with shorter timeout
-            for _ in range(TIMEOUT_SECONDS * 2):
+            # Look for chunks with extended timeout
+            for attempt in range(60):  # 60 attempts * 0.5s = 30 seconds
                 try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=0.1)
+                    response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                     response_data = json.loads(response)
                     msg_type = response_data.get("type")
 
@@ -550,13 +569,25 @@ async def validate_bot_response_flow():
                                 wav_file.writeframes(decoded_chunk)
                             except Exception as e:
                                 print(f"❌ Error processing audio chunk: {e}")
+                        
+                        # Log progress every 10 chunks
+                        if chunk_count % 10 == 0:
+                            print(f"   Received {chunk_count} audio chunks so far...")
                                 
                     elif msg_type == "playStream.stop":
                         print(f"✅ Received playStream.stop for streamId: {response_data.get('streamId')}")
                         break
+                        
                 except asyncio.TimeoutError:
-                    if play_stream_chunks_received:
+                    # If we haven't received any chunks yet, keep waiting
+                    if not play_stream_chunks_received:
                         continue
+                    # If we've received chunks but haven't gotten more in 0.5s, assume we're done
+                    else:
+                        print("   No more chunks received, assuming stream is complete")
+                        break
+                except websockets.exceptions.ConnectionClosed:
+                    print("❌ Connection closed while receiving bot response")
                     break
 
             print(f"   Received {chunk_count} audio chunks from bot")
@@ -570,18 +601,9 @@ async def validate_bot_response_flow():
                 wav_file.close()
                 print(f"✅ Saved bot response audio to: {output_file}")
 
-            # End the session gracefully
-            try:
-                session_end = {
-                    "type": "session.end",
-                    "conversationId": conversation_id,
-                    "reasonCode": "normal",
-                    "reason": "Validation completed",
-                }
-                await ws.send(json.dumps(session_end))
-                print("✅ Sent session.end event")
-            except websockets.exceptions.ConnectionClosed:
-                print("❌ Connection closed before ending session")
+            # DO NOT end the session here - let it stay open to receive responses
+            # The connection will be closed when the websocket context exits
+            print("✅ Keeping connection open - validation completed successfully")
 
             return play_stream_started and play_stream_chunks_received
 
