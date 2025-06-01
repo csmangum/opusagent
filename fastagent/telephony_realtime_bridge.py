@@ -565,8 +565,9 @@ class TelephonyRealtimeBridge:
             text_delta = ResponseTextDeltaEvent(**response_dict)
             logger.info(f"Text delta received: {text_delta.delta}")
         elif response_type == ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA:
-            # TODO: Handle audio transcript delta
-            pass
+            logger.info(
+                f"Received audio transcript delta: {response_dict.get('delta', '')}"
+            )
 
     async def handle_response_completion(self, response_dict):
         """Handle response completion events from the OpenAI Realtime API.
