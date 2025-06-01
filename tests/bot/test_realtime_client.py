@@ -7,6 +7,7 @@ streaming audio data.
 """
 
 import asyncio
+import base64
 import json
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -53,21 +54,25 @@ async def test_connect_success(realtime_client):
     realtime_client._model = "gpt-4o-realtime-preview"
     realtime_client._headers = {
         "Authorization": f"Bearer {realtime_client._api_key}",
-        "OpenAI-Beta": "realtime=v1"
+        "OpenAI-Beta": "realtime=v1",
     }
     realtime_client._logger = MagicMock()
 
-    with patch("websockets.connect", return_value=mock_ws):
+    async def mock_connect(*args, **kwargs):
+        return mock_ws
+
+    with patch("websockets.connect", side_effect=mock_connect):
         with patch("asyncio.wait_for", return_value=mock_ws) as mock_wait_for:
-            with patch("asyncio.create_task") as mock_create_task:
-                # Patch _initialize_session to return True
+            with patch(
+                "asyncio.create_task", new_callable=AsyncMock
+            ) as mock_create_task:
                 with patch.object(
                     realtime_client, "_initialize_session", return_value=True
                 ):
                     result = await realtime_client.connect()
 
                     assert result is True
-                    assert realtime_client._ws == mock_ws
+                    assert realtime_client.ws == mock_ws
                     assert realtime_client._connection_active is True
                     assert mock_create_task.call_count == 2  # _recv_loop and _heartbeat
 
@@ -85,27 +90,50 @@ async def test_connect_failure(realtime_client):
 @pytest.mark.asyncio
 async def test_send_audio_chunk_success(realtime_client):
     """Test sending an audio chunk successfully."""
-    realtime_client._ws = AsyncMock()
+    # Set up client state for successful operation
     realtime_client._connection_active = True
-    realtime_client._ws.closed = False
-    realtime_client._rate_limit = MagicMock()
-    realtime_client._rate_limit.is_allowed.return_value = True
-    realtime_client._audio_queue = asyncio.Queue(maxsize=32)
-    realtime_client._audio_queue_size = 32
     realtime_client._is_closing = False
-    realtime_client._logger = MagicMock()
-
-    # Mock the send_event method
-    with patch.object(realtime_client, "send_event", return_value="test-event-id"):
-        mock_chunk = b"test audio data"
-        result = await realtime_client.send_audio_chunk(mock_chunk)
-
-        assert result is True
-        # Check that send_event was called with the correct event
-        realtime_client.send_event.assert_called_once()
-        call_args = realtime_client.send_event.call_args[0][0]
-        assert isinstance(call_args, InputAudioBufferAppendEvent)
-        assert call_args.audio_data == "dGVzdCBhdWRpbyBkYXRh"  # base64 encoded "test audio data"
+    realtime_client._audio_queue_size = 32
+    
+    # Mock the audio queue to report it's not full
+    mock_audio_queue = MagicMock()
+    mock_audio_queue.qsize.return_value = 10  # Queue has space
+    realtime_client._audio_queue = mock_audio_queue
+    
+    # Mock the rate limit to allow the request
+    mock_rate_limit = MagicMock()
+    mock_rate_limit.is_allowed.return_value = True
+    realtime_client._rate_limit = mock_rate_limit
+    
+    # Mock the send_event method to succeed
+    realtime_client.send_event = AsyncMock()
+    
+    # Test audio data
+    test_audio_data = b"test audio chunk data"
+    expected_base64 = base64.b64encode(test_audio_data).decode("utf-8")
+    
+    # Call the method
+    result = await realtime_client.send_audio_chunk(test_audio_data)
+    
+    # Verify success
+    assert result is True
+    
+    # Verify rate limit was checked
+    mock_rate_limit.is_allowed.assert_called_once()
+    
+    # Verify audio queue size was checked
+    mock_audio_queue.qsize.assert_called_once()
+    
+    # Verify send_event was called with correct event
+    realtime_client.send_event.assert_called_once()
+    sent_event = realtime_client.send_event.call_args[0][0]
+    
+    # Verify the event is of correct type and contains expected data
+    assert isinstance(sent_event, InputAudioBufferAppendEvent)
+    assert sent_event.audio == expected_base64
+    
+    # Verify rate limit was updated with correct data size
+    mock_rate_limit.add_request.assert_called_once_with(len(test_audio_data))
 
 
 @pytest.mark.asyncio
@@ -200,20 +228,31 @@ async def test_close(realtime_client):
     mock_ws = AsyncMock()
     mock_ws.closed = False
     mock_ws.close = AsyncMock()
-    realtime_client._ws = mock_ws
-    
-    # Create proper mock tasks
-    mock_recv_task = AsyncMock()
-    mock_recv_task.done.return_value = False
-    mock_heartbeat_task = AsyncMock()
-    mock_heartbeat_task.done.return_value = False
+    realtime_client.ws = mock_ws
+
+    # Create proper mock tasks using asyncio.Future and mock cancel
+    mock_recv_task = asyncio.Future()
+    mock_recv_task.cancel = MagicMock()
+    mock_heartbeat_task = asyncio.Future()
+    mock_heartbeat_task.cancel = MagicMock()
+
+    # Mark the tasks as done after cancel is called
+    def cancel_and_set_cancelled(fut):
+        fut.set_exception(asyncio.CancelledError())
+
+    mock_recv_task.cancel.side_effect = lambda: cancel_and_set_cancelled(mock_recv_task)
+    mock_heartbeat_task.cancel.side_effect = lambda: cancel_and_set_cancelled(
+        mock_heartbeat_task
+    )
+
     realtime_client._recv_task = mock_recv_task
     realtime_client._heartbeat_task = mock_heartbeat_task
-    
+
     realtime_client._connection_active = True
     realtime_client._is_closing = False
     realtime_client._is_connected = True
     realtime_client._audio_queue = asyncio.Queue(maxsize=32)
+    realtime_client._audio_queue_size = realtime_client._audio_queue.maxsize
     realtime_client._logger = MagicMock()
 
     await realtime_client.close()

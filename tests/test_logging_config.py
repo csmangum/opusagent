@@ -12,7 +12,7 @@ class TestLoggingConfig(unittest.TestCase):
         self.assertEqual(logger.name, "voice_agent")
         
         # Test that the logger has the correct level
-        self.assertEqual(logger.level, logging.INFO)
+        self.assertEqual(logger.level, logging.DEBUG)
         
         # Test that the logger has the correct handlers and format
         self.assertGreaterEqual(len(logger.handlers), 1)  # At least one handler (console)

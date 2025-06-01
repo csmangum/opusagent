@@ -1,5 +1,6 @@
 import asyncio
 import json
+import types
 import uuid
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
@@ -15,6 +16,7 @@ def mock_websocket():
     mock = AsyncMock()
     mock.send_json = AsyncMock()
     mock.iter_text = AsyncMock()
+    mock.client_state = types.SimpleNamespace(DISCONNECTED=False)
     return mock
 
 
@@ -142,7 +144,10 @@ async def test_receive_from_telephony_user_stream_chunk(mock_audio_event, bridge
     bridge._closed = False
 
     # Setup mock data
-    audio_chunk = {"type": "userStream.chunk", "audioChunk": "base64audio"}
+    audio_chunk = {
+        "type": "userStream.chunk",
+        "audioChunk": "AAAA",
+    }  # valid base64 for two null bytes
 
     # Set up the mock to return the message
     async def mock_iter():
@@ -154,7 +159,7 @@ async def test_receive_from_telephony_user_stream_chunk(mock_audio_event, bridge
     # Mock the audio event model
     mock_event = MagicMock()
     mock_event.model_dump_json.return_value = (
-        '{"type": "input_audio_buffer.append", "audio": "base64audio"}'
+        '{"type": "input_audio_buffer.append", "audio": "AAAA"}'
     )
     mock_audio_event.return_value = mock_event
 
@@ -223,6 +228,9 @@ async def test_receive_from_telephony_session_end(bridge):
 @pytest.mark.asyncio
 async def test_receive_from_telephony_disconnect(bridge):
     # Simulate WebSocket disconnect
+    bridge.telephony_websocket.client_state.DISCONNECTED = (
+        False  # Ensure initially connected
+    )
     bridge.telephony_websocket.iter_text.side_effect = WebSocketDisconnect()
 
     # Run the method
@@ -237,6 +245,9 @@ async def test_receive_from_telephony_disconnect(bridge):
 @pytest.mark.asyncio
 async def test_receive_from_telephony_exception(bridge):
     # Simulate a generic exception
+    bridge.telephony_websocket.client_state.DISCONNECTED = (
+        False  # Ensure initially connected
+    )
     bridge.telephony_websocket.iter_text.side_effect = Exception("Test error")
 
     # Run the method

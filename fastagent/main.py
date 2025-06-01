@@ -54,9 +54,9 @@ app = FastAPI(
 async def handle_call(telephony_websocket: WebSocket):
     """Handle WebSocket connections between telephony provider and OpenAI."""
     client_address = telephony_websocket.client
-    logger.info(f"Incoming telephony connection from {client_address}")
+    logger.info(f"------ Incoming telephony connection from {client_address} ------")
     await telephony_websocket.accept()
-    logger.info(f"Telephony connection accepted from {client_address}")
+    logger.info(f"------ Telephony connection accepted from {client_address} ------")
 
     try:
         logger.info("Attempting to connect to OpenAI Realtime API...")

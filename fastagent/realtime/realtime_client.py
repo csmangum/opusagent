@@ -97,6 +97,7 @@ from fastagent.models.openai_api import (  # Session-related; Event types; Base 
     ConversationItemType,
     ErrorEvent,
     InputAudioBufferAppendEvent,
+    InputAudioBufferClearEvent,
     InputAudioBufferCommitEvent,
     MessageRole,
     RateLimitsUpdatedEvent,
@@ -104,6 +105,7 @@ from fastagent.models.openai_api import (  # Session-related; Event types; Base 
     ResponseAudioDeltaEvent,
     ResponseContentPartDoneEvent,
     ResponseCreateEvent,
+    ResponseCreateOptions,
     ResponseDoneEvent,
     ResponseOutputItemAddedEvent,
     ResponseTextDeltaEvent,
@@ -330,6 +332,9 @@ class RealtimeClient:
         )
         self._logger = logging.getLogger("voice_agent")
         self._logger.setLevel(log_level)
+        
+        # Event handler registry for on/off methods
+        self._event_handlers: Dict[str, List[Callable]] = {}
 
         # Initialize session config
         self._session_config = {
@@ -365,6 +370,10 @@ class RealtimeClient:
         self._last_memory_check = 0
         self._memory_check_interval = 60  # Check every 60 seconds
 
+        # Heartbeat configuration
+        self._heartbeat_interval = 60  # 60 seconds between heartbeat checks
+        self._last_activity = time.time()
+
         self._logger.info(
             f"RealtimeClient initialized with model: {model}, voice: {voice}, queue_size: {queue_size}"
         )
@@ -376,6 +385,16 @@ class RealtimeClient:
         self._session_config_event = asyncio.Event()
 
     @property
+    def session_id(self) -> Optional[str]:
+        """Get the current session ID."""
+        return self._session_id
+
+    @property
+    def conversation_id(self) -> Optional[str]:
+        """Get the current conversation ID."""
+        return self._conversation_id
+
+    @property
     def audio_queue(self) -> asyncio.Queue:
         """Get the audio queue."""
         return self._audio_queue
@@ -384,6 +403,161 @@ class RealtimeClient:
     def rate_limit(self) -> RateLimit:
         """Get the rate limit object."""
         return self._rate_limit
+
+    @property
+    def ws_url(self):
+        """Return the websocket URL for the current model."""
+        return f"{self._api_base}?model={self._model}"
+
+    def on(self, event_type: str, handler: Callable) -> None:
+        """Register an event handler for a specific event type.
+        
+        Args:
+            event_type: The event type to listen for (e.g., 'session.created')
+            handler: Async function to call when the event occurs
+        """
+        if event_type not in self._event_handlers:
+            self._event_handlers[event_type] = []
+        self._event_handlers[event_type].append(handler)
+        self._logger.debug(f"Registered handler for event type: {event_type}")
+
+    def off(self, event_type: str, handler: Callable) -> None:
+        """Remove an event handler for a specific event type.
+        
+        Args:
+            event_type: The event type to stop listening for
+            handler: The handler function to remove
+        """
+        if event_type in self._event_handlers:
+            try:
+                self._event_handlers[event_type].remove(handler)
+                self._logger.debug(f"Removed handler for event type: {event_type}")
+            except ValueError:
+                self._logger.warning(f"Handler not found for event type: {event_type}")
+
+    async def send_text_message(self, text: str, role: MessageRole = MessageRole.USER) -> bool:
+        """Send a text message to the conversation.
+        
+        Args:
+            text: The text content to send
+            role: The role of the message sender (default: USER)
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Create conversation item with text content
+            content_param = ConversationItemContentParam(
+                type="input_text",
+                text=text
+            )
+            
+            item_param = ConversationItemParam(
+                type="message",
+                role=role,
+                content=[content_param]
+            )
+            
+            event = ConversationItemCreateEvent(
+                item=item_param
+            )
+            
+            await self.send_event(event)
+            return True
+            
+        except Exception as e:
+            self._logger.error(f"Error sending text message: {e}")
+            return False
+
+    async def update_session(self, **kwargs) -> bool:
+        """Update the session configuration.
+        
+        Args:
+            **kwargs: Session configuration parameters (voice, modalities, tools, etc.)
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Update local session config
+            for key, value in kwargs.items():
+                if key in ['model']:
+                    # Model cannot be changed after session creation
+                    self._logger.warning(f"Cannot change {key} after session creation")
+                    continue
+                self._session_config[key] = value
+            
+            # Create session config object
+            session_config = SessionConfig(**self._session_config)
+            
+            # Send session update event
+            event = SessionUpdateEvent(session=session_config)
+            await self.send_event(event)
+            return True
+            
+        except Exception as e:
+            self._logger.error(f"Error updating session: {e}")
+            return False
+
+    async def create_response(self, modalities: Optional[List[str]] = None, **kwargs) -> bool:
+        """Create a response from the assistant.
+        
+        Args:
+            modalities: List of modalities for the response (e.g., ["text", "audio"])
+            **kwargs: Additional response options
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Set default modalities if not provided
+            if modalities is None:
+                modalities = ["text"]
+            
+            # Create response options
+            options = ResponseCreateOptions(
+                modalities=modalities,
+                **kwargs
+            )
+            
+            # Send response create event
+            event = ResponseCreateEvent(response=options)
+            await self.send_event(event)
+            return True
+            
+        except Exception as e:
+            self._logger.error(f"Error creating response: {e}")
+            return False
+
+    async def commit_audio_buffer(self) -> bool:
+        """Commit the current audio buffer to the conversation.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            event = InputAudioBufferCommitEvent()
+            await self.send_event(event)
+            return True
+            
+        except Exception as e:
+            self._logger.error(f"Error committing audio buffer: {e}")
+            return False
+
+    async def clear_audio_buffer(self) -> bool:
+        """Clear the current audio buffer.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            event = InputAudioBufferClearEvent()
+            await self.send_event(event)
+            return True
+            
+        except Exception as e:
+            self._logger.error(f"Error clearing audio buffer: {e}")
+            return False
 
     def _initialize_handlers(self) -> None:
         """Initialize all client handlers."""
@@ -1235,7 +1409,7 @@ class RealtimeClient:
         try:
             # Create and send the audio event
             event = InputAudioBufferAppendEvent(
-                audio_data=base64.b64encode(audio_data).decode("utf-8")
+                audio=base64.b64encode(audio_data).decode("utf-8")
             )
             await self.send_event(event)
             self._rate_limit.add_request(len(audio_data))
