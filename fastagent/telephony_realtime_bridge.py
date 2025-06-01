@@ -477,9 +477,11 @@ class TelephonyRealtimeBridge:
                 )
                 return
 
-            # Check if telephony websocket is available (basic check)
-            if not self.telephony_websocket:
-                logger.debug("Skipping audio delta - no telephony websocket")
+            # Check if telephony websocket is available and not closed
+            if not self.telephony_websocket or self._is_websocket_closed():
+                logger.debug(
+                    "Skipping audio delta - telephony websocket is closed or unavailable"
+                )
                 return
 
             # Start a new audio stream if needed
