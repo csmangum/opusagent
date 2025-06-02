@@ -123,8 +123,9 @@ class ConnectionPanel(Widget):
         # Update UI elements
         status_widget = self.query_one("#connection-status", Static)
         
+        ws_url = self.parent_app.config.ws_url if self.parent_app and hasattr(self.parent_app, "config") else "ws://localhost:8000/voice-bot"
         if status == "Connected":
-            status_widget.update("🟢 Connected to ws://localhost:8000/voice-bot")
+            status_widget.update(f"🟢 Connected to {ws_url}")
             status_widget.set_class(False, "status-disconnected", "status-connecting")
             status_widget.set_class(True, "status-connected")
             
