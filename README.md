@@ -1,7 +1,7 @@
 # FastAgent
 ![Status](https://img.shields.io/badge/status-In%20Development%20–%20Experimental%20%26%20Aspirational-blue)
 
-FastAgent is a framework for real-time voice bots that delivers seamless, low-latency interactions. Built with FastAPI, it integrates the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation. FastAgent combines a dynamic, Stateful LLM Layer conversational core with finite state agents(FSA) for complex tasks, ensuring rapid, context-aware voice interactions optimized for enterprise applications.
+FastAgent is a framework for real-time voice bots that delivers seamless, low-latency interactions. Built with FastAPI, it integrates the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation. FastAgent combines a dynamic, Stateful LLM Layer conversational core with finite state agents (FSA) for complex tasks, ensuring rapid, context-aware voice interactions optimized for enterprise applications.
 
 ## Key Features
 
