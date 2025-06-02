@@ -181,11 +181,18 @@ async def test_receive_from_telephony_user_stream_stop(mock_commit_event, bridge
     bridge.realtime_websocket.close_code = None
     bridge._closed = False
 
-    # Setup mock data
+    # Prepare a base64-encoded audio chunk of at least 3200 bytes
+    import base64
+    audio_bytes = b"\x00" * 3200
+    audio_chunk_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+    # Setup mock data: first a chunk, then a stop
+    stream_chunk = {"type": "userStream.chunk", "audioChunk": audio_chunk_b64}
     stream_stop = {"type": "userStream.stop"}
 
-    # Set up the mock to return the message
+    # Set up the mock to return the messages in sequence
     async def mock_iter():
+        yield json.dumps(stream_chunk)
         yield json.dumps(stream_stop)
         return
 
@@ -200,7 +207,7 @@ async def test_receive_from_telephony_user_stream_stop(mock_commit_event, bridge
     await bridge.receive_from_telephony()
 
     # Verify commit event was sent to OpenAI
-    bridge.realtime_websocket.send.assert_called_once_with(
+    bridge.realtime_websocket.send.assert_any_call(
         mock_event.model_dump_json.return_value
     )
 
