@@ -42,6 +42,9 @@ from validate.validate import (  # now imported from validate/validate.py
 from validate.validate_bot_response_flow import (
     validate_bot_response_flow,
 )  # moved out for modularity
+from validate.replacement_card_flow import (
+    validate_replacement_card_flow,
+)  # import the new replacement card flow validation
 
 # Load environment variables
 load_dotenv()
@@ -634,6 +637,15 @@ async def main():
         TIMEOUT_SECONDS=TIMEOUT_SECONDS,
     )
 
+    # Run replacement card flow validation
+    replacement_card_success = await validate_replacement_card_flow(
+        WS_URL=WS_URL,
+        AUDIO_FILE_PATH=AUDIO_FILE_PATH,
+        load_audio_chunks=load_audio_chunks,
+        AudioRecorder=AudioRecorder,
+        TIMEOUT_SECONDS=TIMEOUT_SECONDS,
+    )
+
     # Report results
     print("\n=== Validation Results ===")
     if session_success:
@@ -661,7 +673,16 @@ async def main():
             "❌ Bot response flow: FAILED - Check if the bridge properly handles the bot response sequence"
         )
 
-    if session_success and audio_success and bot_response_success:
+    if replacement_card_success:
+        print(
+            "✅ Replacement card flow: PASSED - Check if the bridge properly handles the replacement card flow"
+        )
+    else:
+        print(
+            "❌ Replacement card flow: FAILED - Check if the bridge properly handles the replacement card flow"
+        )
+
+    if session_success and audio_success and bot_response_success and replacement_card_success:
         print("\n✅ ALL VALIDATIONS PASSED!")
     else:
         print("\n❌ SOME VALIDATIONS FAILED")
