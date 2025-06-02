@@ -17,7 +17,7 @@ class WebSocketClient:
                  ping_interval: float = 20.0,
                  ping_timeout: float = 10.0,
                  connection_timeout: float = 15.0):
-        self.websocket: Optional[websockets.WebSocketServerProtocol] = None
+        self.websocket: Optional[websockets.WebSocketClientProtocol] = None
         self.connected = False
         self.connecting = False
         self.url: Optional[str] = None
