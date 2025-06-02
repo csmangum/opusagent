@@ -12,7 +12,7 @@ from typing import Optional, List
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Static, Button, ProgressBar, Slider, Label
+from textual.widgets import Static, Button, ProgressBar, Label
 from textual.widget import Widget
 from textual.timer import Timer
 
@@ -131,7 +131,8 @@ class AudioPanel(Widget):
             # Volume controls
             with Horizontal(classes="volume-controls"):
                 yield Label("🔊 Volume:")
-                yield Slider(value=100, min=0, max=100, step=5, id="volume-slider")
+                yield Button("➖", id="volume-down-btn", variant="default")
+                yield Button("➕", id="volume-up-btn", variant="default")
                 yield Button("🔇 Mute", id="mute-btn", variant="default")
             
             # Audio file info
@@ -180,11 +181,15 @@ class AudioPanel(Widget):
             asyncio.create_task(self._async_send_audio_file())
         elif event.button.id == "mute-btn":
             self._toggle_mute()
+        elif event.button.id == "volume-up-btn":
+            self._change_volume(0.1)
+        elif event.button.id == "volume-down-btn":
+            self._change_volume(-0.1)
     
-    def on_slider_changed(self, event) -> None:
-        """Handle slider change events."""
-        if event.slider.id == "volume-slider":
-            self._set_volume(event.value / 100.0)
+    def _change_volume(self, delta: float) -> None:
+        """Increase or decrease the volume by delta (clamped 0.0-1.0)."""
+        new_volume = max(0.0, min(1.0, self.volume + delta))
+        self._set_volume(new_volume)
     
     async def _async_start_stream(self) -> None:
         """Start audio streaming."""
@@ -534,17 +539,14 @@ class AudioPanel(Widget):
     def _set_volume(self, volume: float) -> None:
         """Set playback volume."""
         self.volume = max(0.0, min(1.0, volume))
-        
         if self.audio_manager:
             self.audio_manager.set_volume(self.volume)
-        
         # Update mute button text
         mute_btn = self.query_one("#mute-btn", Button)
         if self.volume == 0.0:
             mute_btn.label = "🔇 Muted"
         else:
             mute_btn.label = "🔇 Mute"
-        
         logger.debug(f"Volume set to {self.volume:.2f}")
     
     def _toggle_mute(self) -> None:
