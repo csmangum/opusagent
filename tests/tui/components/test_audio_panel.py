@@ -16,6 +16,7 @@ async def test_audio_panel_volume_buttons():
         assert isinstance(panel, AudioPanel)
         up_btn = panel.query_one("#volume-up-btn", Button)
         down_btn = panel.query_one("#volume-down-btn", Button)
+        panel.volume = 0.5  # Set to less than max so it can increase
         old_volume = panel.volume
         # Click volume up
         await pilot.click("#volume-up-btn")

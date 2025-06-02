@@ -93,6 +93,8 @@ class TelephonyRealtimeBridge:
         _closed (bool): Flag indicating whether the bridge connections are closed
         audio_chunks_sent (int): Number of audio chunks sent to the OpenAI Realtime API
         total_audio_bytes_sent (int): Total number of bytes sent to the OpenAI Realtime API
+        input_transcript_buffer (list): Buffer for accumulating input audio transcriptions
+        output_transcript_buffer (list): Buffer for accumulating output audio transcriptions
     """
 
     def __init__(
@@ -118,6 +120,10 @@ class TelephonyRealtimeBridge:
         # Audio buffer tracking for debugging
         self.audio_chunks_sent = 0
         self.total_audio_bytes_sent = 0
+
+        # Transcript buffers for logging full transcripts
+        self.input_transcript_buffer = []  # User → AI
+        self.output_transcript_buffer = []  # AI → User
 
         # Create event handler mappings for telephony events
         self.telephony_event_handlers = {
@@ -633,8 +639,10 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        #! TODO: Handle audio transcript delta
-        pass
+        delta = response_dict.get('delta', '')
+        if delta:
+            self.output_transcript_buffer.append(delta)
+        logger.debug(f"Received audio transcript delta: {delta}")
 
     async def handle_audio_transcript_done(self, response_dict):
         """Handle audio transcript completion events from the OpenAI Realtime API.
@@ -642,8 +650,10 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
+        full_transcript = ''.join(self.output_transcript_buffer)
+        logger.info(f"Full AI transcript (output audio): {full_transcript}")
+        self.output_transcript_buffer.clear()
         logger.info("Audio transcript completed")
-        # Optionally, could log here, but we log on close
 
     async def handle_content_part_done(self, response_dict):
         """Handle content part completion events from the OpenAI Realtime API.
@@ -667,8 +677,11 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
+        delta = response_dict.get('delta', '')
+        if delta:
+            self.input_transcript_buffer.append(delta)
         logger.debug(
-            f"Received input audio transcription delta: {response_dict.get('delta', '')}"
+            f"Received input audio transcription delta: {delta}"
         )
 
     async def handle_input_audio_transcription_completed(self, response_dict):
@@ -677,6 +690,9 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
+        full_transcript = ''.join(self.input_transcript_buffer)
+        logger.info(f"Full user transcript (input audio): {full_transcript}")
+        self.input_transcript_buffer.clear()
         logger.info("Input audio transcription completed")
 
     def _get_telephony_event_type(self, msg_type_str):
