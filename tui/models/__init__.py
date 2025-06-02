@@ -7,6 +7,7 @@ event logging, and other data structures used throughout the application.
 
 from .session_state import SessionState, SessionStatus, StreamStatus, SessionMetrics, AudioStreamState
 from .event_logger import EventLogger, EventLevel, EventCategory, LogEvent
+from .audio_manager import AudioManager, AudioConfig, AudioFormat
 
 __all__ = [
     "SessionState",
@@ -18,4 +19,7 @@ __all__ = [
     "EventLevel",
     "EventCategory",
     "LogEvent",
+    "AudioManager",
+    "AudioConfig",
+    "AudioFormat",
 ] 

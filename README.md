@@ -1,16 +1,17 @@
 # FastAgent
 ![Status](https://img.shields.io/badge/status-In%20Development%20–%20Experimental%20%26%20Aspirational-blue)
 
-FastAgent is a high-performance framework for real-time voice bots that delivers seamless, low-latency interactions. Built with FastAPI, it integrates the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation. FastAgent combines a dynamic, Stateful LLM Layer conversational core with finite state machine (FSM) agents for complex tasks, ensuring rapid, context-aware voice interactions optimized for enterprise applications.
+FastAgent is a framework for real-time voice bots that delivers seamless, low-latency interactions. Built with FastAPI, it integrates the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation. FastAgent combines a dynamic, Stateful LLM Layer conversational core with agentic finite state machines (AFSM) for complex tasks, ensuring rapid, context-aware voice interactions optimized for enterprise applications.
 
 ## Key Features
 
 - **Dynamic Dialogue**: OpenAI's AI drives fluid, multi-turn conversations without rigid states
-- **Structured Tasks**: FSM agents ensure reliable, step-by-step task handling
+- **Structured Tasks**: AFSM agents ensure reliable, step-by-step task handling
 - **Ultra-Low Latency**: FastAPI-powered audio passthrough and real-time processing
 - **Call Continuity**: Automatic handling of disconnections with context preservation
-- **Modular Design**: Easily add new FSM-based tasks (e.g., payments, queries)
+- **Modular Design**: Easily add new AFSM-based tasks (e.g., payments, queries)
 - **Transparent Reasoning**: Track agent decision-making processes through AFSM architecture
+- **Model Context Protocol (MCP)**: Orchestrates tool/function calls, manages conversational context, and ensures reliable, auditable execution between the LLM and backend services
 
 ## Architecture
 
@@ -20,50 +21,26 @@ FastAgent employs a hybrid architecture:
 - **AFSM Task Agents**: When triggered by specific intents, dedicated Agentic Finite State Machines handle structured workflows
 - **Concurrent Execution**: Conversation flows uninterrupted while FSM agents handle tasks in parallel
 
-## Installation
+## Model Context Protocol (MCP)
 
-```bash
-# Clone the repository
-git clone https://github.com/csmangum/fastagent.git
-cd fastagent
+FastAgent uses the **Model Context Protocol (MCP)** as the backbone for orchestrating tool and function calls, managing conversational context, and ensuring reliable execution of complex workflows.
 
-# Create and activate virtual environment (optional)
-python -m venv venv
-# On Windows
-.\venv\Scripts\activate
+- **What is MCP?**  
+  MCP is a protocol layer that connects the conversational AI (LLM) with backend services and the Agentic Finite State Machine (AFSM) framework. It ensures that every tool/function call (such as validating user input, confirming actions, or triggering external services) is executed deterministically, with full context preservation and traceability.
 
-# Install dependencies
-pip install -r requirements.txt
+- **How does it work?**  
+  When the LLM determines that an action is needed (e.g., replacing a card, confirming an address), it issues a structured function call. MCP receives this call, manages the relevant context, and routes the request to the appropriate handler or service. MCP also updates the AFSM state and context, ensuring that the conversation flow remains coherent and auditable.
 
-# Setup environment variables
-cp env.example .env
-# Edit .env with your configuration
-```
-
-## Quick Start
-
-```bash
-# Run the server
-python run.py
-
-# For development with debug enabled
-python run.py --debug
-```
-
-## Docker Support
-
-```bash
-# Build and run with Docker Compose
-docker-compose up -d
-```
+- **Why MCP?**  
+  MCP provides a clean separation between conversational logic and execution logic, making it easy to test, debug, and extend FastAgent with new tools or workflows. It is designed for reliability, transparency, and modularity in enterprise-grade voice and chat agents.
 
 ## Documentation
 
 For detailed documentation on FastAgent concepts and implementation:
 
-- [Architecture Overview](./OVERVIEW.md)
-- [Design Details](./DESIGN.md)
-- [Agentic Finite State Machines (AFSM)](./app/afsm/README.md)
+- [Architecture Overview](docs/OVERVIEW.md)
+- [Design Details](docs/DESIGN.md)
+- [Agentic Finite State Machines (AFSM)](docs/agentic_finite_state_machine.md)
 
 ## Use Cases
 

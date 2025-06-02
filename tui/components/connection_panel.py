@@ -501,6 +501,17 @@ class ConnectionPanel(Widget):
         elif message_type == "playStream.chunk":
             chunk_data = message.get("audioChunk", "")
             self.session_state.handle_bot_audio_chunk(chunk_data)
+            
+            # Route audio chunk to audio panel for playback
+            if self.parent_app and hasattr(self.parent_app, "audio_panel"):
+                try:
+                    from tui.utils.audio_utils import AudioUtils
+                    # Decode base64 audio data
+                    audio_bytes = AudioUtils.convert_from_base64(chunk_data)
+                    # Send to audio panel for playback
+                    await self.parent_app.audio_panel.handle_bot_audio_chunk(audio_bytes)
+                except Exception as e:
+                    logger.error(f"Error routing audio chunk to audio panel: {e}")
         
         self.event_logger.log_audio_event(
             message_type,
