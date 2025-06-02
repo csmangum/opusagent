@@ -52,7 +52,7 @@ Each tool call is received via MCP and handled independently of the conversation
 | User: "My Platinum card."    | Confirm account            | `replace_card`       | `"member_account": "Platinum"` | "Can you tell me the reason you need a replacement?" |
 | User: "It was stolen."       | Ask reason for replacement | `replacement_reason` | `"reason": "stolen"`           | "Thank you. Would you like to use the address we have on file for delivery?" |
 | User: "No, use a different address."   | Confirm address on file    | `confirm_address`    | `"address_correct": false`      | "Thank you. We'll use the address you provided." |
-| LLM: "Your card will arrive" | Finish flow                | `wrap_up`            | polite closure                 | "Your card will arrive in 3-5 business days. Is there anything else I can help you with today?" |
+| | Finish flow                | `wrap_up`            | polite closure                 | "Your card will arrive in 3-5 business days. Is there anything else I can help you with today?" |
 
 ### 🛠 Technical Details
 
