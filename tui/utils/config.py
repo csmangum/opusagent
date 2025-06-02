@@ -32,6 +32,12 @@ class TUIConfig:
     reconnect_attempts: int = 3
     reconnect_delay: int = 2
     
+    # Session settings
+    bot_name: str = "voice-bot"
+    caller_id: str = "tui-validator"
+    session_timeout: int = 300  # 5 minutes
+    auto_reconnect: bool = True
+    
     # Audio settings
     audio_chunk_size: int = 32000  # 2 seconds of 16kHz 16-bit audio
     sample_rate: int = 16000  # 16kHz
@@ -52,6 +58,13 @@ class TUIConfig:
     # Message filtering
     show_audio_chunks: bool = False
     show_debug_messages: bool = True
+    filter_heartbeat_messages: bool = True
+    
+    # Event logging
+    max_events: int = 1000
+    log_level: str = "INFO"
+    export_format: str = "json"
+    auto_export_on_session_end: bool = False
     
     # Appearance
     theme: str = "dark"
@@ -68,6 +81,12 @@ class TUIConfig:
         # Connection settings
         self.timeout_seconds = int(os.getenv("TUI_TIMEOUT", str(self.timeout_seconds)))
         self.reconnect_attempts = int(os.getenv("TUI_RECONNECT_ATTEMPTS", str(self.reconnect_attempts)))
+        self.auto_reconnect = os.getenv("TUI_AUTO_RECONNECT", "true").lower() == "true"
+        
+        # Session settings
+        self.bot_name = os.getenv("TUI_BOT_NAME", self.bot_name)
+        self.caller_id = os.getenv("TUI_CALLER_ID", self.caller_id)
+        self.session_timeout = int(os.getenv("TUI_SESSION_TIMEOUT", str(self.session_timeout)))
         
         # Audio settings
         self.sample_rate = int(os.getenv("TUI_SAMPLE_RATE", str(self.sample_rate)))
@@ -88,6 +107,13 @@ class TUIConfig:
         # Message filtering
         self.show_audio_chunks = os.getenv("TUI_SHOW_AUDIO_CHUNKS", "false").lower() == "true"
         self.show_debug_messages = os.getenv("TUI_SHOW_DEBUG", "true").lower() == "true"
+        self.filter_heartbeat_messages = os.getenv("TUI_FILTER_HEARTBEAT", "true").lower() == "true"
+        
+        # Event logging
+        self.max_events = int(os.getenv("TUI_MAX_EVENTS", str(self.max_events)))
+        self.log_level = os.getenv("TUI_LOG_LEVEL", self.log_level)
+        self.export_format = os.getenv("TUI_EXPORT_FORMAT", self.export_format)
+        self.auto_export_on_session_end = os.getenv("TUI_AUTO_EXPORT", "false").lower() == "true"
         
         # Create recordings directory if it doesn't exist
         Path(self.recordings_dir).mkdir(parents=True, exist_ok=True)
@@ -106,6 +132,10 @@ class TUIConfig:
         """Get the full path for an audio file."""
         return Path(self.recordings_dir) / filename
     
+    def get_export_file_path(self, filename: str) -> Path:
+        """Get the full path for an export file."""
+        return Path(self.recordings_dir) / filename
+    
     def is_valid(self) -> bool:
         """Validate the configuration."""
         try:
@@ -115,6 +145,10 @@ class TUIConfig:
             
             # Check audio settings
             if self.sample_rate <= 0 or self.audio_chunk_size <= 0:
+                return False
+            
+            # Check session settings
+            if self.session_timeout <= 0:
                 return False
             
             # Check directory exists and is writable
@@ -134,10 +168,15 @@ class TUIConfig:
             "ws_path": self.ws_path,
             "ws_url": self.ws_url,
             "timeout_seconds": self.timeout_seconds,
+            "bot_name": self.bot_name,
+            "caller_id": self.caller_id,
             "sample_rate": self.sample_rate,
             "audio_format": self.audio_format,
             "recordings_dir": self.recordings_dir,
             "theme": self.theme,
+            "max_events": self.max_events,
+            "log_level": self.log_level,
+            "auto_reconnect": self.auto_reconnect,
         }
 
 

@@ -10,6 +10,7 @@ Usage:
 import asyncio
 import os
 import sys
+import logging
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -27,6 +28,14 @@ from tui.components.transcript_panel import TranscriptPanel
 from tui.components.controls_panel import ControlsPanel
 from tui.components.status_bar import StatusBar
 from tui.utils.config import TUIConfig
+from tui.models.event_logger import EventLogger, LogEvent
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class InteractiveTUIValidator(App):
@@ -62,7 +71,7 @@ class InteractiveTUIValidator(App):
     
     .connection-section {
         height: auto;
-        min-height: 5;
+        min-height: 6;
     }
     
     .controls-section {
@@ -96,10 +105,14 @@ class InteractiveTUIValidator(App):
         Binding("q", "quit", "Quit", priority=True),
         Binding("c", "connect", "Connect"),
         Binding("d", "disconnect", "Disconnect"),
-        Binding("s", "start_call", "Start Call"),
-        Binding("e", "end_call", "End Call"),
+        Binding("s", "start_session", "Start Session"),
+        Binding("e", "end_session", "End Session"),
+        Binding("r", "start_recording", "Start Recording"),
+        Binding("t", "stop_recording", "Stop Recording"),
         Binding("h", "help", "Help"),
         ("ctrl+r", "restart", "Restart"),
+        ("ctrl+l", "clear_logs", "Clear Logs"),
+        ("ctrl+e", "export_logs", "Export Logs"),
     ]
 
     def __init__(self):
@@ -113,6 +126,9 @@ class InteractiveTUIValidator(App):
         self.transcript_panel = None
         self.controls_panel = None
         self.status_bar = None
+        
+        # Central event logger for the application
+        self.event_logger = None
 
     def compose(self) -> ComposeResult:
         """Create the UI layout."""
@@ -161,47 +177,260 @@ class InteractiveTUIValidator(App):
         self.sub_title = self.SUB_TITLE
         
         # Set up component references and event handlers
+        await self._setup_components()
+        
+        # Log application startup
+        if self.event_logger:
+            self.event_logger.log_event(
+                "app_startup",
+                "TUI Validator started successfully",
+                data={"config": self.config.to_dict()}
+            )
+            
+        logger.info("TUI Validator initialized successfully")
+
+    async def _setup_components(self) -> None:
+        """Setup and connect all components."""
+        # Set parent app reference for all components
+        components = [
+            self.connection_panel,
+            self.controls_panel, 
+            self.audio_panel,
+            self.events_panel,
+            self.transcript_panel,
+            self.status_bar
+        ]
+        
+        for component in components:
+            if component:
+                component.parent_app = self
+        
+        # Get the central event logger from connection panel
         if self.connection_panel:
-            self.connection_panel.parent_app = self
-        if self.controls_panel:
-            self.controls_panel.parent_app = self
-        if self.audio_panel:
-            self.audio_panel.parent_app = self
+            self.event_logger = self.connection_panel.get_event_logger()
+            
+            # Connect event logger to events panel
+            if self.events_panel and self.event_logger:
+                self.event_logger.add_event_handler(self._on_event_logged)
+        
+        # Setup component interconnections
+        await self._setup_component_connections()
+    
+    async def _setup_component_connections(self) -> None:
+        """Setup connections between components."""
+        if not self.connection_panel:
+            return
+            
+        # Get session state and message handler from connection panel
+        session_state = self.connection_panel.get_session_state()
+        message_handler = self.connection_panel.message_handler
+        
+        # Connect session events to transcript panel
+        if self.transcript_panel and message_handler:
+            message_handler.add_general_handler(self._on_message_for_transcript)
+        
+        # Connect session state changes to status bar updates
+        if self.status_bar and session_state:
+            session_state.add_status_change_callback(self._on_session_status_for_status_bar)
+            session_state.add_metrics_update_callback(self._on_metrics_update_for_status_bar)
+    
+    def _on_event_logged(self, event: LogEvent) -> None:
+        """Handle events logged to the central event logger."""
         if self.events_panel:
-            self.events_panel.parent_app = self
-        if self.transcript_panel:
-            self.transcript_panel.parent_app = self
+            # Convert LogEvent to events panel format
+            status_map = {
+                "debug": "info",
+                "info": "info", 
+                "warning": "warning",
+                "error": "error",
+                "critical": "error"
+            }
+            
+            status = status_map.get(event.level.value, "info")
+            details = event.message
+            
+            # Add additional context if available
+            if event.data:
+                context_info = []
+                if "conversation_id" in event.data:
+                    conv_id = event.data["conversation_id"]
+                    if len(conv_id) > 8:
+                        conv_id = conv_id[:8] + "..."
+                    context_info.append(f"Conv: {conv_id}")
+                
+                if context_info:
+                    details = f"{details} ({', '.join(context_info)})"
+            
+            self.events_panel.add_event(event.event_type, status=status, details=details)
+    
+    async def _on_message_for_transcript(self, message: dict) -> None:
+        """Handle messages for transcript display."""
+        if not self.transcript_panel:
+            return
+            
+        message_type = message.get("type", "")
+        
+        # Handle transcript-related messages
+        if message_type == "conversation.item.input_audio_transcription.completed":
+            transcript = message.get("transcript", "")
+            if transcript:
+                self.transcript_panel.add_user_message(transcript)
+                
+        elif message_type.startswith("response.") and "content" in message:
+            # Handle bot responses
+            content = message.get("content", [])
+            for item in content:
+                if item.get("type") == "text":
+                    text = item.get("text", "")
+                    if text:
+                        self.transcript_panel.add_bot_message(text)
+    
+    def _on_session_status_for_status_bar(self, old_status, new_status) -> None:
+        """Handle session status changes for status bar."""
         if self.status_bar:
-            self.status_bar.parent_app = self
+            audio_status = "Idle"
+            if new_status.value == "active":
+                audio_status = "Session Active"
+            elif new_status.value == "initiating":
+                audio_status = "Starting Session"
+            elif new_status.value == "ending":
+                audio_status = "Ending Session"
+            
+            self.status_bar.update_audio_status(audio_status)
+    
+    def _on_metrics_update_for_status_bar(self, metrics) -> None:
+        """Handle metrics updates for status bar."""
+        if self.status_bar and metrics.latency_ms:
+            self.status_bar.update_latency(metrics.latency_ms)
 
     def action_connect(self) -> None:
         """Handle connect action."""
         if self.connection_panel:
-            self.connection_panel.initiate_connection()
+            asyncio.create_task(self.connection_panel._async_connect())
 
     def action_disconnect(self) -> None:
-        """Handle disconnect action."""
+        """Handle disconnect action.""" 
         if self.connection_panel:
-            self.connection_panel.disconnect()
+            asyncio.create_task(self.connection_panel._async_disconnect())
+    
+    def action_start_session(self) -> None:
+        """Handle start session action."""
+        if self.connection_panel:
+            asyncio.create_task(self.connection_panel._async_start_session())
+    
+    def action_end_session(self) -> None:
+        """Handle end session action."""
+        if self.connection_panel:
+            asyncio.create_task(self.connection_panel._async_end_session())
 
-    def action_start_call(self) -> None:
-        """Handle start call action."""
-        if self.controls_panel:
-            self.controls_panel.start_call()
+    def action_start_recording(self) -> None:
+        """Handle start recording action."""
+        if self.audio_panel:
+            self.audio_panel.start_stream()
 
-    def action_end_call(self) -> None:
-        """Handle end call action."""
-        if self.controls_panel:
-            self.controls_panel.end_call()
+    def action_stop_recording(self) -> None:
+        """Handle stop recording action."""
+        if self.audio_panel:
+            self.audio_panel.stop_stream()
+
+    def action_clear_logs(self) -> None:
+        """Clear all logs and events."""
+        if self.events_panel:
+            self.events_panel.clear_events()
+        if self.transcript_panel:
+            self.transcript_panel.clear_transcript()
+        if self.event_logger:
+            self.event_logger.clear_events()
+        if self.status_bar:
+            self.status_bar.reset_counters()
+            
+        self.bell()  # Audio feedback
+
+    def action_export_logs(self) -> None:
+        """Export logs to file."""
+        if self.event_logger:
+            # Create export filename with timestamp
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"tui_validator_logs_{timestamp}.json"
+            filepath = self.config.get_audio_file_path(filename)
+            
+            asyncio.create_task(self._async_export_logs(str(filepath)))
+
+    async def _async_export_logs(self, filepath: str) -> None:
+        """Async export logs to file."""
+        try:
+            success = await self.event_logger.export_logs(filepath, "json")
+            if success:
+                if self.events_panel:
+                    self.events_panel.add_event(
+                        "export_success", 
+                        status="success", 
+                        details=f"Logs exported to {filepath}"
+                    )
+                self.bell()  # Success feedback
+            else:
+                if self.events_panel:
+                    self.events_panel.add_event(
+                        "export_failed", 
+                        status="error", 
+                        details="Failed to export logs"
+                    )
+        except Exception as e:
+            logger.error(f"Error exporting logs: {e}")
+            if self.events_panel:
+                self.events_panel.add_event(
+                    "export_error", 
+                    status="error", 
+                    details=f"Export error: {e}"
+                )
 
     def action_help(self) -> None:
         """Show help dialog."""
-        # TODO: Implement help dialog
+        help_text = """
+TelephonyRealtimeBridge Interactive Validator
+
+Keyboard Shortcuts:
+  c - Connect to server
+  d - Disconnect from server  
+  s - Start session
+  e - End session
+  r - Start audio recording
+  t - Stop audio recording
+  Ctrl+L - Clear all logs
+  Ctrl+E - Export logs
+  Ctrl+R - Restart application
+  q - Quit application
+  h - Show this help
+
+Connection: Use 'c' to connect to the TelephonyRealtimeBridge server.
+Session: After connecting, use 's' to start a session with the bot.
+Audio: Use 'r' to start recording audio and 't' to stop.
+Logs: Use Ctrl+L to clear logs or Ctrl+E to export them.
+"""
+        
+        if self.transcript_panel:
+            self.transcript_panel.add_system_message(help_text)
         self.bell()
 
     def action_restart(self) -> None:
         """Restart the application."""
         self.exit(return_code=2)  # Use code 2 to indicate restart needed
+
+    async def on_unmount(self) -> None:
+        """Cleanup when app is shutting down."""
+        # Disconnect gracefully
+        if self.connection_panel:
+            await self.connection_panel._async_disconnect()
+        
+        # Log shutdown
+        if self.event_logger:
+            self.event_logger.log_event(
+                "app_shutdown",
+                "TUI Validator shutting down",
+            )
+        
+        logger.info("TUI Validator shutdown complete")
 
 
 def main():
