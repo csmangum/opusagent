@@ -23,10 +23,10 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
-logger = logging.getLogger("fastagent.examples.afsm_demo")
+logger = logging.getLogger("fastagent.examples.fsa_demo")
 
 async def main():
-    """Run a simple demonstration of the AFSM."""
+    """Run a simple demonstration of the FSA."""
     # Create state instances
     greeting_state = GreetingState()
     auth_state = AuthenticationState()
@@ -53,7 +53,7 @@ async def main():
     )
     
     print("\n" + "="*50)
-    print("AFSM Demo - Bank Customer Service Simulation")
+    print("FSA Demo - Bank Customer Service Simulation")
     print("="*50)
     print("Type your messages below. Type 'exit' to quit.")
     print("="*50 + "\n")
@@ -64,10 +64,10 @@ async def main():
         user_input = input("\nYou: ")
         
         if user_input.lower() in ["exit", "quit", "bye"]:
-            print("\nThank you for using the AFSM demo. Goodbye!")
+            print("\nThank you for using the FSA demo. Goodbye!")
             break
         
-        # Process the input through the AFSM
+        # Process the input through the FSA
         response = await manager.process_input(user_input)
         
         # Display the response

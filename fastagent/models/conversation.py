@@ -11,12 +11,12 @@ from typing import Any, Dict, Optional
 
 from fastapi import WebSocket
 
-# Import the AFSM executor for concurrent task management
+# Import the FSA executor for concurrent task management
 try:
-    from fastagent.afsm.executor import fsm_executor
-    _has_afsm_executor = True
+    from fastagent.fsa.executor import fsm_executor
+    _has_fsa_executor = True
 except ImportError:
-    _has_afsm_executor = False
+    _has_fsa_executor = False
 
 
 class ConversationManager:
@@ -71,8 +71,8 @@ class ConversationManager:
             conversation_id: Unique identifier for the conversation to remove
         """
         if conversation_id in self.active_conversations:
-            # Clean up any concurrent AFSM tasks associated with this conversation
-            if _has_afsm_executor:
+            # Clean up any concurrent FSA tasks associated with this conversation
+            if _has_fsa_executor:
                 cleaned_tasks = fsm_executor.cleanup_conversation_tasks(conversation_id)
                 if cleaned_tasks:
                     import logging

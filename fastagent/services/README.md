@@ -4,7 +4,7 @@ The Concurrent Execution Service enables FastAgent to run structured tasks in pa
 
 ## Key Features
 
-- **Parallel Processing**: Execute AFSM task agents in the background while the conversation continues
+- **Parallel Processing**: Execute FSA task agents in the background while the conversation continues
 - **Task Management**: Track task progress, status, and results
 - **Resource Cleanup**: Automatically clean up resources when conversations end
 - **Error Handling**: Robust error handling and timeout management for background tasks
@@ -21,9 +21,9 @@ The `ConcurrentExecutor` class provides the foundation for running concurrent ta
 - Handle errors and timeouts gracefully
 - Clean up tasks when conversations end
 
-### AFSMExecutor
+### FSAExecutor
 
-The `AFSMExecutor` class integrates the concurrent execution service with AFSM state machines:
+The `FSAExecutor` class integrates the concurrent execution service with FSA state machines:
 
 - Execute complete FSM workflows in the background
 - Track state transitions during execution
@@ -52,10 +52,10 @@ task_id = executor.submit_task(
 result = executor.get_task_result(task_id)
 ```
 
-### AFSM Task Execution
+### FSA Task Execution
 
 ```python
-from fastagent.services.afsm_executor import fsm_executor
+from fastagent.services.fsa_executor import fsm_executor
 
 # Define states for a structured task
 state_map = {
@@ -90,7 +90,7 @@ The concurrent execution service is integrated with the conversation manager to 
 
 1. **Task Design**: Keep background tasks focused and optimized
 2. **Error Handling**: Include proper error handling in concurrent tasks
-3. **State Management**: Maintain clean state boundaries in AFSM tasks
+3. **State Management**: Maintain clean state boundaries in FSA tasks
 4. **Resource Management**: Be mindful of resource usage in long-running tasks
 5. **Conversation Integration**: Use natural prompts to inform users about background processing
 

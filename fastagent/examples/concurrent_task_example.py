@@ -1,5 +1,5 @@
 """
-Example demonstrating concurrent execution of AFSM task agents alongside conversation flow.
+Example demonstrating concurrent execution of FSA task agents alongside conversation flow.
 
 This example shows how to:
 1. Define states for a structured task (in this case, a simple account balance check)
@@ -12,14 +12,14 @@ import logging
 import uuid
 from typing import Dict, Any
 
-from fastagent.afsm.executor import fsm_executor
-from fastagent.afsm.states import AFSMState
+from fastagent.fsa.executor import fsm_executor
+from fastagent.fsa.states import FSAState
 from fastagent.config.constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
 
 # Define some example states for a banking task
-class BalanceCheckInitialState(AFSMState):
+class BalanceCheckInitialState(FSAState):
     """Initial state for balance check task."""
     
     def __init__(self):
@@ -41,7 +41,7 @@ class BalanceCheckInitialState(AFSMState):
         
         return response, "balance_check_auth", context
 
-class BalanceCheckAuthState(AFSMState):
+class BalanceCheckAuthState(FSAState):
     """Authentication state for balance check task."""
     
     def __init__(self):
@@ -63,7 +63,7 @@ class BalanceCheckAuthState(AFSMState):
         
         return response, "balance_check_query", context
 
-class BalanceCheckQueryState(AFSMState):
+class BalanceCheckQueryState(FSAState):
     """Query state for balance check task."""
     
     def __init__(self):
@@ -86,7 +86,7 @@ class BalanceCheckQueryState(AFSMState):
         
         return response, "balance_check_result", context
 
-class BalanceCheckResultState(AFSMState):
+class BalanceCheckResultState(FSAState):
     """Result state for balance check task."""
     
     def __init__(self):
@@ -113,7 +113,7 @@ class BalanceCheckResultState(AFSMState):
 
 
 async def demonstrate_concurrent_execution():
-    """Demonstrate concurrent execution of an AFSM task while conversation continues."""
+    """Demonstrate concurrent execution of an FSA task while conversation continues."""
     
     # Create a unique conversation ID
     conversation_id = f"demo_{uuid.uuid4().hex[:8]}"

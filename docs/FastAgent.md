@@ -1,10 +1,10 @@
-**FastAgent: A Low-Latency FastAPI Bridge for Real-Time Telephony Voice Agents Using Agentic Finite State Machines (AFSM)**
+**FastAgent: A Low-Latency FastAPI Bridge for Real-Time Telephony Voice Agents Using Finite State Agents (FSA)**
 
 ---
 
 ## Abstract
 
-FastAgent is a high-performance, low-latency framework designed to integrate telephony systems with intelligent, real-time voice agents. It leverages FastAPI for HTTP/WebSocket communication and introduces the concept of Agentic Finite State Machines (AFSM) to provide structured, controllable, and dynamic conversational flows. FastAgent enables stateful, memory-aware voice interactions that are modular, scalable, and optimized for live customer engagements.
+FastAgent is a high-performance, low-latency framework designed to integrate telephony systems with intelligent, real-time voice agents. It leverages FastAPI for HTTP/WebSocket communication and introduces the concept of Finite State Agents (FSA) to provide structured, controllable, and dynamic conversational flows. FastAgent enables stateful, memory-aware voice interactions that are modular, scalable, and optimized for live customer engagements.
 
 ---
 
@@ -15,7 +15,7 @@ The need for responsive, intelligent voice systems is rising rapidly across indu
 FastAgent bridges these two paradigms by combining:
 - FastAPI's high concurrency and low-latency performance.
 - Telephony integration for real-time voice streaming.
-- Agentic Finite State Machines (AFSM) for structure, context-awareness, and reliability.
+- Finite State Agents (FSA) for structure, context-awareness, and reliability.
 
 This architecture provides enterprises and developers with a powerful platform to deploy flexible, safe, and efficient voice-based agents.
 
@@ -36,8 +36,8 @@ FastAgent supports:
 - Session lifecycle management (start, maintain, terminate calls).
 - Optional audio recording and playback capabilities.
 
-### Agentic Finite State Machines (AFSM)
-AFSM extends traditional FSMs by:
+### Finite State Agents (FSA)
+FSA extends traditional FSMs by:
 - Embedding agent reasoning into each state.
 - Utilizing scratchpads for localized reasoning.
 - Dynamically adjusting the next state based on LLM-influenced or rule-based outputs.
@@ -57,17 +57,17 @@ Each agent instance maintains:
    - Audio streams to and from the voice agent.
 
 2. **Session Manager**
-   - Initializes a new AFSM agent per call.
+   - Initializes a new FSA agent per call.
    - Stores and updates session context.
 
-3. **AFSM Engine**
+3. **FSA Engine**
    - Each user utterance triggers state evaluation.
    - State determines behavior, context feeding, and LLM prompting.
    - Scratchpad reasoning is optionally exposed.
 
 4. **LLM Reasoning Layer** (Optional)
    - Selectively invoked to reason inside scratchpad or generate user-facing responses.
-   - Can propose transitions, but final authority is always with AFSM rules.
+   - Can propose transitions, but final authority is always with FSA rules.
 
 5. **Output Handler**
    - Formats final response (e.g., synthesized speech).
@@ -96,15 +96,15 @@ Each agent instance maintains:
 
 ## Future Work
 
-- **Multi-Agent Escalation:** Seamless handoff between AFSM agents based on intent.
-- **Adaptive State Evolution:** Allow AFSMs to evolve over session lifetime using reinforcement learning.
-- **Cross-Channel Continuity:** Persist user AFSM across voice, SMS, and chat interfaces.
+- **Multi-Agent Escalation:** Seamless handoff between FSA agents based on intent.
+- **Adaptive State Evolution:** Allow FSA to evolve over session lifetime using reinforcement learning.
+- **Cross-Channel Continuity:** Persist user FSA across voice, SMS, and chat interfaces.
 
 ---
 
 ## Conclusion
 
-FastAgent represents a new approach to real-time voice agent development: combining the speed and modularity of FastAPI, the rigor of finite-state control, and the intelligence of reasoning-capable agents. With Agentic Finite State Machines (AFSM), FastAgent provides a foundation for scalable, safe, and satisfying conversational experiences in telephony environments.
+FastAgent represents a new approach to real-time voice agent development: combining the speed and modularity of FastAPI, the rigor of finite-state control, and the intelligence of reasoning-capable agents. With Finite State Agents (FSA), FastAgent provides a foundation for scalable, safe, and satisfying conversational experiences in telephony environments.
 
 ---
 
