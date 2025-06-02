@@ -1,6 +1,6 @@
-# Bank of Peril - Agentic Finite State Machine for Customer Service
+# Bank of Peril - Finite State Agent for Customer Service
 
-This diagram illustrates how an Agentic Finite State Machine (AFSM) handles customer interactions for a hypothetical company called The Bank of Peril, a financial institution known for its high-security protocols and unique "Risk Acceptance Program" for high-yield investments. The AFSM provides a structured framework for managing customer conversations while maintaining context awareness and agent reasoning through scratchpads in each state.
+This diagram illustrates how a Finite State Agent (FSA) handles customer interactions for a hypothetical company called The Bank of Peril, a financial institution known for its high-security protocols and unique "Risk Acceptance Program" for high-yield investments. The FSA provides a structured framework for managing customer conversations while maintaining context awareness and agent reasoning through scratchpads in each state.
 
 ## Key Features
 - **State-Aware Conversations**: Each state has specific handling logic and allowed transitions
@@ -13,31 +13,31 @@ This diagram illustrates how an Agentic Finite State Machine (AFSM) handles cust
 ## Sample Conversation Flow
 
 **Customer**: "Hi, I need to check my account balance and make a transfer."  
-*(AFSM State: Greeting → Authentication)*
+*(FSA State: Greeting → Authentication)*
 
 **Agent**: "Welcome to Bank of Peril, where we secure what matters most. For account access, I'll need to verify your identity. Can you please provide your account number and the last 4 digits of your security phrase?"  
-*(AFSM State: Authentication)*
+*(FSA State: Authentication)*
 
 **Customer**: *Provides authentication information*  
-*(AFSM State: Authentication → AccountVerification)*
+*(FSA State: Authentication → AccountVerification)*
 
 **Agent**: "Thank you, your identity has been verified. How can I help with your account today?"  
-*(AFSM State: AccountVerification → AccountInquiry)*
+*(FSA State: AccountVerification → AccountInquiry)*
 
 **Customer**: "I want to check my balance and transfer $500 to my Perilous Savings account."  
-*(AFSM State: AccountInquiry → BalanceInformation → TransactionRequest → TransferSetup)*
+*(FSA State: AccountInquiry → BalanceInformation → TransactionRequest → TransferSetup)*
 
 **Agent**: "Your current balance is $2,450 in your Peril Checking account. I can help you transfer $500 to your Perilous Savings account. The transfer will be secured with our Advanced Risk Protocol. Would you like to proceed?"  
-*(AFSM State: TransferSetup → TransactionConfirmation)*
+*(FSA State: TransferSetup → TransactionConfirmation)*
 
 **Customer**: "Yes, please proceed with the transfer."  
-*(AFSM State: TransactionConfirmation → TransactionSuccess)*
+*(FSA State: TransactionConfirmation → TransactionSuccess)*
 
 **Agent**: "I've completed the transfer of $500 to your Perilous Savings account. The transaction is secured with our 256-bit encryption and recorded in our secure ledger. Is there anything else I can help you with today?"  
-*(AFSM State: TransactionSuccess → FollowUpQuestion)*
+*(FSA State: TransactionSuccess → FollowUpQuestion)*
 
 **Customer**: "No, that's all. Thank you."  
-*(AFSM State: FollowUpQuestion → ThankYou → SatisfactionSurvey → EndCall)*
+*(FSA State: FollowUpQuestion → ThankYou → SatisfactionSurvey → EndCall)*
 
 ```mermaid
 stateDiagram-v2
@@ -168,9 +168,9 @@ stateDiagram-v2
     end note
 ```
 
-## AFSM Implementation Notes
+## FSA Implementation Notes
 
-The Bank of Peril AFSM is implemented using FastAgent's core architecture and focuses on:
+The Bank of Peril FSA is implemented using FastAgent's core architecture and focuses on:
 
 1. **Security-First Design**: Multi-factor authentication and fraud detection are deeply integrated
 2. **Specialized Banking States**: Custom states for handling Bank of Peril's unique offerings 

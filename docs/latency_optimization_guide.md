@@ -103,7 +103,7 @@ async def process_audio_chunk(chunk, session_id):
 
 ### 4. Memory and Context Management
 
-The AFSM architecture enables efficient memory management:
+The FSA architecture enables efficient memory management:
 
 ```python
 class ConversationContext:

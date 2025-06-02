@@ -21,7 +21,7 @@ This design outlines a real-time conversational bot that integrates the **AudioC
      - Interacts with OpenAI to prompt users for additional input and processes responses.
      - Returns results to OpenAI via `conversation.item.create` (type `function_call_output`) for integration into the dialogue.
    - **Rationale**: FSMs provide structured control for complex tasks, ensuring all required data is collected and tasks are executed reliably.
-   - **Implementation**: Based on the Agent Finite State Machine (AFSM) architecture, providing structured, controllable, and dynamic conversational agents. See [AFSM Documentation](fastagent/afsm/README.md) for details.
+   - **Implementation**: Based on the Finite State Agent (FSA) architecture, providing structured, controllable, and dynamic conversational agents. See [FSA Documentation](fastagent/fsa/README.md) for details.
 
 3. **WebSocket Managers**:
    - **AudioCodes Connection**: Handles incoming audio streams and sends audio responses.

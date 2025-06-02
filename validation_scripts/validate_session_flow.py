@@ -8,7 +8,7 @@ This script validates key message sequences:
 
 The script also records all audio exchanges:
 - Incoming audio (bot responses) saved to bot_audio_*.wav
-- Outgoing audio (user input) saved to user_audio_*.wav  
+- Outgoing audio (user input) saved to user_audio_*.wav
 - Combined stereo recording saved to session_recording_*.wav (left=user, right=bot)
 
 Usage:
@@ -30,6 +30,7 @@ from pathlib import Path
 import numpy as np
 import websockets
 from dotenv import load_dotenv
+from scipy import signal
 
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -59,36 +60,42 @@ AUDIO_FILE_PATH = (
 
 class AudioRecorder:
     """Handles recording of audio streams in multiple formats."""
-    
+
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.output_dir = Path("validation_output")
         self.output_dir.mkdir(exist_ok=True)
-        
+
         # Create timestamp for all files
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         # File paths
-        self.bot_audio_file = self.output_dir / f"bot_audio_{session_id}_{timestamp}.wav"
-        self.user_audio_file = self.output_dir / f"user_audio_{session_id}_{timestamp}.wav"
-        self.session_recording_file = self.output_dir / f"session_recording_{session_id}_{timestamp}.wav"
-        
+        self.bot_audio_file = (
+            self.output_dir / f"bot_audio_{session_id}_{timestamp}.wav"
+        )
+        self.user_audio_file = (
+            self.output_dir / f"user_audio_{session_id}_{timestamp}.wav"
+        )
+        self.session_recording_file = (
+            self.output_dir / f"session_recording_{session_id}_{timestamp}.wav"
+        )
+
         # WAV file objects
         self.bot_wav = None
         self.user_wav = None
         self.session_wav = None
-        
+
         # Audio buffers for creating combined recording
         self.bot_audio_buffer = []
         self.user_audio_buffer = []
-        
+
         # Audio parameters
         self.sample_rate = 16000
         self.channels = 1
         self.sample_width = 2  # 16-bit
-        
+
         self._init_wav_files()
-    
+
     def _init_wav_files(self):
         """Initialize WAV files for recording."""
         # Bot audio (incoming)
@@ -96,114 +103,130 @@ class AudioRecorder:
         self.bot_wav.setnchannels(self.channels)
         self.bot_wav.setsampwidth(self.sample_width)
         self.bot_wav.setframerate(self.sample_rate)
-        
+
         # User audio (outgoing)
         self.user_wav = wave.open(str(self.user_audio_file), "wb")
         self.user_wav.setnchannels(self.channels)
         self.user_wav.setsampwidth(self.sample_width)
         self.user_wav.setframerate(self.sample_rate)
-        
+
         # Session recording (stereo: left=user, right=bot)
         self.session_wav = wave.open(str(self.session_recording_file), "wb")
         self.session_wav.setnchannels(2)  # Stereo
         self.session_wav.setsampwidth(self.sample_width)
         self.session_wav.setframerate(self.sample_rate)
-        
+
         print(f"✅ Audio recording initialized:")
         print(f"   Bot audio: {self.bot_audio_file}")
         print(f"   User audio: {self.user_audio_file}")
         print(f"   Session recording: {self.session_recording_file}")
-    
+
     def record_bot_audio(self, audio_chunk_b64: str):
         """Record incoming bot audio."""
         try:
             decoded_chunk = base64.b64decode(audio_chunk_b64)
-            
+
             # Write to bot-only file
             if self.bot_wav:
                 self.bot_wav.writeframes(decoded_chunk)
-            
+
             # Store in buffer for combined recording
             self.bot_audio_buffer.append(decoded_chunk)
-            
+
         except Exception as e:
             print(f"❌ Error recording bot audio: {e}")
-    
+
     def record_user_audio(self, audio_chunk_b64: str):
         """Record outgoing user audio."""
         try:
             decoded_chunk = base64.b64decode(audio_chunk_b64)
-            
+
             # Write to user-only file
             if self.user_wav:
                 self.user_wav.writeframes(decoded_chunk)
-            
+
             # Store in buffer for combined recording
             self.user_audio_buffer.append(decoded_chunk)
-            
+
         except Exception as e:
             print(f"❌ Error recording user audio: {e}")
-    
+
     def create_combined_recording(self):
         """Create a stereo recording with user on left channel, bot on right channel."""
         try:
             # Convert buffers to numpy arrays
             if self.user_audio_buffer:
-                user_audio = np.concatenate([np.frombuffer(chunk, dtype=np.int16) for chunk in self.user_audio_buffer])
+                user_audio = np.concatenate(
+                    [
+                        np.frombuffer(chunk, dtype=np.int16)
+                        for chunk in self.user_audio_buffer
+                    ]
+                )
             else:
                 user_audio = np.array([], dtype=np.int16)
-                
+
             if self.bot_audio_buffer:
-                bot_audio = np.concatenate([np.frombuffer(chunk, dtype=np.int16) for chunk in self.bot_audio_buffer])
+                bot_audio = np.concatenate(
+                    [
+                        np.frombuffer(chunk, dtype=np.int16)
+                        for chunk in self.bot_audio_buffer
+                    ]
+                )
             else:
                 bot_audio = np.array([], dtype=np.int16)
-            
+
             # Make both arrays the same length by padding with silence
             max_length = max(len(user_audio), len(bot_audio))
             if max_length == 0:
                 return
-                
+
             if len(user_audio) < max_length:
-                user_audio = np.pad(user_audio, (0, max_length - len(user_audio)), 'constant')
+                user_audio = np.pad(
+                    user_audio, (0, max_length - len(user_audio)), "constant"
+                )
             if len(bot_audio) < max_length:
-                bot_audio = np.pad(bot_audio, (0, max_length - len(bot_audio)), 'constant')
-            
+                bot_audio = np.pad(
+                    bot_audio, (0, max_length - len(bot_audio)), "constant"
+                )
+
             # Create stereo audio (interleave left and right channels)
             stereo_audio = np.empty((max_length * 2,), dtype=np.int16)
             stereo_audio[0::2] = user_audio  # Left channel (user)
-            stereo_audio[1::2] = bot_audio   # Right channel (bot)
-            
+            stereo_audio[1::2] = bot_audio  # Right channel (bot)
+
             # Write to stereo file
             if self.session_wav:
                 self.session_wav.writeframes(stereo_audio.tobytes())
-                
+
         except Exception as e:
             print(f"❌ Error creating combined recording: {e}")
-    
+
     def close(self):
         """Close all WAV files and create final combined recording."""
         try:
             # Create the combined recording before closing
             self.create_combined_recording()
-            
+
             # Close all files
             if self.bot_wav:
                 self.bot_wav.close()
                 self.bot_wav = None
-                
+
             if self.user_wav:
                 self.user_wav.close()
                 self.user_wav = None
-                
+
             if self.session_wav:
                 self.session_wav.close()
                 self.session_wav = None
-            
+
             print(f"✅ Audio recording completed:")
             print(f"   Bot audio: {self.bot_audio_file}")
             print(f"   User audio: {self.user_audio_file}")
-            print(f"   Session recording: {self.session_recording_file} (stereo: left=user, right=bot)")
-            
+            print(
+                f"   Session recording: {self.session_recording_file} (stereo: left=user, right=bot)"
+            )
+
         except Exception as e:
             print(f"❌ Error closing audio files: {e}")
 
@@ -402,7 +425,9 @@ async def validate_audio_stream_flow():
             print(f"Sent session.initiate with conversationId: {conversation_id}")
 
             # Initialize audio recorder
-            recorder = AudioRecorder(f"stream_{conversation_id[:8]}")  # Use prefix to distinguish from bot test
+            recorder = AudioRecorder(
+                f"stream_{conversation_id[:8]}"
+            )  # Use prefix to distinguish from bot test
 
             # Wait for session.accepted
             session_accepted = False
@@ -413,13 +438,13 @@ async def validate_audio_stream_flow():
                     )
                     response_data = json.loads(response)
                     msg_type = response_data.get("type")
-                    
+
                     # Record any bot audio that comes in during session setup
                     if msg_type == "playStream.chunk":
                         audio_chunk = response_data.get("audioChunk")
                         if audio_chunk:
                             recorder.record_bot_audio(audio_chunk)
-                    
+
                     if response_data.get("type") == "session.accepted":
                         session_accepted = True
                         print("✅ Session accepted")
@@ -484,7 +509,7 @@ async def validate_audio_stream_flow():
             for i, chunk in enumerate(audio_chunks):
                 # Record the outgoing user audio
                 recorder.record_user_audio(chunk)
-                
+
                 audio_chunk = {
                     "type": "userStream.chunk",
                     "conversationId": conversation_id,
@@ -592,7 +617,9 @@ async def validate_bot_response_flow():
             print(f"Sent session.initiate with conversationId: {conversation_id}")
 
             # Initialize audio recorder
-            recorder = AudioRecorder(conversation_id[:8])  # Use first 8 chars of conversation ID
+            recorder = AudioRecorder(
+                conversation_id[:8]
+            )  # Use first 8 chars of conversation ID
 
             # Wait for session.accepted and process all incoming messages
             session_accepted = False
@@ -639,12 +666,12 @@ async def validate_bot_response_flow():
                             )
                             play_stream_chunks_received = True
                         chunk_count += 1
-                        
+
                         # Record the audio chunk
                         audio_chunk = response_data.get("audioChunk")
                         if audio_chunk:
                             recorder.record_bot_audio(audio_chunk)
-                            
+
                         # Log progress every 20 chunks
                         if chunk_count % 20 == 0:
                             print(f"   Received {chunk_count} audio chunks so far...")
@@ -742,7 +769,7 @@ async def validate_bot_response_flow():
                         for i, chunk in enumerate(audio_chunks):
                             # Record the outgoing user audio
                             recorder.record_user_audio(chunk)
-                            
+
                             audio_chunk = {
                                 "type": "userStream.chunk",
                                 "conversationId": conversation_id,
@@ -786,12 +813,12 @@ async def validate_bot_response_flow():
                                 )
                                 play_stream_chunks_received_2 = True
                             chunk_count_2 += 1
-                            
+
                             # Record the audio chunk
                             audio_chunk = response_data.get("audioChunk")
                             if audio_chunk:
                                 recorder.record_bot_audio(audio_chunk)
-                                
+
                             if chunk_count_2 % 10 == 0:
                                 print(
                                     f"   Received {chunk_count_2} audio chunks so far (second bot response)..."
