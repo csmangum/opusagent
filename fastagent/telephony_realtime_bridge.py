@@ -343,28 +343,38 @@ class TelephonyRealtimeBridge:
             f"{self.total_audio_bytes_sent} bytes (~{total_duration_ms:.1f}ms of audio)"
         )
 
-        # Commit the audio buffer to signal end of speech
+        # Commit the audio buffer to signal end of speech - only if we have enough audio data
         if not self._closed and self.realtime_websocket.close_code is None:
-            buffer_commit = InputAudioBufferCommitEvent(
-                type="input_audio_buffer.commit"
-            )
-            try:
-                await self.realtime_websocket.send(
-                    buffer_commit.model_dump_json()
-                )  #! this may not be actually sending the buffer to the OpenAI Realtime API
-                logger.info(
-                    f"realtime_websocket_object: {self.realtime_websocket.send}"
+            # OpenAI requires at least 100ms of audio (3200 bytes for 16kHz 16-bit mono)
+            min_audio_bytes = 3200  # 100ms of 16kHz 16-bit mono audio
+            
+            if self.total_audio_bytes_sent >= min_audio_bytes:
+                buffer_commit = InputAudioBufferCommitEvent(
+                    type="input_audio_buffer.commit"
                 )
+                try:
+                    await self.realtime_websocket.send(
+                        buffer_commit.model_dump_json()
+                    )
+                    logger.info(
+                        f"realtime_websocket_object: {self.realtime_websocket.send}"
+                    )
+                    logger.info(
+                        f"Audio buffer committed with {self.audio_chunks_sent} chunks ({self.total_audio_bytes_sent} bytes)"
+                    )
+                    logger.info(
+                        f"Audio buffer commit sent: {buffer_commit.model_dump_json()}"
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending audio buffer commit: {e}")
+            else:
                 logger.info(
-                    f"Audio buffer committed with {self.audio_chunks_sent} chunks ({self.total_audio_bytes_sent} bytes)"
+                    f"Skipping audio buffer commit - insufficient audio data: "
+                    f"{self.total_audio_bytes_sent} bytes ({total_duration_ms:.1f}ms) "
+                    f"< {min_audio_bytes} bytes (100ms minimum required by OpenAI)"
                 )
-                logger.info(
-                    f"Audio buffer commit sent: {buffer_commit.model_dump_json()}"
-                )
-            except Exception as e:
-                logger.error(f"Error sending audio buffer commit: {e}")
 
-            # Send userStream.stopped response
+            # Send userStream.stopped response regardless of commit
             stream_stopped = UserStreamStoppedResponse(
                 type=TelephonyEventType.USER_STREAM_STOPPED,
                 conversationId=self.conversation_id,
