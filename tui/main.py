@@ -71,7 +71,7 @@ class InteractiveTUIValidator(App):
     
     .connection-section {
         height: auto;
-        min-height: 6;
+        min-height: {MIN_HEIGHT_CONNECTION_SECTION};
     }
     
     .controls-section {
