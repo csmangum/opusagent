@@ -17,7 +17,9 @@ phrases = [
     "I lost it.",
     "Its my Gold card.",
     "Yes send it to that address.",
-    "Thanks, thats all."
+    "Thanks, thats all.",
+    "What is my balance?",
+    "Transfer funds 100 to 1234567890"
 ]
 
 VOICE = "nova"
