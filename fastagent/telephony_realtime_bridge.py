@@ -56,6 +56,10 @@ load_dotenv()
 # Configure logging
 logger = configure_logging()
 
+DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
+MINI_MODEL = "gpt-4o-mini-realtime-preview-2024-12-17"
+FUTURE_MODEL = "gpt-4o-realtime-preview-2025-06-03"
+
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -153,6 +157,7 @@ class TelephonyRealtimeBridge:
             ServerEventType.RESPONSE_CREATED: lambda x: logger.info(
                 "Response creation started"
             ),
+            
             ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
             ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
             ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
@@ -992,7 +997,7 @@ async def initialize_session(realtime_websocket):
         instructions=SYSTEM_MESSAGE,
         modalities=["text", "audio"],
         temperature=0.8,
-        model="gpt-4o-mini-realtime-preview-2024-12-17",
+        model=DEFAULT_MODEL,
         tools=[
             {
                 "type": "function",
