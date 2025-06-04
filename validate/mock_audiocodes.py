@@ -65,7 +65,7 @@ class MockAudioCodes:
 
     async def wait_for_message(self, predicate: Callable[[Any], bool], timeout: float = 5.0):
         """Wait for a received message matching the predicate."""
-        end_time = asyncio.get_event_loop().time() + timeout
+        end_time = asyncio.get_running_loop().time() + timeout
         idx = 0
         while True:
             while idx < len(self.received_messages):
