@@ -7,7 +7,7 @@ maintain consistent naming throughout the codebase.
 """
 
 # Logger name used throughout the application
-LOGGER_NAME = "voice_agent"
+LOGGER_NAME = "fastagent"
 
 # Default OpenAI model for Realtime API
 DEFAULT_REALTIME_MODEL = "gpt-4o-realtime-preview-2024-12-17"
