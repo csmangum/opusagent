@@ -65,8 +65,13 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 PORT = int(os.getenv("PORT", 6060))
 SYSTEM_MESSAGE = (
-    "You are a banking agent. You are able to answer questions about the bank and the services they offer. "
-    "You are also able to help with general banking questions and provide information about the bank's products and services."
+    "You are a customer service agent for Bank of Peril. You help customers with their banking needs. "
+    "When a customer contacts you, first greet them warmly, then listen to their request and call the call_intent function to identify their intent. "
+    "After calling call_intent, use the function result to guide your response:\n"
+    "- If intent is 'card_replacement', ask which type of card they need to replace (use the available_cards from the function result)\n"
+    "- If intent is 'account_inquiry', ask what specific account information they need\n"
+    "- For other intents, ask clarifying questions to better understand their needs\n"
+    "Always be helpful, professional, and use the information returned by functions to provide relevant follow-up questions."
 )
 VOICE = "alloy"
 LOG_EVENT_TYPES = [
@@ -1127,8 +1132,25 @@ class TelephonyRealtimeBridge:
         try:
             await self.realtime_websocket.send(json.dumps(function_result_event))
             logger.info(f"✅ Function result sent successfully to OpenAI")
+            
+            # After sending function result, trigger response generation
+            # This ensures the AI continues the conversation
+            logger.info("🚀 Triggering response generation after function execution...")
+            response_create = {
+                "type": "response.create",
+                "response": {
+                    "modalities": ["text", "audio"],
+                    "output_audio_format": "pcm16",
+                    "temperature": 0.8,
+                    "max_output_tokens": 4096,
+                    "voice": VOICE,
+                },
+            }
+            await self.realtime_websocket.send(json.dumps(response_create))
+            logger.info("✅ Response generation triggered successfully")
+            
         except Exception as e:
-            logger.error(f"🚨 Failed to send function result: {e}")
+            logger.error(f"🚨 Failed to send function result or trigger response: {e}")
             import traceback
             logger.error(f"🚨 Send result traceback: {traceback.format_exc()}")
 
@@ -1144,12 +1166,19 @@ class TelephonyRealtimeBridge:
         return {"status": "success", "amount": amount, "to_account": to_account}
     
     def _func_call_intent(self, arguments):
-        logger.info(f"!!!!!!!!!!!!!!!!! Function call intent received: {arguments} !!!!!!!!!!!!!")
         intent = arguments.get("intent", "")
         if intent == "card_replacement":
-            return {"status": "success", "intent": intent}
+            logger.info(f"!!!!!!!!!!!!!!!!! Function call intent received: {arguments} !!!!!!!!!!!!!")
+            # Return data that guides the AI's next response
+            return {
+                "status": "success", 
+                "intent": intent,
+                "next_action": "ask_card_type",
+                "available_cards": ["Gold card", "Silver card", "Basic card"],
+                "prompt_guidance": "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
+            }
         else:
-            return {"status": "error", "message": "Invalid intent"}
+            return {"status": "success", "intent": intent, "next_action": "continue_conversation"}
 
 
 async def send_initial_conversation_item(realtime_websocket):
