@@ -10,7 +10,7 @@ import base64
 import json
 import os
 import uuid
-from typing import Optional
+from typing import Any, Callable, Dict, Optional
 
 import websockets
 from dotenv import load_dotenv
@@ -56,6 +56,10 @@ load_dotenv()
 # Configure logging
 logger = configure_logging()
 
+DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
+MINI_MODEL = "gpt-4o-mini-realtime-preview-2024-12-17"
+FUTURE_MODEL = "gpt-4o-realtime-preview-2025-06-03"
+
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -73,6 +77,7 @@ LOG_EVENT_TYPES = [
     LogEventType.INPUT_AUDIO_BUFFER_COMMITTED,
     LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
     LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
+    LogEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE,
 ]
 
 
@@ -95,6 +100,7 @@ class TelephonyRealtimeBridge:
         total_audio_bytes_sent (int): Total number of bytes sent to the OpenAI Realtime API
         input_transcript_buffer (list): Buffer for accumulating input audio transcriptions
         output_transcript_buffer (list): Buffer for accumulating output audio transcriptions
+        function_registry (Dict[str, Callable[[Dict[str, Any]], Any]]): Function registry for demonstration
     """
 
     def __init__(
@@ -151,6 +157,7 @@ class TelephonyRealtimeBridge:
             ServerEventType.RESPONSE_CREATED: lambda x: logger.info(
                 "Response creation started"
             ),
+            
             ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
             ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
             ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
@@ -165,6 +172,14 @@ class TelephonyRealtimeBridge:
             # Add handlers for input audio transcription events
             ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA: self.handle_input_audio_transcription_delta,
             ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED: self.handle_input_audio_transcription_completed,
+            # Add new handler for function call events
+            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE: self.handle_function_call,
+        }
+
+        # Function registry for demonstration
+        self.function_registry: Dict[str, Callable[[Dict[str, Any]], Any]] = {
+            "get_balance": self._func_get_balance,
+            "transfer_funds": self._func_transfer_funds,
         }
 
     async def close(self):
@@ -353,15 +368,13 @@ class TelephonyRealtimeBridge:
         if not self._closed and self.realtime_websocket.close_code is None:
             # OpenAI requires at least 100ms of audio (3200 bytes for 16kHz 16-bit mono)
             min_audio_bytes = 3200  # 100ms of 16kHz 16-bit mono audio
-            
+
             if self.total_audio_bytes_sent >= min_audio_bytes:
                 buffer_commit = InputAudioBufferCommitEvent(
                     type="input_audio_buffer.commit"
                 )
                 try:
-                    await self.realtime_websocket.send(
-                        buffer_commit.model_dump_json()
-                    )
+                    await self.realtime_websocket.send(buffer_commit.model_dump_json())
                     logger.info(
                         f"realtime_websocket_object: {self.realtime_websocket.send}"
                     )
@@ -639,7 +652,7 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        delta = response_dict.get('delta', '')
+        delta = response_dict.get("delta", "")
         if delta:
             self.output_transcript_buffer.append(delta)
         logger.debug(f"Received audio transcript delta: {delta}")
@@ -650,7 +663,7 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        full_transcript = ''.join(self.output_transcript_buffer)
+        full_transcript = "".join(self.output_transcript_buffer)
         logger.info(f"Full AI transcript (output audio): {full_transcript}")
         self.output_transcript_buffer.clear()
         logger.info("Audio transcript completed")
@@ -677,12 +690,10 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        delta = response_dict.get('delta', '')
+        delta = response_dict.get("delta", "")
         if delta:
             self.input_transcript_buffer.append(delta)
-        logger.debug(
-            f"Received input audio transcription delta: {delta}"
-        )
+        logger.debug(f"Received input audio transcription delta: {delta}")
 
     async def handle_input_audio_transcription_completed(self, response_dict):
         """Handle input audio transcription completion events from the OpenAI Realtime API.
@@ -690,7 +701,7 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        full_transcript = ''.join(self.input_transcript_buffer)
+        full_transcript = "".join(self.input_transcript_buffer)
         logger.info(f"Full user transcript (input audio): {full_transcript}")
         self.input_transcript_buffer.clear()
         logger.info("Input audio transcription completed")
@@ -815,6 +826,82 @@ class TelephonyRealtimeBridge:
             if not self._closed:
                 await self.close()
 
+    async def handle_function_call(self, response_dict):
+        """Handle function call event from OpenAI (out-of-band)."""
+        logger.info(f"Function call event received: {response_dict}")
+        # Parse function call details
+        try:
+            # Arguments are a JSON string
+            arguments_str = response_dict.get("arguments", "{}")
+            call_id = response_dict.get("call_id")
+            item_id = response_dict.get("item_id")
+            output_index = response_dict.get("output_index")
+            response_id = response_dict.get("response_id")
+            # The function name is typically in the parent response or item, but for demo, assume it's in arguments
+            # You may need to adjust this based on your OpenAI payloads
+            args = json.loads(arguments_str)
+            function_name = (
+                args.get("function_name") or args.get("name") or args.get("tool_name")
+            )
+            if not function_name:
+                logger.error(f"No function name found in arguments: {arguments_str}")
+                return
+            logger.info(f"Dispatching function: {function_name} with args: {args}")
+            # Run function out-of-band
+            asyncio.create_task(
+                self._execute_and_respond_to_function(
+                    function_name, args, call_id, item_id, output_index, response_id
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error parsing function call: {e}")
+
+    async def _execute_and_respond_to_function(
+        self, function_name, arguments, call_id, item_id, output_index, response_id
+    ):
+        # Execute the function
+        try:
+            func = self.function_registry.get(function_name)
+            if not func:
+                raise NotImplementedError(
+                    f"Function '{function_name}' not implemented."
+                )
+            result = (
+                await func(arguments)
+                if asyncio.iscoroutinefunction(func)
+                else func(arguments)
+            )
+        except Exception as e:
+            logger.error(f"Function execution failed: {e}")
+            result = {"error": str(e)}
+        # Send result back to OpenAI as a conversation item
+        function_result_event = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "function_result",
+                "name": function_name,
+                "result": result,
+                # Optionally include call_id, item_id, output_index, response_id for traceability
+                "call_id": call_id,
+                "item_id": item_id,
+                "output_index": output_index,
+                "response_id": response_id,
+            },
+        }
+        logger.info(f"Sending function result for {function_name}: {result}")
+        await self.realtime_websocket.send(json.dumps(function_result_event))
+
+    # Example function implementations
+    def _func_get_balance(self, arguments):
+        # Simulate a balance lookup
+        return {"balance": 1234.56, "currency": "USD"}
+
+    def _func_transfer_funds(self, arguments):
+        # Simulate a fund transfer
+        amount = arguments.get("amount", 0)
+        to_account = arguments.get("to_account", "unknown")
+        return {"status": "success", "amount": amount, "to_account": to_account}
+
 
 async def send_initial_conversation_item(realtime_websocket):
     """Send the initial conversation item to start the AI interaction.
@@ -858,7 +945,27 @@ async def send_initial_conversation_item(realtime_websocket):
             "output_audio_format": "pcm16",
             "temperature": 0.8,
             "max_output_tokens": 4096,
-            "tool_choice": "none",
+            "tool_choice": "auto",  # Enable function calling
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "get_balance",
+                    "description": "Get the user's account balance.",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+                {
+                    "type": "function",
+                    "name": "transfer_funds",
+                    "description": "Transfer funds to another account.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "amount": {"type": "number"},
+                            "to_account": {"type": "string"},
+                        },
+                    },
+                },
+            ],
         },
     }
     await realtime_websocket.send(json.dumps(response_create))
@@ -890,8 +997,27 @@ async def initialize_session(realtime_websocket):
         instructions=SYSTEM_MESSAGE,
         modalities=["text", "audio"],
         temperature=0.8,
-        model="gpt-4o-realtime-preview-2024-10-01",
-        tools=[],
+        model=DEFAULT_MODEL,
+        tools=[
+            {
+                "type": "function",
+                "name": "get_balance",
+                "description": "Get the user's account balance.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            {
+                "type": "function",
+                "name": "transfer_funds",
+                "description": "Transfer funds to another account.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "amount": {"type": "number"},
+                        "to_account": {"type": "string"},
+                    },
+                },
+            },
+        ],
         input_audio_noise_reduction={"type": "near_field"},
         input_audio_transcription={"model": "whisper-1"},
         max_response_output_tokens=4096,  # Maximum allowed value

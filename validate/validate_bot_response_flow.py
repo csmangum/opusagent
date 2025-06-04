@@ -10,10 +10,8 @@ Depends on AudioRecorder and load_audio_chunks from validate.validate.
 import asyncio
 import base64
 import json
-import time
 import websockets
 import uuid
-from validate.validate import AudioRecorder, load_audio_chunks
 
 async def validate_bot_response_flow(
     WS_URL,

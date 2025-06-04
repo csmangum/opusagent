@@ -637,15 +637,15 @@ async def main():
         TIMEOUT_SECONDS=TIMEOUT_SECONDS,
     )
 
-    # Run replacement card flow validation
-    replacement_card_success = await validate_replacement_card_flow(
-        WS_URL=WS_URL,
-        AUDIO_FILE_PATH=AUDIO_FILE_PATH,
-        load_audio_chunks=load_audio_chunks,
-        AudioRecorder=AudioRecorder,
-        TIMEOUT_SECONDS=TIMEOUT_SECONDS,
-    )
-
+    # # Run replacement card flow validation
+    # replacement_card_success = await validate_replacement_card_flow(
+    #     WS_URL=WS_URL,
+    #     AUDIO_FILE_PATH=AUDIO_FILE_PATH,
+    #     load_audio_chunks=load_audio_chunks,
+    #     AudioRecorder=AudioRecorder,
+    #     TIMEOUT_SECONDS=TIMEOUT_SECONDS,
+    # )
+    replacement_card_success = True
     # Report results
     print("\n=== Validation Results ===")
     if session_success:

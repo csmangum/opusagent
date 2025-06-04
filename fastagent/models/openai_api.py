@@ -35,6 +35,7 @@ class LogEventType(str, Enum):
     INPUT_AUDIO_BUFFER_COMMITTED = "input_audio_buffer.committed"
     INPUT_AUDIO_BUFFER_SPEECH_STOPPED = "input_audio_buffer.speech_stopped"
     INPUT_AUDIO_BUFFER_SPEECH_STARTED = "input_audio_buffer.speech_started"
+    RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE = "response.function_call_arguments.done"
     SESSION_CREATED = "session.created"
 
 

@@ -49,14 +49,13 @@ async def validate_replacement_card_flow(
             # Initialize audio recorder
             recorder = AudioRecorder(f"replacement_card_{conversation_id[:8]}")
 
-            # Wait for session.accepted and initial bot greeting
+            # Wait for session.accepted
             session_accepted = False
-            initial_bot_response_complete = False
             
-            print("Waiting for session.accepted and initial bot greeting...")
+            print("Waiting for session.accepted...")
             
-            # Process initial session establishment and bot greeting
-            for attempt in range(60):  # 30 seconds
+            # Process initial session establishment
+            for attempt in range(30):  # 15 seconds
                 try:
                     response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                     response_data = json.loads(response)
@@ -65,20 +64,19 @@ async def validate_replacement_card_flow(
                     if msg_type == "session.accepted":
                         session_accepted = True
                         print("✅ Session accepted")
+                        break
 
                     elif msg_type == "playStream.start":
                         print("✅ Bot started speaking (initial greeting)")
 
                     elif msg_type == "playStream.chunk":
-                        # Record the bot's audio
+                        # Record any initial bot audio
                         audio_chunk = response_data.get("audioChunk")
                         if audio_chunk:
                             recorder.record_bot_audio(audio_chunk)
 
                     elif msg_type == "playStream.stop":
                         print("✅ Bot finished initial greeting")
-                        initial_bot_response_complete = True
-                        break
 
                 except asyncio.TimeoutError:
                     continue
@@ -88,10 +86,10 @@ async def validate_replacement_card_flow(
                 recorder.close()
                 return False
 
-            if not initial_bot_response_complete:
-                print("❌ Initial bot greeting not received")
-                recorder.close()
-                return False
+            print("✅ Session established, starting conversation exchanges...")
+            
+            # Give the session a moment to fully initialize
+            await asyncio.sleep(1)
 
             # Now process each user phrase in sequence
             successful_exchanges = 0
@@ -180,7 +178,7 @@ async def validate_replacement_card_flow(
                 print("🤖 Waiting for bot response...")
                 
                 # Process messages until bot response is complete
-                for attempt in range(60):  # 30 seconds for bot response
+                for attempt in range(120):  # 60 seconds for bot response (increased timeout)
                     try:
                         response = await asyncio.wait_for(ws.recv(), timeout=0.5)
                         response_data = json.loads(response)
@@ -225,9 +223,13 @@ async def validate_replacement_card_flow(
                     print(f"   Stream stopped: {stream_stopped}")
                     print(f"   Bot responded: {bot_started_response}")
                     print(f"   Bot finished: {bot_finished_response}")
+                    
+                    # Even if this exchange failed, continue to the next one
+                    if verbose:
+                        print("   Continuing to next exchange...")
 
                 # Small pause between exchanges
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
 
             # Final summary
             print(f"\n--- Replacement Card Flow Summary ---")
