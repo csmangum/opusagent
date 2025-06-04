@@ -18,6 +18,7 @@ from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
 from fastagent.config.logging_config import configure_logging
+from fastagent.function_handler import FunctionHandler
 
 # Import AudioCodes models
 from fastagent.models.audiocodes_api import (
@@ -104,7 +105,7 @@ class TelephonyRealtimeBridge:
         total_audio_bytes_sent (int): Total number of bytes sent to the OpenAI Realtime API
         input_transcript_buffer (list): Buffer for accumulating input audio transcriptions
         output_transcript_buffer (list): Buffer for accumulating output audio transcriptions
-        function_registry (Dict[str, Callable[[Dict[str, Any]], Any]]): Function registry for demonstration
+        function_handler (FunctionHandler): Handler for managing function calls from the OpenAI Realtime API
     """
 
     def __init__(
@@ -135,6 +136,9 @@ class TelephonyRealtimeBridge:
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
+        # Initialize function handler
+        self.function_handler = FunctionHandler(realtime_websocket)
+
         # Create event handler mappings for telephony events
         self.telephony_event_handlers = {
             TelephonyEventType.SESSION_INITIATE: self.handle_session_initiate,
@@ -161,7 +165,6 @@ class TelephonyRealtimeBridge:
             ServerEventType.RESPONSE_CREATED: lambda x: logger.info(
                 "Response creation started"
             ),
-            
             ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
             ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
             ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
@@ -177,19 +180,9 @@ class TelephonyRealtimeBridge:
             ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA: self.handle_input_audio_transcription_delta,
             ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED: self.handle_input_audio_transcription_completed,
             # Add new handler for function call events
-            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA: self.handle_function_call_arguments_delta,
-            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE: self.handle_function_call_arguments_done,
+            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA: self.function_handler.handle_function_call_arguments_delta,
+            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE: self.function_handler.handle_function_call_arguments_done,
         }
-
-        # Function registry for demonstration
-        self.function_registry: Dict[str, Callable[[Dict[str, Any]], Any]] = {
-            "get_balance": self._func_get_balance,
-            "transfer_funds": self._func_transfer_funds,
-            "call_intent": self._func_call_intent,
-        }
-
-        # Function call accumulation state
-        self.active_function_calls: Dict[str, Dict[str, Any]] = {}  # call_id -> {function_name, arguments_buffer, item_id, etc.}
 
     async def close(self):
         """Safely close both WebSocket connections.
@@ -393,7 +386,7 @@ class TelephonyRealtimeBridge:
                     logger.info(
                         f"Audio buffer commit sent: {buffer_commit.model_dump_json()}"
                     )
-                    
+
                     # Since VAD is disabled, manually trigger response generation
                     response_create = {
                         "type": "response.create",
@@ -407,9 +400,11 @@ class TelephonyRealtimeBridge:
                     }
                     await self.realtime_websocket.send(json.dumps(response_create))
                     logger.info("Response creation triggered after audio buffer commit")
-                    
+
                 except Exception as e:
-                    logger.error(f"Error sending audio buffer commit or response create: {e}")
+                    logger.error(
+                        f"Error sending audio buffer commit or response create: {e}"
+                    )
             else:
                 logger.info(
                     f"Skipping audio buffer commit - insufficient audio data: "
@@ -463,31 +458,42 @@ class TelephonyRealtimeBridge:
 
             # Log the full error response for debugging
             logger.error(f"FULL ERROR RESPONSE: {json.dumps(response_dict)}")
-        
+
         # Handle response.done events to check for quota issues
         elif response_type == "response.done":
             response_data = response_dict.get("response", {})
             status = response_data.get("status")
             status_details = response_data.get("status_details", {})
-            
+
             if status == "failed":
                 error_info = status_details.get("error", {})
                 error_type = error_info.get("type")
                 error_code = error_info.get("code")
-                
-                if error_type == "insufficient_quota" or error_code == "insufficient_quota":
+
+                if (
+                    error_type == "insufficient_quota"
+                    or error_code == "insufficient_quota"
+                ):
                     logger.error("=" * 80)
                     logger.error("🚨 OPENAI API QUOTA EXCEEDED")
                     logger.error("=" * 80)
                     logger.error("❌ Your OpenAI API quota has been exceeded!")
                     logger.error("")
                     logger.error("💡 WHAT THIS MEANS:")
-                    logger.error("   • You've run out of API credits or hit your usage limit")
-                    logger.error("   • The Realtime API is expensive and uses credits quickly")
-                    logger.error("   • No audio will be generated until this is resolved")
+                    logger.error(
+                        "   • You've run out of API credits or hit your usage limit"
+                    )
+                    logger.error(
+                        "   • The Realtime API is expensive and uses credits quickly"
+                    )
+                    logger.error(
+                        "   • No audio will be generated until this is resolved"
+                    )
                     logger.error("")
                     logger.error("🔧 HOW TO FIX:")
-                    logger.error("   1. Check your OpenAI billing: https://platform.openai.com/account/billing")
+                    logger.error(
+                        "   1. Check your OpenAI billing: https://platform.openai.com/account/billing"
+                    )
                     logger.error("   2. Add more credits to your account")
                     logger.error("   3. Check/increase your usage limits")
                     logger.error("   4. Consider upgrading your OpenAI plan if needed")
@@ -495,16 +501,28 @@ class TelephonyRealtimeBridge:
                     logger.error("📊 USAGE INFO:")
                     usage = response_data.get("usage", {})
                     if usage:
-                        logger.error(f"   • Total tokens in this request: {usage.get('total_tokens', 0)}")
-                        logger.error(f"   • Input tokens: {usage.get('input_tokens', 0)}")
-                        logger.error(f"   • Output tokens: {usage.get('output_tokens', 0)}")
+                        logger.error(
+                            f"   • Total tokens in this request: {usage.get('total_tokens', 0)}"
+                        )
+                        logger.error(
+                            f"   • Input tokens: {usage.get('input_tokens', 0)}"
+                        )
+                        logger.error(
+                            f"   • Output tokens: {usage.get('output_tokens', 0)}"
+                        )
                     logger.error("")
-                    logger.error("⚠️  The bridge will now close this session to avoid hanging.")
-                    logger.error("   Please resolve your billing issue and restart the validation.")
+                    logger.error(
+                        "⚠️  The bridge will now close this session to avoid hanging."
+                    )
+                    logger.error(
+                        "   Please resolve your billing issue and restart the validation."
+                    )
                     logger.error("=" * 80)
                     await self.close()
                 else:
-                    logger.error(f"Response failed with error: {error_info.get('message', 'Unknown error')}")
+                    logger.error(
+                        f"Response failed with error: {error_info.get('message', 'Unknown error')}"
+                    )
                     logger.error(f"Error type: {error_type}, Error code: {error_code}")
 
     async def handle_session_update(self, response_dict):
@@ -700,30 +718,34 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        item = response_dict.get('item', {})
+        item = response_dict.get("item", {})
         logger.info(f"Output item added: {item}")
-        
+
         # If this is a function call item, capture the function name for later use
-        if item.get('type') == 'function_call':
-            call_id = item.get('call_id')
-            function_name = item.get('name')
-            item_id = item.get('id')
-            
+        if item.get("type") == "function_call":
+            call_id = item.get("call_id")
+            function_name = item.get("name")
+            item_id = item.get("id")
+
             if call_id and function_name:
                 # Initialize the function call state with the function name
-                if call_id not in self.active_function_calls:
-                    self.active_function_calls[call_id] = {
+                if call_id not in self.function_handler.active_function_calls:
+                    self.function_handler.active_function_calls[call_id] = {
                         "arguments_buffer": "",
                         "item_id": item_id,
                         "output_index": response_dict.get("output_index", 0),
                         "response_id": response_dict.get("response_id"),
-                        "function_name": function_name
+                        "function_name": function_name,
                     }
                 else:
                     # Update existing entry with function name
-                    self.active_function_calls[call_id]["function_name"] = function_name
-                    
-                logger.info(f"Captured function call: {function_name} with call_id: {call_id}")
+                    self.function_handler.active_function_calls[call_id][
+                        "function_name"
+                    ] = function_name
+
+                logger.info(
+                    f"Captured function call: {function_name} with call_id: {call_id}"
+                )
 
     async def handle_content_part_added(self, response_dict):
         """Handle response content part added events from the OpenAI Realtime API.
@@ -884,16 +906,27 @@ class TelephonyRealtimeBridge:
                 response_dict = json.loads(openai_message)
                 response_type = response_dict["type"]
                 logger.info(f"Received OpenAI message type: {response_type}")
-                
+
                 # Add detailed logging for important events
                 if response_type in ["response.created", "response.done"]:
-                    logger.info(f"Response event details: {json.dumps(response_dict, indent=2)}")
+                    logger.info(
+                        f"Response event details: {json.dumps(response_dict, indent=2)}"
+                    )
                 elif response_type == "response.output_item.added":
-                    logger.info(f"Output item added: {json.dumps(response_dict.get('item', {}), indent=2)}")
+                    logger.info(
+                        f"Output item added: {json.dumps(response_dict.get('item', {}), indent=2)}"
+                    )
                 elif response_type == "response.content_part.added":
-                    logger.info(f"Content part added: {json.dumps(response_dict.get('part', {}), indent=2)}")
-                elif response_type in ["response.audio.delta", "response.audio_transcript.delta"]:
-                    logger.info(f"Audio event: {response_type} - delta size: {len(response_dict.get('delta', ''))}")
+                    logger.info(
+                        f"Content part added: {json.dumps(response_dict.get('part', {}), indent=2)}"
+                    )
+                elif response_type in [
+                    "response.audio.delta",
+                    "response.audio_transcript.delta",
+                ]:
+                    logger.info(
+                        f"Audio event: {response_type} - delta size: {len(response_dict.get('delta', ''))}"
+                    )
 
                 # Handle log events first
                 if response_type in [event.value for event in LOG_EVENT_TYPES]:
@@ -905,9 +938,12 @@ class TelephonyRealtimeBridge:
                 if handler:
                     try:
                         # Special logging for function call events
-                        if response_type in ["response.function_call_arguments.delta", "response.function_call_arguments.done"]:
+                        if response_type in [
+                            "response.function_call_arguments.delta",
+                            "response.function_call_arguments.done",
+                        ]:
                             logger.info(f"🎯 Routing {response_type} to handler")
-                            
+
                         if asyncio.iscoroutinefunction(handler):
                             await handler(response_dict)
                         else:
@@ -916,7 +952,9 @@ class TelephonyRealtimeBridge:
                         logger.error(f"Error in event handler for {response_type}: {e}")
                 else:
                     logger.warning(f"Unknown OpenAI event type: {response_type}")
-                    logger.info(f"Unknown event data: {json.dumps(response_dict, indent=2)}")
+                    logger.info(
+                        f"Unknown event data: {json.dumps(response_dict, indent=2)}"
+                    )
 
         except websockets.exceptions.ConnectionClosed as e:
             logger.error(f"OpenAI WebSocket connection closed: {e}")
@@ -930,255 +968,6 @@ class TelephonyRealtimeBridge:
             logger.error(f"Error in receive_from_realtime: {e}")
             if not self._closed:
                 await self.close()
-
-    async def handle_function_call(self, response_dict):
-        """Handle function call event from OpenAI (out-of-band)."""
-        logger.info(f"Function call event received: {response_dict}")
-        # Parse function call details
-        try:
-            # Arguments are a JSON string
-            arguments_str = response_dict.get("arguments", "{}")
-            call_id = response_dict.get("call_id")
-            item_id = response_dict.get("item_id")
-            output_index = response_dict.get("output_index")
-            response_id = response_dict.get("response_id")
-            # The function name is typically in the parent response or item, but for demo, assume it's in arguments
-            # You may need to adjust this based on your OpenAI payloads
-            args = json.loads(arguments_str)
-            function_name = (
-                args.get("function_name") or args.get("name") or args.get("tool_name")
-            )
-            if not function_name:
-                logger.error(f"No function name found in arguments: {arguments_str}")
-                return
-            logger.info(f"Dispatching function: {function_name} with args: {args}")
-            # Run function out-of-band
-            asyncio.create_task(
-                self._execute_and_respond_to_function(
-                    function_name, args, call_id, item_id, output_index, response_id
-                )
-            )
-        except Exception as e:
-            logger.error(f"Error parsing function call: {e}")
-
-    async def handle_function_call_arguments_delta(self, response_dict):
-        """Handle function call arguments delta events from OpenAI.
-        
-        These events contain incremental pieces of the function call arguments
-        that need to be accumulated until the function call is complete.
-        """
-        call_id = response_dict.get("call_id")
-        delta = response_dict.get("delta", "")
-        item_id = response_dict.get("item_id")
-        output_index = response_dict.get("output_index", 0)
-        response_id = response_dict.get("response_id")
-        
-        if not call_id:
-            logger.warning(f"Function call delta received without call_id: {response_dict}")
-            return
-            
-        # Initialize or update the function call state
-        if call_id not in self.active_function_calls:
-            self.active_function_calls[call_id] = {
-                "arguments_buffer": "",
-                "item_id": item_id,
-                "output_index": output_index,
-                "response_id": response_id,
-                "function_name": None  # Will be determined from the arguments
-            }
-        
-        # Accumulate the arguments
-        self.active_function_calls[call_id]["arguments_buffer"] += delta
-        
-        logger.debug(f"Function call arguments delta for {call_id}: '{delta}' (total: {len(self.active_function_calls[call_id]['arguments_buffer'])} chars)")
-
-    async def handle_function_call_arguments_done(self, response_dict):
-        """Handle function call arguments completion events from OpenAI.
-        
-        This event indicates that all arguments for a function call have been received
-        and the function can now be executed.
-        """
-        logger.info(f"🔧 FUNCTION CALL ARGUMENTS DONE HANDLER CALLED")
-        logger.info(f"🔧 Full response_dict: {response_dict}")
-        
-        call_id = response_dict.get("call_id")
-        final_arguments = response_dict.get("arguments", "")
-        item_id = response_dict.get("item_id")
-        output_index = response_dict.get("output_index", 0)
-        response_id = response_dict.get("response_id")
-        
-        logger.info(f"🔧 Extracted values:")
-        logger.info(f"   call_id: {call_id}")
-        logger.info(f"   final_arguments: {final_arguments}")
-        logger.info(f"   item_id: {item_id}")
-        logger.info(f"   output_index: {output_index}")
-        logger.info(f"   response_id: {response_id}")
-        
-        if not call_id:
-            logger.warning(f"🚨 Function call done received without call_id: {response_dict}")
-            return
-        
-        logger.info(f"🔧 Active function calls: {list(self.active_function_calls.keys())}")
-        
-        # Use the final arguments from the done event, or fall back to accumulated buffer
-        if final_arguments:
-            arguments_str = final_arguments
-            logger.info(f"🔧 Using final_arguments from done event: {arguments_str}")
-        elif call_id in self.active_function_calls:
-            arguments_str = self.active_function_calls[call_id]["arguments_buffer"]
-            logger.info(f"🔧 Using accumulated buffer: {arguments_str}")
-        else:
-            logger.error(f"🚨 Function call done for unknown call_id: {call_id}")
-            logger.error(f"🚨 Known call_ids: {list(self.active_function_calls.keys())}")
-            return
-            
-        logger.info(f"🔧 Function call arguments complete for {call_id}: {arguments_str}")
-        
-        try:
-            # Parse the JSON arguments
-            args = json.loads(arguments_str) if arguments_str else {}
-            logger.info(f"🔧 Parsed arguments: {args}")
-            
-            # Get the function name from the captured function call state
-            function_name = None
-            if call_id in self.active_function_calls:
-                function_name = self.active_function_calls[call_id].get("function_name")
-                logger.info(f"🔧 Found function_name in active calls: {function_name}")
-            else:
-                logger.error(f"🚨 call_id {call_id} not found in active_function_calls")
-            
-            if not function_name:
-                logger.error(f"🚨 No function name found for call_id: {call_id}")
-                logger.error(f"🚨 Arguments string: {arguments_str}")
-                logger.error(f"🚨 Active function calls state: {self.active_function_calls}")
-                # Clean up the active function call
-                if call_id in self.active_function_calls:
-                    del self.active_function_calls[call_id]
-                return
-                
-            logger.info(f"🚀 Executing function: {function_name} with args: {args}")
-            
-            # Execute the function
-            asyncio.create_task(
-                self._execute_and_respond_to_function(
-                    function_name, args, call_id, item_id, output_index, response_id
-                )
-            )
-            logger.info(f"🚀 Function execution task created for {function_name}")
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"🚨 Failed to parse function arguments JSON: {e}")
-            logger.error(f"🚨 Arguments string: {arguments_str}")
-        except Exception as e:
-            logger.error(f"🚨 Error processing function call: {e}")
-            import traceback
-            logger.error(f"🚨 Traceback: {traceback.format_exc()}")
-        finally:
-            # Clean up the active function call
-            if call_id in self.active_function_calls:
-                logger.info(f"🔧 Cleaning up active function call for {call_id}")
-                del self.active_function_calls[call_id]
-
-    async def _execute_and_respond_to_function(
-        self, function_name, arguments, call_id, item_id, output_index, response_id
-    ):
-        """Execute a function and send the result back to OpenAI."""
-        logger.info(f"🔥 _execute_and_respond_to_function called:")
-        logger.info(f"   function_name: {function_name}")
-        logger.info(f"   arguments: {arguments}")
-        logger.info(f"   call_id: {call_id}")
-        logger.info(f"   item_id: {item_id}")
-        logger.info(f"   output_index: {output_index}")
-        logger.info(f"   response_id: {response_id}")
-        
-        # Execute the function
-        try:
-            logger.info(f"🔥 Looking up function '{function_name}' in registry...")
-            logger.info(f"🔥 Available functions: {list(self.function_registry.keys())}")
-            
-            func = self.function_registry.get(function_name)
-            if not func:
-                logger.error(f"🚨 Function '{function_name}' not implemented.")
-                raise NotImplementedError(
-                    f"Function '{function_name}' not implemented."
-                )
-            
-            logger.info(f"🔥 Found function '{function_name}', executing...")
-            
-            result = (
-                await func(arguments)
-                if asyncio.iscoroutinefunction(func)
-                else func(arguments)
-            )
-            logger.info(f"✅ Function {function_name} executed successfully: {result}")
-        except Exception as e:
-            logger.error(f"🚨 Function execution failed: {e}")
-            import traceback
-            logger.error(f"🚨 Function execution traceback: {traceback.format_exc()}")
-            result = {"error": str(e)}
-        
-        # Send result back to OpenAI as a conversation item
-        function_result_event = {
-            "type": "conversation.item.create",
-            "item": {
-                "type": "function_call_output",
-                "call_id": call_id,
-                "output": json.dumps(result)
-            },
-        }
-        logger.info(f"📤 Sending function result for {function_name}: {result}")
-        logger.info(f"📤 Function result event: {json.dumps(function_result_event, indent=2)}")
-        
-        try:
-            await self.realtime_websocket.send(json.dumps(function_result_event))
-            logger.info(f"✅ Function result sent successfully to OpenAI")
-            
-            # After sending function result, trigger response generation
-            # This ensures the AI continues the conversation
-            logger.info("🚀 Triggering response generation after function execution...")
-            response_create = {
-                "type": "response.create",
-                "response": {
-                    "modalities": ["text", "audio"],
-                    "output_audio_format": "pcm16",
-                    "temperature": 0.8,
-                    "max_output_tokens": 4096,
-                    "voice": VOICE,
-                },
-            }
-            await self.realtime_websocket.send(json.dumps(response_create))
-            logger.info("✅ Response generation triggered successfully")
-            
-        except Exception as e:
-            logger.error(f"🚨 Failed to send function result or trigger response: {e}")
-            import traceback
-            logger.error(f"🚨 Send result traceback: {traceback.format_exc()}")
-
-    # Example function implementations
-    def _func_get_balance(self, arguments):
-        # Simulate a balance lookup
-        return {"balance": 1234.56, "currency": "USD"}
-
-    def _func_transfer_funds(self, arguments):
-        # Simulate a fund transfer
-        amount = arguments.get("amount", 0)
-        to_account = arguments.get("to_account", "unknown")
-        return {"status": "success", "amount": amount, "to_account": to_account}
-    
-    def _func_call_intent(self, arguments):
-        intent = arguments.get("intent", "")
-        if intent == "card_replacement":
-            logger.info(f"!!!!!!!!!!!!!!!!! Function call intent received: {arguments} !!!!!!!!!!!!!")
-            # Return data that guides the AI's next response
-            return {
-                "status": "success", 
-                "intent": intent,
-                "next_action": "ask_card_type",
-                "available_cards": ["Gold card", "Silver card", "Basic card"],
-                "prompt_guidance": "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
-            }
-        else:
-            return {"status": "success", "intent": intent, "next_action": "continue_conversation"}
 
 
 async def send_initial_conversation_item(realtime_websocket):
@@ -1225,14 +1014,15 @@ async def send_initial_conversation_item(realtime_websocket):
                 "voice": VOICE,
             },
         }
-        
+
         logger.info("Sending response create: %s", json.dumps(response_create))
         await realtime_websocket.send(json.dumps(response_create))
         logger.info("Initial conversation flow initiated successfully")
-        
+
     except Exception as e:
         logger.error(f"Error in send_initial_conversation_item: {e}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise
 
@@ -1283,7 +1073,10 @@ async def initialize_session(realtime_websocket):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "intent": {"type": "string", "enum": ["card_replacement", "account_inquiry", "other"]},
+                        "intent": {
+                            "type": "string",
+                            "enum": ["card_replacement", "account_inquiry", "other"],
+                        },
                     },
                     "required": ["intent"],
                 },
