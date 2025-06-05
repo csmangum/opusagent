@@ -6,10 +6,12 @@ Test script for MockTwilioClient - demonstrates how to test Twilio bridge functi
 import asyncio
 import logging
 from pathlib import Path
+import pytest
 
 from validate.mock_twilio_client import MockTwilioClient
 
 
+@pytest.mark.asyncio
 async def test_single_turn():
     """Test a single turn conversation with the bridge."""
     # Configure logging
@@ -67,6 +69,7 @@ async def test_single_turn():
         return False
 
 
+@pytest.mark.asyncio
 async def test_multi_turn():
     """Test a multi-turn conversation with the bridge."""
     # Configure logging
@@ -114,6 +117,7 @@ async def test_multi_turn():
         return False
 
 
+@pytest.mark.asyncio
 async def test_dtmf_and_marks():
     """Test DTMF and mark functionality."""
     logging.basicConfig(
@@ -157,6 +161,7 @@ async def test_dtmf_and_marks():
         return False
 
 
+@pytest.mark.asyncio
 async def test_protocol_compliance():
     """Test that we're sending properly formatted Twilio messages."""
     logging.basicConfig(
