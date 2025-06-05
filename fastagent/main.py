@@ -36,8 +36,7 @@ if env_path.exists():
     dotenv.load_dotenv(env_path)
 
 # Configure logging
-logger = configure_logging()
-
+logger = configure_logging("main")
 # Get configuration from environment variables
 PORT = int(os.getenv("PORT", "8000"))
 HOST = os.getenv("HOST", "0.0.0.0")

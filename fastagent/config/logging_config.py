@@ -20,12 +20,12 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # Log file configuration
 LOG_DIR = Path("logs")
-LOG_FILE = LOG_DIR / "voice_agent.log"
+LOG_FILE = LOG_DIR / "fastagent.log"
 MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
 BACKUP_COUNT = 5
 
 
-def configure_logging():
+def configure_logging(name: str = LOGGER_NAME, file_path: str = "logs/"):
     """
     Configure the application logger with console and file handlers.
     
@@ -33,7 +33,7 @@ def configure_logging():
         logging.Logger: The configured logger instance
     """
     # Create logger
-    logger = logging.getLogger(LOGGER_NAME)
+    logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, LOG_LEVEL))
     
     # Remove existing handlers if any
@@ -46,6 +46,12 @@ def configure_logging():
     # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
+    # Set encoding to utf-8 if possible (Python 3.7+)
+    if hasattr(console_handler.stream, 'reconfigure'):
+        try:
+            console_handler.stream.reconfigure(encoding='utf-8')
+        except Exception as e:
+            logger.warning(f"Could not reconfigure console stream encoding: {e}")
     logger.addHandler(console_handler)
     
     # Create file handler if log directory exists or can be created
@@ -57,7 +63,8 @@ def configure_logging():
         file_handler = RotatingFileHandler(
             LOG_FILE,
             maxBytes=MAX_LOG_SIZE,
-            backupCount=BACKUP_COUNT
+            backupCount=BACKUP_COUNT,
+            encoding='utf-8'
         )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

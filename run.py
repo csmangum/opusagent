@@ -24,7 +24,7 @@ sys.path.append(str(Path(__file__).parent))
 from fastagent.config.logging_config import configure_logging
 
 # Configure logging
-logger = configure_logging()
+logger = configure_logging("run")
 
 
 def parse_args():
