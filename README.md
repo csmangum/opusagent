@@ -1,7 +1,18 @@
 # OpusAgent
 ![Status](https://img.shields.io/badge/status-In%20Development%20–%20Experimental%20%26%20Aspirational-blue)
 
-OpusAgent is a framework for real-time voice bots that delivers seamless, low-latency interactions. Built with FastAPI, it integrates the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation. OpusAgent combines a dynamic, Stateful LLM Layer conversational core with finite state agents (FSA) for complex tasks, ensuring rapid, context-aware voice interactions optimized for enterprise applications.
+OpusAgent is a powerful, enterprise-grade conversational AI platform that combines the natural language understanding of GPT-4 with a robust Finite State Agent (FSA) framework. It enables the creation of intelligent voice and chat agents that can handle complex, multi-step workflows while maintaining natural conversation flow. The platform is particularly well-suited for customer support, banking, healthcare, and enterprise applications where reliable, auditable, and context-aware interactions are crucial.
+
+At its core, OpusAgent bridges the gap between natural language processing and deterministic task execution. It leverages GPT-4's advanced language understanding capabilities while maintaining strict control over business logic through its FSA framework. This unique combination allows for:
+
+- **Natural Conversations**: The system maintains fluid, context-aware dialogues that feel natural to users
+- **Deterministic Execution**: Every action and state transition is controlled and auditable
+- **Complex Workflow Support**: Handles multi-step processes like account management, payment processing, and service requests
+- **Real-time Processing**: Ultra-low latency audio processing for voice interactions
+- **Enterprise Integration**: Seamless connection with existing business systems and APIs
+- **Compliance & Security**: Built-in support for audit trails and secure data handling
+
+The platform's architecture is designed to scale from simple Q&A bots to complex, multi-domain enterprise assistants, making it ideal for organizations that need both conversational flexibility and process reliability.
 
 ## Key Features
 
@@ -15,24 +26,13 @@ OpusAgent is a framework for real-time voice bots that delivers seamless, low-la
 
 ## Architecture
 
-OpusAgent employs a hybrid architecture:
+OpusAgent's architecture combines three key layers:
 
-- **Stateful LLM Layer**: Leverages OpenAI's stateful context for natural language understanding and conversation flow
-- **FSA Task Agents**: When triggered by specific intents, dedicated Finite State Agents handle structured workflows
-- **Concurrent Execution**: Conversation flows uninterrupted while FSA agents handle tasks in parallel
+- **Conversation Layer**: Powered by GPT-4, handles natural language understanding and dialogue management
+- **Control Layer**: FSA framework manages state transitions and workflow execution
+- **Integration Layer**: MCP connects the conversation and control layers with backend services
 
-## Model Context Protocol (MCP)
-
-OpusAgent uses the **Model Context Protocol (MCP)** as the backbone for orchestrating tool and function calls, managing conversational context, and ensuring reliable execution of complex workflows.
-
-- **What is MCP?**  
-  MCP is a protocol layer that connects the conversational AI (LLM) with backend services and the Finite State Agent (FSA) framework. It ensures that every tool/function call (such as validating user input, confirming actions, or triggering external services) is executed deterministically, with full context preservation and traceability.
-
-- **How does it work?**  
-  When the LLM determines that an action is needed (e.g., replacing a card, confirming an address), it issues a structured function call. MCP receives this call, manages the relevant context, and routes the request to the appropriate handler or service. MCP also updates the FSA state and context, ensuring that the conversation flow remains coherent and auditable.
-
-- **Why MCP?**  
-  MCP provides a clean separation between conversational logic and execution logic, making it easy to test, debug, and extend OpusAgent with new tools or workflows. It is designed for reliability, transparency, and modularity in enterprise-grade voice and chat agents.
+This layered approach enables natural conversations while maintaining strict control over business logic and ensuring reliable execution of complex workflows.
 
 ## Documentation
 
