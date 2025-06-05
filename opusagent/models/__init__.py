@@ -11,6 +11,9 @@ Key components:
   supporting the real-time speech, chat functionality, and function calling capabilities.
   Includes models for session management, conversation items, client-server events,
   and audio streaming in the OpenAI Realtime API.
+- twilio_api: Pydantic models for Twilio Media Streams WebSocket protocol, supporting
+  real-time audio streaming to and from phone calls. Includes models for connection,
+  media streaming, DTMF detection, and audio playback control.
 - conversation: State management for active voice conversations, tracking WebSocket
   connections and media formats throughout the call lifecycle.
 
@@ -69,6 +72,36 @@ session_config = SessionConfig(
 
 # Create a response event
 response_event = ResponseCreateEvent()
+
+# Using Twilio Media Streams models
+from opusagent.models.twilio_api import StartMessage, OutgoingMediaMessage
+
+# Parse an incoming start message from Twilio
+start_data = {
+    "event": "start",
+    "sequenceNumber": "1",
+    "start": {
+        "streamSid": "MZXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "accountSid": "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "callSid": "CAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "tracks": ["inbound", "outbound"],
+        "customParameters": {},
+        "mediaFormat": {
+            "encoding": "audio/x-mulaw",
+            "sampleRate": 8000,
+            "channels": 1
+        }
+    },
+    "streamSid": "MZXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+}
+start_message = StartMessage(**start_data)
+
+# Send audio back to Twilio
+outgoing_media = OutgoingMediaMessage(
+    event="media",
+    streamSid=start_message.streamSid,
+    media={"payload": "base64_encoded_audio_data"}
+)
 ```
 """
 
@@ -134,4 +167,34 @@ from opusagent.models.openai_api import (
     RealtimeStreamMessage,
     RealtimeFunctionMessage,
     WebSocketErrorResponse,
+)
+
+from opusagent.models.twilio_api import (
+    TwilioEventType,
+    BaseTwilioMessage,
+    TwilioMessageWithSequence,
+    TwilioMessageWithStreamSid,
+    ConnectedMessage,
+    MediaFormat,
+    StartMetadata,
+    StartMessage,
+    MediaPayload,
+    MediaMessage,
+    StopMetadata,
+    StopMessage,
+    DTMFPayload,
+    DTMFMessage,
+    MarkPayload,
+    MarkMessage,
+    OutgoingMediaPayload,
+    OutgoingMediaMessage,
+    OutgoingMarkMessage,
+    ClearMessage,
+    TwilioMessage,
+)
+
+# Update the union types to include both AudioCodes and Twilio messages
+from opusagent.models.twilio_api import (
+    IncomingMessage as TwilioIncomingMessage,
+    OutgoingMessage as TwilioOutgoingMessage,
 )

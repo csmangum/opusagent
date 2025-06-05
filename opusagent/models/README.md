@@ -26,6 +26,16 @@ Type-safe models for the OpenAI Realtime API message structures, including:
 - Function/tool calling structures
 - Audio streaming message formats
 
+### `twilio_api.py`
+
+Pydantic models for Twilio Media Streams WebSocket protocol, including:
+
+- Connection and session management messages
+- Audio streaming messages for real-time media
+- DTMF tone detection and handling
+- Audio playback control and synchronization
+- Bidirectional audio streaming support
+
 ### `conversation.py`
 
 State management for active voice conversations, including:
@@ -59,4 +69,34 @@ session_config = SessionConfig(
     model="gpt-4",
     voice="alloy",
     input_audio_format="pcm16"
+)
+
+# Using Twilio Media Streams models
+from opusagent.models.twilio_api import StartMessage, OutgoingMediaMessage
+
+# Parse an incoming start message from Twilio
+start_data = {
+    "event": "start",
+    "sequenceNumber": "1",
+    "start": {
+        "streamSid": "MZXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "accountSid": "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "callSid": "CAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+        "tracks": ["inbound", "outbound"],
+        "customParameters": {},
+        "mediaFormat": {
+            "encoding": "audio/x-mulaw",
+            "sampleRate": 8000,
+            "channels": 1
+        }
+    },
+    "streamSid": "MZXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+}
+start_message = StartMessage(**start_data)
+
+# Send audio back to Twilio  
+outgoing_media = OutgoingMediaMessage(
+    event="media",
+    streamSid=start_message.streamSid,
+    media={"payload": "base64_encoded_audio_data"}
 ) 
