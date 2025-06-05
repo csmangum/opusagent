@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from fastagent.config.logging_config import configure_logging
+from opusagent.config.logging_config import configure_logging
 from validate.mock_audiocodes_client import MockAudioCodesClient
 
 # Load environment variables

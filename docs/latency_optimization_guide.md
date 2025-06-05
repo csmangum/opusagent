@@ -1,19 +1,19 @@
-# Latency Optimization Guide for FastAgent
+# Latency Optimization Guide for OpusAgent
 
 ## Introduction
 
-In real-time voice agent systems, latency is a critical factor that directly impacts user experience. This guide outlines optimization strategies implemented in FastAgent to achieve ultra-low latency voice interactions. For natural conversational flow, end-to-end latency should remain below 200-300ms, from speech input to agent response.
+In real-time voice agent systems, latency is a critical factor that directly impacts user experience. This guide outlines optimization strategies implemented in OpusAgent to achieve ultra-low latency voice interactions. For natural conversational flow, end-to-end latency should remain below 200-300ms, from speech input to agent response.
 
 ## Core Optimization Areas
 
 ### 1. FastAPI and WebSocket Optimizations
 
-FastAgent leverages FastAPI for its asynchronous capabilities but requires specific optimizations:
+OpusAgent leverages FastAPI for its asynchronous capabilities but requires specific optimizations:
 
 ```python
 # Configuration in run.py
 app = FastAPI(
-    title="FastAgent",
+    title="OpusAgent",
     description="Low-latency voice agent framework",
     version="1.0.0",
     docs_url="/docs",
@@ -209,7 +209,7 @@ class VoiceSynthesizer:
 
 ## Latency Monitoring and Debugging
 
-FastAgent includes built-in latency monitoring:
+OpusAgent includes built-in latency monitoring:
 
 ```python
 @app.get("/health")
@@ -236,7 +236,7 @@ async def health_check():
 
 ### Latency Testing Tools
 
-FastAgent provides a specialized script for latency testing:
+OpusAgent provides a specialized script for latency testing:
 
 ```bash
 # Using PowerShell to run latency test
@@ -291,6 +291,6 @@ For systems requiring ultra-low latency (sub-100ms):
 
 ## Conclusion
 
-Achieving ultra-low latency in voice agent systems requires a holistic approach spanning network configuration, code optimization, and efficient resource management. FastAgent's architecture provides the foundation for sub-300ms interactions, with opportunities for further optimization based on specific deployment scenarios.
+Achieving ultra-low latency in voice agent systems requires a holistic approach spanning network configuration, code optimization, and efficient resource management. OpusAgent's architecture provides the foundation for sub-300ms interactions, with opportunities for further optimization based on specific deployment scenarios.
 
 By following these guidelines, developers can create voice agents that provide natural, responsive conversations indistinguishable from human interactions. 

@@ -1,10 +1,10 @@
-**FastAgent: A Low-Latency FastAPI Bridge for Real-Time Telephony Voice Agents Using Finite State Agents (FSA)**
+**OpusAgent: A Low-Latency FastAPI Bridge for Real-Time Telephony Voice Agents Using Finite State Agents (FSA)**
 
 ---
 
 ## Abstract
 
-FastAgent is a high-performance, low-latency framework designed to integrate telephony systems with intelligent, real-time voice agents. It leverages FastAPI for HTTP/WebSocket communication and introduces the concept of Finite State Agents (FSA) to provide structured, controllable, and dynamic conversational flows. FastAgent enables stateful, memory-aware voice interactions that are modular, scalable, and optimized for live customer engagements.
+OpusAgent is a high-performance, low-latency framework designed to integrate telephony systems with intelligent, real-time voice agents. It leverages FastAPI for HTTP/WebSocket communication and introduces the concept of Finite State Agents (FSA) to provide structured, controllable, and dynamic conversational flows. OpusAgent enables stateful, memory-aware voice interactions that are modular, scalable, and optimized for live customer engagements.
 
 ---
 
@@ -12,7 +12,7 @@ FastAgent is a high-performance, low-latency framework designed to integrate tel
 
 The need for responsive, intelligent voice systems is rising rapidly across industries such as banking, healthcare, and customer service. Traditional IVR (Interactive Voice Response) systems are rigid, slow, and often frustrating to users. Conversely, purely generative AI systems often lack necessary control, leading to unpredictable or unsafe behavior.
 
-FastAgent bridges these two paradigms by combining:
+OpusAgent bridges these two paradigms by combining:
 - FastAPI's high concurrency and low-latency performance.
 - Telephony integration for real-time voice streaming.
 - Finite State Agents (FSA) for structure, context-awareness, and reliability.
@@ -24,13 +24,13 @@ This architecture provides enterprises and developers with a powerful platform t
 ## Key Concepts
 
 ### FastAPI Bridge
-FastAgent uses FastAPI as its core web framework to:
+OpusAgent uses FastAPI as its core web framework to:
 - Handle real-time WebSocket and HTTP traffic.
 - Interface directly with telephony platforms (e.g., SIP, WebRTC, Voice AI Connect).
 - Manage sessions, context, and state with millisecond latency.
 
 ### Telephony Integration
-FastAgent supports:
+OpusAgent supports:
 - Audio streaming via WebSocket.
 - DTMF tone recognition.
 - Session lifecycle management (start, maintain, terminate calls).
@@ -75,7 +75,7 @@ Each agent instance maintains:
 
 ---
 
-## Advantages of FastAgent
+## Advantages of OpusAgent
 
 - **Ultra-Low Latency:** FastAPI and direct WebSocket handling minimize delays.
 - **Full State Awareness:** Every response is conditioned on an explicit state.
@@ -104,7 +104,7 @@ Each agent instance maintains:
 
 ## Conclusion
 
-FastAgent represents a new approach to real-time voice agent development: combining the speed and modularity of FastAPI, the rigor of finite-state control, and the intelligence of reasoning-capable agents. With Finite State Agents (FSA), FastAgent provides a foundation for scalable, safe, and satisfying conversational experiences in telephony environments.
+OpusAgent represents a new approach to real-time voice agent development: combining the speed and modularity of FastAPI, the rigor of finite-state control, and the intelligence of reasoning-capable agents. With Finite State Agents (FSA), OpusAgent provides a foundation for scalable, safe, and satisfying conversational experiences in telephony environments.
 
 ---
 

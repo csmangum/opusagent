@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 """
-Pytest configuration file for the FastAgent framework test suite.
+Pytest configuration file for the OpusAgent framework test suite.
 
 This file contains fixtures that are shared across multiple test files.
 """

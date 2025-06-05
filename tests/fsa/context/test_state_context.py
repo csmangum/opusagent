@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from fastagent.fsa.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
-from fastagent.fsa.context.state_context import StateContext
+from opusagent.fsa.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
+from opusagent.fsa.context.state_context import StateContext
 
 
 class TestStateContext:

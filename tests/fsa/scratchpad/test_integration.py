@@ -5,9 +5,9 @@ Unit tests for scratchpad integration classes.
 import pytest
 from unittest.mock import MagicMock, patch
 
-from fastagent.fsa.scratchpad.integration import StateScratchpadIntegration, ScratchpadStateMixin
-from fastagent.fsa.scratchpad.manager import ScratchpadManager
-from fastagent.fsa.scratchpad.section import SectionType
+from opusagent.fsa.scratchpad.integration import StateScratchpadIntegration, ScratchpadStateMixin
+from opusagent.fsa.scratchpad.manager import ScratchpadManager
+from opusagent.fsa.scratchpad.section import SectionType
 
 
 class MockState:

@@ -170,7 +170,7 @@ stateDiagram-v2
 
 ## FSA Implementation Notes
 
-The Bank of Peril FSA is implemented using FastAgent's core architecture and focuses on:
+The Bank of Peril FSA is implemented using OpusAgent's core architecture and focuses on:
 
 1. **Security-First Design**: Multi-factor authentication and fraud detection are deeply integrated
 2. **Specialized Banking States**: Custom states for handling Bank of Peril's unique offerings 

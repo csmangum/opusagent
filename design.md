@@ -7,11 +7,11 @@ Integrate **GPT-4o's structured function calling** with our **Finite State Agent
 ### 🏗️ Architecture Summary
 
 **User Input (Voice or Text)** →
-**FastAgent (GPT-4o + FSA)** →
+**OpusAgent (GPT-4o + FSA)** →
 **State Management & Tool Calls (Structured JSON)** →
 **MCP Handler executes logic / triggers services** →
 **FSA Context & Transition Logic** →
-**FastAgent resumes dialog with updated state**
+**OpusAgent resumes dialog with updated state**
 
 ---
 
@@ -197,7 +197,7 @@ async def handle_replacement_reason(params: dict) -> dict:
 ### 🚀 Implementation Roadmap
 
 1. **FSA Foundation**: Implement base tools (`call_intent`, `replace_card`, `confirm_address`, etc.) in MCP with FSA state integration
-2. **Agent Definition**: Define the agent using FastAgent with GPT-4o, `tools=[...]`, and FSA state management
+2. **Agent Definition**: Define the agent using OpusAgent with GPT-4o, `tools=[...]`, and FSA state management
 3. **Mock Implementation**: Wrap tool execution in mock/stub logic initially; connect to services later
 4. **Context Integration**: Connect GPT-4o function calls with FSA context preservation and state transitions
 5. **Monitoring & Logging**: Add comprehensive logging for both tool calls and FSA state changes

@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from fastagent.fsa.states import FSAState, StateManager, StateTransition
+from opusagent.fsa.states import FSAState, StateManager, StateTransition
 
 
 class MockState(FSAState):

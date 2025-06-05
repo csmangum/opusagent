@@ -1,8 +1,8 @@
 import pytest
 
-from fastagent.fsa.context.context_filter import ContextFilter
-from fastagent.fsa.context.context_item import ContextItem, ExpirationPolicy
-from fastagent.fsa.context.state_context import StateContext
+from opusagent.fsa.context.context_filter import ContextFilter
+from opusagent.fsa.context.context_item import ContextItem, ExpirationPolicy
+from opusagent.fsa.context.state_context import StateContext
 
 
 class TestContextFilter:

@@ -21,8 +21,8 @@ from dotenv import load_dotenv
 sys.path.append(os.path.abspath("."))
 
 # Import our client
-from fastagent.realtime.realtime_client import RealtimeClient
-from fastagent.models.openai_api import MessageRole, ServerEventType
+from opusagent.realtime.realtime_client import RealtimeClient
+from opusagent.models.openai_api import MessageRole, ServerEventType
 
 # Initialize test results dictionary
 test_results = {

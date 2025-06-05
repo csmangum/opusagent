@@ -1,8 +1,8 @@
-# FastAgent Flow Design & Implementation Guide
+# OpusAgent Flow Design & Implementation Guide
 
 ## 🚀 Quick Start: From Idea to Working Flow in Minutes
 
-This guide shows how to design and implement conversational flows quickly and efficiently using the FastAgent system.
+This guide shows how to design and implement conversational flows quickly and efficiently using the OpusAgent system.
 
 ## 📋 Phase 1: Design Your Flow (5 minutes)
 

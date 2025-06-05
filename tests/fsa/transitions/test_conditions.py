@@ -2,9 +2,9 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from fastagent.fsa.transitions.conditions import PostCondition, PreCondition
-from fastagent.fsa.transitions.conditions.post_conditions import clear_variable, log_transition
-from fastagent.fsa.transitions.conditions.pre_conditions import merge_variables, set_variable
+from opusagent.fsa.transitions.conditions import PostCondition, PreCondition
+from opusagent.fsa.transitions.conditions.post_conditions import clear_variable, log_transition
+from opusagent.fsa.transitions.conditions.pre_conditions import merge_variables, set_variable
 
 
 class TestPreCondition(unittest.TestCase):

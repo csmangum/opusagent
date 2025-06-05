@@ -1,8 +1,8 @@
 import unittest
 import pytest
 import asyncio
-from fastagent.fsa.states.base import StateContext
-from fastagent.fsa.states.examples import (
+from opusagent.fsa.states.base import StateContext
+from opusagent.fsa.states.examples import (
     GreetingState,
     AuthenticationState,
     GeneralInquiryState,

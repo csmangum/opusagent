@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-This document outlines the complete step-by-step implementation plan for the **Interactive TUI Validator for TelephonyRealtimeBridge Call Flow Testing**, based on [GitHub Issue #52](https://github.com/csmangum/fastagent/issues/52).
+This document outlines the complete step-by-step implementation plan for the **Interactive TUI Validator for TelephonyRealtimeBridge Call Flow Testing**, based on [GitHub Issue #52](https://github.com/csmangum/opusagent/issues/52).
 
 The TUI provides a comprehensive interface for testing AudioCodes VoiceAI Connect Enterprise (VAIC) integration with OpenAI Realtime API, featuring real-time audio playback, transcript display, and event monitoring.
 
@@ -283,7 +283,7 @@ python -m tui.main
 
 ```bash
 # Navigate to project root
-cd /path/to/fastagent
+cd /path/to/opusagent
 
 # Install dependencies
 pip install -r requirements.txt

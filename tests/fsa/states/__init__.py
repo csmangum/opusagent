@@ -1,5 +1,5 @@
 """
-Tests for the states module of the FastAgent framework.
+Tests for the states module of the OpusAgent framework.
 
 This package contains unit tests for the Finite State Agent (FSA)
 components, including:

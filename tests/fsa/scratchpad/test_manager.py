@@ -8,9 +8,9 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch, mock_open
 
-from fastagent.fsa.scratchpad.manager import ScratchpadManager
-from fastagent.fsa.scratchpad.content import ScratchpadContent
-from fastagent.fsa.scratchpad.section import SectionType, ReasoningSection
+from opusagent.fsa.scratchpad.manager import ScratchpadManager
+from opusagent.fsa.scratchpad.content import ScratchpadContent
+from opusagent.fsa.scratchpad.section import SectionType, ReasoningSection
 
 
 class TestScratchpadManager:
