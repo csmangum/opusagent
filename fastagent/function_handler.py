@@ -545,7 +545,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for account confirmation
         """
-        from rc_prompts import member_account_confirmation_prompt, base_prompt
+        from demo.rc_prompts import member_account_confirmation_prompt, base_prompt
         
         member_accounts = arguments.get("member_accounts", ["Gold card", "Silver card", "Basic card"])
         organization_name = arguments.get("organization_name", "Bank of Peril")
@@ -579,7 +579,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for reason collection
         """
-        from rc_prompts import replacement_reason_prompt
+        from demo.rc_prompts import replacement_reason_prompt
         
         card_in_context = arguments.get("card_in_context", "your card")
         reason = arguments.get("reason", "")
@@ -615,7 +615,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for address confirmation
         """
-        from rc_prompts import confirm_address_prompt
+        from demo.rc_prompts import confirm_address_prompt
         
         card_in_context = arguments.get("card_in_context", "your card")
         address_on_file = arguments.get("address_on_file", "123 Main St, Anytown, ST 12345")
@@ -654,7 +654,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for starting replacement
         """
-        from rc_prompts import start_card_replacement_prompt
+        from demo.rc_prompts import start_card_replacement_prompt
         
         card_in_context = arguments.get("card_in_context", "your card")
         address_in_context = arguments.get("address_in_context", "your address on file")
@@ -689,7 +689,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for finishing replacement
         """
-        from rc_prompts import finish_card_replacement_prompt
+        from demo.rc_prompts import finish_card_replacement_prompt
         
         card_in_context = arguments.get("card_in_context", "your card")
         address_in_context = arguments.get("address_in_context", "your address")
@@ -727,7 +727,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for wrapping up
         """
-        from rc_prompts import wrap_up_prompt
+        from demo.rc_prompts import wrap_up_prompt
         
         organization_name = arguments.get("organization_name", "Bank of Peril")
         
@@ -760,7 +760,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for loan type selection
         """
-        from demo_loan_application_prompts import loan_intent_confirmation_prompt
+        from demo.demo_loan_application_prompts import loan_intent_confirmation_prompt
         
         selected_loan_type = arguments.get("loan_type", "")
         
@@ -794,7 +794,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for amount collection
         """
-        from demo_loan_application_prompts import loan_amount_prompt
+        from demo.demo_loan_application_prompts import loan_amount_prompt
         
         loan_type = arguments.get("loan_type", "loan")
         loan_amount = arguments.get("loan_amount", 0)
@@ -838,7 +838,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for income verification
         """
-        from demo_loan_application_prompts import income_verification_prompt
+        from demo.demo_loan_application_prompts import income_verification_prompt
         
         loan_type = arguments.get("loan_type", "loan")
         loan_amount = arguments.get("loan_amount", 0)
@@ -874,7 +874,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for employment verification
         """
-        from demo_loan_application_prompts import employment_verification_prompt
+        from demo.demo_loan_application_prompts import employment_verification_prompt
         
         employer = arguments.get("employer", "")
         employment_duration = arguments.get("employment_duration", "")
@@ -905,7 +905,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for credit check consent
         """
-        from demo_loan_application_prompts import credit_check_consent_prompt
+        from demo.demo_loan_application_prompts import credit_check_consent_prompt
         
         loan_type = arguments.get("loan_type", "loan")
         consent_given = arguments.get("consent_given", False)
@@ -939,7 +939,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for application submission
         """
-        from demo_loan_application_prompts import application_summary_prompt
+        from demo.demo_loan_application_prompts import application_summary_prompt
         
         loan_type = arguments.get("loan_type", "loan")
         loan_amount = arguments.get("loan_amount", 0)
@@ -983,7 +983,7 @@ class FunctionHandler:
         Returns:
             Formatted prompt and guidance for pre-approval
         """
-        from demo_loan_application_prompts import loan_approval_prompt
+        from demo.demo_loan_application_prompts import loan_approval_prompt
         
         loan_type = arguments.get("loan_type", "loan")
         loan_amount = arguments.get("loan_amount", 0)

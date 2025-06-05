@@ -53,5 +53,6 @@ Also ask if they have any other questions.
 """
 
 wrap_up_prompt = """
-Thank you for calling {organization_name}. Have a great day!
+Say goodbye to the customer.
+"Thank you for calling {organization_name}. Have a great day!"
 """
