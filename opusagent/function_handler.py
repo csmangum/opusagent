@@ -106,14 +106,16 @@ class FunctionHandler:
         realtime_websocket: WebSocket connection to OpenAI Realtime API for sending responses
     """
 
-    def __init__(self, realtime_websocket):
+    def __init__(self, realtime_websocket, call_recorder=None):
         """
         Initialize the function handler.
 
         Args:
             realtime_websocket: WebSocket connection to OpenAI Realtime API
+            call_recorder: Optional CallRecorder instance for logging function calls
         """
         self.realtime_websocket = realtime_websocket
+        self.call_recorder = call_recorder
         self.function_registry: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
         self.active_function_calls: Dict[str, Dict[str, Any]] = (
             {}
@@ -417,12 +419,37 @@ class FunctionHandler:
                 else func(arguments)
             )
             logger.info(f"✅ Function {function_name} executed successfully: {result}")
+
+            # Log function call to call recorder if available
+            if self.call_recorder:
+                try:
+                    await self.call_recorder.log_function_call(
+                        function_name=function_name,
+                        arguments=arguments,
+                        result=result,
+                        call_id=call_id
+                    )
+                except Exception as e:
+                    logger.error(f"Error logging function call to recorder: {e}")
+
         except Exception as e:
             logger.error(f"🚨 Function execution failed: {e}")
             import traceback
 
             logger.error(f"🚨 Function execution traceback: {traceback.format_exc()}")
             result = {"error": str(e)}
+
+            # Log failed function call to call recorder if available
+            if self.call_recorder:
+                try:
+                    await self.call_recorder.log_function_call(
+                        function_name=function_name,
+                        arguments=arguments,
+                        result=result,
+                        call_id=call_id
+                    )
+                except Exception as e:
+                    logger.error(f"Error logging failed function call to recorder: {e}")
 
         # Send result back to OpenAI as a conversation item
         function_result_event = {

@@ -1,0 +1,98 @@
+{
+  "conversation_id": "8494a38b-64e6-4bf0-ab89-6dfa4fbf755e",
+  "session_id": "8494a38b-64e6-4bf0-ab89-6dfa4fbf755e",
+  "events": [
+    {
+      "timestamp": "2025-06-05T23:00:53.008015+00:00",
+      "event_type": "recording_started",
+      "data": {
+        "conversation_id": "8494a38b-64e6-4bf0-ab89-6dfa4fbf755e",
+        "recording_dir": "call_recordings\\8494a38b-64e6-4bf0-ab89-6dfa4fbf755e_20250605_160053",
+        "caller_sample_rate": 16000,
+        "bot_sample_rate": 24000,
+        "target_sample_rate": 16000
+      }
+    },
+    {
+      "timestamp": "2025-06-05T23:00:57.706450+00:00",
+      "event_type": "function_call",
+      "data": {
+        "timestamp": "2025-06-05T23:00:57.706450+00:00",
+        "function_name": "call_intent",
+        "arguments": {
+          "intent": "card_replacement"
+        },
+        "result": {
+          "status": "success",
+          "intent": "card_replacement",
+          "next_action": "ask_card_type",
+          "available_cards": [
+            "Gold card",
+            "Silver card",
+            "Basic card"
+          ],
+          "prompt_guidance": "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
+        },
+        "call_id": "call_3M24BIqoLlYjRrpK"
+      }
+    },
+    {
+      "timestamp": "2025-06-05T23:01:08.565353+00:00",
+      "event_type": "function_call",
+      "data": {
+        "timestamp": "2025-06-05T23:01:08.565353+00:00",
+        "function_name": "replacement_reason",
+        "arguments": {
+          "card_in_context": "Gold card",
+          "reason": "Lost"
+        },
+        "result": {
+          "status": "success",
+          "function_name": "replacement_reason",
+          "prompt_guidance": "\nThe customer wants to replace their Gold card. We need the reason they \nwant to replace their card.\n\nBased on their response, call the `replacement_reason` function with the reason.\n\nLost\nDamaged\nStolen\nOther\n",
+          "next_action": "collect_address",
+          "valid_reasons": [
+            "Lost",
+            "Damaged",
+            "Stolen",
+            "Other"
+          ],
+          "selected_reason": "Lost",
+          "context": {
+            "stage": "reason_collection",
+            "card_in_context": "Gold card",
+            "reason": "Lost"
+          }
+        },
+        "call_id": "call_JSgVzUJf0BSJp1PO"
+      }
+    },
+    {
+      "timestamp": "2025-06-05T23:01:14.197028+00:00",
+      "event_type": "function_call",
+      "data": {
+        "timestamp": "2025-06-05T23:01:14.197028+00:00",
+        "function_name": "confirm_address",
+        "arguments": {
+          "card_in_context": "Gold card",
+          "address_on_file": "[Your Current Address]"
+        },
+        "result": {
+          "status": "success",
+          "function_name": "confirm_address",
+          "prompt_guidance": "\nThe customer wants to replace their Gold card. We need the address to mail the new card.\nThe address on file with this card is: [Your Current Address].\n\nCall the `confirm_address` function with the confirmed address.\n",
+          "next_action": "confirm_address",
+          "address_on_file": "[Your Current Address]",
+          "confirmed_address": "",
+          "context": {
+            "stage": "address_confirmation",
+            "card_in_context": "Gold card",
+            "address_on_file": "[Your Current Address]",
+            "confirmed_address": ""
+          }
+        },
+        "call_id": "call_2ArrQCtVQ4XJXYcf"
+      }
+    }
+  ]
+}
