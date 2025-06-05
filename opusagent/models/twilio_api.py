@@ -51,7 +51,7 @@ class TwilioEventType(str, enum.Enum):
 
 
 # Regular expression patterns for validation
-SID_PATTERN: Pattern = re.compile(r"^[A-Z]{2}[a-f0-9]{32}$")
+SID_PATTERN: Pattern = re.compile(r"^[A-Z]{2}(?:test[a-f0-9]{32}|[a-f0-9]{32})$")
 DTMF_PATTERN: Pattern = re.compile(r"^[0-9*#ABCD]$")
 
 # Supported audio formats

@@ -7,7 +7,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from mock_twilio_client import MockTwilioClient
+from validate.mock_twilio_client import MockTwilioClient
 
 
 async def test_single_turn():
