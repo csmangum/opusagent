@@ -12,15 +12,15 @@ from pathlib import Path
 
 from mock_twilio_client import MockTwilioClient
 
+# Configure logging at the module level
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 async def test_banking_conversation_flow():
     """Test a realistic banking conversation using static audio files."""
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    logger = logging.getLogger(__name__)
 
     # Bridge server URL 
     bridge_url = "ws://localhost:6060/twilio-ws"
