@@ -13,13 +13,9 @@ openai.api_key = OPENAI_API_KEY
 
 # List of phrases to synthesize
 phrases = [
-    "Hi, I need to replace my card. ",
-    "I lost it.",
-    "Its my Gold card.",
-    "Yes send it to that address.",
-    "Thanks, thats all.",
-    "What is my balance?",
-    "Transfer funds 100 to 1234567890"
+    "Uh, sorry, can you hold on a sec? ... Okay, I lost my card.",
+    "Wait, can you tell me when my last payment was?",
+    "Actually, I moved. Can you send it to 456 Oak Ave?"
 ]
 
 VOICE = "nova"
