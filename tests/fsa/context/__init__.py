@@ -1,3 +1,3 @@
 """
-Test suite for the fastagent.fsa.context module.
+Test suite for the opusagent.fsa.context module.
 """ 

@@ -1,19 +1,19 @@
-# FastAgent Architecture for Real-Time Voice Bots
+# OpusAgent Architecture for Real-Time Voice Bots
 
 ## Overview
 
-The FastAgent Architecture, built with FastAPI, powers a high-performance conversational voice bot that delivers seamless, low-latency interactions. Integrating the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation, FastAgent combines a dynamic, Stateful LLM Layer conversational core with finite state machine (FSM) agents for complex tasks, such as booking appointments. This hybrid design ensures rapid, context-aware voice interactions optimized for enterprise applications.
+The OpusAgent Architecture, built with FastAPI, powers a high-performance conversational voice bot that delivers seamless, low-latency interactions. Integrating the AudioCodes VoiceAI Connect API for voice input and the OpenAI Realtime API for dialogue and voice generation, OpusAgent combines a dynamic, Stateful LLM Layer conversational core with finite state machine (FSM) agents for complex tasks, such as booking appointments. This hybrid design ensures rapid, context-aware voice interactions optimized for enterprise applications.
 
 ## How It Works
 
 ### High-Speed Dialogue Core:
-- FastAgent streams audio from AudioCodes to OpenAI, leveraging OpenAI's neural model for context-aware, natural dialogue without rigid states.
+- OpusAgent streams audio from AudioCodes to OpenAI, leveraging OpenAI's neural model for context-aware, natural dialogue without rigid states.
 - Responses are streamed back to the user via AudioCodes, ensuring real-time performance.
 
 ### Finite State Agents (FSA):
-- When a task is triggered (e.g., "Book an appointment"), OpenAI initiates a function call, and FastAgent deploys an FSA agent to manage structured steps (e.g., collecting date, time, confirmation).
+- When a task is triggered (e.g., "Book an appointment"), OpenAI initiates a function call, and OpusAgent deploys an FSA agent to manage structured steps (e.g., collecting date, time, confirmation).
 - Agents operate efficiently, ensuring precise task execution.
-- For detailed documentation on the Finite State Agent (FSA) architecture, see [FSA Documentation](fastagent/fsa/README.md).
+- For detailed documentation on the Finite State Agent (FSA) architecture, see [FSA Documentation](opusagent/fsa/README.md).
 
 ### Concurrent Execution:
 - The conversation flows uninterrupted while FSM agents handle tasks, allowing users to ask questions or pivot topics.
@@ -41,10 +41,10 @@ The FastAgent Architecture, built with FastAPI, powers a high-performance conver
 
 User: "Book an appointment for tomorrow."  
 
-OpenAI triggers book_appointment, and a FastAgent FSM prompts: "What time?"  
+OpenAI triggers book_appointment, and a OpusAgent FSM prompts: "What time?"  
 User says: "10 AM," while the conversation remains live for other queries.  
 The agent confirms: "Book for tomorrow at 10 AM?" User agrees, task completes.  
-OpenAI responds: "Appointment booked!"—delivered instantly via FastAgent.
+OpenAI responds: "Appointment booked!"—delivered instantly via opusagent.
 
 Before ending the interaction, the bot asks: "Is there anything else I can help you with today?"  
 User responds: "No, that's all I needed."  
@@ -53,11 +53,11 @@ Bot confirms: "I'm glad I could help. Your appointment is confirmed for tomorrow
 ### Call Continuity Scenario
 
 During an appointment booking, if the call disconnects unexpectedly:  
-FastAgent detects the abrupt termination and automatically sends an SMS: "Our call was disconnected. Your appointment request was saved. Reply CALL to continue where we left off."  
+OpusAgent detects the abrupt termination and automatically sends an SMS: "Our call was disconnected. Your appointment request was saved. Reply CALL to continue where we left off."  
 When the user replies or calls back, the system retrieves the conversation context and FSA state.  
 Bot greets: "Welcome back! We were booking an appointment for tomorrow at 10 AM. Would you like to continue or start over?"  
 User confirms, and the conversation resumes from the saved state, ensuring no information is lost.
 
-## Why FastAgent?
+## Why OpusAgent?
 
-Built on FastAPI, FastAgent delivers unparalleled speed and precision. Its hybrid design—pairing an AI-driven conversational core with structured FSM agents—ensures dynamic, task-heavy voice interactions, making it ideal for real-time enterprise voice bots.
+Built on FastAPI, OpusAgent delivers unparalleled speed and precision. Its hybrid design—pairing an AI-driven conversational core with structured FSM agents—ensures dynamic, task-heavy voice interactions, making it ideal for real-time enterprise voice bots.

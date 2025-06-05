@@ -5,7 +5,7 @@ import unittest
 import pytest
 import pytest_asyncio
 
-from fastagent.fsa.states import FSAState, StateManager, StateTransition
+from opusagent.fsa.states import FSAState, StateManager, StateTransition
 
 
 class FastMockState(FSAState):

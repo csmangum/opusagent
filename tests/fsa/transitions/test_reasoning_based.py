@@ -2,7 +2,7 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from fastagent.fsa.transitions.reasoning_based import ReasoningBasedTransition
+from opusagent.fsa.transitions.reasoning_based import ReasoningBasedTransition
 
 
 class TestReasoningBasedTransition(unittest.TestCase):

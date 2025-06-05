@@ -30,8 +30,8 @@ from dotenv import load_dotenv
 from fastapi import WebSocket
 from websockets.exceptions import ConnectionClosedError
 
-from fastagent.realtime.realtime_client import RealtimeClient
-from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
+from opusagent.realtime.realtime_client import RealtimeClient
+from opusagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 # Load environment variables from .env file
 load_dotenv()

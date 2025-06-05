@@ -42,7 +42,7 @@ Analyzing the server logs revealed the error timing:
 ## 🔍 Root Cause Analysis
 
 ### Primary Issue Identified
-Location: `fastagent/telephony_realtime_bridge.py` in `handle_user_stream_stop()` method
+Location: `opusagent/telephony_realtime_bridge.py` in `handle_user_stream_stop()` method
 
 **The Problem:**
 ```python
@@ -198,7 +198,7 @@ The system is now **production-ready** with the primary audio processing pipelin
 ---
 
 **Files Modified:**
-- `fastagent/telephony_realtime_bridge.py` - Added buffer size validation in `handle_user_stream_stop()`
+- `opusagent/telephony_realtime_bridge.py` - Added buffer size validation in `handle_user_stream_stop()`
 
 **Testing Completed:**
 - ✅ Validation script execution

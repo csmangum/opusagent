@@ -1,6 +1,6 @@
 # TelephonyRealtimeBridge
 
-The `TelephonyRealtimeBridge` is a critical component in the FastAgent framework that enables real-time, bidirectional audio communication between telephony systems (using AudioCodes or similar telephony providers) and OpenAI's Realtime API. It serves as a communication pipeline that handles audio streaming, session management, speech detection, and event processing in both directions.
+The `TelephonyRealtimeBridge` is a critical component in the OpusAgent framework that enables real-time, bidirectional audio communication between telephony systems (using AudioCodes or similar telephony providers) and OpenAI's Realtime API. It serves as a communication pipeline that handles audio streaming, session management, speech detection, and event processing in both directions.
 
 This bridge is designed for low-latency voice agent applications, allowing seamless transmission of audio between end-users (via telephony) and AI agents (via OpenAI), enabling natural, real-time conversations with voice-enabled AI assistants.
 
@@ -28,7 +28,7 @@ Telephone User ⟷ Telephony System ⟷ TelephonyRealtimeBridge ⟷ OpenAI Realt
 The bridge uses strictly typed Pydantic models to ensure reliable message parsing and generation. These models represent the various message types exchanged with both the telephony system and OpenAI.
 
 ### AudioCodes API Models
-Located in `fastagent/models/audiocodes_api.py`, these models represent the telephony protocol:
+Located in `opusagent/models/audiocodes_api.py`, these models represent the telephony protocol:
 
 - **Session Management**:
   - `SessionInitiateMessage`: Initial request to start a conversation
@@ -48,7 +48,7 @@ Located in `fastagent/models/audiocodes_api.py`, these models represent the tele
   - `PlayStreamStopMessage`: Stop playing audio to the user
 
 ### OpenAI Realtime API Models
-Located in `fastagent/models/openai_api.py`, these models represent the OpenAI Realtime protocol:
+Located in `opusagent/models/openai_api.py`, these models represent the OpenAI Realtime protocol:
 
 - **Session Management**:
   - `SessionConfig`: Configuration for the OpenAI session
@@ -90,7 +90,7 @@ The bridge is typically instantiated and used within a FastAPI endpoint that han
 from fastapi import FastAPI, WebSocket
 import asyncio
 import websockets
-from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
+from opusagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 app = FastAPI()
 

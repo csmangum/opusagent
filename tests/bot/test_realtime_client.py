@@ -16,8 +16,8 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError
 
-from fastagent.models.openai_api import InputAudioBufferAppendEvent
-from fastagent.realtime.realtime_client import RealtimeClient
+from opusagent.models.openai_api import InputAudioBufferAppendEvent
+from opusagent.realtime.realtime_client import RealtimeClient
 
 
 @pytest.fixture

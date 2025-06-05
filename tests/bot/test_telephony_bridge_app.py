@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi.websockets import WebSocketDisconnect
 
-from fastagent.telephony_realtime_bridge import (
+from opusagent.telephony_realtime_bridge import (
     initialize_session,
     send_initial_conversation_item,
 )

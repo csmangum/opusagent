@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the function handlers implemented for the card replacement flow in the FastAgent system. These handlers integrate with the finite state rational agents to drive a structured card replacement conversation flow.
+This document describes the function handlers implemented for the card replacement flow in the OpusAgent system. These handlers integrate with the finite state rational agents to drive a structured card replacement conversation flow.
 
 ## Architecture
 
@@ -581,6 +581,6 @@ This context enables the finite state machine to make intelligent transitions an
 
 ## Implementation Files
 
-- **Function Handlers**: `fastagent/function_handler.py`
+- **Function Handlers**: `opusagent/function_handler.py`
 - **Prompt Templates**: `rc_prompts.py`
-- **Session Configuration**: `fastagent/telephony_realtime_bridge.py` 
+- **Session Configuration**: `opusagent/telephony_realtime_bridge.py` 

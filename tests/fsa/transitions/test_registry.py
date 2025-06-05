@@ -2,8 +2,8 @@ import unittest
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
-from fastagent.fsa.transitions.base import BaseTransition
-from fastagent.fsa.transitions.registry import TransitionRegistry
+from opusagent.fsa.transitions.base import BaseTransition
+from opusagent.fsa.transitions.registry import TransitionRegistry
 
 
 class MockTransition(BaseTransition):

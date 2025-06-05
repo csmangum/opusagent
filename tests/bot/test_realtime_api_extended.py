@@ -16,7 +16,7 @@ import pytest
 import websockets
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-from fastagent.realtime.realtime_client import (
+from opusagent.realtime.realtime_client import (
     MAX_DATA_PER_WINDOW,
     MAX_REQUESTS_PER_WINDOW,
     RATE_LIMIT_WINDOW,
@@ -25,7 +25,7 @@ from fastagent.realtime.realtime_client import (
     RateLimitError,
     RealtimeClient,
 )
-from fastagent.models.openai_api import ClientEvent, ClientEventType, ServerEventType
+from opusagent.models.openai_api import ClientEvent, ClientEventType, ServerEventType
 
 
 @pytest.fixture

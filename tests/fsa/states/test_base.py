@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from fastagent.fsa.states import FSAState, StateContext, StateTransition
+from opusagent.fsa.states import FSAState, StateContext, StateTransition
 
 
 class TestStateTransition(unittest.TestCase):

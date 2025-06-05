@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 from fastapi.websockets import WebSocketDisconnect
 
-from fastagent.models.openai_api import ServerEventType
-from fastagent.telephony_realtime_bridge import TelephonyRealtimeBridge
+from opusagent.models.openai_api import ServerEventType
+from opusagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 
 @pytest.fixture
@@ -75,8 +75,8 @@ async def test_close_method_already_closed(bridge):
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.initialize_session")
-@patch("fastagent.telephony_realtime_bridge.SessionAcceptedResponse")
+@patch("opusagent.telephony_realtime_bridge.initialize_session")
+@patch("opusagent.telephony_realtime_bridge.SessionAcceptedResponse")
 @patch("uuid.uuid4")
 async def test_receive_from_telephony_session_initiate(
     mock_uuid, mock_session_response, mock_init_session, bridge
@@ -135,7 +135,7 @@ async def test_receive_from_telephony_session_initiate(
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.InputAudioBufferAppendEvent")
+@patch("opusagent.telephony_realtime_bridge.InputAudioBufferAppendEvent")
 async def test_receive_from_telephony_user_stream_chunk(mock_audio_event, bridge):
     # Setup
     bridge.conversation_id = "test-conversation-id"
@@ -173,7 +173,7 @@ async def test_receive_from_telephony_user_stream_chunk(mock_audio_event, bridge
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.InputAudioBufferCommitEvent")
+@patch("opusagent.telephony_realtime_bridge.InputAudioBufferCommitEvent")
 async def test_receive_from_telephony_user_stream_stop(mock_commit_event, bridge):
     # Setup
     bridge.conversation_id = "test-conversation-id"
@@ -267,9 +267,9 @@ async def test_receive_from_telephony_exception(bridge):
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.ResponseAudioDeltaEvent")
-@patch("fastagent.telephony_realtime_bridge.PlayStreamStartMessage")
-@patch("fastagent.telephony_realtime_bridge.PlayStreamChunkMessage")
+@patch("opusagent.telephony_realtime_bridge.ResponseAudioDeltaEvent")
+@patch("opusagent.telephony_realtime_bridge.PlayStreamStartMessage")
+@patch("opusagent.telephony_realtime_bridge.PlayStreamChunkMessage")
 async def test_receive_from_realtime_audio_delta(
     mock_chunk_msg, mock_start_msg, mock_audio_event, bridge
 ):
@@ -320,7 +320,7 @@ async def test_receive_from_realtime_audio_delta(
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.PlayStreamStopMessage")
+@patch("opusagent.telephony_realtime_bridge.PlayStreamStopMessage")
 async def test_receive_from_realtime_audio_done(mock_stop_msg, bridge):
     # Setup
     bridge.conversation_id = "test-conversation-id"
@@ -407,7 +407,7 @@ async def test_handle_log_event_error(bridge):
     }
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_log_event(error_event)
 
         # Verify error was logged properly
@@ -432,7 +432,7 @@ async def test_handle_log_event_other(bridge):
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.ResponseTextDeltaEvent")
+@patch("opusagent.telephony_realtime_bridge.ResponseTextDeltaEvent")
 async def test_handle_text_delta(mock_text_delta, bridge):
     # Setup
     text_event = {"type": "response.text.delta", "delta": "Hello, how can I help?"}
@@ -443,7 +443,7 @@ async def test_handle_text_delta(mock_text_delta, bridge):
     mock_text_delta.return_value = mock_event
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_text_and_transcript(text_event)
 
         # Verify text delta was logged
@@ -459,7 +459,7 @@ async def test_handle_transcript_delta(bridge):
     }
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_text_and_transcript(transcript_event)
 
         # Verify transcript delta was logged - use assert_called_with instead of assert_called_once_with
@@ -470,8 +470,8 @@ async def test_handle_transcript_delta(bridge):
 
 
 @pytest.mark.asyncio
-@patch("fastagent.telephony_realtime_bridge.ResponseDoneEvent")
-@patch("fastagent.telephony_realtime_bridge.PlayStreamStopMessage")
+@patch("opusagent.telephony_realtime_bridge.ResponseDoneEvent")
+@patch("opusagent.telephony_realtime_bridge.PlayStreamStopMessage")
 async def test_handle_response_completion(mock_stop_msg, mock_response_done, bridge):
     # Setup
     bridge.conversation_id = "test-conversation-id"
@@ -493,7 +493,7 @@ async def test_handle_response_completion(mock_stop_msg, mock_response_done, bri
     mock_stop_msg.return_value = mock_stop
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_response_completion(response_done_event)
 
         # The method logs two messages, first "Response completed" and then about stopping the stream
@@ -516,7 +516,7 @@ async def test_handle_speech_detection_started(bridge):
     speech_started_event = {"type": ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED}
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_speech_detection(speech_started_event)
 
         # Verify speech detection was logged
@@ -531,7 +531,7 @@ async def test_handle_speech_detection_stopped(bridge):
     speech_stopped_event = {"type": ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED}
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_speech_detection(speech_stopped_event)
 
         # Verify speech detection was logged
@@ -545,7 +545,7 @@ async def test_handle_speech_detection_committed(bridge):
     buffer_committed_event = {"type": "input_audio_buffer.committed"}
 
     # Call the handler
-    with patch("fastagent.telephony_realtime_bridge.logger") as mock_logger:
+    with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_speech_detection(buffer_committed_event)
 
         # Verify commitment was logged

@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from fastagent.fsa.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
+from opusagent.fsa.context.context_item import ContextCategory, ContextItem, ExpirationPolicy
 
 
 class TestContextItem:

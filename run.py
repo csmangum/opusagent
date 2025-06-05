@@ -21,7 +21,7 @@ load_dotenv()
 # Import constants from app (will also load environment variables)
 sys.path.append(str(Path(__file__).parent))
 
-from fastagent.config.logging_config import configure_logging
+from opusagent.config.logging_config import configure_logging
 
 # Configure logging
 logger = configure_logging("run")
@@ -103,7 +103,7 @@ def main():
 
         # Configure uvicorn with optimized WebSocket settings for low latency
         config = uvicorn.Config(
-            "fastagent.main:app",
+            "opusagent.main:app",
             host=args.host,
             port=args.port,
             log_level=args.log_level.lower(),

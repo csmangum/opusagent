@@ -4,13 +4,13 @@ import unittest
 import pytest
 import pytest_asyncio
 
-from fastagent.fsa.states.examples import (
+from opusagent.fsa.states.examples import (
     AccountVerificationState,
     AuthenticationState,
     GeneralInquiryState,
     GreetingState,
 )
-from fastagent.fsa.states.manager import StateManager
+from opusagent.fsa.states.manager import StateManager
 
 
 class TestConversationFlows(unittest.TestCase):
