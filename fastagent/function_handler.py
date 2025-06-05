@@ -127,6 +127,7 @@ class FunctionHandler:
         self.register_function("get_balance", self._func_get_balance)
         self.register_function("transfer_funds", self._func_transfer_funds)
         self.register_function("call_intent", self._func_call_intent)
+        self.register_function("transfer_to_human", self._func_transfer_to_human)
         
         # Card replacement flow functions
         self.register_function("member_account_confirmation", self._func_member_account_confirmation)
@@ -1009,5 +1010,48 @@ class FunctionHandler:
                 "loan_type": loan_type,
                 "loan_amount": loan_amount,
                 "reference_number": reference_number
+            }
+        }
+
+    def _func_transfer_to_human(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle transfer to human agent.
+        
+        Args:
+            arguments: Function arguments containing transfer context and reason
+            
+        Returns:
+            Formatted prompt and guidance for human transfer
+        """
+        reason = arguments.get("reason", "general inquiry")
+        priority = arguments.get("priority", "normal")
+        context = arguments.get("context", {})
+        
+        # Log the transfer request
+        logger.info(f"Transfer to human requested. Reason: {reason}, Priority: {priority}")
+        
+        # Generate a transfer reference number
+        transfer_id = f"TR-{uuid.uuid4().hex[:8].upper()}"
+        
+        # Format the transfer message
+        transfer_message = (
+            f"I understand you'd like to speak with a human agent regarding {reason}. "
+            f"I'll transfer you now. Your reference number is {transfer_id}. "
+            f"Please hold while I connect you with a representative."
+        )
+        
+        return {
+            "status": "success",
+            "function_name": "transfer_to_human",
+            "prompt_guidance": transfer_message,
+            "next_action": "end_conversation",
+            "transfer_id": transfer_id,
+            "priority": priority,
+            "context": {
+                "stage": "human_transfer",
+                "reason": reason,
+                "priority": priority,
+                "transfer_id": transfer_id,
+                **context
             }
         }

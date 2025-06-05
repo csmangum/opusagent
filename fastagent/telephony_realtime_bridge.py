@@ -1068,6 +1068,30 @@ async def initialize_session(realtime_websocket):
             },
             {
                 "type": "function",
+                "name": "transfer_to_human",
+                "description": "Transfer the conversation to a human agent.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "reason": {
+                            "type": "string",
+                            "description": "The reason for transferring to a human agent",
+                        },
+                        "priority": {
+                            "type": "string",
+                            "enum": ["low", "normal", "high"],
+                            "description": "The priority level of the transfer",
+                        },
+                        "context": {
+                            "type": "object",
+                            "description": "Additional context to pass to the human agent",
+                        },
+                    },
+                    "required": ["reason"],
+                },
+            },
+            {
+                "type": "function",
                 "name": "call_intent",
                 "description": "Get the user's intent.",
                 "parameters": {
@@ -1091,10 +1115,10 @@ async def initialize_session(realtime_websocket):
                         "member_accounts": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "List of available member accounts/cards"
+                            "description": "List of available member accounts/cards",
                         },
-                        "organization_name": {"type": "string"}
-                    }
+                        "organization_name": {"type": "string"},
+                    },
                 },
             },
             {
@@ -1107,9 +1131,9 @@ async def initialize_session(realtime_websocket):
                         "card_in_context": {"type": "string"},
                         "reason": {
                             "type": "string",
-                            "enum": ["Lost", "Damaged", "Stolen", "Other"]
-                        }
-                    }
+                            "enum": ["Lost", "Damaged", "Stolen", "Other"],
+                        },
+                    },
                 },
             },
             {
@@ -1121,8 +1145,8 @@ async def initialize_session(realtime_websocket):
                     "properties": {
                         "card_in_context": {"type": "string"},
                         "address_on_file": {"type": "string"},
-                        "confirmed_address": {"type": "string"}
-                    }
+                        "confirmed_address": {"type": "string"},
+                    },
                 },
             },
             {
@@ -1133,8 +1157,8 @@ async def initialize_session(realtime_websocket):
                     "type": "object",
                     "properties": {
                         "card_in_context": {"type": "string"},
-                        "address_in_context": {"type": "string"}
-                    }
+                        "address_in_context": {"type": "string"},
+                    },
                 },
             },
             {
@@ -1146,8 +1170,8 @@ async def initialize_session(realtime_websocket):
                     "properties": {
                         "card_in_context": {"type": "string"},
                         "address_in_context": {"type": "string"},
-                        "delivery_time": {"type": "string"}
-                    }
+                        "delivery_time": {"type": "string"},
+                    },
                 },
             },
             {
@@ -1156,9 +1180,7 @@ async def initialize_session(realtime_websocket):
                 "description": "Wrap up the call with closing remarks.",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "organization_name": {"type": "string"}
-                    }
+                    "properties": {"organization_name": {"type": "string"}},
                 },
             },
         ],
