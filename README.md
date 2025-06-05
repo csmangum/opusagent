@@ -16,13 +16,13 @@ The platform's architecture is designed to scale from simple Q&A bots to complex
 
 ## Key Features
 
-- **Dynamic Dialogue**: OpenAI's AI drives fluid, multi-turn conversations without rigid states
-- **Structured Tasks**: FSA agents ensure reliable, step-by-step task handling
-- **Ultra-Low Latency**: FastAPI-powered audio passthrough and real-time processing
-- **Call Continuity**: Automatic handling of disconnections with context preservation
-- **Modular Design**: Easily add new FSA-based tasks (e.g., payments, queries)
-- **Transparent Reasoning**: Track agent decision-making processes through FSA architecture
-- **Model Context Protocol (MCP)**: Orchestrates tool/function calls, manages conversational context, and ensures reliable, auditable execution between the LLM and backend services
+- **Dynamic Dialogue**: OpenAI's AI drives fluid, multi-turn conversations without rigid states.
+- **Structured Tasks**: FSA agents ensure reliable, step-by-step task handling.
+- **Ultra-Low Latency**: FastAPI-powered audio passthrough and real-time processing.
+- **Call Continuity**: Automatic handling of disconnections with context preservation.
+- **Modular Design**: Easily add new FSA-based tasks (e.g., payments, queries).
+- **Transparent Reasoning**: Track agent decision-making processes through FSA architecture.
+- **Model Context Protocol (MCP)**: Orchestrates tool/function calls, manages conversational context, and ensures reliable, auditable execution between the LLM and backend services.
 
 ## Architecture
 
