@@ -1044,7 +1044,7 @@ class FunctionHandler:
             "status": "success",
             "function_name": "transfer_to_human",
             "prompt_guidance": transfer_message,
-            "next_action": "end_conversation",
+            "next_action": "end_call",
             "transfer_id": transfer_id,
             "priority": priority,
             "context": {
