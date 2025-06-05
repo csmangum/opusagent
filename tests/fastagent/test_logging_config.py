@@ -9,7 +9,7 @@ class TestLoggingConfig(unittest.TestCase):
         self.assertIsInstance(logger, logging.Logger)
         
         # Test that the logger has the correct name
-        self.assertEqual(logger.name, "voice_agent")
+        self.assertEqual(logger.name, "fastagent")
         
         # Test that the logger has the correct level
         self.assertEqual(logger.level, logging.DEBUG)
