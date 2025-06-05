@@ -180,3 +180,5 @@ recordings/
 .vscode/
 *.wav
 !demo/*.wav
+
+call_recordings/
