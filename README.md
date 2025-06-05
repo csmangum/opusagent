@@ -1,9 +1,9 @@
 # OpusAgent
 ![Status](https://img.shields.io/badge/status-In%20Development%20–%20Experimental%20%26%20Aspirational-blue)
 
-OpusAgent is a powerful, enterprise-grade conversational AI platform that combines the natural language understanding of GPT-4 with a robust Finite State Agent (FSA) framework. It enables the creation of intelligent voice and chat agents that can handle complex, multi-step workflows while maintaining natural conversation flow. The platform is particularly well-suited for customer support, banking, healthcare, and enterprise applications where reliable, auditable, and context-aware interactions are crucial.
+OpusAgent is a powerful, enterprise-grade conversational AI platform that combines the natural language understanding of GPT-4o with a robust Finite State Agent (FSA) framework. It enables the creation of rational voice and chat agents that can handle complex, multi-step workflows while maintaining natural conversation flow. The platform is particularly well-suited for customer support, banking, healthcare, and enterprise applications where reliable, auditable, and context-aware interactions are crucial.
 
-At its core, OpusAgent bridges the gap between natural language processing and deterministic task execution. It leverages GPT-4's advanced language understanding capabilities while maintaining strict control over business logic through its FSA framework. This unique combination allows for:
+At its core, OpusAgent bridges the gap between natural language processing and deterministic task execution. It leverages GPT-4o's advanced language understanding capabilities while maintaining strict control over business logic through its FSA framework. This unique combination allows for:
 
 - **Natural Conversations**: The system maintains fluid, context-aware dialogues that feel natural to users
 - **Deterministic Execution**: Every action and state transition is controlled and auditable
@@ -28,7 +28,7 @@ The platform's architecture is designed to scale from simple Q&A bots to complex
 
 OpusAgent's architecture combines three key layers:
 
-- **Conversation Layer**: Powered by GPT-4, handles natural language understanding and dialogue management
+- **Conversation Layer**: Powered by GPT-4o, handles natural language understanding and dialogue management
 - **Control Layer**: FSA framework manages state transitions and workflow execution
 - **Integration Layer**: MCP connects the conversation and control layers with backend services
 
