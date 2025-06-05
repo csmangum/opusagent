@@ -1,15 +1,88 @@
 """
-Function call handler for the OpenAI Realtime API integration.
+Function Call Handler for OpenAI Realtime API Integration
 
-This module provides a centralized handler for managing function calls from the OpenAI Realtime API,
-including accumulating streaming function arguments, executing functions, and sending results back.
-This design separates function call logic from the main bridge implementation for better modularity
-and testability.
+This module provides a comprehensive function call management system for OpenAI's Realtime API,
+enabling seamless integration between AI conversations and backend function execution. The handler
+manages the complete lifecycle of function calls including streaming argument accumulation,
+function execution, and response delivery.
+
+Architecture Overview:
+    The FunctionHandler class serves as the central orchestrator for all function call operations,
+    providing a clean separation between conversation flow and business logic. It handles both
+    synchronous and asynchronous function execution while maintaining state for streaming calls.
+
+Key Features:
+    - **Streaming Support**: Accumulates function arguments delivered across multiple delta events
+    - **Function Registry**: Dynamic registration/unregistration of callable functions
+    - **Async/Sync Compatibility**: Supports both synchronous and asynchronous function implementations
+    - **Error Handling**: Comprehensive error handling with detailed logging for debugging
+    - **Response Management**: Automatic response generation triggering after function execution
+    - **State Management**: Tracks active function calls and manages cleanup
+
+Supported Function Flows:
+    1. **Card Replacement Flow**: Complete end-to-end card replacement process
+       - Member account confirmation
+       - Replacement reason collection
+       - Address verification
+       - Replacement processing and completion
+    
+    2. **Loan Application Flow**: Comprehensive loan application processing
+       - Loan type selection and information
+       - Amount collection with type-specific guidance
+       - Income and employment verification
+       - Credit check consent and application submission
+       - Pre-approval processing
+    
+    3. **Banking Operations**: Basic banking function simulations
+       - Balance inquiries
+       - Fund transfers
+       - Intent classification
+
+Usage Example:
+    ```python
+    # Initialize handler with WebSocket connection
+    handler = FunctionHandler(realtime_websocket)
+    
+    # Register custom function
+    def my_custom_function(args):
+        return {"status": "success", "data": args}
+    
+    handler.register_function("my_function", my_custom_function)
+    
+    # Handle incoming function call events
+    await handler.handle_function_call_arguments_delta(delta_event)
+    await handler.handle_function_call_arguments_done(done_event)
+    ```
+
+Event Processing Workflow:
+    1. **Delta Events**: Incremental argument data is accumulated in active_function_calls
+    2. **Done Events**: Complete arguments trigger function lookup and execution
+    3. **Function Execution**: Registered functions are called with parsed arguments
+    4. **Result Delivery**: Function results are sent back to OpenAI via WebSocket
+    5. **Response Generation**: AI response generation is automatically triggered
+    6. **Cleanup**: Function call state is cleaned up after completion
+
+Dependencies:
+    - asyncio: For asynchronous function execution and task management
+    - json: For argument parsing and result serialization
+    - logging: For comprehensive operation logging
+    - uuid: For generating unique identifiers
+    - OpenAI Realtime API: For WebSocket communication
+
+Thread Safety:
+    This module is designed for use in asyncio environments and maintains thread-safe
+    operation through proper async/await patterns and state management.
+
+Note:
+    Function implementations should follow the pattern of accepting a dictionary of
+    arguments and returning a dictionary result. The handler automatically manages
+    JSON serialization/deserialization for OpenAI API compatibility.
 """
 
 import asyncio
 import json
 import logging
+import uuid
 from typing import Any, Callable, Dict, Optional
 
 from fastagent.config.constants import LOGGER_NAME
@@ -54,6 +127,23 @@ class FunctionHandler:
         self.register_function("get_balance", self._func_get_balance)
         self.register_function("transfer_funds", self._func_transfer_funds)
         self.register_function("call_intent", self._func_call_intent)
+        
+        # Card replacement flow functions
+        self.register_function("member_account_confirmation", self._func_member_account_confirmation)
+        self.register_function("replacement_reason", self._func_replacement_reason)
+        self.register_function("confirm_address", self._func_confirm_address)
+        self.register_function("start_card_replacement", self._func_start_card_replacement)
+        self.register_function("finish_card_replacement", self._func_finish_card_replacement)
+        self.register_function("wrap_up", self._func_wrap_up)
+
+        # Loan application flow functions
+        self.register_function("loan_type_selection", self._func_loan_type_selection)
+        self.register_function("loan_amount_collection", self._func_loan_amount_collection)
+        self.register_function("income_verification", self._func_income_verification)
+        self.register_function("employment_verification", self._func_employment_verification)
+        self.register_function("credit_check_consent", self._func_credit_check_consent)
+        self.register_function("submit_loan_application", self._func_submit_loan_application)
+        self.register_function("loan_pre_approval", self._func_loan_pre_approval)
 
     def register_function(
         self, name: str, func: Callable[[Dict[str, Any]], Any]
@@ -443,3 +533,481 @@ class FunctionHandler:
                 "intent": intent,
                 "next_action": "continue_conversation",
             }
+
+    # Card replacement flow function implementations
+    def _func_member_account_confirmation(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle member account confirmation for card replacement.
+        
+        Args:
+            arguments: Function arguments containing member accounts and context
+            
+        Returns:
+            Formatted prompt and guidance for account confirmation
+        """
+        from rc_prompts import member_account_confirmation_prompt, base_prompt
+        
+        member_accounts = arguments.get("member_accounts", ["Gold card", "Silver card", "Basic card"])
+        organization_name = arguments.get("organization_name", "Bank of Peril")
+        
+        # Format the prompt with context
+        formatted_prompt = member_account_confirmation_prompt.format(
+            member_accounts=", ".join(member_accounts)
+        )
+        
+        logger.info(f"Member account confirmation function called with accounts: {member_accounts}")
+        
+        return {
+            "status": "success",
+            "function_name": "member_account_confirmation",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "confirm_card_selection",
+            "available_cards": member_accounts,
+            "context": {
+                "stage": "account_confirmation",
+                "organization_name": organization_name
+            }
+        }
+
+    def _func_replacement_reason(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle replacement reason collection.
+        
+        Args:
+            arguments: Function arguments containing card context and selected reason
+            
+        Returns:
+            Formatted prompt and guidance for reason collection
+        """
+        from rc_prompts import replacement_reason_prompt
+        
+        card_in_context = arguments.get("card_in_context", "your card")
+        reason = arguments.get("reason", "")
+        
+        # Format the prompt with context
+        formatted_prompt = replacement_reason_prompt.format(
+            card_in_context=card_in_context
+        )
+        
+        logger.info(f"Replacement reason function called for {card_in_context}, reason: {reason}")
+        
+        return {
+            "status": "success",
+            "function_name": "replacement_reason",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "collect_address" if reason else "ask_reason",
+            "valid_reasons": ["Lost", "Damaged", "Stolen", "Other"],
+            "selected_reason": reason,
+            "context": {
+                "stage": "reason_collection",
+                "card_in_context": card_in_context,
+                "reason": reason
+            }
+        }
+
+    def _func_confirm_address(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle address confirmation for card replacement.
+        
+        Args:
+            arguments: Function arguments containing card context and address
+            
+        Returns:
+            Formatted prompt and guidance for address confirmation
+        """
+        from rc_prompts import confirm_address_prompt
+        
+        card_in_context = arguments.get("card_in_context", "your card")
+        address_on_file = arguments.get("address_on_file", "123 Main St, Anytown, ST 12345")
+        confirmed_address = arguments.get("confirmed_address", "")
+        
+        # Format the prompt with context
+        formatted_prompt = confirm_address_prompt.format(
+            card_in_context=card_in_context,
+            address_on_file=address_on_file
+        )
+        
+        logger.info(f"Address confirmation function called for {card_in_context}")
+        
+        return {
+            "status": "success",
+            "function_name": "confirm_address",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "start_replacement" if confirmed_address else "confirm_address",
+            "address_on_file": address_on_file,
+            "confirmed_address": confirmed_address,
+            "context": {
+                "stage": "address_confirmation",
+                "card_in_context": card_in_context,
+                "address_on_file": address_on_file,
+                "confirmed_address": confirmed_address
+            }
+        }
+
+    def _func_start_card_replacement(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle starting the card replacement process.
+        
+        Args:
+            arguments: Function arguments containing card and address context
+            
+        Returns:
+            Formatted prompt and guidance for starting replacement
+        """
+        from rc_prompts import start_card_replacement_prompt
+        
+        card_in_context = arguments.get("card_in_context", "your card")
+        address_in_context = arguments.get("address_in_context", "your address on file")
+        
+        # Format the prompt with context
+        formatted_prompt = start_card_replacement_prompt.format(
+            card_in_context=card_in_context,
+            address_in_context=address_in_context
+        )
+        
+        logger.info(f"Starting card replacement for {card_in_context} to {address_in_context}")
+        
+        return {
+            "status": "success",
+            "function_name": "start_card_replacement",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "finish_replacement",
+            "context": {
+                "stage": "replacement_started",
+                "card_in_context": card_in_context,
+                "address_in_context": address_in_context
+            }
+        }
+
+    def _func_finish_card_replacement(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle finishing the card replacement process.
+        
+        Args:
+            arguments: Function arguments containing card and address context
+            
+        Returns:
+            Formatted prompt and guidance for finishing replacement
+        """
+        from rc_prompts import finish_card_replacement_prompt
+        
+        card_in_context = arguments.get("card_in_context", "your card")
+        address_in_context = arguments.get("address_in_context", "your address")
+        delivery_time = arguments.get("delivery_time", "5-7 business days")
+        
+        # Format the prompt with context
+        formatted_prompt = finish_card_replacement_prompt.format(
+            card_in_context=card_in_context,
+            address_in_context=address_in_context
+        )
+        
+        logger.info(f"Finishing card replacement for {card_in_context}")
+        
+        return {
+            "status": "success",
+            "function_name": "finish_card_replacement",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "wrap_up",
+            "delivery_time": delivery_time,
+            "context": {
+                "stage": "replacement_complete",
+                "card_in_context": card_in_context,
+                "address_in_context": address_in_context,
+                "delivery_time": delivery_time
+            }
+        }
+
+    def _func_wrap_up(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle wrapping up the call.
+        
+        Args:
+            arguments: Function arguments containing organization context
+            
+        Returns:
+            Formatted prompt and guidance for wrapping up
+        """
+        from rc_prompts import wrap_up_prompt
+        
+        organization_name = arguments.get("organization_name", "Bank of Peril")
+        
+        # Format the prompt with context
+        formatted_prompt = wrap_up_prompt.format(
+            organization_name=organization_name
+        )
+        
+        logger.info(f"Wrapping up call for {organization_name}")
+        
+        return {
+            "status": "success",
+            "function_name": "wrap_up",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "end_call",
+            "context": {
+                "stage": "call_complete",
+                "organization_name": organization_name
+            }
+        }
+
+    # Loan application flow function implementations
+    def _func_loan_type_selection(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle loan type selection and provide information.
+        
+        Args:
+            arguments: Function arguments containing loan type preference
+            
+        Returns:
+            Formatted prompt and guidance for loan type selection
+        """
+        from demo_loan_application_prompts import loan_intent_confirmation_prompt
+        
+        selected_loan_type = arguments.get("loan_type", "")
+        
+        logger.info(f"Loan type selection function called with type: {selected_loan_type}")
+        
+        return {
+            "status": "success",
+            "function_name": "loan_type_selection",
+            "prompt_guidance": loan_intent_confirmation_prompt,
+            "next_action": "collect_loan_amount" if selected_loan_type else "ask_loan_type",
+            "available_loan_types": [
+                "Personal loan", 
+                "Auto loan", 
+                "Home mortgage", 
+                "Business loan"
+            ],
+            "selected_loan_type": selected_loan_type,
+            "context": {
+                "stage": "loan_type_selection",
+                "selected_loan_type": selected_loan_type
+            }
+        }
+
+    def _func_loan_amount_collection(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle loan amount collection with type-specific information.
+        
+        Args:
+            arguments: Function arguments containing loan type and amount
+            
+        Returns:
+            Formatted prompt and guidance for amount collection
+        """
+        from demo_loan_application_prompts import loan_amount_prompt
+        
+        loan_type = arguments.get("loan_type", "loan")
+        loan_amount = arguments.get("loan_amount", 0)
+        
+        # Provide type-specific information
+        loan_type_info = {
+            "Personal loan": "Personal loans range from $1,000 to $50,000 with competitive rates.",
+            "Auto loan": "We finance both new and used vehicles up to $100,000.",
+            "Home mortgage": "We offer purchase and refinance mortgages with various term options.",
+            "Business loan": "Business loans range from $5,000 to $500,000 for qualified businesses."
+        }.get(loan_type, "Please let me know the amount you're looking for.")
+        
+        formatted_prompt = loan_amount_prompt.format(
+            loan_type=loan_type,
+            loan_type_info=loan_type_info
+        )
+        
+        logger.info(f"Loan amount collection for {loan_type}, amount: ${loan_amount}")
+        
+        return {
+            "status": "success",
+            "function_name": "loan_amount_collection",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "verify_income" if loan_amount > 0 else "collect_amount",
+            "loan_type": loan_type,
+            "loan_amount": loan_amount,
+            "context": {
+                "stage": "amount_collection",
+                "loan_type": loan_type,
+                "loan_amount": loan_amount
+            }
+        }
+
+    def _func_income_verification(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle income verification for loan application.
+        
+        Args:
+            arguments: Function arguments containing loan context and income
+            
+        Returns:
+            Formatted prompt and guidance for income verification
+        """
+        from demo_loan_application_prompts import income_verification_prompt
+        
+        loan_type = arguments.get("loan_type", "loan")
+        loan_amount = arguments.get("loan_amount", 0)
+        annual_income = arguments.get("annual_income", 0)
+        
+        formatted_prompt = income_verification_prompt.format(
+            loan_type=loan_type,
+            loan_amount=loan_amount
+        )
+        
+        logger.info(f"Income verification for {loan_type}: ${annual_income}")
+        
+        return {
+            "status": "success",
+            "function_name": "income_verification",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "verify_employment" if annual_income > 0 else "collect_income",
+            "context": {
+                "stage": "income_verification",
+                "loan_type": loan_type,
+                "loan_amount": loan_amount,
+                "annual_income": annual_income
+            }
+        }
+
+    def _func_employment_verification(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle employment verification for loan application.
+        
+        Args:
+            arguments: Function arguments containing employment details
+            
+        Returns:
+            Formatted prompt and guidance for employment verification
+        """
+        from demo_loan_application_prompts import employment_verification_prompt
+        
+        employer = arguments.get("employer", "")
+        employment_duration = arguments.get("employment_duration", "")
+        job_title = arguments.get("job_title", "")
+        
+        logger.info(f"Employment verification: {employer}, {employment_duration}, {job_title}")
+        
+        return {
+            "status": "success",
+            "function_name": "employment_verification",
+            "prompt_guidance": employment_verification_prompt,
+            "next_action": "get_credit_consent" if all([employer, employment_duration, job_title]) else "collect_employment",
+            "context": {
+                "stage": "employment_verification",
+                "employer": employer,
+                "employment_duration": employment_duration,
+                "job_title": job_title
+            }
+        }
+
+    def _func_credit_check_consent(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle credit check consent for loan application.
+        
+        Args:
+            arguments: Function arguments containing loan context and consent
+            
+        Returns:
+            Formatted prompt and guidance for credit check consent
+        """
+        from demo_loan_application_prompts import credit_check_consent_prompt
+        
+        loan_type = arguments.get("loan_type", "loan")
+        consent_given = arguments.get("consent_given", False)
+        
+        formatted_prompt = credit_check_consent_prompt.format(
+            loan_type=loan_type
+        )
+        
+        logger.info(f"Credit check consent for {loan_type}: {consent_given}")
+        
+        return {
+            "status": "success",
+            "function_name": "credit_check_consent",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "submit_application" if consent_given else "request_consent",
+            "consent_given": consent_given,
+            "context": {
+                "stage": "credit_consent",
+                "loan_type": loan_type,
+                "consent_given": consent_given
+            }
+        }
+
+    def _func_submit_loan_application(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle loan application submission and summary.
+        
+        Args:
+            arguments: Function arguments containing complete application data
+            
+        Returns:
+            Formatted prompt and guidance for application submission
+        """
+        from demo_loan_application_prompts import application_summary_prompt
+        
+        loan_type = arguments.get("loan_type", "loan")
+        loan_amount = arguments.get("loan_amount", 0)
+        annual_income = arguments.get("annual_income", 0)
+        employer = arguments.get("employer", "")
+        employment_duration = arguments.get("employment_duration", "")
+        
+        formatted_prompt = application_summary_prompt.format(
+            loan_type=loan_type,
+            loan_amount=loan_amount,
+            annual_income=annual_income,
+            employer=employer,
+            employment_duration=employment_duration
+        )
+        
+        logger.info(f"Submitting loan application: {loan_type} for ${loan_amount}")
+        
+        return {
+            "status": "success",
+            "function_name": "submit_loan_application",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "check_pre_approval",
+            "application_submitted": True,
+            "context": {
+                "stage": "application_submitted",
+                "loan_type": loan_type,
+                "loan_amount": loan_amount,
+                "annual_income": annual_income,
+                "employer": employer,
+                "employment_duration": employment_duration
+            }
+        }
+
+    def _func_loan_pre_approval(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle loan pre-approval notification.
+        
+        Args:
+            arguments: Function arguments containing loan context
+            
+        Returns:
+            Formatted prompt and guidance for pre-approval
+        """
+        from demo_loan_application_prompts import loan_approval_prompt
+        
+        loan_type = arguments.get("loan_type", "loan")
+        loan_amount = arguments.get("loan_amount", 0)
+        reference_number = arguments.get("reference_number", f"LA-{uuid.uuid4().hex[:8].upper()}")
+        
+        formatted_prompt = loan_approval_prompt.format(
+            loan_type=loan_type,
+            loan_amount=loan_amount,
+            reference_number=reference_number
+        )
+        
+        logger.info(f"Loan pre-approval for {loan_type}: {reference_number}")
+        
+        return {
+            "status": "success",
+            "function_name": "loan_pre_approval",
+            "prompt_guidance": formatted_prompt,
+            "next_action": "wrap_up",
+            "pre_approved": True,
+            "reference_number": reference_number,
+            "context": {
+                "stage": "pre_approved",
+                "loan_type": loan_type,
+                "loan_amount": loan_amount,
+                "reference_number": reference_number
+            }
+        }

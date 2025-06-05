@@ -1081,6 +1081,86 @@ async def initialize_session(realtime_websocket):
                     "required": ["intent"],
                 },
             },
+            {
+                "type": "function",
+                "name": "member_account_confirmation",
+                "description": "Confirm which member account/card needs replacement.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "member_accounts": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of available member accounts/cards"
+                        },
+                        "organization_name": {"type": "string"}
+                    }
+                },
+            },
+            {
+                "type": "function",
+                "name": "replacement_reason",
+                "description": "Collect the reason for card replacement.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "reason": {
+                            "type": "string",
+                            "enum": ["Lost", "Damaged", "Stolen", "Other"]
+                        }
+                    }
+                },
+            },
+            {
+                "type": "function",
+                "name": "confirm_address",
+                "description": "Confirm the address for card delivery.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "address_on_file": {"type": "string"},
+                        "confirmed_address": {"type": "string"}
+                    }
+                },
+            },
+            {
+                "type": "function",
+                "name": "start_card_replacement",
+                "description": "Start the card replacement process.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "address_in_context": {"type": "string"}
+                    }
+                },
+            },
+            {
+                "type": "function",
+                "name": "finish_card_replacement",
+                "description": "Finish the card replacement process and provide delivery information.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "address_in_context": {"type": "string"},
+                        "delivery_time": {"type": "string"}
+                    }
+                },
+            },
+            {
+                "type": "function",
+                "name": "wrap_up",
+                "description": "Wrap up the call with closing remarks.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "organization_name": {"type": "string"}
+                    }
+                },
+            },
         ],
         input_audio_noise_reduction={"type": "near_field"},
         input_audio_transcription={"model": "whisper-1"},
