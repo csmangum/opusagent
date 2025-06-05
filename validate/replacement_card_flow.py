@@ -225,7 +225,8 @@ async def validate_replacement_card_flow(
                     print(f"   Bot finished: {bot_finished_response}")
                     
                     # Even if this exchange failed, continue to the next one
-                    print("   Continuing to next exchange...")
+                    if verbose:
+                        print("   Continuing to next exchange...")
 
                 # Small pause between exchanges
                 await asyncio.sleep(2)
