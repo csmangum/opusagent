@@ -110,7 +110,7 @@ async def test_banking_conversation_flow():
                     logger.error(f"❌ No AI response for turn {i}")
                 
                 # Brief pause between turns
-                await asyncio.sleep(1.5)
+                await asyncio.sleep(turn_delay)
             
             # End call
             logger.info("\n📴 Ending call...")
