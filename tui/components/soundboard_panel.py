@@ -296,8 +296,8 @@ class SoundboardPanel(Widget):
             try:
                 btn = self.query_one(f"#phrase-{i}", Button)
                 btn.disabled = not can_send
-            except:
-                pass
+            except LookupError as e:
+                logger.warning(f"Failed to update button state for phrase-{i}: {e}")
         
         # Update controls
         try:
