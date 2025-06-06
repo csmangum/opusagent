@@ -27,6 +27,7 @@ from tui.components.events_panel import EventsPanel
 from tui.components.transcript_panel import TranscriptPanel
 from tui.components.controls_panel import ControlsPanel
 from tui.components.status_bar import StatusBar
+from tui.components.soundboard_panel import SoundboardPanel
 from tui.utils.config import TUIConfig
 from tui.models.event_logger import EventLogger, LogEvent
 
@@ -110,6 +111,12 @@ class InteractiveTUIValidator(App):
         Binding("r", "start_recording", "Start Recording"),
         Binding("t", "stop_recording", "Stop Recording"),
         Binding("h", "help", "Help"),
+        # Soundboard shortcuts
+        Binding("1", "send_phrase_1", "Hello"),
+        Binding("2", "send_phrase_2", "Bank Info"),  
+        Binding("3", "send_phrase_3", "Card Lost"),
+        Binding("4", "send_phrase_4", "Balance"),
+        # System shortcuts
         ("ctrl+r", "restart", "Restart"),
         ("ctrl+l", "clear_logs", "Clear Logs"),
         ("ctrl+e", "export_logs", "Export Logs"),
@@ -126,6 +133,7 @@ class InteractiveTUIValidator(App):
         self.transcript_panel = None
         self.controls_panel = None
         self.status_bar = None
+        self.soundboard_panel = None
         
         # Central event logger for the application
         self.event_logger = None
@@ -149,8 +157,9 @@ class InteractiveTUIValidator(App):
                 self.audio_panel = AudioPanel(classes="audio-section")
                 yield self.audio_panel
                 
-                # Debug console (takes remaining space)
-                yield Container(classes="debug-section")
+                # Soundboard for quick phrase testing
+                self.soundboard_panel = SoundboardPanel(classes="audio-section")
+                yield self.soundboard_panel
             
             # Right panel (30% width)
             with Vertical(classes="right-panel"):
@@ -198,7 +207,8 @@ class InteractiveTUIValidator(App):
             self.audio_panel,
             self.events_panel,
             self.transcript_panel,
-            self.status_bar
+            self.status_bar,
+            self.soundboard_panel
         ]
         
         for component in components:
@@ -333,6 +343,26 @@ class InteractiveTUIValidator(App):
         if self.audio_panel:
             self.audio_panel.stop_stream()
 
+    def action_send_phrase_1(self) -> None:
+        """Send phrase 1 (Hello)."""
+        if self.soundboard_panel and self.soundboard_panel.session_active:
+            asyncio.create_task(self.soundboard_panel._send_phrase("Hello"))
+
+    def action_send_phrase_2(self) -> None:
+        """Send phrase 2 (Bank Info)."""
+        if self.soundboard_panel and self.soundboard_panel.session_active:
+            asyncio.create_task(self.soundboard_panel._send_phrase("Bank Info"))
+
+    def action_send_phrase_3(self) -> None:
+        """Send phrase 3 (Card Lost)."""
+        if self.soundboard_panel and self.soundboard_panel.session_active:
+            asyncio.create_task(self.soundboard_panel._send_phrase("Card Lost"))
+
+    def action_send_phrase_4(self) -> None:
+        """Send phrase 4 (Balance)."""
+        if self.soundboard_panel and self.soundboard_panel.session_active:
+            asyncio.create_task(self.soundboard_panel._send_phrase("Balance"))
+
     def action_clear_logs(self) -> None:
         """Clear all logs and events."""
         if self.events_panel:
@@ -397,16 +427,26 @@ Keyboard Shortcuts:
   e - End session
   r - Start audio recording
   t - Stop audio recording
+  
+Soundboard (during active session):
+  1 - Send "Hello" phrase
+  2 - Send "Bank Info" phrase  
+  3 - Send "Card Lost" phrase
+  4 - Send "Balance" phrase
+  
+System:
   Ctrl+L - Clear all logs
   Ctrl+E - Export logs
   Ctrl+R - Restart application
   q - Quit application
   h - Show this help
 
-Connection: Use 'c' to connect to the TelephonyRealtimeBridge server.
-Session: After connecting, use 's' to start a session with the bot.
-Audio: Use 'r' to start recording audio and 't' to stop.
-Logs: Use Ctrl+L to clear logs or Ctrl+E to export them.
+Getting Started:
+1. Use 'c' to connect to the TelephonyRealtimeBridge server
+2. Use 's' to start a session with the bot
+3. Click soundboard buttons or use number keys to send phrases
+4. Listen to bot responses through your speakers
+5. Monitor function calls and conversation flow in real-time
 """
         
         if self.transcript_panel:

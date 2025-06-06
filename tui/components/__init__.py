@@ -11,6 +11,7 @@ from .events_panel import EventsPanel
 from .transcript_panel import TranscriptPanel
 from .controls_panel import ControlsPanel
 from .status_bar import StatusBar
+from .soundboard_panel import SoundboardPanel
 
 __all__ = [
     "ConnectionPanel",
@@ -19,4 +20,5 @@ __all__ = [
     "TranscriptPanel",
     "ControlsPanel",
     "StatusBar",
+    "SoundboardPanel",
 ] 

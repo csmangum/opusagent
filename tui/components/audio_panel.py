@@ -160,6 +160,16 @@ class AudioPanel(Widget):
         """Initialize visualization timer when mounted."""
         # Start visualization update timer
         self.viz_timer = self.set_interval(0.1, self._update_visualization)
+        
+        # Auto-start playback for live audio (bot responses)
+        if self.audio_manager:
+            playback_success = self.audio_manager.start_playback()
+            if playback_success:
+                self._update_format_info(status="Ready for Audio")
+                logger.info("Audio playback system ready for bot responses")
+            else:
+                self._update_format_info(status="Audio System Error")
+                logger.warning("Failed to initialize audio playback system")
     
     async def on_unmount(self) -> None:
         """Clean up when unmounting."""
@@ -573,8 +583,18 @@ class AudioPanel(Widget):
     
     async def handle_bot_audio_chunk(self, audio_data: bytes) -> None:
         """Handle incoming audio chunk from bot."""
-        if self.audio_manager and self.audio_manager.playing:
-            await self.audio_manager.play_audio_chunk(audio_data)
+        try:
+            if self.audio_manager and self.audio_manager.playing:
+                await self.audio_manager.play_audio_chunk(audio_data)
+                
+                # Update visualization to show we're receiving bot audio
+                self._update_format_info(status="Playing Bot Audio")
+                
+                # Log audio reception
+                logger.debug(f"Playing bot audio chunk: {len(audio_data)} bytes")
+                
+        except Exception as e:
+            logger.error(f"Error playing bot audio chunk: {e}")
     
     async def _cleanup_audio(self) -> None:
         """Clean up audio resources."""
