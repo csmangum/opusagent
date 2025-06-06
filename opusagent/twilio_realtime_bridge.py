@@ -209,7 +209,7 @@ class TwilioRealtimeBridge:
             self._closed = True
             
             # Cancel any pending commit task
-            if hasattr(self, '_commit_task') and self._commit_task is not None:
+            if self._commit_task is not None:
                 self._commit_task.cancel()
                 try:
                     await self._commit_task
