@@ -335,7 +335,7 @@ class TwilioRealtimeBridge:
                         self.audio_buffer.clear()
 
                     # Schedule a delayed commit in case this is the last audio chunk
-                    if hasattr(self, '_commit_task') and self._commit_task is not None:
+                    if self._commit_task is not None:
                         self._commit_task.cancel()
                     
                     self._commit_task = asyncio.create_task(self._delayed_commit())
