@@ -1042,6 +1042,7 @@ async def send_initial_conversation_item(realtime_websocket):
                 "content": [
                     {
                         "type": "input_text",
+                        #! the welcome phrase is being set here
                         "text": "You are a customer service agent for Bank of Peril. You are given a task to help the customer with their banking needs. Start by saying 'Hello! How can I help you today?' You will infer the customer's intent from their response and call the call_intent function.",
                     }
                 ],

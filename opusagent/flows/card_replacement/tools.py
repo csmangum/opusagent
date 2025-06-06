@@ -10,13 +10,26 @@ from typing import Any, Dict, List
 CALL_INTENT_TOOL = {
     "type": "function",
     "name": "call_intent",
-    "description": "Get the user's intent.",
+    "description": "Get the user's intent and any additional context they provide upfront (like card type, reason for replacement, etc.).",
     "parameters": {
         "type": "object",
         "properties": {
             "intent": {
                 "type": "string",
                 "enum": ["card_replacement", "account_inquiry", "other"],
+            },
+            "card_type": {
+                "type": "string",
+                "description": "Type of card mentioned (e.g., 'Gold card', 'Silver card', 'Basic card') - only if explicitly mentioned",
+            },
+            "replacement_reason": {
+                "type": "string",
+                "enum": ["Lost", "Damaged", "Stolen", "Other"],
+                "description": "Reason for replacement - only if explicitly mentioned",
+            },
+            "additional_context": {
+                "type": "string",
+                "description": "Any other relevant context provided by the customer",
             },
         },
         "required": ["intent"],

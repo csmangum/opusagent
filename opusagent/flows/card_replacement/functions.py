@@ -22,24 +22,54 @@ logger = logging.getLogger(__name__)
 
 def call_intent(arguments: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Process user intent identification.
+    Process user intent identification and capture any additional context provided upfront.
 
     Args:
-        arguments: Function arguments containing intent
+        arguments: Function arguments containing intent and optional context
 
     Returns:
-        Intent processing results with guidance for next actions
+        Intent processing results with guidance for next actions based on provided context
     """
     intent = arguments.get("intent", "")
+    card_type = arguments.get("card_type", "")
+    replacement_reason = arguments.get("replacement_reason", "")
+    additional_context = arguments.get("additional_context", "")
+    
     if intent == "card_replacement":
-        logger.info(f"Card replacement intent identified: {arguments}")
-        # Return data that guides the AI's next response
+        logger.info(f"Card replacement intent identified with context: {arguments}")
+        
+        # Determine next action based on what context was already provided
+        captured_info = []
+        next_action = "ask_card_type"  # default
+        prompt_guidance = "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
+        
+        # Check what information we already have
+        if card_type:
+            captured_info.append(f"card_type: {card_type}")
+            if replacement_reason:
+                captured_info.append(f"reason: {replacement_reason}")
+                next_action = "confirm_address"
+                prompt_guidance = f"Could you please confirm the address where you would like the new {card_type} to be delivered?"
+            else:
+                next_action = "ask_reason"
+                prompt_guidance = f"Could you please let me know the reason for replacing your {card_type}? Is it Lost, Damaged, Stolen, or Other?"
+        elif replacement_reason:
+            captured_info.append(f"reason: {replacement_reason}")
+            next_action = "ask_card_type_with_reason"
+            prompt_guidance = f"Which type of card do you need to replace? Your options are Gold card, Silver card, or Basic card."
+        
         return {
             "status": "success",
             "intent": intent,
-            "next_action": "ask_card_type",
+            "next_action": next_action,
             "available_cards": ["Gold card", "Silver card", "Basic card"],
-            "prompt_guidance": "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card.",
+            "prompt_guidance": prompt_guidance,
+            "captured_context": {
+                "card_type": card_type,
+                "replacement_reason": replacement_reason,
+                "additional_context": additional_context,
+                "captured_info": captured_info
+            }
         }
     else:
         return {
@@ -63,25 +93,36 @@ def member_account_confirmation(arguments: Dict[str, Any]) -> Dict[str, Any]:
         "member_accounts", ["Gold card", "Silver card", "Basic card"]
     )
     organization_name = arguments.get("organization_name", "Bank of Peril")
-
-    # Format the prompt with context
-    formatted_prompt = MEMBER_ACCOUNT_CONFIRMATION_PROMPT.format(
-        member_accounts=", ".join(member_accounts)
-    )
+    
+    # Check if a specific card was already mentioned/captured
+    specific_card = arguments.get("card_in_context", "")
+    
+    if specific_card:
+        # Card already identified, proceed to next step
+        formatted_prompt = f"Could you please let me know the reason for replacing your {specific_card}? Is it Lost, Damaged, Stolen, or Other?"
+        next_action = "ask_reason"
+    else:
+        # Format the prompt with context for card selection
+        formatted_prompt = MEMBER_ACCOUNT_CONFIRMATION_PROMPT.format(
+            member_accounts=", ".join(member_accounts)
+        )
+        next_action = "confirm_card_selection"
 
     logger.info(
-        f"Member account confirmation function called with accounts: {member_accounts}"
+        f"Member account confirmation function called with accounts: {member_accounts}, specific_card: {specific_card}"
     )
 
     return {
         "status": "success",
         "function_name": "member_account_confirmation",
         "prompt_guidance": formatted_prompt,
-        "next_action": "confirm_card_selection",
+        "next_action": next_action,
         "available_cards": member_accounts,
+        "confirmed_card": specific_card,
         "context": {
             "stage": "account_confirmation",
             "organization_name": organization_name,
+            "card_in_context": specific_card,
         },
     }
 

@@ -96,6 +96,47 @@ class TranscriptPanel(Widget):
         
         self._maintain_log_size()
     
+    def add_function_call(self, function_name: str, arguments: dict, timestamp: str = None) -> None:
+        """Add a function call to the transcript."""
+        if not self.transcript_log:
+            return
+        
+        self.transcript_count += 1
+        timestamp = timestamp or self._get_timestamp()
+        
+        # Format arguments nicely
+        args_str = ", ".join([f"{k}={v}" for k, v in arguments.items()])
+        
+        self.transcript_log.write(
+            f"[dim]{timestamp}[/dim] [magenta]🔧 Function Call:[/magenta] {function_name}({args_str})"
+        )
+        
+        self._maintain_log_size()
+    
+    def add_function_result(self, function_name: str, result: dict, timestamp: str = None) -> None:
+        """Add a function result to the transcript."""
+        if not self.transcript_log:
+            return
+        
+        self.transcript_count += 1
+        timestamp = timestamp or self._get_timestamp()
+        
+        # Format result nicely
+        if isinstance(result, dict) and "status" in result:
+            status = result.get("status", "unknown")
+            next_action = result.get("next_action", "")
+            status_text = f"Status: {status}"
+            if next_action:
+                status_text += f", Next: {next_action}"
+        else:
+            status_text = str(result)[:100] + "..." if len(str(result)) > 100 else str(result)
+        
+        self.transcript_log.write(
+            f"[dim]{timestamp}[/dim] [cyan]📋 Function Result:[/cyan] {function_name} → {status_text}"
+        )
+        
+        self._maintain_log_size()
+    
     def _get_timestamp(self) -> str:
         """Get formatted timestamp."""
         from datetime import datetime

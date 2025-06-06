@@ -551,6 +551,14 @@ class ConnectionPanel(Widget):
         """Handle session status changes."""
         self._update_session_info()
         
+        # Notify soundboard panel of session state changes
+        session_active = new_status.value == "active"
+        if self.parent_app and hasattr(self.parent_app, "soundboard_panel"):
+            self.parent_app.soundboard_panel.set_session_state(
+                session_active, 
+                self.session_state.conversation_id
+            )
+        
         if self.parent_app and hasattr(self.parent_app, "events_panel"):
             self.parent_app.events_panel.add_event(
                 f"session_status_change", 
@@ -568,6 +576,10 @@ class ConnectionPanel(Widget):
             # Notify controls panel
             if hasattr(self.parent_app, "controls_panel"):
                 self.parent_app.controls_panel.set_connection_state(connected)
+            
+            # Notify soundboard panel
+            if hasattr(self.parent_app, "soundboard_panel"):
+                self.parent_app.soundboard_panel.set_connection_state(connected)
     
     def get_session_state(self) -> SessionState:
         """Get the current session state."""
