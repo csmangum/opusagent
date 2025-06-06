@@ -100,7 +100,7 @@ class TwilioRealtimeBridgeValidator:
                 self.logger.info("Connecting to OpenAI Realtime API...")
                 realtime_ws = await websockets.connect(
                     OPENAI_REALTIME_URL,
-                    extra_headers=headers
+                    additional_headers=headers
                 )
                 
                 self.logger.info("Connected to OpenAI Realtime API")
