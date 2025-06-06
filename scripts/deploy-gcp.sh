@@ -73,9 +73,7 @@ gcloud run deploy $SERVICE_NAME \
     --timeout 3600 \
     --concurrency 1000 \
     --max-instances 10 \
-    --set-env-vars "ENV=production" \
-    --set-env-vars "PORT=8000" \
-    --set-env-vars "HOST=0.0.0.0" \
+    --set-env-vars "ENV=production,PORT=8000,HOST=0.0.0.0" \
     --set-secrets "OPENAI_API_KEY=openai-api-key:latest"
 
 # Get the service URL
