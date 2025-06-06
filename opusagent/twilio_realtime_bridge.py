@@ -147,6 +147,9 @@ class TwilioRealtimeBridge:
         # Mark counter for audio synchronization
         self.mark_counter = 0
 
+        # Commit task for delayed audio buffer processing
+        self._commit_task = None
+
         # Initialize function handler
         self.function_handler = FunctionHandler(realtime_websocket)
 
@@ -204,6 +207,15 @@ class TwilioRealtimeBridge:
         """
         if not self._closed:
             self._closed = True
+            
+            # Cancel any pending commit task
+            if hasattr(self, '_commit_task') and self._commit_task is not None:
+                self._commit_task.cancel()
+                try:
+                    await self._commit_task
+                except asyncio.CancelledError:
+                    pass
+            
             try:
                 if (
                     self.realtime_websocket
@@ -322,6 +334,12 @@ class TwilioRealtimeBridge:
                         # Clear buffer
                         self.audio_buffer.clear()
 
+                    # Schedule a delayed commit in case this is the last audio chunk
+                    if hasattr(self, '_commit_task') and self._commit_task is not None:
+                        self._commit_task.cancel()
+                    
+                    self._commit_task = asyncio.create_task(self._delayed_commit())
+
                 except Exception as e:
                     logger.error(f"Error processing Twilio media: {e}")
             except Exception as e:
@@ -352,6 +370,22 @@ class TwilioRealtimeBridge:
             # Simple placeholder - just repeat each byte twice to simulate 16-bit
             # This is NOT proper audio conversion and will sound terrible
             return b"".join([bytes([b, b]) for b in mulaw_data])
+
+    async def _delayed_commit(self):
+        """Commit audio buffer after a delay if no more audio arrives."""
+        try:
+            # Wait 1 second for more audio
+            await asyncio.sleep(1.0)
+            
+            # If we still have audio in buffer, commit it
+            if self.audio_buffer and not self._closed:
+                logger.info("Committing remaining audio buffer after silence")
+                await self._commit_audio_buffer()
+        except asyncio.CancelledError:
+            # Task was cancelled because more audio arrived
+            pass
+        except Exception as e:
+            logger.error(f"Error in delayed commit: {e}")
 
     async def handle_stop(self, data):
         """Handle 'stop' message from Twilio.
