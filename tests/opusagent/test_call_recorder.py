@@ -25,7 +25,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 import numpy as np
 import pytest
 
-from opusagent.models.call_recorder import (AudioChannel, CallMetadata,
+from opusagent.call_recorder import (AudioChannel, CallMetadata,
                                             CallRecorder, TranscriptEntry,
                                             TranscriptType)
 
@@ -109,7 +109,8 @@ class TestCallMetadata:
         assert metadata.duration_seconds is None
         
         # With end time
-        end_time = start_time.replace(second=start_time.second + 30)
+        from datetime import timedelta
+        end_time = start_time + timedelta(seconds=30)
         metadata.end_time = end_time
         assert metadata.duration_seconds == 30.0
     

@@ -19,7 +19,7 @@ from fastapi.websockets import WebSocketDisconnect
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.function_handler import FunctionHandler
-from opusagent.models.call_recorder import CallRecorder, AudioChannel, TranscriptType
+from opusagent.call_recorder import CallRecorder, AudioChannel, TranscriptType
 
 # Import AudioCodes models
 from opusagent.models.audiocodes_api import (
