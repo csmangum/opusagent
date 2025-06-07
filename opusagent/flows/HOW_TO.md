@@ -9,13 +9,6 @@ This guide provides step-by-step instructions for common tasks with the flow sys
 Replace your existing session initialization:
 
 ```python
-# OLD: In telephony_realtime_bridge.py
-from opusagent.function_handler import FunctionHandler
-
-# Initialize function handler
-self.function_handler = FunctionHandler(realtime_websocket)
-
-# NEW: With flows
 from opusagent.flows import create_default_flow_manager
 
 # Create flow manager and activate card replacement
@@ -32,18 +25,6 @@ self.flow_manager.register_with_function_handler(self.function_handler)
 Replace the tools array in `initialize_session()`:
 
 ```python
-# OLD: Hard-coded tools
-tools = [
-    {
-        "type": "function",
-        "name": "get_balance",
-        "description": "Get the user's account balance.",
-        "parameters": {"type": "object", "properties": {}},
-    },
-    # ... many more tools
-]
-
-# NEW: From flows
 tools = self.flow_manager.get_all_tools()
 instructions = self.flow_manager.get_combined_system_instruction()
 
@@ -329,56 +310,13 @@ def test_flow_manager():
     
     tools = manager.get_all_tools()
     functions = manager.get_all_functions()
-    
+
     assert len(tools) > 0
     assert len(functions) > 0
     assert "verify_identity" in functions
 ```
 
-## 🚨 Common Issues & Solutions
-
-### Issue 1: Function Not Found
-```
-Error: Function 'my_function' not implemented
-```
-**Solution**: Make sure the function name in `tools.py` matches the function name in `functions.py`:
-```python
-# tools.py
-"name": "my_function"
-
-# functions.py  
-def my_function(arguments):  # ✅ Names match
-    pass
-```
-
-### Issue 2: Import Errors
-```
-ImportError: cannot import name 'MyFlow' from 'opusagent.flows.my_flow'
-```
-**Solution**: Check your `__init__.py` exports:
-```python
-# flows/my_flow/__init__.py
-from .flow import MyFlow
-__all__ = ["MyFlow"]
-```
-
-### Issue 3: Tools Not Appearing in OpenAI
-**Solution**: Make sure the flow is activated:
-```python
-flow_manager.activate_flow("my_flow")  # Must be called!
-tools = flow_manager.get_all_tools()   # Now includes your tools
-```
-
-### Issue 4: System Instructions Not Working
-**Solution**: Use the combined instructions:
-```python
-# ❌ Wrong - only gets one flow's instructions
-instructions = flow.get_system_instruction()
-
-# ✅ Correct - gets all active flows' instructions
-instructions = flow_manager.get_combined_system_instruction()
-```
-
+---
 ## 📋 Checklist: Adding a New Flow
 
 - [ ] Create flow directory: `opusagent/flows/my_flow/`
@@ -402,16 +340,3 @@ instructions = flow_manager.get_combined_system_instruction()
 5. **Logging**: Log important events for debugging
 6. **Validation**: Use the flow validation methods to catch issues early
 7. **Testing**: Test each component individually before integration
-
-## 🔄 Migration from Existing Code
-
-If you have existing functions in `function_handler.py`:
-
-1. **Extract**: Copy function to flow's `functions.py`
-2. **Create Tool**: Add OpenAI tool definition in `tools.py`
-3. **Add Prompts**: Move any prompts to `prompts.py`
-4. **Test**: Verify the function works in the new location
-5. **Remove**: Delete old function from `function_handler.py`
-6. **Update**: Use flow manager instead of direct registration
-
-This approach lets you migrate one function at a time without breaking existing functionality.
