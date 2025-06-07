@@ -9,6 +9,7 @@ import asyncio
 import base64
 import json
 import os
+import time
 import uuid
 from typing import Any, Callable, Dict, Optional
 
@@ -82,7 +83,7 @@ LOG_EVENT_TYPES = [
     LogEventType.ERROR,
     LogEventType.RESPONSE_CONTENT_DONE,
     LogEventType.RATE_LIMITS_UPDATED,
-    LogEventType.RESPONSE_DONE,
+    # Removed RESPONSE_DONE so it can be handled by the normal event handler
     LogEventType.INPUT_AUDIO_BUFFER_COMMITTED,
     LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
     LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
@@ -150,6 +151,11 @@ class TwilioRealtimeBridge:
         # Commit task for delayed audio buffer processing
         self._commit_task = None
 
+        # Response state tracking to prevent race conditions
+        self.response_active = False  # Track if response is being generated
+        self.pending_user_input = None  # Queue for user input during active response
+        self.response_id_tracker = None  # Track current response ID
+
         # Initialize function handler
         self.function_handler = FunctionHandler(realtime_websocket)
 
@@ -177,9 +183,7 @@ class TwilioRealtimeBridge:
             ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED: self.handle_speech_detection,
             ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED: self.handle_speech_detection,
             # Response events
-            ServerEventType.RESPONSE_CREATED: lambda x: logger.info(
-                "Response creation started"
-            ),
+            ServerEventType.RESPONSE_CREATED: self.handle_response_created,
             ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
             ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
             ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
@@ -488,6 +492,30 @@ class TwilioRealtimeBridge:
 
     async def _trigger_response(self):
         """Trigger a response from OpenAI after committing audio."""
+        # Only trigger response if no active response
+        if not self.response_active:
+            logger.info("No active response - creating new response immediately")
+            await self._create_response()
+        else:
+            # Queue the user input for processing after current response completes
+            self.pending_user_input = {
+                "audio_committed": True,
+                "timestamp": time.time()
+            }
+            logger.info(f"User input queued - response already active (response_id: {self.response_id_tracker})")
+            
+            # Double-check if response became inactive while we were setting pending input
+            if not self.response_active:
+                logger.info("Response became inactive while queuing - processing immediately")
+                await self._create_response()
+                self.pending_user_input = None
+
+    async def _create_response(self):
+        """Create a new response request to OpenAI Realtime API.
+        
+        This helper method contains the response creation logic extracted from
+        _trigger_response to enable reuse and better error handling.
+        """
         try:
             response_create = {
                 "type": "response.create",
@@ -502,7 +530,7 @@ class TwilioRealtimeBridge:
             await self.realtime_websocket.send(json.dumps(response_create))
             logger.info("Response creation triggered")
         except Exception as e:
-            logger.error(f"Error triggering response: {e}")
+            logger.error(f"Error creating response: {e}")
 
     # OpenAI event handlers (similar to AudioCodes bridge)
 
@@ -621,9 +649,48 @@ class TwilioRealtimeBridge:
             await self.twilio_websocket.send_json(mark_message.model_dump())
             logger.info(f"Sent mark to Twilio: {mark_name}")
 
+    async def handle_response_created(self, response_dict):
+        """Handle response created events from the OpenAI Realtime API.
+
+        This method tracks when response generation starts to prevent race conditions.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        self.response_active = True
+        response_data = response_dict.get("response", {})
+        self.response_id_tracker = response_data.get("id")
+        logger.info(f"Response generation started: {self.response_id_tracker}")
+        
+        # Log pending input status for debugging
+        if self.pending_user_input:
+            logger.info(f"Note: Pending user input exists while starting new response")
+
     async def handle_response_completion(self, response_dict):
-        """Handle response completion events from OpenAI."""
-        logger.info("Response completed")
+        """Handle response completion events from the OpenAI Realtime API.
+
+        This method processes the final completion of a response and processes
+        any pending user input that was queued during response generation.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        response_done = ResponseDoneEvent(**response_dict)
+        self.response_active = False
+        self.response_id_tracker = None  # Reset response ID tracker
+        response_id = response_done.response.get("id") if response_done.response else None
+        logger.info(f"Response generation completed: {response_id}")
+
+        # Process any pending user input that was queued during response generation
+        if self.pending_user_input:
+            logger.info("Processing queued user input after response completion")
+            try:
+                await self._create_response()
+                logger.info("Successfully processed queued user input")
+            except Exception as e:
+                logger.error(f"Error processing queued user input: {e}")
+            finally:
+                self.pending_user_input = None
 
     # Additional handlers (similar to AudioCodes bridge)
 
