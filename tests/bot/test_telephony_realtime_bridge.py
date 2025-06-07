@@ -481,6 +481,7 @@ async def test_handle_response_completion(mock_stop_msg, mock_response_done, bri
 
     # Mock the response done event model
     mock_event = MagicMock()
+    mock_event.response = {"id": "test-response-123"}
     mock_response_done.return_value = mock_event
 
     # Mock the stop message
@@ -496,11 +497,11 @@ async def test_handle_response_completion(mock_stop_msg, mock_response_done, bri
     with patch("opusagent.telephony_realtime_bridge.logger") as mock_logger:
         await bridge.handle_response_completion(response_done_event)
 
-        # The method logs two messages, first "Response completed" and then about stopping the stream
-        # Check that the first call was for "Response completed"
+        # The method logs two messages, first about response completion and then about stopping the stream
+        # Check that the first call was for response completion
         calls = mock_logger.info.call_args_list
         assert len(calls) >= 1  # Make sure there was at least one call
-        assert calls[0] == call("Response completed")
+        assert calls[0] == call("Response generation completed: test-response-123")
 
         # Verify stream was stopped
         bridge.telephony_websocket.send_json.assert_called_once_with(
@@ -550,3 +551,141 @@ async def test_handle_speech_detection_committed(bridge):
 
         # Verify commitment was logged
         mock_logger.info.assert_called_with("Audio buffer committed")
+
+
+@pytest.mark.asyncio
+async def test_race_condition_prevention(bridge):
+    """Test that race condition is prevented when user input arrives during active response."""
+    # Setup
+    bridge.conversation_id = "test-conversation-id"
+    bridge.session_initialized = True
+    bridge.realtime_websocket.close_code = None
+    bridge._closed = False
+    bridge.total_audio_bytes_sent = 3200  # Sufficient audio for commit
+    
+    # Simulate active response
+    bridge.response_active = True
+    bridge.response_id_tracker = "test-response-id"
+    
+    # Test data for user stream stop during active response
+    stream_stop = {"type": "userStream.stop"}
+    
+    # Call handle_user_stream_stop during active response
+    await bridge.handle_user_stream_stop(stream_stop)
+    
+    # Verify that no response.create was sent (since response is active)
+    # The bridge should have queued the user input instead
+    assert bridge.pending_user_input is not None
+    assert bridge.pending_user_input["audio_committed"] is True
+    assert "timestamp" in bridge.pending_user_input
+    
+    # Verify no response.create call was made
+    sent_messages = [call[0][0] for call in bridge.realtime_websocket.send.call_args_list]
+    response_create_messages = [msg for msg in sent_messages if '"type": "response.create"' in msg]
+    assert len(response_create_messages) == 0, "No response.create should be sent during active response"
+
+
+@pytest.mark.asyncio
+async def test_response_state_tracking(bridge):
+    """Test that response state is properly tracked through the lifecycle."""
+    # Initial state
+    assert bridge.response_active is False
+    assert bridge.response_id_tracker is None
+    assert bridge.pending_user_input is None
+    
+    # Simulate response created event
+    response_created = {
+        "type": "response.created",
+        "response": {"id": "test-response-123"}
+    }
+    await bridge.handle_response_created(response_created)
+    
+    # Verify response is now active
+    assert bridge.response_active is True
+    assert bridge.response_id_tracker == "test-response-123"
+    
+    # Simulate response completion
+    response_done = {
+        "type": "response.done",
+        "response": {"id": "test-response-123", "status": "completed"}
+    }
+    await bridge.handle_response_completion(response_done)
+    
+    # Verify response is no longer active
+    assert bridge.response_active is False
+
+
+@pytest.mark.asyncio
+async def test_pending_input_processing(bridge):
+    """Test that pending user input is processed after response completion."""
+    # Setup
+    bridge.conversation_id = "test-conversation-id"
+    bridge.realtime_websocket.close_code = None
+    bridge._closed = False
+    
+    # Set pending user input (as would happen during active response)
+    bridge.pending_user_input = {
+        "audio_committed": True,  
+        "timestamp": 1234567890.0
+    }
+    
+    # Simulate response completion
+    response_done = {
+        "type": "response.done", 
+        "response": {"id": "test-response-123", "status": "completed"}
+    }
+    await bridge.handle_response_completion(response_done)
+    
+    # Verify pending input was processed (response.create should be called)
+    sent_messages = [call[0][0] for call in bridge.realtime_websocket.send.call_args_list]
+    response_create_messages = [msg for msg in sent_messages if '"type": "response.create"' in msg]
+    assert len(response_create_messages) == 1, "response.create should be sent for queued input"
+    
+    # Verify pending input was cleared
+    assert bridge.pending_user_input is None
+
+
+@pytest.mark.asyncio
+async def test_normal_flow_without_race_condition(bridge):
+    """Test normal flow when no response is active."""
+    # Setup
+    bridge.conversation_id = "test-conversation-id"
+    bridge.session_initialized = True
+    bridge.realtime_websocket.close_code = None
+    bridge._closed = False
+    bridge.total_audio_bytes_sent = 3200  # Sufficient audio for commit
+    bridge.response_active = False  # No active response
+    
+    # Test data
+    stream_stop = {"type": "userStream.stop"}
+    
+    # Call handle_user_stream_stop when no response is active
+    await bridge.handle_user_stream_stop(stream_stop)
+    
+    # Verify response.create was sent normally
+    sent_messages = [call[0][0] for call in bridge.realtime_websocket.send.call_args_list]
+    response_create_messages = [msg for msg in sent_messages if '"type": "response.create"' in msg]
+    assert len(response_create_messages) == 1, "response.create should be sent when no active response"
+    
+    # Verify no pending input was created
+    assert bridge.pending_user_input is None
+
+
+@pytest.mark.asyncio
+async def test_create_response_helper(bridge):
+    """Test the _create_response helper method."""
+    bridge.realtime_websocket.close_code = None
+    bridge._closed = False
+    
+    # Call the helper method
+    await bridge._create_response()
+    
+    # Verify response.create was sent with correct structure
+    bridge.realtime_websocket.send.assert_called_once()
+    sent_json = bridge.realtime_websocket.send.call_args[0][0]
+    sent_data = json.loads(sent_json)
+    
+    assert sent_data["type"] == "response.create"
+    assert sent_data["response"]["modalities"] == ["text", "audio"]
+    assert sent_data["response"]["output_audio_format"] == "pcm16"
+    assert sent_data["response"]["voice"] == "alloy"

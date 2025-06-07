@@ -9,6 +9,7 @@ import asyncio
 import base64
 import json
 import os
+import time
 import uuid
 from typing import Any, Callable, Dict, Optional
 
@@ -80,7 +81,7 @@ LOG_EVENT_TYPES = [
     LogEventType.ERROR,
     LogEventType.RESPONSE_CONTENT_DONE,
     LogEventType.RATE_LIMITS_UPDATED,
-    LogEventType.RESPONSE_DONE,
+    # Removed RESPONSE_DONE so it can be handled by the normal event handler
     LogEventType.INPUT_AUDIO_BUFFER_COMMITTED,
     LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
     LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
@@ -137,6 +138,11 @@ class TelephonyRealtimeBridge:
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
+        # Response state tracking to prevent race conditions
+        self.response_active = False  # Track if response is being generated
+        self.pending_user_input = None  # Queue for user input during active response
+        self.response_id_tracker = None  # Track current response ID
+
         # Initialize function handler
         self.function_handler = FunctionHandler(realtime_websocket)
         
@@ -166,9 +172,7 @@ class TelephonyRealtimeBridge:
             ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED: self.handle_speech_detection,
             ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED: self.handle_speech_detection,
             # Response events
-            ServerEventType.RESPONSE_CREATED: lambda x: logger.info(
-                "Response creation started"
-            ),
+            ServerEventType.RESPONSE_CREATED: self.handle_response_created,
             ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
             ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
             ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
@@ -418,19 +422,23 @@ class TelephonyRealtimeBridge:
                         f"Audio buffer commit sent: {buffer_commit.model_dump_json()}"
                     )
 
-                    # Since VAD is disabled, manually trigger response generation
-                    response_create = {
-                        "type": "response.create",
-                        "response": {
-                            "modalities": ["text", "audio"],
-                            "output_audio_format": "pcm16",
-                            "temperature": 0.8,
-                            "max_output_tokens": 4096,
-                            "voice": VOICE,
-                        },
-                    }
-                    await self.realtime_websocket.send(json.dumps(response_create))
-                    logger.info("Response creation triggered after audio buffer commit")
+                    # Only trigger response if no active response
+                    if not self.response_active:
+                        logger.info("No active response - creating new response immediately")
+                        await self._create_response()
+                    else:
+                        # Queue the user input for processing after current response completes
+                        self.pending_user_input = {
+                            "audio_committed": True,
+                            "timestamp": time.time()
+                        }
+                        logger.info(f"User input queued - response already active (response_id: {self.response_id_tracker})")
+                        
+                        # Double-check if response became inactive while we were setting pending input
+                        if not self.response_active:
+                            logger.info("Response became inactive while queuing - processing immediately")
+                            await self._create_response()
+                            self.pending_user_input = None
 
                 except Exception as e:
                     logger.error(
@@ -453,6 +461,28 @@ class TelephonyRealtimeBridge:
             logger.warning(
                 "Cannot commit audio buffer - connection closed or websocket unavailable"
             )
+
+    async def _create_response(self):
+        """Create a new response request to OpenAI Realtime API.
+        
+        This helper method contains the response creation logic extracted from
+        handle_user_stream_stop to enable reuse and better error handling.
+        """
+        try:
+            response_create = {
+                "type": "response.create",
+                "response": {
+                    "modalities": ["text", "audio"],
+                    "output_audio_format": "pcm16",
+                    "temperature": 0.8,
+                    "max_output_tokens": 4096,
+                    "voice": VOICE,
+                },
+            }
+            await self.realtime_websocket.send(json.dumps(response_create))
+            logger.info("Response creation triggered after audio buffer commit")
+        except Exception as e:
+            logger.error(f"Error creating response: {e}")
 
     async def handle_session_end(self, data):
         """Handle session.end message from telephony client.
@@ -720,17 +750,38 @@ class TelephonyRealtimeBridge:
                 f"Received audio transcript delta: {response_dict.get('delta', '')}"
             )
 
+    async def handle_response_created(self, response_dict):
+        """Handle response created events from the OpenAI Realtime API.
+
+        This method tracks when response generation starts to prevent race conditions.
+
+        Args:
+            response_dict (dict): The response data from the OpenAI Realtime API
+        """
+        self.response_active = True
+        response_data = response_dict.get("response", {})
+        self.response_id_tracker = response_data.get("id")
+        logger.info(f"Response generation started: {self.response_id_tracker}")
+        
+        # Log pending input status for debugging
+        if self.pending_user_input:
+            logger.info(f"Note: Pending user input exists while starting new response")
+
     async def handle_response_completion(self, response_dict):
         """Handle response completion events from the OpenAI Realtime API.
 
         This method processes the final completion of a response and ensures
-        that any active audio streams are properly stopped.
+        that any active audio streams are properly stopped. It also processes
+        any pending user input that was queued during response generation.
 
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
         response_done = ResponseDoneEvent(**response_dict)
-        logger.info("Response completed")
+        self.response_active = False
+        response_id = response_done.response.get("id") if response_done.response else None
+        logger.info(f"Response generation completed: {response_id}")
+        
         # Stop the current play stream if active
         if self.active_stream_id and self.conversation_id:
             stream_stop = PlayStreamStopMessage(
@@ -743,6 +794,17 @@ class TelephonyRealtimeBridge:
                 f"Stopped play stream at end of response: {self.active_stream_id}"
             )
             self.active_stream_id = None
+
+        # Process any pending user input that was queued during response generation
+        if self.pending_user_input:
+            logger.info("Processing queued user input after response completion")
+            try:
+                await self._create_response()
+                logger.info("Successfully processed queued user input")
+            except Exception as e:
+                logger.error(f"Error processing queued user input: {e}")
+            finally:
+                self.pending_user_input = None
 
     async def handle_output_item_added(self, response_dict):
         """Handle response output item added events from the OpenAI Realtime API.
