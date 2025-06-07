@@ -677,6 +677,7 @@ class TwilioRealtimeBridge:
         """
         response_done = ResponseDoneEvent(**response_dict)
         self.response_active = False
+        self.response_id_tracker = None  # Reset response ID tracker
         response_id = response_done.response.get("id") if response_done.response else None
         logger.info(f"Response generation completed: {response_id}")
 
