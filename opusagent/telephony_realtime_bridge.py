@@ -63,6 +63,8 @@ DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
 MINI_MODEL = "gpt-4o-mini-realtime-preview-2024-12-17"
 FUTURE_MODEL = "gpt-4o-realtime-preview-2025-06-03"
 
+SELECTED_MODEL = MINI_MODEL
+
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -76,7 +78,7 @@ SYSTEM_MESSAGE = (
     "- For other intents, ask clarifying questions to better understand their needs\n"
     "Always be helpful, professional, and use the information returned by functions to provide relevant follow-up questions."
 )
-VOICE = "alloy"
+VOICE = "verse"
 LOG_EVENT_TYPES = [
     LogEventType.ERROR,
     LogEventType.RESPONSE_CONTENT_DONE,
@@ -1162,7 +1164,7 @@ async def initialize_session(realtime_websocket):
         instructions=SYSTEM_MESSAGE,
         modalities=["text", "audio"],
         temperature=0.8,
-        model=DEFAULT_MODEL,
+        model=SELECTED_MODEL,
         tools=[
             {
                 "type": "function",
