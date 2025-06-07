@@ -2,6 +2,7 @@
 Card Replacement Flow Tools
 
 OpenAI function tool definitions for the card replacement conversation flow.
+#! I dont think the functions are all configured correctly
 """
 
 from typing import Any, Dict, List
@@ -10,7 +11,7 @@ from typing import Any, Dict, List
 CALL_INTENT_TOOL = {
     "type": "function",
     "name": "call_intent",
-    "description": "Get the user's intent and any additional context they provide upfront (like card type, reason for replacement, etc.).",
+    "description": "Get the user's intent and any additional context they provide upfront (like card_in_context, replacement_reason, etc.).",
     "parameters": {
         "type": "object",
         "properties": {
@@ -18,14 +19,14 @@ CALL_INTENT_TOOL = {
                 "type": "string",
                 "enum": ["card_replacement", "account_inquiry", "other"],
             },
-            "card_type": {
+            "card_in_context": {
                 "type": "string",
-                "description": "Type of card mentioned (e.g., 'Gold card', 'Silver card', 'Basic card') - only if explicitly mentioned",
+                "description": "The card that the customer is referring to",
             },
             "replacement_reason": {
                 "type": "string",
                 "enum": ["Lost", "Damaged", "Stolen", "Other"],
-                "description": "Reason for replacement - only if explicitly mentioned",
+                "description": "The reason for replacement - only if explicitly mentioned",
             },
             "additional_context": {
                 "type": "string",
@@ -37,6 +38,8 @@ CALL_INTENT_TOOL = {
 }
 
 # Tool definition for member account confirmation
+#! this isn't quite right, it should provide the card_in_context
+#! update anything that uses this function
 MEMBER_ACCOUNT_CONFIRMATION_TOOL = {
     "type": "function",
     "name": "member_account_confirmation",
@@ -72,6 +75,7 @@ REPLACEMENT_REASON_TOOL = {
 }
 
 # Tool definition for address confirmation
+#! update to be boolean instead?
 CONFIRM_ADDRESS_TOOL = {
     "type": "function",
     "name": "confirm_address",

@@ -6,6 +6,7 @@ All prompts and templates used in the card replacement conversation flow.
 
 # Base prompt template for the card replacement flow
 BASE_PROMPT = """
+#! Any of this redundant? Should we just have the system instruction?
 You are a customer service representative for {organization_name}.
 
 {organization_rules}
@@ -45,6 +46,7 @@ Valid reasons:
 """
 
 # Prompt for confirming the address for card delivery
+#! prompt guide the arguments
 CONFIRM_ADDRESS_PROMPT = """
 The customer wants to replace their {card_in_context}. We need the address to mail the new card.
 The address on file with this card is: {address_on_file}.
@@ -73,6 +75,7 @@ Say goodbye to the customer.
 
 # System instruction for the card replacement flow
 SYSTEM_INSTRUCTION = """
+#! confirm this description of the flow
 You are a customer service agent for Bank of Peril. You help customers with their banking needs. 
 When a customer contacts you, first greet them warmly, then listen to their request and call the call_intent function to identify their intent. 
 

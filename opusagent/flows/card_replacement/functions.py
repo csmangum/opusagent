@@ -6,6 +6,7 @@ Function implementations for the card replacement conversation flow.
 
 import logging
 import uuid
+from collections import OrderedDict
 from typing import Any, Dict
 
 from .prompts import (
@@ -34,15 +35,17 @@ def call_intent(arguments: Dict[str, Any]) -> Dict[str, Any]:
     card_type = arguments.get("card_type", "")
     replacement_reason = arguments.get("replacement_reason", "")
     additional_context = arguments.get("additional_context", "")
-    
+
+    # Prompt guidance should ideally be imported from a centralized module for consistency and maintainability.
+
     if intent == "card_replacement":
         logger.info(f"Card replacement intent identified with context: {arguments}")
-        
+
         # Determine next action based on what context was already provided
         captured_info = []
-        next_action = "ask_card_type"  # default
+        next_action = "ask_card_type"  #! is this really needed
         prompt_guidance = "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
-        
+
         # Check what information we already have
         if card_type:
             captured_info.append(f"card_type: {card_type}")
@@ -56,20 +59,20 @@ def call_intent(arguments: Dict[str, Any]) -> Dict[str, Any]:
         elif replacement_reason:
             captured_info.append(f"reason: {replacement_reason}")
             next_action = "ask_card_type_with_reason"
-            prompt_guidance = f"Which type of card do you need to replace? Your options are Gold card, Silver card, or Basic card."
-        
+            prompt_guidance = f"Which type of card do you need to replace?"
+
         return {
             "status": "success",
             "intent": intent,
             "next_action": next_action,
-            "available_cards": ["Gold card", "Silver card", "Basic card"],
+            "available_cards": ["Gold card", "Silver card", "Basic card"], #! this will be dynamic per customer
             "prompt_guidance": prompt_guidance,
             "captured_context": {
                 "card_type": card_type,
                 "replacement_reason": replacement_reason,
                 "additional_context": additional_context,
-                "captured_info": captured_info
-            }
+                "captured_info": captured_info,
+            },
         }
     else:
         return {
@@ -90,13 +93,13 @@ def member_account_confirmation(arguments: Dict[str, Any]) -> Dict[str, Any]:
         Formatted prompt and guidance for account confirmation
     """
     member_accounts = arguments.get(
-        "member_accounts", ["Gold card", "Silver card", "Basic card"]
+        "member_accounts", ["Gold card", "Silver card", "Basic card"] #! this will be dynamic per customer
     )
     organization_name = arguments.get("organization_name", "Bank of Peril")
-    
+
     # Check if a specific card was already mentioned/captured
     specific_card = arguments.get("card_in_context", "")
-    
+
     if specific_card:
         # Card already identified, proceed to next step
         formatted_prompt = f"Could you please let me know the reason for replacing your {specific_card}? Is it Lost, Damaged, Stolen, or Other?"
@@ -297,6 +300,7 @@ def wrap_up(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def transfer_to_human(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    #! validate this function
     """
     Handle transfer to human agent.
 
@@ -341,16 +345,18 @@ def transfer_to_human(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # Function registry mapping for easy access
-CARD_REPLACEMENT_FUNCTIONS = {
-    "call_intent": call_intent,
-    "member_account_confirmation": member_account_confirmation,
-    "replacement_reason": replacement_reason,
-    "confirm_address": confirm_address,
-    "start_card_replacement": start_card_replacement,
-    "finish_card_replacement": finish_card_replacement,
-    "wrap_up": wrap_up,
-    "transfer_to_human": transfer_to_human,
-}
+CARD_REPLACEMENT_FUNCTIONS = OrderedDict(
+    [
+        ("call_intent", call_intent),
+        ("member_account_confirmation", member_account_confirmation),
+        ("replacement_reason", replacement_reason),
+        ("confirm_address", confirm_address),
+        ("start_card_replacement", start_card_replacement),
+        ("finish_card_replacement", finish_card_replacement),
+        ("wrap_up", wrap_up),
+        ("transfer_to_human", transfer_to_human),
+    ]
+)
 
 
 def get_card_replacement_functions() -> Dict[str, Any]:
