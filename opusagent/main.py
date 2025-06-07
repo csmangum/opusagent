@@ -24,6 +24,7 @@ from opusagent.telephony_realtime_bridge import (
     TelephonyRealtimeBridge,
     initialize_session,
 )
+from opusagent.twilio_realtime_bridge import TwilioRealtimeBridge
 
 load_dotenv()
 
@@ -49,7 +50,7 @@ app = FastAPI(
 )
 
 
-@app.websocket("/voice-bot")
+@app.websocket("/voice-agent")
 async def handle_call(telephony_websocket: WebSocket):
     """Handle WebSocket connections between telephony provider and OpenAI."""
     client_address = telephony_websocket.client
@@ -109,6 +110,66 @@ async def handle_call(telephony_websocket: WebSocket):
         await telephony_websocket.close()
 
 
+@app.websocket("/twilio-agent")
+async def handle_twilio_call(twilio_websocket: WebSocket):
+    """Handle WebSocket connections between Twilio Media Streams and OpenAI."""
+    client_address = twilio_websocket.client
+    logger.info(f"------ Incoming Twilio connection from {client_address} ------")
+    await twilio_websocket.accept()
+    logger.info(f"------ Twilio connection accepted from {client_address} ------")
+
+    try:
+        logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
+        
+        async with websockets.connect(
+            "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
+            subprotocols=["realtime"],
+            additional_headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "OpenAI-Beta": "realtime=v1",
+            },
+            ping_interval=5,
+            ping_timeout=20,
+            close_timeout=10,
+        ) as realtime_websocket:
+            logger.info("OpenAI WebSocket connection established for Twilio")
+            bridge = TwilioRealtimeBridge(twilio_websocket, realtime_websocket)
+            logger.info("Twilio-Realtime bridge created")
+            
+            try:
+                logger.info("Initializing Twilio realtime-websocket session...")
+                await bridge.initialize_openai_session()
+                logger.info("Twilio realtime-websocket session initialized")
+            except Exception as e:
+                logger.error(f"Error initializing Twilio realtime-websocket session: {e}")
+                raise
+
+            # Run both tasks and handle cleanup
+            try:
+                logger.info("Starting Twilio bridge tasks...")
+                await asyncio.gather(
+                    bridge.receive_from_twilio(), bridge.receive_from_realtime()
+                )
+            except Exception as e:
+                logger.error(f"Error in Twilio main connection loop: {e}")
+                raise
+            finally:
+                logger.info("Closing Twilio bridge...")
+                await bridge.close()
+    except websockets.exceptions.InvalidStatusCode as e:
+        logger.error(f"Invalid status code from OpenAI (Twilio): {e}")
+        logger.error(f"Response headers: {e.response_headers}")
+        await twilio_websocket.close()
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.error(f"OpenAI connection closed (Twilio): {e}")
+        logger.error(f"Close code: {e.code}")
+        logger.error(f"Close reason: {e.reason}")
+        await twilio_websocket.close()
+    except Exception as e:
+        logger.error(f"Error establishing OpenAI connection (Twilio): {e}")
+        await twilio_websocket.close()
+
+
 @app.get("/")
 async def root():
     """Root endpoint to display basic information about the API.
@@ -121,7 +182,8 @@ async def root():
         "description": "Integration between AudioCodes VoiceAI Connect and OpenAI Realtime API",
         "version": "1.0.0",
         "endpoints": {
-            "/ws": "WebSocket endpoint for AudioCodes VoiceAI Connect",
+            "/voice-agent": "WebSocket endpoint for AudioCodes VoiceAI Connect",
+            "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
         },
     }
 
