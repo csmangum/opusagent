@@ -136,9 +136,11 @@ class TwilioRealtimeBridge:
         self.speech_detected = False
         self._closed = False
 
-        # Audio buffer tracking for debugging
+        # Audio processing stats
         self.audio_chunks_sent = 0
         self.total_audio_bytes_sent = 0
+        
+        # Small audio buffer for optimal chunk sizes (2-3 Twilio chunks = ~40-60ms)
         self.audio_buffer = []
 
         # Transcript buffers for logging full transcripts
@@ -148,8 +150,7 @@ class TwilioRealtimeBridge:
         # Mark counter for audio synchronization
         self.mark_counter = 0
 
-        # Commit task for delayed audio buffer processing
-        self._commit_task = None
+
 
         # Response state tracking to prevent race conditions
         self.response_active = False  # Track if response is being generated
@@ -211,14 +212,6 @@ class TwilioRealtimeBridge:
         """
         if not self._closed:
             self._closed = True
-            
-            # Cancel any pending commit task
-            if self._commit_task is not None:
-                self._commit_task.cancel()
-                try:
-                    await self._commit_task
-                except asyncio.CancelledError:
-                    pass
             
             try:
                 if (
@@ -309,16 +302,17 @@ class TwilioRealtimeBridge:
                 try:
                     # Decode base64 to get mulaw audio bytes
                     mulaw_bytes = base64.b64decode(audio_payload)
-
-                    # Add to buffer
+                    
+                    # Add to small buffer for optimal chunk sizes
                     self.audio_buffer.append(mulaw_bytes)
-
-                    # Process audio in chunks but don't clear buffer yet
-                    if len(self.audio_buffer) >= 10:  # Process every 10 chunks
-                        combined_audio = b"".join(self.audio_buffer)
-
-                        # Convert mulaw to pcm16 (placeholder - implement proper conversion)
-                        pcm16_audio = self._convert_mulaw_to_pcm16(combined_audio)
+                    
+                    # Send when we have 2 chunks (40ms) for better performance
+                    if len(self.audio_buffer) >= 2:
+                        # Combine buffered audio
+                        combined_mulaw = b"".join(self.audio_buffer)
+                        
+                        # Convert mulaw to pcm16
+                        pcm16_audio = self._convert_mulaw_to_pcm16(combined_mulaw)
                         pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
 
                         # Send to OpenAI
@@ -330,18 +324,10 @@ class TwilioRealtimeBridge:
                         self.audio_chunks_sent += 1
                         self.total_audio_bytes_sent += len(pcm16_audio)
 
-                        logger.debug(
-                            f"Sent combined audio chunk to OpenAI (mulaw->pcm16 conversion)"
-                        )
-
-                        # Clear buffer after sending
+                        logger.debug(f"Sent audio chunk to OpenAI ({len(combined_mulaw)} mulaw bytes -> {len(pcm16_audio)} pcm16 bytes)")
+                        
+                        # Clear buffer
                         self.audio_buffer.clear()
-
-                    # Cancel any existing commit task and schedule a new one
-                    if self._commit_task is not None:
-                        self._commit_task.cancel()
-                    
-                    self._commit_task = asyncio.create_task(self._delayed_commit())
 
                 except Exception as e:
                     logger.error(f"Error processing Twilio media: {e}")
@@ -374,45 +360,7 @@ class TwilioRealtimeBridge:
             # This is NOT proper audio conversion and will sound terrible
             return b"".join([bytes([b, b]) for b in mulaw_data])
 
-    async def _delayed_commit(self):
-        """Commit audio buffer after a delay if no more audio arrives."""
-        try:
-            # Wait 1 second for more audio
-            await asyncio.sleep(1.0)
-            
-            # Always commit - even if buffer is empty, we need to trigger response
-            if not self._closed:
-                logger.info("Audio stream ended - committing and triggering response")
-                
-                # If we have remaining audio in buffer, send it first
-                if self.audio_buffer:
-                    combined_audio = b"".join(self.audio_buffer)
-                    pcm16_audio = self._convert_mulaw_to_pcm16(combined_audio)
-                    pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
 
-                    # Send final audio chunk to OpenAI
-                    audio_append = InputAudioBufferAppendEvent(
-                        type="input_audio_buffer.append", audio=pcm16_b64
-                    )
-                    await self.realtime_websocket.send(audio_append.model_dump_json())
-                    logger.debug("Sent final audio chunk to OpenAI")
-                    self.audio_buffer.clear()
-                
-                # Always commit the buffer to trigger OpenAI processing
-                buffer_commit = InputAudioBufferCommitEvent(
-                    type="input_audio_buffer.commit"
-                )
-                await self.realtime_websocket.send(buffer_commit.model_dump_json())
-                logger.info("Audio buffer committed to OpenAI")
-
-                # Trigger response
-                await self._trigger_response()
-                
-        except asyncio.CancelledError:
-            # Task was cancelled because more audio arrived
-            logger.debug("Delayed commit cancelled - more audio arrived")
-        except Exception as e:
-            logger.error(f"Error in delayed commit: {e}")
 
     async def handle_stop(self, data):
         """Handle 'stop' message from Twilio.
@@ -425,8 +373,8 @@ class TwilioRealtimeBridge:
         logger.info(f"Twilio stream stop: {data}")
         stop_msg = StopMessage(**data)
 
-        # Commit any remaining audio buffer
-        if self.audio_buffer and not self._closed:
+        # Commit audio buffer on stop
+        if not self._closed:
             await self._commit_audio_buffer()
 
         logger.info(f"Stream stopped for call: {stop_msg.stop.callSid}")
@@ -459,23 +407,23 @@ class TwilioRealtimeBridge:
         logger.info(f"Audio playback completed for mark: {mark_msg.mark.name}")
 
     async def _commit_audio_buffer(self):
-        """Commit any remaining audio in the buffer to OpenAI."""
+        """Commit audio buffer to OpenAI and trigger response."""
         if not self._closed:
             try:
-                # If we have remaining audio in buffer, send it first
+                # Send any remaining audio in buffer
                 if self.audio_buffer:
-                    combined_audio = b"".join(self.audio_buffer)
-                    pcm16_audio = self._convert_mulaw_to_pcm16(combined_audio)
+                    combined_mulaw = b"".join(self.audio_buffer)
+                    pcm16_audio = self._convert_mulaw_to_pcm16(combined_mulaw)
                     pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
 
-                    # Send to OpenAI
                     audio_append = InputAudioBufferAppendEvent(
                         type="input_audio_buffer.append", audio=pcm16_b64
                     )
                     await self.realtime_websocket.send(audio_append.model_dump_json())
-                    logger.debug("Sent remaining audio to OpenAI")
-
-                # Always commit the buffer
+                    logger.debug(f"Sent remaining audio chunk to OpenAI ({len(combined_mulaw)} bytes)")
+                    self.audio_buffer.clear()
+                
+                # Commit the buffer
                 buffer_commit = InputAudioBufferCommitEvent(
                     type="input_audio_buffer.commit"
                 )
@@ -485,7 +433,6 @@ class TwilioRealtimeBridge:
                 await self._trigger_response()
 
                 logger.info("Committed audio buffer to OpenAI and triggered response")
-                self.audio_buffer.clear()
 
             except Exception as e:
                 logger.error(f"Error committing audio buffer: {e}")
@@ -555,19 +502,10 @@ class TwilioRealtimeBridge:
         if response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
             logger.info("Speech started detected")
             self.speech_detected = True
-            # Cancel any pending commit task since speech is ongoing
-            if self._commit_task is not None:
-                self._commit_task.cancel()
-                self._commit_task = None
                 
         elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
             logger.info("Speech stopped detected - committing audio buffer")
             self.speech_detected = False
-            
-            # Cancel any existing delayed commit task
-            if self._commit_task is not None:
-                self._commit_task.cancel()
-                self._commit_task = None
             
             # Immediately commit when speech stops for faster response
             try:
@@ -581,7 +519,7 @@ class TwilioRealtimeBridge:
     async def handle_audio_response_delta(self, response_dict):
         """Handle audio response delta events from the OpenAI Realtime API.
 
-        Converts PCM16 audio from OpenAI to mulaw and sends to Twilio.
+        Converts PCM16 audio from OpenAI to mulaw and sends to Twilio in properly sized chunks.
         """
         try:
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
@@ -599,15 +537,30 @@ class TwilioRealtimeBridge:
             # Convert PCM16 to mulaw for Twilio
             pcm16_data = base64.b64decode(audio_delta.delta)
             mulaw_data = self._convert_pcm16_to_mulaw(pcm16_data)
-            mulaw_b64 = base64.b64encode(mulaw_data).decode("utf-8")
+            
+            # Split into 20ms chunks (160 bytes for 8kHz mulaw = 20ms)
+            chunk_size = 160  # 20ms at 8000Hz
+            
+            for i in range(0, len(mulaw_data), chunk_size):
+                chunk = mulaw_data[i:i + chunk_size]
+                
+                # Pad last chunk if needed
+                if len(chunk) < chunk_size:
+                    chunk += b'\x00' * (chunk_size - len(chunk))
+                
+                # Encode chunk as base64
+                chunk_b64 = base64.b64encode(chunk).decode("utf-8")
+                
+                # Send chunk to Twilio
+                media_message = OutgoingMediaMessage(
+                    event="media", streamSid=self.stream_sid, media={"payload": chunk_b64}
+                )
 
-            # Send audio to Twilio
-            media_message = OutgoingMediaMessage(
-                event="media", streamSid=self.stream_sid, media={"payload": mulaw_b64}
-            )
-
-            await self.twilio_websocket.send_json(media_message.model_dump())
-            logger.debug(f"Sent audio to Twilio (size: {len(mulaw_b64)} bytes mulaw)")
+                await self.twilio_websocket.send_json(media_message.model_dump())
+                logger.debug(f"Sent audio chunk to Twilio ({len(chunk)} bytes mulaw)")
+                
+                # Small delay to maintain proper timing (20ms between chunks)
+                await asyncio.sleep(0.02)
 
         except Exception as e:
             logger.error(f"Error processing audio response delta: {e}")
