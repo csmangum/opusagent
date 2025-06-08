@@ -35,8 +35,7 @@ load_dotenv()
 
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SERVER_URL = "wss://8b75-72-222-156-75.ngrok-free.app/twilio-agent/twilio-agent"
-
+SERVER_URL = "wss://grand-collie-complete.ngrok-free.app/twilio-agent"
 # Load environment variables from .env file if it exists
 env_path = Path(".") / ".env"
 if env_path.exists():
