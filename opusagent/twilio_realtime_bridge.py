@@ -590,14 +590,7 @@ class TwilioRealtimeBridge:
             return pcm16_data[::2]
 
     def _resample_pcm16(self, pcm16_data: bytes, from_rate: int, to_rate: int) -> bytes:
-        """Resample PCM16 audio data from one sample rate to another using high-quality resampling.
-
-        This implementation uses a combination of techniques to ensure high-quality resampling:
-        1. Uses audioop.ratecv for the actual resampling
-        2. Applies proper filtering to prevent aliasing
-        3. Handles both upsampling and downsampling cases
-        4. Maintains proper sample alignment for PCM16 format
-        5. Normalizes volume and applies smoothing for better quality
+        """Resample PCM16 audio data from one sample rate to another.
 
         Args:
             pcm16_data: PCM16 audio bytes
@@ -607,106 +600,22 @@ class TwilioRealtimeBridge:
         Returns:
             bytes: Resampled PCM16 audio data
         """
+        # Return unchanged if rates are the same
+        if from_rate == to_rate:
+            return pcm16_data
+
         try:
             import audioop
-            import array
-            import math
-            import numpy as np
-
-            # Convert bytes to array of shorts for better processing
-            samples = array.array('h')
-            samples.frombytes(pcm16_data)
-
-            # Convert to numpy array for better processing
-            samples_np = np.array(samples, dtype=np.int16)
-
-            # Apply volume normalization
-            max_val = np.max(np.abs(samples_np))
-            if max_val > 0:
-                # Target 90% of max volume to avoid clipping
-                target_peak = 0.9 * 32767  # 32767 is max for int16
-                gain = target_peak / max_val
-                # Limit gain to prevent excessive amplification
-                gain = min(gain, 3.0)
-                samples_np = np.clip(samples_np * gain, -32768, 32767).astype(np.int16)
-
-            # Apply smoothing to reduce jitter
-            window_size = 5
-            kernel = np.ones(window_size) / window_size
-            samples_np = np.convolve(samples_np, kernel, mode='same').astype(np.int16)
-
-            # Calculate resampling ratio
-            ratio = from_rate / to_rate
-
-            # For downsampling, apply anti-aliasing filter first
-            if ratio > 1:
-                # Calculate cutoff frequency (Nyquist frequency of target rate)
-                cutoff = to_rate / 2
-                # Apply low-pass filter to prevent aliasing
-                nyquist = from_rate / 2
-                normalized_cutoff = cutoff / nyquist
-                
-                # Create a simple FIR filter
-                filter_size = 32
-                filter_kernel = np.sinc(np.linspace(-filter_size/2, filter_size/2, filter_size) * normalized_cutoff)
-                filter_kernel = filter_kernel * np.hamming(filter_size)
-                filter_kernel = filter_kernel / np.sum(filter_kernel)
-                
-                # Apply the filter
-                filtered_samples = np.convolve(samples_np, filter_kernel, mode='same')
-                samples_np = np.clip(filtered_samples, -32768, 32767).astype(np.int16)
-
-            # Convert back to array for audioop processing
-            samples = array.array('h', samples_np.tolist())
-            pcm16_filtered = samples.tobytes()
-
             # Use audioop.ratecv for the actual resampling
             resampled_data, _ = audioop.ratecv(
-                pcm16_filtered,
+                pcm16_data,
                 2,  # Sample width in bytes (2 for PCM16)
                 1,  # Number of channels
                 from_rate,
                 to_rate,
                 None  # State for continuous resampling
             )
-
-            # For upsampling, apply interpolation
-            if ratio < 1:
-                # Convert to array for interpolation
-                resampled_samples = array.array('h')
-                resampled_samples.frombytes(resampled_data)
-                resampled_np = np.array(resampled_samples, dtype=np.int16)
-                
-                # Use cubic interpolation for smoother upsampling
-                old_indices = np.arange(len(resampled_np))
-                new_length = int(len(resampled_np) / ratio)
-                new_indices = np.linspace(0, len(resampled_np) - 1, new_length)
-                
-                # Cubic interpolation
-                interpolated = np.interp(new_indices, old_indices, resampled_np)
-                interpolated = np.clip(interpolated, -32768, 32767).astype(np.int16)
-                
-                # Apply final smoothing to reduce interpolation artifacts
-                window_size = 3
-                kernel = np.ones(window_size) / window_size
-                interpolated = np.convolve(interpolated, kernel, mode='same').astype(np.int16)
-                
-                return interpolated.tobytes()
-
-            # Apply final volume check and normalization
-            final_samples = array.array('h')
-            final_samples.frombytes(resampled_data)
-            final_np = np.array(final_samples, dtype=np.int16)
-            
-            # Normalize final output
-            max_val = np.max(np.abs(final_np))
-            if max_val > 0:
-                target_peak = 0.9 * 32767
-                gain = target_peak / max_val
-                gain = min(gain, 2.0)  # More conservative gain for final output
-                final_np = np.clip(final_np * gain, -32768, 32767).astype(np.int16)
-            
-            return final_np.tobytes()
+            return resampled_data
 
         except (ImportError, Exception) as e:
             logger.warning(f"Audio resampling error: {e}, using fallback resampling")
