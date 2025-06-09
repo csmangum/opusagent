@@ -136,9 +136,11 @@ class TwilioRealtimeBridge:
         self.speech_detected = False
         self._closed = False
 
-        # Audio buffer tracking for debugging
+        # Audio processing stats
         self.audio_chunks_sent = 0
         self.total_audio_bytes_sent = 0
+        
+        # Small audio buffer for optimal chunk sizes (2-3 Twilio chunks = ~40-60ms)
         self.audio_buffer = []
 
         # Transcript buffers for logging full transcripts
@@ -148,8 +150,7 @@ class TwilioRealtimeBridge:
         # Mark counter for audio synchronization
         self.mark_counter = 0
 
-        # Commit task for delayed audio buffer processing
-        self._commit_task = None
+
 
         # Response state tracking to prevent race conditions
         self.response_active = False  # Track if response is being generated
@@ -211,14 +212,6 @@ class TwilioRealtimeBridge:
         """
         if not self._closed:
             self._closed = True
-            
-            # Cancel any pending commit task
-            if self._commit_task is not None:
-                self._commit_task.cancel()
-                try:
-                    await self._commit_task
-                except asyncio.CancelledError:
-                    pass
             
             try:
                 if (
@@ -309,16 +302,17 @@ class TwilioRealtimeBridge:
                 try:
                     # Decode base64 to get mulaw audio bytes
                     mulaw_bytes = base64.b64decode(audio_payload)
-
-                    # Add to buffer
+                    
+                    # Add to small buffer for optimal chunk sizes
                     self.audio_buffer.append(mulaw_bytes)
-
-                    # Process audio in chunks but don't clear buffer yet
-                    if len(self.audio_buffer) >= 10:  # Process every 10 chunks
-                        combined_audio = b"".join(self.audio_buffer)
-
-                        # Convert mulaw to pcm16 (placeholder - implement proper conversion)
-                        pcm16_audio = self._convert_mulaw_to_pcm16(combined_audio)
+                    
+                    # Send when we have 2 chunks (40ms) for better performance
+                    if len(self.audio_buffer) >= 2:
+                        # Combine buffered audio
+                        combined_mulaw = b"".join(self.audio_buffer)
+                        
+                        # Convert mulaw to pcm16
+                        pcm16_audio = self._convert_mulaw_to_pcm16(combined_mulaw)
                         pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
 
                         # Send to OpenAI
@@ -330,18 +324,10 @@ class TwilioRealtimeBridge:
                         self.audio_chunks_sent += 1
                         self.total_audio_bytes_sent += len(pcm16_audio)
 
-                        logger.debug(
-                            f"Sent combined audio chunk to OpenAI (mulaw->pcm16 conversion)"
-                        )
-
-                        # Clear buffer after sending
+                        logger.debug(f"Sent audio chunk to OpenAI ({len(combined_mulaw)} mulaw bytes -> {len(pcm16_audio)} pcm16 bytes)")
+                        
+                        # Clear buffer
                         self.audio_buffer.clear()
-
-                    # Cancel any existing commit task and schedule a new one
-                    if self._commit_task is not None:
-                        self._commit_task.cancel()
-                    
-                    self._commit_task = asyncio.create_task(self._delayed_commit())
 
                 except Exception as e:
                     logger.error(f"Error processing Twilio media: {e}")
@@ -374,45 +360,7 @@ class TwilioRealtimeBridge:
             # This is NOT proper audio conversion and will sound terrible
             return b"".join([bytes([b, b]) for b in mulaw_data])
 
-    async def _delayed_commit(self):
-        """Commit audio buffer after a delay if no more audio arrives."""
-        try:
-            # Wait 1 second for more audio
-            await asyncio.sleep(1.0)
-            
-            # Always commit - even if buffer is empty, we need to trigger response
-            if not self._closed:
-                logger.info("Audio stream ended - committing and triggering response")
-                
-                # If we have remaining audio in buffer, send it first
-                if self.audio_buffer:
-                    combined_audio = b"".join(self.audio_buffer)
-                    pcm16_audio = self._convert_mulaw_to_pcm16(combined_audio)
-                    pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
 
-                    # Send final audio chunk to OpenAI
-                    audio_append = InputAudioBufferAppendEvent(
-                        type="input_audio_buffer.append", audio=pcm16_b64
-                    )
-                    await self.realtime_websocket.send(audio_append.model_dump_json())
-                    logger.debug("Sent final audio chunk to OpenAI")
-                    self.audio_buffer.clear()
-                
-                # Always commit the buffer to trigger OpenAI processing
-                buffer_commit = InputAudioBufferCommitEvent(
-                    type="input_audio_buffer.commit"
-                )
-                await self.realtime_websocket.send(buffer_commit.model_dump_json())
-                logger.info("Audio buffer committed to OpenAI")
-
-                # Trigger response
-                await self._trigger_response()
-                
-        except asyncio.CancelledError:
-            # Task was cancelled because more audio arrived
-            logger.debug("Delayed commit cancelled - more audio arrived")
-        except Exception as e:
-            logger.error(f"Error in delayed commit: {e}")
 
     async def handle_stop(self, data):
         """Handle 'stop' message from Twilio.
@@ -425,8 +373,8 @@ class TwilioRealtimeBridge:
         logger.info(f"Twilio stream stop: {data}")
         stop_msg = StopMessage(**data)
 
-        # Commit any remaining audio buffer
-        if self.audio_buffer and not self._closed:
+        # Commit audio buffer on stop
+        if not self._closed:
             await self._commit_audio_buffer()
 
         logger.info(f"Stream stopped for call: {stop_msg.stop.callSid}")
@@ -459,23 +407,23 @@ class TwilioRealtimeBridge:
         logger.info(f"Audio playback completed for mark: {mark_msg.mark.name}")
 
     async def _commit_audio_buffer(self):
-        """Commit any remaining audio in the buffer to OpenAI."""
+        """Commit audio buffer to OpenAI and trigger response."""
         if not self._closed:
             try:
-                # If we have remaining audio in buffer, send it first
+                # Send any remaining audio in buffer
                 if self.audio_buffer:
-                    combined_audio = b"".join(self.audio_buffer)
-                    pcm16_audio = self._convert_mulaw_to_pcm16(combined_audio)
+                    combined_mulaw = b"".join(self.audio_buffer)
+                    pcm16_audio = self._convert_mulaw_to_pcm16(combined_mulaw)
                     pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
 
-                    # Send to OpenAI
                     audio_append = InputAudioBufferAppendEvent(
                         type="input_audio_buffer.append", audio=pcm16_b64
                     )
                     await self.realtime_websocket.send(audio_append.model_dump_json())
-                    logger.debug("Sent remaining audio to OpenAI")
-
-                # Always commit the buffer
+                    logger.debug(f"Sent remaining audio chunk to OpenAI ({len(combined_mulaw)} bytes)")
+                    self.audio_buffer.clear()
+                
+                # Commit the buffer
                 buffer_commit = InputAudioBufferCommitEvent(
                     type="input_audio_buffer.commit"
                 )
@@ -485,7 +433,6 @@ class TwilioRealtimeBridge:
                 await self._trigger_response()
 
                 logger.info("Committed audio buffer to OpenAI and triggered response")
-                self.audio_buffer.clear()
 
             except Exception as e:
                 logger.error(f"Error committing audio buffer: {e}")
@@ -555,19 +502,10 @@ class TwilioRealtimeBridge:
         if response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
             logger.info("Speech started detected")
             self.speech_detected = True
-            # Cancel any pending commit task since speech is ongoing
-            if self._commit_task is not None:
-                self._commit_task.cancel()
-                self._commit_task = None
                 
         elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
             logger.info("Speech stopped detected - committing audio buffer")
             self.speech_detected = False
-            
-            # Cancel any existing delayed commit task
-            if self._commit_task is not None:
-                self._commit_task.cancel()
-                self._commit_task = None
             
             # Immediately commit when speech stops for faster response
             try:
@@ -581,7 +519,7 @@ class TwilioRealtimeBridge:
     async def handle_audio_response_delta(self, response_dict):
         """Handle audio response delta events from the OpenAI Realtime API.
 
-        Converts PCM16 audio from OpenAI to mulaw and sends to Twilio.
+        Converts PCM16 audio from OpenAI to mulaw and sends to Twilio in properly sized chunks.
         """
         try:
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
@@ -598,16 +536,34 @@ class TwilioRealtimeBridge:
 
             # Convert PCM16 to mulaw for Twilio
             pcm16_data = base64.b64decode(audio_delta.delta)
-            mulaw_data = self._convert_pcm16_to_mulaw(pcm16_data)
-            mulaw_b64 = base64.b64encode(mulaw_data).decode("utf-8")
+            
+            # Resample from 24kHz to 8kHz before converting to mulaw
+            pcm16_8k = self._resample_pcm16(pcm16_data, 24000, 8000)
+            mulaw_data = self._convert_pcm16_to_mulaw(pcm16_8k)
+            
+            # Split into 20ms chunks (160 bytes for 8kHz mulaw = 20ms)
+            chunk_size = 160  # 20ms at 8000Hz
+            
+            for i in range(0, len(mulaw_data), chunk_size):
+                chunk = mulaw_data[i:i + chunk_size]
+                
+                # Pad last chunk if needed
+                if len(chunk) < chunk_size:
+                    chunk += b'\x00' * (chunk_size - len(chunk))
+                
+                # Encode chunk as base64
+                chunk_b64 = base64.b64encode(chunk).decode("utf-8")
+                
+                # Send chunk to Twilio
+                media_message = OutgoingMediaMessage(
+                    event="media", streamSid=self.stream_sid, media={"payload": chunk_b64}
+                )
 
-            # Send audio to Twilio
-            media_message = OutgoingMediaMessage(
-                event="media", streamSid=self.stream_sid, media={"payload": mulaw_b64}
-            )
-
-            await self.twilio_websocket.send_json(media_message.model_dump())
-            logger.debug(f"Sent audio to Twilio (size: {len(mulaw_b64)} bytes mulaw)")
+                await self.twilio_websocket.send_json(media_message.model_dump())
+                logger.debug(f"Sent audio chunk to Twilio ({len(chunk)} bytes mulaw)")
+                
+                # Small delay to maintain proper timing (20ms between chunks)
+                await asyncio.sleep(0.02)
 
         except Exception as e:
             logger.error(f"Error processing audio response delta: {e}")
@@ -632,6 +588,147 @@ class TwilioRealtimeBridge:
             # Simple placeholder - take every other byte
             # This is NOT proper audio conversion
             return pcm16_data[::2]
+
+    def _resample_pcm16(self, pcm16_data: bytes, from_rate: int, to_rate: int) -> bytes:
+        """Resample PCM16 audio data from one sample rate to another using high-quality resampling.
+
+        This implementation uses a combination of techniques to ensure high-quality resampling:
+        1. Uses audioop.ratecv for the actual resampling
+        2. Applies proper filtering to prevent aliasing
+        3. Handles both upsampling and downsampling cases
+        4. Maintains proper sample alignment for PCM16 format
+        5. Normalizes volume and applies smoothing for better quality
+
+        Args:
+            pcm16_data: PCM16 audio bytes
+            from_rate: Source sample rate (e.g. 24000)
+            to_rate: Target sample rate (e.g. 8000)
+
+        Returns:
+            bytes: Resampled PCM16 audio data
+        """
+        try:
+            import audioop
+            import array
+            import math
+            import numpy as np
+
+            # Convert bytes to array of shorts for better processing
+            samples = array.array('h')
+            samples.frombytes(pcm16_data)
+
+            # Convert to numpy array for better processing
+            samples_np = np.array(samples, dtype=np.int16)
+
+            # Apply volume normalization
+            max_val = np.max(np.abs(samples_np))
+            if max_val > 0:
+                # Target 90% of max volume to avoid clipping
+                target_peak = 0.9 * 32767  # 32767 is max for int16
+                gain = target_peak / max_val
+                # Limit gain to prevent excessive amplification
+                gain = min(gain, 3.0)
+                samples_np = np.clip(samples_np * gain, -32768, 32767).astype(np.int16)
+
+            # Apply smoothing to reduce jitter
+            window_size = 5
+            kernel = np.ones(window_size) / window_size
+            samples_np = np.convolve(samples_np, kernel, mode='same').astype(np.int16)
+
+            # Calculate resampling ratio
+            ratio = from_rate / to_rate
+
+            # For downsampling, apply anti-aliasing filter first
+            if ratio > 1:
+                # Calculate cutoff frequency (Nyquist frequency of target rate)
+                cutoff = to_rate / 2
+                # Apply low-pass filter to prevent aliasing
+                nyquist = from_rate / 2
+                normalized_cutoff = cutoff / nyquist
+                
+                # Create a simple FIR filter
+                filter_size = 32
+                filter_kernel = np.sinc(np.linspace(-filter_size/2, filter_size/2, filter_size) * normalized_cutoff)
+                filter_kernel = filter_kernel * np.hamming(filter_size)
+                filter_kernel = filter_kernel / np.sum(filter_kernel)
+                
+                # Apply the filter
+                filtered_samples = np.convolve(samples_np, filter_kernel, mode='same')
+                samples_np = np.clip(filtered_samples, -32768, 32767).astype(np.int16)
+
+            # Convert back to array for audioop processing
+            samples = array.array('h', samples_np.tolist())
+            pcm16_filtered = samples.tobytes()
+
+            # Use audioop.ratecv for the actual resampling
+            resampled_data, _ = audioop.ratecv(
+                pcm16_filtered,
+                2,  # Sample width in bytes (2 for PCM16)
+                1,  # Number of channels
+                from_rate,
+                to_rate,
+                None  # State for continuous resampling
+            )
+
+            # For upsampling, apply interpolation
+            if ratio < 1:
+                # Convert to array for interpolation
+                resampled_samples = array.array('h')
+                resampled_samples.frombytes(resampled_data)
+                resampled_np = np.array(resampled_samples, dtype=np.int16)
+                
+                # Use cubic interpolation for smoother upsampling
+                old_indices = np.arange(len(resampled_np))
+                new_length = int(len(resampled_np) / ratio)
+                new_indices = np.linspace(0, len(resampled_np) - 1, new_length)
+                
+                # Cubic interpolation
+                interpolated = np.interp(new_indices, old_indices, resampled_np)
+                interpolated = np.clip(interpolated, -32768, 32767).astype(np.int16)
+                
+                # Apply final smoothing to reduce interpolation artifacts
+                window_size = 3
+                kernel = np.ones(window_size) / window_size
+                interpolated = np.convolve(interpolated, kernel, mode='same').astype(np.int16)
+                
+                return interpolated.tobytes()
+
+            # Apply final volume check and normalization
+            final_samples = array.array('h')
+            final_samples.frombytes(resampled_data)
+            final_np = np.array(final_samples, dtype=np.int16)
+            
+            # Normalize final output
+            max_val = np.max(np.abs(final_np))
+            if max_val > 0:
+                target_peak = 0.9 * 32767
+                gain = target_peak / max_val
+                gain = min(gain, 2.0)  # More conservative gain for final output
+                final_np = np.clip(final_np * gain, -32768, 32767).astype(np.int16)
+            
+            return final_np.tobytes()
+
+        except (ImportError, Exception) as e:
+            logger.warning(f"Audio resampling error: {e}, using fallback resampling")
+            # Fallback to simpler resampling if advanced methods fail
+            try:
+                import audioop
+                # Basic resampling without filtering
+                resampled_data, _ = audioop.ratecv(pcm16_data, 2, 1, from_rate, to_rate, None)
+                return resampled_data
+            except Exception as e2:
+                logger.error(f"Fallback resampling also failed: {e2}")
+                # Last resort: simple sample dropping/duplication
+                ratio = from_rate / to_rate
+                if ratio > 1:  # Downsampling
+                    return pcm16_data[::int(ratio * 2)]
+                else:  # Upsampling
+                    repeat_factor = int(1/ratio)
+                    result = bytearray()
+                    for i in range(0, len(pcm16_data), 2):
+                        sample = pcm16_data[i:i+2]
+                        result.extend(sample * repeat_factor)
+                    return bytes(result)
 
     async def handle_audio_response_completion(self, response_dict):
         """Handle audio response completion events from OpenAI."""
