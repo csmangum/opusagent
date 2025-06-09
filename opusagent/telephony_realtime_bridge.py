@@ -63,7 +63,7 @@ DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
 MINI_MODEL = "gpt-4o-mini-realtime-preview-2024-12-17"
 FUTURE_MODEL = "gpt-4o-realtime-preview-2025-06-03"
 
-SELECTED_MODEL = MINI_MODEL
+SELECTED_MODEL = FUTURE_MODEL
 
 # Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

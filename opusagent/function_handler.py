@@ -557,7 +557,7 @@ class FunctionHandler:
         intent = arguments.get("intent", "")
         if intent == "card_replacement":
             logger.info(
-                f"!!!!!!!!!!!!!!!!! Function call intent received: {arguments} !!!!!!!!!!!!!"
+                f"Function call intent received: {arguments}"
             )
             # Return data that guides the AI's next response
             return {

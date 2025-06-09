@@ -688,4 +688,4 @@ async def test_create_response_helper(bridge):
     assert sent_data["type"] == "response.create"
     assert sent_data["response"]["modalities"] == ["text", "audio"]
     assert sent_data["response"]["output_audio_format"] == "pcm16"
-    assert sent_data["response"]["voice"] == "alloy"
+    assert sent_data["response"]["voice"] == "verse"
