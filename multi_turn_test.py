@@ -26,7 +26,7 @@ load_dotenv()
 logger = configure_logging("multi_turn_test")
 
 # Configuration
-BRIDGE_URL = "ws://localhost:8000/voice-agent"
+BRIDGE_URL = "ws://localhost:8000/ws/telephony"
 
 # Example conversation flows - modify these lists for your own testing
 REPLACEMENT_CARD_CONVERSATION = [

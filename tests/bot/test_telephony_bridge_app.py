@@ -6,10 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi.websockets import WebSocketDisconnect
 
-from opusagent.telephony_realtime_bridge import (
-    initialize_session,
-    send_initial_conversation_item,
-)
+from opusagent.telephony_realtime_bridge import TelephonyRealtimeBridge
 
 
 def test_index_page(test_client):
@@ -23,9 +20,15 @@ async def test_send_initial_conversation_item():
     # Create mock websocket
     mock_ws = AsyncMock()
     mock_ws.send = AsyncMock()
+    
+    # Create bridge instance with mock websockets
+    bridge = TelephonyRealtimeBridge(
+        telephony_websocket=AsyncMock(),
+        realtime_websocket=mock_ws
+    )
 
-    # Call the function
-    await send_initial_conversation_item(mock_ws)
+    # Call the method
+    await bridge.send_initial_conversation_item()
 
     # Verify two calls - one for conversation item, one for response creation
     assert mock_ws.send.call_count == 2

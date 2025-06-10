@@ -18,9 +18,11 @@ from dotenv import load_dotenv
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
+from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
 from opusagent.config.logging_config import configure_logging
 from opusagent.function_handler import FunctionHandler
+from opusagent.session_manager import SessionManager
 
 # Import AudioCodes models
 from opusagent.models.audiocodes_api import (
@@ -102,7 +104,6 @@ class TelephonyRealtimeBridge:
         realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
-        active_stream_id (Optional[str]): Identifier for the current audio stream being played
         session_initialized (bool): Whether the OpenAI Realtime API session has been initialized
         speech_detected (bool): Whether speech is currently being detected
         _closed (bool): Flag indicating whether the bridge connections are closed
@@ -111,6 +112,8 @@ class TelephonyRealtimeBridge:
         input_transcript_buffer (list): Buffer for accumulating input audio transcriptions
         output_transcript_buffer (list): Buffer for accumulating output audio transcriptions
         function_handler (FunctionHandler): Handler for managing function calls from the OpenAI Realtime API
+        audio_handler (AudioStreamHandler): Handler for managing audio streams
+        session_manager (SessionManager): Handler for managing OpenAI Realtime API sessions
     """
 
     def __init__(
@@ -128,8 +131,6 @@ class TelephonyRealtimeBridge:
         self.realtime_websocket = realtime_websocket
         self.conversation_id: Optional[str] = None
         self.media_format: Optional[str] = None
-        self.active_stream_id: Optional[str] = None
-        self.session_initialized = False
         self.speech_detected = False
         self._closed = False
 
@@ -151,6 +152,16 @@ class TelephonyRealtimeBridge:
 
         # Initialize call recorder (will be set up when conversation starts)
         self.call_recorder: Optional[CallRecorder] = None
+
+        # Initialize audio handler
+        self.audio_handler = AudioStreamHandler(
+            telephony_websocket=telephony_websocket,
+            realtime_websocket=realtime_websocket,
+            call_recorder=self.call_recorder,
+        )
+
+        # Initialize session manager
+        self.session_manager = SessionManager(realtime_websocket)
 
         # Create event handler mappings for telephony events
         self.telephony_event_handlers = {
@@ -213,6 +224,9 @@ class TelephonyRealtimeBridge:
                 except Exception as e:
                     logger.error(f"Error finalizing call recording: {e}")
 
+            # Close audio handler
+            await self.audio_handler.close()
+
             try:
                 if (
                     self.realtime_websocket
@@ -259,9 +273,9 @@ class TelephonyRealtimeBridge:
         # Get media format
         self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
 
-        # Set flag to indicate we're waiting for session acceptance
-        self.waiting_for_session_creation = True
-        self.session_initialized = True
+        # Initialize session with OpenAI Realtime API
+        await self.session_manager.initialize_session()
+        await self.session_manager.send_initial_conversation_item()
 
         # Initialize call recorder
         if self.conversation_id:
@@ -278,6 +292,15 @@ class TelephonyRealtimeBridge:
             # Update function handler with call recorder
             self.function_handler.call_recorder = self.call_recorder
 
+            # Update audio handler with call recorder
+            self.audio_handler.call_recorder = self.call_recorder
+
+            # Initialize audio stream
+            await self.audio_handler.initialize_stream(
+                conversation_id=self.conversation_id,
+                media_format=self.media_format,
+            )
+
         # Send session.accepted response immediately since session is already initialized
         session_accepted = SessionAcceptedResponse(
             type=TelephonyEventType.SESSION_ACCEPTED,
@@ -286,7 +309,6 @@ class TelephonyRealtimeBridge:
         )
         await self.telephony_websocket.send_json(session_accepted.model_dump())
         logger.info(f"Session accepted with format: {self.media_format}")
-        self.waiting_for_session_creation = False
 
     async def handle_user_stream_start(self, data):
         """Handle userStream.start message from telephony client.
@@ -320,66 +342,7 @@ class TelephonyRealtimeBridge:
         Args:
             data (dict): UserStream chunk message data containing audio
         """
-        if not self._closed and self.realtime_websocket.close_code is None:
-            audio_chunk_b64 = data["audioChunk"]
-
-            # Validate audio chunk meets OpenAI requirements
-            try:
-                # Decode base64 to get raw audio bytes
-                audio_bytes = base64.b64decode(audio_chunk_b64)
-                original_size = len(audio_bytes)
-
-                # OpenAI requires at least 100ms of 16kHz 16-bit audio (3200 bytes minimum)
-                min_chunk_size = 3200  # 100ms of 16kHz 16-bit mono audio
-
-                # Check if chunk is too small
-                if len(audio_bytes) < min_chunk_size:
-                    logger.warning(
-                        f"Audio chunk too small: {len(audio_bytes)} bytes. "
-                        f"OpenAI requires at least {min_chunk_size} bytes (100ms of 16kHz 16-bit audio). "
-                        f"Padding with silence."
-                    )
-                    # Pad with silence to meet minimum requirements
-                    padding_needed = min_chunk_size - len(audio_bytes)
-                    audio_bytes += b"\x00" * padding_needed
-
-                    # Re-encode to base64
-                    audio_chunk_b64 = base64.b64encode(audio_bytes).decode("utf-8")
-
-                # Update tracking counters
-                self.audio_chunks_sent += 1
-                self.total_audio_bytes_sent += len(audio_bytes)
-
-                # Log audio chunk details
-                duration_ms = (
-                    len(audio_bytes) / (16000 * 2)
-                ) * 1000  # Assuming 16kHz 16-bit
-                logger.debug(
-                    f"Processing audio chunk #{self.audio_chunks_sent}: {original_size} -> {len(audio_bytes)} bytes "
-                    f"(~{duration_ms:.1f}ms of audio). Total sent: {self.total_audio_bytes_sent} bytes"
-                )
-
-            except Exception as e:
-                logger.error(f"Error processing audio chunk: {e}")
-                # Skip this chunk if we can't process it
-                return
-
-            # Record caller audio if recorder is available
-            if self.call_recorder:
-                await self.call_recorder.record_caller_audio(audio_chunk_b64)
-
-            # Use our Pydantic model for buffer append
-            audio_append = InputAudioBufferAppendEvent(
-                type="input_audio_buffer.append", audio=audio_chunk_b64
-            )
-            logger.debug(
-                f"Sending audio to realtime-websocket (size: {len(audio_chunk_b64)} bytes base64)"
-            )
-            await self.realtime_websocket.send(audio_append.model_dump_json())
-        else:
-            logger.warning(
-                "Skipping audio chunk - connection closed or websocket unavailable"
-            )
+        await self.audio_handler.handle_incoming_audio(data)
 
     async def handle_user_stream_stop(self, data):
         """Handle userStream.stop message from telephony client.
@@ -395,105 +358,37 @@ class TelephonyRealtimeBridge:
             f"User stream stop received for conversation: {self.conversation_id}"
         )
 
-        # Log buffer state before committing
-        total_duration_ms = (
-            (self.total_audio_bytes_sent / (16000 * 2)) * 1000
-            if self.total_audio_bytes_sent > 0
-            else 0
+        # Commit the audio buffer
+        await self.audio_handler.commit_audio_buffer()
+
+        # Send userStream.stopped response
+        stream_stopped = UserStreamStoppedResponse(
+            type=TelephonyEventType.USER_STREAM_STOPPED,
+            conversationId=self.conversation_id,
         )
-        logger.info(
-            f"Buffer state before commit: {self.audio_chunks_sent} chunks, "
-            f"{self.total_audio_bytes_sent} bytes (~{total_duration_ms:.1f}ms of audio)"
-        )
+        await self.telephony_websocket.send_json(stream_stopped.model_dump())
 
-        # Commit the audio buffer to signal end of speech - only if we have enough audio data
-        if not self._closed and self.realtime_websocket.close_code is None:
-            # OpenAI requires at least 100ms of audio (3200 bytes for 16kHz 16-bit mono)
-            min_audio_bytes = 3200  # 100ms of 16kHz 16-bit mono audio
-
-            if self.total_audio_bytes_sent >= min_audio_bytes:
-                buffer_commit = InputAudioBufferCommitEvent(
-                    type="input_audio_buffer.commit"
-                )
-                try:
-                    await self.realtime_websocket.send(buffer_commit.model_dump_json())
-                    logger.info(
-                        f"realtime_websocket_object: {self.realtime_websocket.send}"
-                    )
-                    logger.info(
-                        f"Audio buffer committed with {self.audio_chunks_sent} chunks ({self.total_audio_bytes_sent} bytes)"
-                    )
-                    logger.info(
-                        f"Audio buffer commit sent: {buffer_commit.model_dump_json()}"
-                    )
-
-                    # Only trigger response if no active response
-                    if not self.response_active:
-                        logger.info(
-                            "No active response - creating new response immediately"
-                        )
-                        await self._create_response()
-                    else:
-                        # Queue the user input for processing after current response completes
-                        self.pending_user_input = {
-                            "audio_committed": True,
-                            "timestamp": time.time(),
-                        }
-                        logger.info(
-                            f"User input queued - response already active (response_id: {self.response_id_tracker})"
-                        )
-
-                        # Double-check if response became inactive while we were setting pending input
-                        if not self.response_active:
-                            logger.info(
-                                "Response became inactive while queuing - processing immediately"
-                            )
-                            await self._create_response()
-                            self.pending_user_input = None
-
-                except Exception as e:
-                    logger.error(
-                        f"Error sending audio buffer commit or response create: {e}"
-                    )
-            else:
-                logger.info(
-                    f"Skipping audio buffer commit - insufficient audio data: "
-                    f"{self.total_audio_bytes_sent} bytes ({total_duration_ms:.1f}ms) "
-                    f"< {min_audio_bytes} bytes (100ms minimum required by OpenAI)"
-                )
-
-            # Send userStream.stopped response regardless of commit
-            stream_stopped = UserStreamStoppedResponse(
-                type=TelephonyEventType.USER_STREAM_STOPPED,
-                conversationId=self.conversation_id,
-            )
-            await self.telephony_websocket.send_json(stream_stopped.model_dump())
+        # Only trigger response if no active response
+        if not self.response_active:
+            logger.info("No active response - creating new response immediately")
+            await self.session_manager.create_response()
         else:
-            logger.warning(
-                "Cannot commit audio buffer - connection closed or websocket unavailable"
+            # Queue the user input for processing after current response completes
+            self.pending_user_input = {
+                "audio_committed": True,
+                "timestamp": time.time(),
+            }
+            logger.info(
+                f"User input queued - response already active (response_id: {self.response_id_tracker})"
             )
 
-    async def _create_response(self):
-        """Create a new response request to OpenAI Realtime API.
-
-        This helper method contains the response creation logic extracted from
-        handle_user_stream_stop to enable reuse and better error handling.
-        """
-        try:
-            response_create = {
-                "type": "response.create",
-                "response": {
-                    "modalities": ["text", "audio"],
-                    "output_audio_format": "pcm16",
-                    "temperature": 0.8,
-                    "max_output_tokens": 4096,
-                    "voice": VOICE,
-                },
-            }
-            await self.realtime_websocket.send(json.dumps(response_create))
-            logger.info("Response creation triggered after audio buffer commit")
-        except Exception as e:
-            logger.error(f"Error creating response: {e}")
+            # Double-check if response became inactive while we were setting pending input
+            if not self.response_active:
+                logger.info(
+                    "Response became inactive while queuing - processing immediately"
+                )
+                await self.session_manager.create_response()
+                self.pending_user_input = None
 
     async def handle_session_end(self, data):
         """Handle session.end message from telephony client.
@@ -611,17 +506,6 @@ class TelephonyRealtimeBridge:
             logger.info("Session updated successfully")
         elif response_type == ServerEventType.SESSION_CREATED:
             logger.info("Session created successfully")
-            # Send initial conversation item immediately when session is created
-            try:
-                logger.info("Attempting to send initial conversation item...")
-                await send_initial_conversation_item(self.realtime_websocket)
-                logger.info("Initial conversation item sent successfully")
-            except Exception as e:
-                logger.error(f"Error sending initial conversation item: {e}")
-                logger.error(f"Exception type: {type(e)}")
-                import traceback
-
-                logger.error(f"Traceback: {traceback.format_exc()}")
 
     async def handle_speech_detection(self, response_dict):
         """Handle speech detection events from the OpenAI Realtime API.
@@ -652,74 +536,7 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API containing audio
         """
-        try:
-            # Parse using our updated model - note the "delta" field instead of "audio"
-            audio_delta = ResponseAudioDeltaEvent(**response_dict)
-
-            # Check if connections are still active
-            if self._closed or not self.conversation_id:
-                logger.debug(
-                    "Skipping audio delta - connection closed or no conversation ID"
-                )
-                return
-
-            # Check if telephony websocket is available and not closed
-            if not self.telephony_websocket or self._is_websocket_closed():
-                logger.debug(
-                    "Skipping audio delta - telephony websocket is closed or unavailable"
-                )
-                return
-
-            # Start a new audio stream if needed
-            if not self.active_stream_id:
-                try:
-                    # Start a new audio stream
-                    self.active_stream_id = str(uuid.uuid4())
-                    stream_start = PlayStreamStartMessage(
-                        type=TelephonyEventType.PLAY_STREAM_START,
-                        conversationId=self.conversation_id,
-                        streamId=self.active_stream_id,
-                        mediaFormat=self.media_format or "raw/lpcm16",
-                    )
-                    await self.telephony_websocket.send_json(stream_start.model_dump())
-                    logger.info(f"Started play stream: {self.active_stream_id}")
-                except Exception as e:
-                    logger.error(f"Error starting audio stream: {e}")
-                    # If we can't start the stream, the connection might be dead
-                    logger.warning("Telephony WebSocket appears to be disconnected")
-                    self.active_stream_id = None
-                    return
-
-            try:
-                # Record bot audio if recorder is available
-                if self.call_recorder:
-                    await self.call_recorder.record_bot_audio(audio_delta.delta)
-
-                # Send audio chunk with the delta value as the audio data
-                stream_chunk = PlayStreamChunkMessage(
-                    type=TelephonyEventType.PLAY_STREAM_CHUNK,
-                    conversationId=self.conversation_id,
-                    streamId=self.active_stream_id,
-                    audioChunk=audio_delta.delta,  # Use delta field for audio data
-                )
-                await self.telephony_websocket.send_json(stream_chunk.model_dump())
-                logger.debug(
-                    f"Sent audio chunk to client (size: {len(audio_delta.delta)} bytes)"
-                )
-            except Exception as e:
-                logger.error(f"Error sending audio chunk: {e}")
-                # If we can't send audio chunks, the WebSocket is likely disconnected
-                logger.warning(
-                    "Telephony WebSocket appears to be disconnected, stopping audio stream"
-                )
-                self.active_stream_id = None  # Reset stream ID so it can be restarted if connection recovers
-                # Don't close the connection here, just log the error
-                # The connection will be closed by the main error handler if needed
-
-        except Exception as e:
-            logger.error(f"Error processing audio data: {e}")
-            # Don't close the connection here, just log the error
-            # The connection will be closed by the main error handler if needed
+        await self.audio_handler.handle_outgoing_audio(response_dict)
 
     async def handle_audio_response_completion(self, response_dict):
         """Handle audio response completion events from the OpenAI Realtime API.
@@ -731,16 +548,7 @@ class TelephonyRealtimeBridge:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
         logger.info("Audio response completed")
-        # Stop the play stream
-        if self.active_stream_id and self.conversation_id:
-            stream_stop = PlayStreamStopMessage(
-                type=TelephonyEventType.PLAY_STREAM_STOP,
-                conversationId=self.conversation_id,
-                streamId=self.active_stream_id,
-            )
-            await self.telephony_websocket.send_json(stream_stop.model_dump())
-            logger.info(f"Stopped play stream: {self.active_stream_id}")
-            self.active_stream_id = None
+        await self.audio_handler.stop_stream()
 
     async def handle_text_and_transcript(self, response_dict):
         """Handle text and transcript events from the OpenAI Realtime API.
@@ -796,23 +604,13 @@ class TelephonyRealtimeBridge:
         logger.info(f"Response generation completed: {response_id}")
 
         # Stop the current play stream if active
-        if self.active_stream_id and self.conversation_id:
-            stream_stop = PlayStreamStopMessage(
-                type=TelephonyEventType.PLAY_STREAM_STOP,
-                conversationId=self.conversation_id,
-                streamId=self.active_stream_id,
-            )
-            await self.telephony_websocket.send_json(stream_stop.model_dump())
-            logger.info(
-                f"Stopped play stream at end of response: {self.active_stream_id}"
-            )
-            self.active_stream_id = None
+        await self.audio_handler.stop_stream()
 
         # Process any pending user input that was queued during response generation
         if self.pending_user_input:
             logger.info("Processing queued user input after response completion")
             try:
-                await self._create_response()
+                await self.session_manager.create_response()
                 logger.info("Successfully processed queued user input")
             except Exception as e:
                 logger.error(f"Error processing queued user input: {e}")
@@ -1096,256 +894,3 @@ class TelephonyRealtimeBridge:
             logger.error(f"Error in receive_from_realtime: {e}")
             if not self._closed:
                 await self.close()
-
-
-async def send_initial_conversation_item(realtime_websocket):
-    """Send the initial conversation item to start the AI interaction.
-
-    This function creates and sends the first conversation item to the OpenAI Realtime API,
-    initiating the conversation with a greeting and request for an introduction and joke.
-
-    Args:
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
-    """
-    try:
-        # Create initial conversation item using plain JSON to avoid model validation issues
-        initial_conversation = {
-            "type": "conversation.item.create",
-            "item": {
-                "type": "message",
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        #! the welcome phrase is being set here
-                        "text": "You are a customer service agent for Bank of Peril. You are given a task to help the customer with their banking needs. Start by saying 'Hello! How can I help you today?' You will infer the customer's intent from their response and call the call_intent function.",
-                    }
-                ],
-            },
-        }
-
-        logger.info(
-            "Sending initial conversation item: %s", json.dumps(initial_conversation)
-        )
-        await realtime_websocket.send(json.dumps(initial_conversation))
-
-        # Wait for the conversation item to be processed
-        await asyncio.sleep(2)
-
-        # Create response using the correct structure for OpenAI Realtime API
-        response_create = {
-            "type": "response.create",
-            "response": {
-                "modalities": ["text", "audio"],
-                "output_audio_format": "pcm16",
-                "temperature": 0.8,
-                "max_output_tokens": 4096,
-                "voice": VOICE,
-            },
-        }
-
-        logger.info("Sending response create: %s", json.dumps(response_create))
-        await realtime_websocket.send(json.dumps(response_create))
-        logger.info("Initial conversation flow initiated successfully")
-
-    except Exception as e:
-        logger.error(f"Error in send_initial_conversation_item: {e}")
-        import traceback
-
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        raise
-
-
-async def initialize_session(realtime_websocket):
-    """Initialize the OpenAI Realtime API session with configuration.
-
-    This function sets up the initial session configuration for the OpenAI Realtime API,
-    including audio format settings, voice selection, system instructions, and other
-    session parameters. It also triggers the initial conversation.
-
-    Args:
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
-    """
-    # Use our SessionConfig and SessionUpdateEvent models
-    session_config = SessionConfig(
-        # turn_detection removed to disable OpenAI VAD
-        input_audio_format="pcm16",
-        output_audio_format="pcm16",
-        voice=VOICE,
-        instructions=SESSION_PROMPT,
-        modalities=["text", "audio"],
-        temperature=0.8,
-        model=SELECTED_MODEL,
-        tools=[
-            {
-                "type": "function",
-                "name": "get_balance",
-                "description": "Get the user's account balance.",
-                "parameters": {"type": "object", "properties": {}},
-            },
-            {
-                "type": "function",
-                "name": "transfer_funds",
-                "description": "Transfer funds to another account.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "amount": {"type": "number"},
-                        "to_account": {"type": "string"},
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "name": "transfer_to_human",
-                "description": "Transfer the conversation to a human agent.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "reason": {
-                            "type": "string",
-                            "description": "The reason for transferring to a human agent",
-                        },
-                        "priority": {
-                            "type": "string",
-                            "enum": ["low", "normal", "high"],
-                            "description": "The priority level of the transfer",
-                        },
-                        "context": {
-                            "type": "object",
-                            "description": "Additional context to pass to the human agent",
-                        },
-                    },
-                    "required": ["reason"],
-                },
-            },
-            {
-                "type": "function",
-                "name": "call_intent",
-                "description": "Get the user's intent.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "intent": {
-                            "type": "string",
-                            "enum": ["card_replacement", "account_inquiry", "other"],
-                        },
-                    },
-                    "required": ["intent"],
-                },
-            },
-            {
-                "type": "function",
-                "name": "member_account_confirmation",
-                "description": "Confirm which member account/card needs replacement.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "member_accounts": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "List of available member accounts/cards",
-                        },
-                        "organization_name": {"type": "string"},
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "name": "replacement_reason",
-                "description": "Collect the reason for card replacement.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "card_in_context": {"type": "string"},
-                        "reason": {
-                            "type": "string",
-                            "enum": ["Lost", "Damaged", "Stolen", "Other"],
-                        },
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "name": "confirm_address",
-                "description": "Confirm the address for card delivery.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "card_in_context": {"type": "string"},
-                        "address_on_file": {"type": "string"},
-                        "confirmed_address": {"type": "string"},
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "name": "start_card_replacement",
-                "description": "Start the card replacement process.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "card_in_context": {"type": "string"},
-                        "address_in_context": {"type": "string"},
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "name": "finish_card_replacement",
-                "description": "Finish the card replacement process and provide delivery information.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "card_in_context": {"type": "string"},
-                        "address_in_context": {"type": "string"},
-                        "delivery_time": {"type": "string"},
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "name": "wrap_up",
-                "description": "Wrap up the call with closing remarks.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {"organization_name": {"type": "string"}},
-                },
-            },
-            {
-                "type": "function",
-                "name": "process_replacement",
-                "description": "Process the card replacement",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "card": {
-                            "type": "string",
-                            "description": "The card to replace",
-                        },
-                        "reason": {
-                            "type": "string",
-                            "description": "The reason for the card replacement",
-                        },
-                        "address": {
-                            "type": "string",
-                            "description": "The address to send the replacement card",
-                        },
-                    },
-                    "required": ["card", "reason", "address"],
-                },
-            },
-        ],
-        input_audio_noise_reduction={"type": "near_field"},
-        input_audio_transcription={"model": "whisper-1"},
-        max_response_output_tokens=4096,  # Maximum allowed value
-        tool_choice="auto",
-    )
-
-    session_update = SessionUpdateEvent(type="session.update", session=session_config)
-
-    logger.info("Sending session update: %s", session_update.model_dump_json())
-    await realtime_websocket.send(session_update.model_dump_json())
-
-    # Wait for the session to be updated before proceeding
-    # await send_initial_conversation_item(realtime_websocket)
