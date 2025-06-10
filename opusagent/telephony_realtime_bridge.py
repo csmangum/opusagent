@@ -18,9 +18,9 @@ from dotenv import load_dotenv
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
+from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
 from opusagent.config.logging_config import configure_logging
 from opusagent.function_handler import FunctionHandler
-from opusagent.call_recorder import CallRecorder, AudioChannel, TranscriptType
 
 # Import AudioCodes models
 from opusagent.models.audiocodes_api import (
@@ -53,6 +53,7 @@ from opusagent.models.openai_api import (
     SessionUpdatedEvent,
     SessionUpdateEvent,
 )
+from opusagent.pure_prompt import SESSION_PROMPT
 
 load_dotenv()
 
@@ -147,7 +148,7 @@ class TelephonyRealtimeBridge:
 
         # Initialize function handler
         self.function_handler = FunctionHandler(realtime_websocket)
-        
+
         # Initialize call recorder (will be set up when conversation starts)
         self.call_recorder: Optional[CallRecorder] = None
 
@@ -202,7 +203,7 @@ class TelephonyRealtimeBridge:
         """
         if not self._closed:
             self._closed = True
-            
+
             # Stop and finalize call recording
             if self.call_recorder:
                 try:
@@ -211,7 +212,7 @@ class TelephonyRealtimeBridge:
                     logger.info(f"Call recording finalized: {summary}")
                 except Exception as e:
                     logger.error(f"Error finalizing call recording: {e}")
-            
+
             try:
                 if (
                     self.realtime_websocket
@@ -267,10 +268,12 @@ class TelephonyRealtimeBridge:
             self.call_recorder = CallRecorder(
                 conversation_id=self.conversation_id,
                 session_id=self.conversation_id,
-                base_output_dir="call_recordings"
+                base_output_dir="call_recordings",
             )
             await self.call_recorder.start_recording()
-            logger.info(f"Call recording started for conversation: {self.conversation_id}")
+            logger.info(
+                f"Call recording started for conversation: {self.conversation_id}"
+            )
 
             # Update function handler with call recorder
             self.function_handler.call_recorder = self.call_recorder
@@ -426,19 +429,25 @@ class TelephonyRealtimeBridge:
 
                     # Only trigger response if no active response
                     if not self.response_active:
-                        logger.info("No active response - creating new response immediately")
+                        logger.info(
+                            "No active response - creating new response immediately"
+                        )
                         await self._create_response()
                     else:
                         # Queue the user input for processing after current response completes
                         self.pending_user_input = {
                             "audio_committed": True,
-                            "timestamp": time.time()
+                            "timestamp": time.time(),
                         }
-                        logger.info(f"User input queued - response already active (response_id: {self.response_id_tracker})")
-                        
+                        logger.info(
+                            f"User input queued - response already active (response_id: {self.response_id_tracker})"
+                        )
+
                         # Double-check if response became inactive while we were setting pending input
                         if not self.response_active:
-                            logger.info("Response became inactive while queuing - processing immediately")
+                            logger.info(
+                                "Response became inactive while queuing - processing immediately"
+                            )
                             await self._create_response()
                             self.pending_user_input = None
 
@@ -466,7 +475,7 @@ class TelephonyRealtimeBridge:
 
     async def _create_response(self):
         """Create a new response request to OpenAI Realtime API.
-        
+
         This helper method contains the response creation logic extracted from
         handle_user_stream_stop to enable reuse and better error handling.
         """
@@ -764,7 +773,7 @@ class TelephonyRealtimeBridge:
         response_data = response_dict.get("response", {})
         self.response_id_tracker = response_data.get("id")
         logger.info(f"Response generation started: {self.response_id_tracker}")
-        
+
         # Log pending input status for debugging
         if self.pending_user_input:
             logger.info(f"Note: Pending user input exists while starting new response")
@@ -781,9 +790,11 @@ class TelephonyRealtimeBridge:
         """
         response_done = ResponseDoneEvent(**response_dict)
         self.response_active = False
-        response_id = response_done.response.get("id") if response_done.response else None
+        response_id = (
+            response_done.response.get("id") if response_done.response else None
+        )
         logger.info(f"Response generation completed: {response_id}")
-        
+
         # Stop the current play stream if active
         if self.active_stream_id and self.conversation_id:
             stream_stop = PlayStreamStopMessage(
@@ -876,15 +887,15 @@ class TelephonyRealtimeBridge:
         """
         full_transcript = "".join(self.output_transcript_buffer)
         logger.info(f"Full AI transcript (output audio): {full_transcript}")
-        
+
         # Record transcript if recorder is available
         if self.call_recorder and full_transcript.strip():
             await self.call_recorder.add_transcript(
                 text=full_transcript,
                 channel=AudioChannel.BOT,
-                transcript_type=TranscriptType.OUTPUT
+                transcript_type=TranscriptType.OUTPUT,
             )
-        
+
         self.output_transcript_buffer.clear()
         logger.info("Audio transcript completed")
 
@@ -923,15 +934,15 @@ class TelephonyRealtimeBridge:
         """
         full_transcript = "".join(self.input_transcript_buffer)
         logger.info(f"Full user transcript (input audio): {full_transcript}")
-        
+
         # Record transcript if recorder is available
         if self.call_recorder and full_transcript.strip():
             await self.call_recorder.add_transcript(
                 text=full_transcript,
                 channel=AudioChannel.CALLER,
-                transcript_type=TranscriptType.INPUT
+                transcript_type=TranscriptType.INPUT,
             )
-        
+
         self.input_transcript_buffer.clear()
         logger.info("Input audio transcription completed")
 
@@ -1161,7 +1172,7 @@ async def initialize_session(realtime_websocket):
         input_audio_format="pcm16",
         output_audio_format="pcm16",
         voice=VOICE,
-        instructions=SYSTEM_MESSAGE,
+        instructions=SESSION_PROMPT,
         modalities=["text", "audio"],
         temperature=0.8,
         model=SELECTED_MODEL,
@@ -1299,6 +1310,29 @@ async def initialize_session(realtime_websocket):
                 "parameters": {
                     "type": "object",
                     "properties": {"organization_name": {"type": "string"}},
+                },
+            },
+            {
+                "type": "function",
+                "name": "process_replacement",
+                "description": "Process the card replacement",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card": {
+                            "type": "string",
+                            "description": "The card to replace",
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "The reason for the card replacement",
+                        },
+                        "address": {
+                            "type": "string",
+                            "description": "The address to send the replacement card",
+                        },
+                    },
+                    "required": ["card", "reason", "address"],
                 },
             },
         ],

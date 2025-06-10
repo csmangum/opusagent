@@ -159,6 +159,7 @@ class FunctionHandler:
             "submit_loan_application", self._func_submit_loan_application
         )
         self.register_function("loan_pre_approval", self._func_loan_pre_approval)
+        self.register_function("process_replacement", self._func_process_replacement)
 
     def register_function(
         self, name: str, func: Callable[[Dict[str, Any]], Any]
@@ -1133,4 +1134,26 @@ class FunctionHandler:
                 "transfer_id": transfer_id,
                 **context,
             },
+        }
+
+    def _func_process_replacement(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle card replacement processing.
+
+        Args:
+            arguments: Function arguments containing card replacement details
+
+        Returns:
+            Formatted prompt and guidance for card replacement
+        """
+        card = arguments.get("card", "")
+        reason = arguments.get("reason", "")
+        address = arguments.get("address", "")
+
+        logger.info(f"Processing card replacement for {card} with reason {reason} to address {address}")
+
+        return {
+            "status": "success",
+            "function_name": "process_replacement",
+            "prompt_guidance": f"Processing card replacement for {card} with reason {reason} to address {address}",
         }
