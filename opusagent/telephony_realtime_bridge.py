@@ -21,6 +21,7 @@ from fastapi.websockets import WebSocketDisconnect
 from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
 from opusagent.config.logging_config import configure_logging
+from opusagent.event_router import EventRouter
 from opusagent.function_handler import FunctionHandler
 from opusagent.session_manager import SessionManager
 
@@ -114,6 +115,7 @@ class TelephonyRealtimeBridge:
         function_handler (FunctionHandler): Handler for managing function calls from the OpenAI Realtime API
         audio_handler (AudioStreamHandler): Handler for managing audio streams
         session_manager (SessionManager): Handler for managing OpenAI Realtime API sessions
+        event_router (EventRouter): Router for handling telephony and realtime events
     """
 
     def __init__(
@@ -163,48 +165,95 @@ class TelephonyRealtimeBridge:
         # Initialize session manager
         self.session_manager = SessionManager(realtime_websocket)
 
-        # Create event handler mappings for telephony events
-        self.telephony_event_handlers = {
-            TelephonyEventType.SESSION_INITIATE: self.handle_session_initiate,
-            TelephonyEventType.USER_STREAM_START: self.handle_user_stream_start,
-            TelephonyEventType.USER_STREAM_CHUNK: self.handle_user_stream_chunk,
-            TelephonyEventType.USER_STREAM_STOP: self.handle_user_stream_stop,
-            TelephonyEventType.SESSION_END: self.handle_session_end,
-        }
+        # Initialize event router
+        self.event_router = EventRouter()
 
-        # Create event handler mappings for realtime events
-        self.realtime_event_handlers = {
-            # Session events
-            ServerEventType.SESSION_UPDATED: self.handle_session_update,
-            ServerEventType.SESSION_CREATED: self.handle_session_update,
-            # Conversation events
-            ServerEventType.CONVERSATION_ITEM_CREATED: lambda x: logger.info(
-                "Conversation item created"
-            ),
-            # Speech detection events
-            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED: self.handle_speech_detection,
-            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED: self.handle_speech_detection,
-            ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED: self.handle_speech_detection,
-            # Response events
-            ServerEventType.RESPONSE_CREATED: self.handle_response_created,
-            ServerEventType.RESPONSE_AUDIO_DELTA: self.handle_audio_response_delta,
-            ServerEventType.RESPONSE_AUDIO_DONE: self.handle_audio_response_completion,
-            ServerEventType.RESPONSE_TEXT_DELTA: self.handle_text_and_transcript,
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA: self.handle_audio_transcript_delta,
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE: self.handle_audio_transcript_done,
-            ServerEventType.RESPONSE_DONE: self.handle_response_completion,
-            # Add new handlers for output item and content part events
-            ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED: self.handle_output_item_added,
-            ServerEventType.RESPONSE_CONTENT_PART_ADDED: self.handle_content_part_added,
-            ServerEventType.RESPONSE_CONTENT_PART_DONE: self.handle_content_part_done,
-            ServerEventType.RESPONSE_OUTPUT_ITEM_DONE: self.handle_output_item_done,
-            # Add handlers for input audio transcription events
-            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA: self.handle_input_audio_transcription_delta,
-            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED: self.handle_input_audio_transcription_completed,
-            # Add new handler for function call events
-            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA: self.function_handler.handle_function_call_arguments_delta,
-            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE: self.function_handler.handle_function_call_arguments_done,
-        }
+        # Register telephony event handlers
+        self.event_router.register_telephony_handler(
+            TelephonyEventType.SESSION_INITIATE, self.handle_session_initiate
+        )
+        self.event_router.register_telephony_handler(
+            TelephonyEventType.USER_STREAM_START, self.handle_user_stream_start
+        )
+        self.event_router.register_telephony_handler(
+            TelephonyEventType.USER_STREAM_CHUNK, self.handle_user_stream_chunk
+        )
+        self.event_router.register_telephony_handler(
+            TelephonyEventType.USER_STREAM_STOP, self.handle_user_stream_stop
+        )
+        self.event_router.register_telephony_handler(
+            TelephonyEventType.SESSION_END, self.handle_session_end
+        )
+
+        # Register realtime event handlers
+        self.event_router.register_realtime_handler(
+            ServerEventType.SESSION_UPDATED, self.handle_session_update
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.SESSION_CREATED, self.handle_session_update
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.CONVERSATION_ITEM_CREATED,
+            lambda x: logger.info("Conversation item created"),
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED, self.handle_speech_detection
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED, self.handle_speech_detection
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED, self.handle_speech_detection
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_CREATED, self.handle_response_created
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_AUDIO_DELTA, self.handle_audio_response_delta
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_AUDIO_DONE, self.handle_audio_response_completion
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_TEXT_DELTA, self.handle_text_and_transcript
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA, self.handle_audio_transcript_delta
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE, self.handle_audio_transcript_done
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_DONE, self.handle_response_completion
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED, self.handle_output_item_added
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_CONTENT_PART_ADDED, self.handle_content_part_added
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_CONTENT_PART_DONE, self.handle_content_part_done
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_OUTPUT_ITEM_DONE, self.handle_output_item_done
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA,
+            self.handle_input_audio_transcription_delta,
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED,
+            self.handle_input_audio_transcription_completed,
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA,
+            self.function_handler.handle_function_call_arguments_delta,
+        )
+        self.event_router.register_realtime_handler(
+            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE,
+            self.function_handler.handle_function_call_arguments_done,
+        )
 
     async def close(self):
         """Safely close both WebSocket connections.
@@ -402,95 +451,6 @@ class TelephonyRealtimeBridge:
         logger.info(f"Session end received: {data.get('reason', 'No reason provided')}")
         await self.close()
         logger.info(f"Telephony-Realtime bridge closed")
-
-    async def handle_log_event(self, response_dict):
-        """Handle log events from the OpenAI Realtime API.
-
-        This method processes log events, with special handling for error events
-        to provide detailed error information for debugging.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        response_type = response_dict["type"]
-
-        # Enhanced error logging
-        if response_type == "error":
-            error_code = response_dict.get("code", "unknown")
-            error_message = response_dict.get("message", "No message provided")
-            error_details = response_dict.get("details", {})
-            logger.error(f"ERROR DETAILS: code={error_code}, message='{error_message}'")
-            if error_details:
-                logger.error(f"ERROR ADDITIONAL DETAILS: {json.dumps(error_details)}")
-
-            # Log the full error response for debugging
-            logger.error(f"FULL ERROR RESPONSE: {json.dumps(response_dict)}")
-
-        # Handle response.done events to check for quota issues
-        elif response_type == "response.done":
-            response_data = response_dict.get("response", {})
-            status = response_data.get("status")
-            status_details = response_data.get("status_details", {})
-
-            if status == "failed":
-                error_info = status_details.get("error", {})
-                error_type = error_info.get("type")
-                error_code = error_info.get("code")
-
-                if (
-                    error_type == "insufficient_quota"
-                    or error_code == "insufficient_quota"
-                ):
-                    logger.error("=" * 80)
-                    logger.error("🚨 OPENAI API QUOTA EXCEEDED")
-                    logger.error("=" * 80)
-                    logger.error("❌ Your OpenAI API quota has been exceeded!")
-                    logger.error("")
-                    logger.error("💡 WHAT THIS MEANS:")
-                    logger.error(
-                        "   • You've run out of API credits or hit your usage limit"
-                    )
-                    logger.error(
-                        "   • The Realtime API is expensive and uses credits quickly"
-                    )
-                    logger.error(
-                        "   • No audio will be generated until this is resolved"
-                    )
-                    logger.error("")
-                    logger.error("🔧 HOW TO FIX:")
-                    logger.error(
-                        "   1. Check your OpenAI billing: https://platform.openai.com/account/billing"
-                    )
-                    logger.error("   2. Add more credits to your account")
-                    logger.error("   3. Check/increase your usage limits")
-                    logger.error("   4. Consider upgrading your OpenAI plan if needed")
-                    logger.error("")
-                    logger.error("📊 USAGE INFO:")
-                    usage = response_data.get("usage", {})
-                    if usage:
-                        logger.error(
-                            f"   • Total tokens in this request: {usage.get('total_tokens', 0)}"
-                        )
-                        logger.error(
-                            f"   • Input tokens: {usage.get('input_tokens', 0)}"
-                        )
-                        logger.error(
-                            f"   • Output tokens: {usage.get('output_tokens', 0)}"
-                        )
-                    logger.error("")
-                    logger.error(
-                        "⚠️  The bridge will now close this session to avoid hanging."
-                    )
-                    logger.error(
-                        "   Please resolve your billing issue and restart the validation."
-                    )
-                    logger.error("=" * 80)
-                    await self.close()
-                else:
-                    logger.error(
-                        f"Response failed with error: {error_info.get('message', 'Unknown error')}"
-                    )
-                    logger.error(f"Error type: {error_type}, Error code: {error_code}")
 
     async def handle_session_update(self, response_dict):
         """Handle session update events from the OpenAI Realtime API.
@@ -744,20 +704,6 @@ class TelephonyRealtimeBridge:
         self.input_transcript_buffer.clear()
         logger.info("Input audio transcription completed")
 
-    def _get_telephony_event_type(self, msg_type_str):
-        """Convert a string message type to a TelephonyEventType enum value.
-
-        Args:
-            msg_type_str (str): The message type string from the raw message
-
-        Returns:
-            TelephonyEventType: The corresponding enum value or None if not found
-        """
-        try:
-            return TelephonyEventType(msg_type_str)
-        except ValueError:
-            return None
-
     async def receive_from_telephony(self):
         """Receive and process audio data from the telephony WebSocket.
 
@@ -777,33 +723,7 @@ class TelephonyRealtimeBridge:
                     break
 
                 data = json.loads(message)
-                msg_type_str = data["type"]
-
-                # Convert string message type to enum
-                msg_type = self._get_telephony_event_type(msg_type_str)
-
-                if msg_type:
-                    # Log only message type and audio chunk size if present
-                    if "audioChunk" in data:
-                        logger.info(
-                            f"Received telephony message: {msg_type_str} with audio chunk size: {len(data['audioChunk'])} bytes"
-                        )
-                    else:
-                        logger.info(f"Received telephony message: {msg_type_str}")
-                    # Dispatch to the appropriate event handler
-                    handler = self.telephony_event_handlers.get(msg_type)
-                    if handler:
-                        await handler(data)
-                        # Special case for session.end to break the loop
-                        if msg_type == TelephonyEventType.SESSION_END:
-                            break
-                    else:
-                        logger.warning(
-                            f"No handler for telephony message type: {msg_type}"
-                        )
-                else:
-                    logger.info(f"Received telephony message: {message}")
-                    logger.warning(f"Unknown telephony message type: {msg_type_str}")
+                await self.event_router.handle_telephony_event(data)
 
         except WebSocketDisconnect:
             logger.info("Client disconnected.")
@@ -830,57 +750,7 @@ class TelephonyRealtimeBridge:
                     break
 
                 response_dict = json.loads(openai_message)
-                response_type = response_dict["type"]
-                logger.info(f"Received OpenAI message type: {response_type}")
-
-                # Add detailed logging for important events
-                if response_type in ["response.created", "response.done"]:
-                    logger.info(
-                        f"Response event details: {json.dumps(response_dict, indent=2)}"
-                    )
-                elif response_type == "response.output_item.added":
-                    logger.info(
-                        f"Output item added: {json.dumps(response_dict.get('item', {}), indent=2)}"
-                    )
-                elif response_type == "response.content_part.added":
-                    logger.info(
-                        f"Content part added: {json.dumps(response_dict.get('part', {}), indent=2)}"
-                    )
-                elif response_type in [
-                    "response.audio.delta",
-                    "response.audio_transcript.delta",
-                ]:
-                    logger.info(
-                        f"Audio event: {response_type} - delta size: {len(response_dict.get('delta', ''))}"
-                    )
-
-                # Handle log events first
-                if response_type in [event.value for event in LOG_EVENT_TYPES]:
-                    await self.handle_log_event(response_dict)
-                    continue
-
-                # Dispatch to the appropriate event handler
-                handler = self.realtime_event_handlers.get(response_type)
-                if handler:
-                    try:
-                        # Special logging for function call events
-                        if response_type in [
-                            "response.function_call_arguments.delta",
-                            "response.function_call_arguments.done",
-                        ]:
-                            logger.info(f"🎯 Routing {response_type} to handler")
-
-                        if asyncio.iscoroutinefunction(handler):
-                            await handler(response_dict)
-                        else:
-                            handler(response_dict)
-                    except Exception as e:
-                        logger.error(f"Error in event handler for {response_type}: {e}")
-                else:
-                    logger.warning(f"Unknown OpenAI event type: {response_type}")
-                    logger.info(
-                        f"Unknown event data: {json.dumps(response_dict, indent=2)}"
-                    )
+                await self.event_router.handle_realtime_event(response_dict)
 
         except websockets.exceptions.ConnectionClosed as e:
             logger.error(f"OpenAI WebSocket connection closed: {e}")
