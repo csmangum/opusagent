@@ -23,7 +23,6 @@ from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
 from opusagent.config.logging_config import configure_logging
 from opusagent.event_router import EventRouter
 from opusagent.function_handler import FunctionHandler
-from opusagent.session_manager import SessionManager
 
 # Import AudioCodes models
 from opusagent.models.audiocodes_api import (
@@ -57,6 +56,8 @@ from opusagent.models.openai_api import (
     SessionUpdateEvent,
 )
 from opusagent.pure_prompt import SESSION_PROMPT
+from opusagent.session_manager import SessionManager
+from opusagent.transcript_manager import TranscriptManager
 
 load_dotenv()
 
@@ -116,6 +117,7 @@ class TelephonyRealtimeBridge:
         audio_handler (AudioStreamHandler): Handler for managing audio streams
         session_manager (SessionManager): Handler for managing OpenAI Realtime API sessions
         event_router (EventRouter): Router for handling telephony and realtime events
+        transcript_manager (TranscriptManager): Manager for handling transcripts
     """
 
     def __init__(
@@ -154,6 +156,9 @@ class TelephonyRealtimeBridge:
 
         # Initialize call recorder (will be set up when conversation starts)
         self.call_recorder: Optional[CallRecorder] = None
+
+        # Initialize transcript manager
+        self.transcript_manager = TranscriptManager()
 
         # Initialize audio handler
         self.audio_handler = AudioStreamHandler(
@@ -197,10 +202,12 @@ class TelephonyRealtimeBridge:
             lambda x: logger.info("Conversation item created"),
         )
         self.event_router.register_realtime_handler(
-            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED, self.handle_speech_detection
+            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
+            self.handle_speech_detection,
         )
         self.event_router.register_realtime_handler(
-            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED, self.handle_speech_detection
+            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
+            self.handle_speech_detection,
         )
         self.event_router.register_realtime_handler(
             ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED, self.handle_speech_detection
@@ -218,10 +225,12 @@ class TelephonyRealtimeBridge:
             ServerEventType.RESPONSE_TEXT_DELTA, self.handle_text_and_transcript
         )
         self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA, self.handle_audio_transcript_delta
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA,
+            self.handle_audio_transcript_delta,
         )
         self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE, self.handle_audio_transcript_done
+            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE,
+            self.handle_audio_transcript_done,
         )
         self.event_router.register_realtime_handler(
             ServerEventType.RESPONSE_DONE, self.handle_response_completion
@@ -343,6 +352,9 @@ class TelephonyRealtimeBridge:
 
             # Update audio handler with call recorder
             self.audio_handler.call_recorder = self.call_recorder
+
+            # Update transcript manager with call recorder
+            self.transcript_manager.set_call_recorder(self.call_recorder)
 
             # Initialize audio stream
             await self.audio_handler.initialize_stream(
@@ -633,9 +645,7 @@ class TelephonyRealtimeBridge:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
         delta = response_dict.get("delta", "")
-        if delta:
-            self.output_transcript_buffer.append(delta)
-        logger.debug(f"Received audio transcript delta: {delta}")
+        await self.transcript_manager.handle_output_transcript_delta(delta)
 
     async def handle_audio_transcript_done(self, response_dict):
         """Handle audio transcript completion events from the OpenAI Realtime API.
@@ -643,19 +653,7 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        full_transcript = "".join(self.output_transcript_buffer)
-        logger.info(f"Full AI transcript (output audio): {full_transcript}")
-
-        # Record transcript if recorder is available
-        if self.call_recorder and full_transcript.strip():
-            await self.call_recorder.add_transcript(
-                text=full_transcript,
-                channel=AudioChannel.BOT,
-                transcript_type=TranscriptType.OUTPUT,
-            )
-
-        self.output_transcript_buffer.clear()
-        logger.info("Audio transcript completed")
+        await self.transcript_manager.handle_output_transcript_completed()
 
     async def handle_content_part_done(self, response_dict):
         """Handle content part completion events from the OpenAI Realtime API.
@@ -680,9 +678,7 @@ class TelephonyRealtimeBridge:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
         delta = response_dict.get("delta", "")
-        if delta:
-            self.input_transcript_buffer.append(delta)
-        logger.debug(f"Received input audio transcription delta: {delta}")
+        await self.transcript_manager.handle_input_transcript_delta(delta)
 
     async def handle_input_audio_transcription_completed(self, response_dict):
         """Handle input audio transcription completion events from the OpenAI Realtime API.
@@ -690,19 +686,7 @@ class TelephonyRealtimeBridge:
         Args:
             response_dict (dict): The response data from the OpenAI Realtime API
         """
-        full_transcript = "".join(self.input_transcript_buffer)
-        logger.info(f"Full user transcript (input audio): {full_transcript}")
-
-        # Record transcript if recorder is available
-        if self.call_recorder and full_transcript.strip():
-            await self.call_recorder.add_transcript(
-                text=full_transcript,
-                channel=AudioChannel.CALLER,
-                transcript_type=TranscriptType.INPUT,
-            )
-
-        self.input_transcript_buffer.clear()
-        logger.info("Input audio transcription completed")
+        await self.transcript_manager.handle_input_transcript_completed()
 
     async def receive_from_telephony(self):
         """Receive and process audio data from the telephony WebSocket.
