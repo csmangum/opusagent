@@ -10,6 +10,7 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import List
+
 from dotenv import load_dotenv
 
 # Add project root to Python path
@@ -26,7 +27,7 @@ load_dotenv()
 logger = configure_logging("multi_turn_test")
 
 # Configuration
-BRIDGE_URL = "ws://localhost:8000/voice-agent"
+BRIDGE_URL = "ws://localhost:8000/ws/telephony"
 
 # Example conversation flows - modify these lists for your own testing
 REPLACEMENT_CARD_CONVERSATION = [
@@ -42,7 +43,7 @@ async def run_multi_turn_test(audio_files: List[str], test_name: str = "MultiTur
     """Run a multi-turn conversation test with the given audio files."""
     logger.info(f"[TEST] Starting {test_name}")
     logger.info("=" * 50)
-    
+
     # Filter to only existing files
     existing_files = []
     for audio_file in audio_files:
@@ -50,37 +51,36 @@ async def run_multi_turn_test(audio_files: List[str], test_name: str = "MultiTur
             existing_files.append(audio_file)
         else:
             logger.warning(f"[TEST] Audio file not found: {audio_file}")
-    
+
     if not existing_files:
         logger.error(f"[TEST] No audio files found for {test_name}")
         logger.error("   Please ensure the audio files exist in the static/ directory")
         return False
-    
+
     logger.info(f"[TEST] Using {len(existing_files)} audio files:")
     for i, file in enumerate(existing_files, 1):
         logger.info(f"   {i}. {Path(file).name}")
-    
+
     try:
         async with MockAudioCodesClient(
             bridge_url=BRIDGE_URL,
             bot_name=f"{test_name}Bot",
             caller="+15551234567",
-            logger=logger
+            logger=logger,
         ) as mock_client:
-            
+
             # Run the multi-turn conversation
             success = await mock_client.simple_conversation_test(
-                audio_files=existing_files,
-                session_name=test_name
+                audio_files=existing_files, session_name=test_name
             )
-            
+
             if success:
                 logger.info(f"\n[TEST] {test_name} completed successfully!")
             else:
                 logger.error(f"\n[TEST] {test_name} failed!")
-            
+
             return success
-            
+
     except Exception as e:
         logger.error(f"[TEST] {test_name} error: {e}")
         return False
@@ -90,16 +90,12 @@ async def main():
     """Main function - choose which conversation to run."""
     logger.info("[MAIN] Multi-Turn Conversation Test Tool")
     logger.info("=" * 50)
-    
 
     logger.info("[MAIN] Running replacement card conversation flow")
     success = await run_multi_turn_test(
-        REPLACEMENT_CARD_CONVERSATION, 
-        "ReplacementCardConversation"
+        REPLACEMENT_CARD_CONVERSATION, "ReplacementCardConversation"
     )
     logger.info(f"[MAIN] Replacement card conversation flow completed: {success}")
-    
-
 
 
 if __name__ == "__main__":
@@ -111,4 +107,4 @@ if __name__ == "__main__":
         sys.exit(0)
     except Exception as e:
         logger.error(f"[MAIN] Unexpected error: {e}")
-        sys.exit(1) 
+        sys.exit(1)
