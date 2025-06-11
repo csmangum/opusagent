@@ -56,6 +56,7 @@ from opusagent.models.openai_api import (
     SessionUpdateEvent,
 )
 from opusagent.pure_prompt import SESSION_PROMPT
+from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
 
@@ -106,7 +107,6 @@ class TelephonyRealtimeBridge:
         realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
-        session_initialized (bool): Whether the OpenAI Realtime API session has been initialized
         speech_detected (bool): Whether speech is currently being detected
         _closed (bool): Flag indicating whether the bridge connections are closed
         audio_chunks_sent (int): Number of audio chunks sent to the OpenAI Realtime API
@@ -118,6 +118,7 @@ class TelephonyRealtimeBridge:
         session_manager (SessionManager): Handler for managing OpenAI Realtime API sessions
         event_router (EventRouter): Router for handling telephony and realtime events
         transcript_manager (TranscriptManager): Manager for handling transcripts
+        realtime_handler (RealtimeHandler): Handler for OpenAI Realtime API communication
     """
 
     def __init__(
@@ -146,11 +147,6 @@ class TelephonyRealtimeBridge:
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
-        # Response state tracking to prevent race conditions
-        self.response_active = False  # Track if response is being generated
-        self.pending_user_input = None  # Queue for user input during active response
-        self.response_id_tracker = None  # Track current response ID
-
         # Initialize function handler
         self.function_handler = FunctionHandler(realtime_websocket)
 
@@ -173,6 +169,16 @@ class TelephonyRealtimeBridge:
         # Initialize event router
         self.event_router = EventRouter()
 
+        # Initialize realtime handler
+        self.realtime_handler = RealtimeHandler(
+            realtime_websocket=realtime_websocket,
+            audio_handler=self.audio_handler,
+            function_handler=self.function_handler,
+            session_manager=self.session_manager,
+            event_router=self.event_router,
+            transcript_manager=self.transcript_manager,
+        )
+
         # Register telephony event handlers
         self.event_router.register_telephony_handler(
             TelephonyEventType.SESSION_INITIATE, self.handle_session_initiate
@@ -188,80 +194,6 @@ class TelephonyRealtimeBridge:
         )
         self.event_router.register_telephony_handler(
             TelephonyEventType.SESSION_END, self.handle_session_end
-        )
-
-        # Register realtime event handlers
-        self.event_router.register_realtime_handler(
-            ServerEventType.SESSION_UPDATED, self.handle_session_update
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.SESSION_CREATED, self.handle_session_update
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.CONVERSATION_ITEM_CREATED,
-            lambda x: logger.info("Conversation item created"),
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
-            self.handle_speech_detection,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
-            self.handle_speech_detection,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED, self.handle_speech_detection
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_CREATED, self.handle_response_created
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_AUDIO_DELTA, self.handle_audio_response_delta
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_AUDIO_DONE, self.handle_audio_response_completion
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_TEXT_DELTA, self.handle_text_and_transcript
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA,
-            self.handle_audio_transcript_delta,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE,
-            self.handle_audio_transcript_done,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_DONE, self.handle_response_completion
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED, self.handle_output_item_added
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_CONTENT_PART_ADDED, self.handle_content_part_added
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_CONTENT_PART_DONE, self.handle_content_part_done
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_OUTPUT_ITEM_DONE, self.handle_output_item_done
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA,
-            self.handle_input_audio_transcription_delta,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED,
-            self.handle_input_audio_transcription_completed,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA,
-            self.function_handler.handle_function_call_arguments_delta,
-        )
-        self.event_router.register_realtime_handler(
-            ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE,
-            self.function_handler.handle_function_call_arguments_done,
         )
 
     async def close(self):
@@ -282,17 +214,9 @@ class TelephonyRealtimeBridge:
                 except Exception as e:
                     logger.error(f"Error finalizing call recording: {e}")
 
-            # Close audio handler
-            await self.audio_handler.close()
+            # Close realtime handler
+            await self.realtime_handler.close()
 
-            try:
-                if (
-                    self.realtime_websocket
-                    and self.realtime_websocket.close_code is None
-                ):
-                    await self.realtime_websocket.close()
-            except Exception as e:
-                logger.error(f"Error closing OpenAI connection: {e}")
             try:
                 if self.telephony_websocket and not self._is_websocket_closed():
                     await self.telephony_websocket.close()
@@ -430,26 +354,26 @@ class TelephonyRealtimeBridge:
         await self.telephony_websocket.send_json(stream_stopped.model_dump())
 
         # Only trigger response if no active response
-        if not self.response_active:
+        if not self.realtime_handler.response_active:
             logger.info("No active response - creating new response immediately")
             await self.session_manager.create_response()
         else:
             # Queue the user input for processing after current response completes
-            self.pending_user_input = {
+            self.realtime_handler.pending_user_input = {
                 "audio_committed": True,
                 "timestamp": time.time(),
             }
             logger.info(
-                f"User input queued - response already active (response_id: {self.response_id_tracker})"
+                f"User input queued - response already active (response_id: {self.realtime_handler.response_id_tracker})"
             )
 
             # Double-check if response became inactive while we were setting pending input
-            if not self.response_active:
+            if not self.realtime_handler.response_active:
                 logger.info(
                     "Response became inactive while queuing - processing immediately"
                 )
                 await self.session_manager.create_response()
-                self.pending_user_input = None
+                self.realtime_handler.pending_user_input = None
 
     async def handle_session_end(self, data):
         """Handle session.end message from telephony client.
@@ -463,230 +387,6 @@ class TelephonyRealtimeBridge:
         logger.info(f"Session end received: {data.get('reason', 'No reason provided')}")
         await self.close()
         logger.info(f"Telephony-Realtime bridge closed")
-
-    async def handle_session_update(self, response_dict):
-        """Handle session update events from the OpenAI Realtime API.
-
-        This method processes session created and updated events.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        response_type = response_dict["type"]
-
-        if response_type == ServerEventType.SESSION_UPDATED:
-            logger.info("Session updated successfully")
-        elif response_type == ServerEventType.SESSION_CREATED:
-            logger.info("Session created successfully")
-
-    async def handle_speech_detection(self, response_dict):
-        """Handle speech detection events from the OpenAI Realtime API.
-
-        This method processes speech detection events including speech started,
-        speech stopped, and audio buffer committed events.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        response_type = response_dict["type"]
-
-        if response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
-            logger.info("Speech started detected")
-            self.speech_detected = True
-        elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
-            logger.info("Speech stopped detected")
-            self.speech_detected = False
-        elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED:
-            logger.info("Audio buffer committed")
-
-    async def handle_audio_response_delta(self, response_dict):
-        """Handle audio response delta events from the OpenAI Realtime API.
-
-        This method processes audio data chunks, creates audio streams when needed,
-        and forwards the audio to the telephony client.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API containing audio
-        """
-        await self.audio_handler.handle_outgoing_audio(response_dict)
-
-    async def handle_audio_response_completion(self, response_dict):
-        """Handle audio response completion events from the OpenAI Realtime API.
-
-        This method processes the completion of audio responses and stops
-        any active audio streams to the telephony client.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        logger.info("Audio response completed")
-        await self.audio_handler.stop_stream()
-
-    async def handle_text_and_transcript(self, response_dict):
-        """Handle text and transcript events from the OpenAI Realtime API.
-
-        This method processes text deltas and audio transcript deltas,
-        logging them for monitoring and debugging purposes.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        response_type = response_dict["type"]
-
-        if response_type == ServerEventType.RESPONSE_TEXT_DELTA:
-            text_delta = ResponseTextDeltaEvent(**response_dict)
-            logger.info(f"Text delta received: {text_delta.delta}")
-        elif response_type == ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA:
-            logger.info(
-                f"Received audio transcript delta: {response_dict.get('delta', '')}"
-            )
-
-    async def handle_response_created(self, response_dict):
-        """Handle response created events from the OpenAI Realtime API.
-
-        This method tracks when response generation starts to prevent race conditions.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        self.response_active = True
-        response_data = response_dict.get("response", {})
-        self.response_id_tracker = response_data.get("id")
-        logger.info(f"Response generation started: {self.response_id_tracker}")
-
-        # Log pending input status for debugging
-        if self.pending_user_input:
-            logger.info(f"Note: Pending user input exists while starting new response")
-
-    async def handle_response_completion(self, response_dict):
-        """Handle response completion events from the OpenAI Realtime API.
-
-        This method processes the final completion of a response and ensures
-        that any active audio streams are properly stopped. It also processes
-        any pending user input that was queued during response generation.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        response_done = ResponseDoneEvent(**response_dict)
-        self.response_active = False
-        response_id = (
-            response_done.response.get("id") if response_done.response else None
-        )
-        logger.info(f"Response generation completed: {response_id}")
-
-        # Stop the current play stream if active
-        await self.audio_handler.stop_stream()
-
-        # Process any pending user input that was queued during response generation
-        if self.pending_user_input:
-            logger.info("Processing queued user input after response completion")
-            try:
-                await self.session_manager.create_response()
-                logger.info("Successfully processed queued user input")
-            except Exception as e:
-                logger.error(f"Error processing queued user input: {e}")
-            finally:
-                self.pending_user_input = None
-
-    async def handle_output_item_added(self, response_dict):
-        """Handle response output item added events from the OpenAI Realtime API.
-
-        This method processes when a new output item is added to the response,
-        logging the event for monitoring purposes.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        item = response_dict.get("item", {})
-        logger.info(f"Output item added: {item}")
-
-        # If this is a function call item, capture the function name for later use
-        if item.get("type") == "function_call":
-            call_id = item.get("call_id")
-            function_name = item.get("name")
-            item_id = item.get("id")
-
-            if call_id and function_name:
-                # Initialize the function call state with the function name
-                if call_id not in self.function_handler.active_function_calls:
-                    self.function_handler.active_function_calls[call_id] = {
-                        "arguments_buffer": "",
-                        "item_id": item_id,
-                        "output_index": response_dict.get("output_index", 0),
-                        "response_id": response_dict.get("response_id"),
-                        "function_name": function_name,
-                    }
-                else:
-                    # Update existing entry with function name
-                    self.function_handler.active_function_calls[call_id][
-                        "function_name"
-                    ] = function_name
-
-                logger.info(
-                    f"Captured function call: {function_name} with call_id: {call_id}"
-                )
-
-    async def handle_content_part_added(self, response_dict):
-        """Handle response content part added events from the OpenAI Realtime API.
-
-        This method processes when a new content part is added to a response,
-        logging the event for monitoring purposes.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        logger.info(f"Content part added: {response_dict.get('part', {})}")
-
-    async def handle_audio_transcript_delta(self, response_dict):
-        """Handle audio transcript delta events from the OpenAI Realtime API.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        delta = response_dict.get("delta", "")
-        await self.transcript_manager.handle_output_transcript_delta(delta)
-
-    async def handle_audio_transcript_done(self, response_dict):
-        """Handle audio transcript completion events from the OpenAI Realtime API.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        await self.transcript_manager.handle_output_transcript_completed()
-
-    async def handle_content_part_done(self, response_dict):
-        """Handle content part completion events from the OpenAI Realtime API.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        logger.info("Content part completed")
-
-    async def handle_output_item_done(self, response_dict):
-        """Handle output item completion events from the OpenAI Realtime API.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        logger.info("Output item completed")
-
-    async def handle_input_audio_transcription_delta(self, response_dict):
-        """Handle input audio transcription delta events from the OpenAI Realtime API.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        delta = response_dict.get("delta", "")
-        await self.transcript_manager.handle_input_transcript_delta(delta)
-
-    async def handle_input_audio_transcription_completed(self, response_dict):
-        """Handle input audio transcription completion events from the OpenAI Realtime API.
-
-        Args:
-            response_dict (dict): The response data from the OpenAI Realtime API
-        """
-        await self.transcript_manager.handle_input_transcript_completed()
 
     async def receive_from_telephony(self):
         """Receive and process audio data from the telephony WebSocket.
@@ -728,23 +428,4 @@ class TelephonyRealtimeBridge:
         Raises:
             Exception: For any errors during processing
         """
-        try:
-            async for openai_message in self.realtime_websocket:
-                if self._closed:
-                    break
-
-                response_dict = json.loads(openai_message)
-                await self.event_router.handle_realtime_event(response_dict)
-
-        except websockets.exceptions.ConnectionClosed as e:
-            logger.error(f"OpenAI WebSocket connection closed: {e}")
-            await self.close()
-        except TypeError as e:
-            logger.error(f"Type error in receive_from_realtime: {e}")
-            # Don't attempt to close if there's a NoneType error
-            if not self._closed:
-                self._closed = True
-        except Exception as e:
-            logger.error(f"Error in receive_from_realtime: {e}")
-            if not self._closed:
-                await self.close()
+        await self.realtime_handler.receive_from_realtime()
