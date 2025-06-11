@@ -5,13 +5,11 @@ and the OpenAI Realtime API, enabling real-time audio communication with AI agen
 It handles bidirectional audio streaming, session management, and event processing.
 """
 
-import asyncio
-import base64
 import json
 import os
 import time
 import uuid
-from typing import Any, Callable, Dict, Optional
+from typing import Optional
 
 import websockets
 from dotenv import load_dotenv
@@ -19,16 +17,13 @@ from fastapi import WebSocket
 from fastapi.websockets import WebSocketDisconnect
 
 from opusagent.audio_stream_handler import AudioStreamHandler
-from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
+from opusagent.call_recorder import CallRecorder
 from opusagent.config.logging_config import configure_logging
 from opusagent.event_router import EventRouter
 from opusagent.function_handler import FunctionHandler
 
 # Import AudioCodes models
 from opusagent.models.audiocodes_api import (
-    PlayStreamChunkMessage,
-    PlayStreamStartMessage,
-    PlayStreamStopMessage,
     SessionAcceptedResponse,
     TelephonyEventType,
     UserStreamStartedResponse,
@@ -36,25 +31,7 @@ from opusagent.models.audiocodes_api import (
 )
 
 # Import OpenAI Realtime API models
-from opusagent.models.openai_api import (
-    ConversationItemContentParam,
-    ConversationItemCreateEvent,
-    ConversationItemParam,
-    InputAudioBufferAppendEvent,
-    InputAudioBufferCommitEvent,
-    LogEventType,
-    MessageRole,
-    ResponseAudioDeltaEvent,
-    ResponseCreateEvent,
-    ResponseCreateOptions,
-    ResponseDoneEvent,
-    ResponseTextDeltaEvent,
-    ServerEventType,
-    SessionConfig,
-    SessionCreatedEvent,
-    SessionUpdatedEvent,
-    SessionUpdateEvent,
-)
+from opusagent.models.openai_api import LogEventType
 from opusagent.pure_prompt import SESSION_PROMPT
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
