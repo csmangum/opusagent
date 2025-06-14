@@ -1,4 +1,4 @@
-"""Handler for managing audio streams between telephony client and OpenAI Realtime API.
+"""Handler for managing audio streams between platform client and OpenAI Realtime API.
 
 This module provides functionality for handling bidirectional audio streaming,
 including audio format validation, chunk processing, and stream management.
@@ -34,17 +34,17 @@ logger = logging.getLogger(__name__)
 
 
 class AudioStreamHandler:
-    """Handler for managing audio streams between telephony client and OpenAI Realtime API.
+    """Handler for managing audio streams between platform client and OpenAI Realtime API.
 
     This class handles all audio-related functionality including:
-    - Processing incoming audio chunks from telephony client
-    - Processing outgoing audio chunks to telephony client
+    - Processing incoming audio chunks from platform client
+    - Processing outgoing audio chunks to platform client
     - Managing audio stream state and metadata
     - Handling audio format conversion and validation
     - Tracking audio statistics and metrics
 
     Attributes:
-        telephony_websocket (WebSocket): FastAPI WebSocket connection for telephony
+        platform_websocket (WebSocket): FastAPI WebSocket connection for platform
         realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
@@ -57,18 +57,18 @@ class AudioStreamHandler:
 
     def __init__(
         self,
-        telephony_websocket: WebSocket,
+        platform_websocket: WebSocket,
         realtime_websocket: websockets.WebSocketClientProtocol,
         call_recorder: Optional[CallRecorder] = None,
     ):
         """Initialize the audio stream handler.
 
         Args:
-            telephony_websocket (WebSocket): FastAPI WebSocket connection for telephony
+            platform_websocket (WebSocket): FastAPI WebSocket connection for platform
             realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
             call_recorder (Optional[CallRecorder]): Call recorder for logging audio
         """
-        self.telephony_websocket = telephony_websocket
+        self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
         self.call_recorder = call_recorder
         self.conversation_id: Optional[str] = None
@@ -94,7 +94,7 @@ class AudioStreamHandler:
         logger.info(f"Audio stream initialized for conversation: {conversation_id}")
 
     async def handle_incoming_audio(self, data: Dict[str, Any]) -> None:
-        """Handle incoming audio chunk from telephony client.
+        """Handle incoming audio chunk from platform client.
 
         This method processes audio chunks and forwards them to the OpenAI Realtime API.
         It validates the audio format and ensures chunks meet minimum size requirements.
@@ -162,7 +162,7 @@ class AudioStreamHandler:
     async def handle_outgoing_audio(self, response_dict: Dict[str, Any]) -> None:
         """Handle outgoing audio chunk from OpenAI Realtime API.
 
-        This method processes audio chunks from OpenAI and forwards them to the telephony client.
+        This method processes audio chunks from OpenAI and forwards them to the platform client.
         It manages audio stream creation and cleanup.
 
         Args:
@@ -179,10 +179,10 @@ class AudioStreamHandler:
                 )
                 return
 
-            # Check if telephony websocket is available and not closed
-            if not self.telephony_websocket or self._is_websocket_closed():
+            # Check if platform websocket is available and not closed
+            if not self.platform_websocket or self._is_websocket_closed():
                 logger.debug(
-                    "Skipping audio delta - telephony websocket is closed or unavailable"
+                    "Skipping audio delta - platform websocket is closed or unavailable"
                 )
                 return
 
@@ -197,11 +197,11 @@ class AudioStreamHandler:
                         streamId=self.active_stream_id,
                         mediaFormat=self.media_format or "raw/lpcm16",
                     )
-                    await self.telephony_websocket.send_json(stream_start.model_dump())
+                    await self.platform_websocket.send_json(stream_start.model_dump())
                     logger.info(f"Started play stream: {self.active_stream_id}")
                 except Exception as e:
                     logger.error(f"Error starting audio stream: {e}")
-                    logger.warning("Telephony WebSocket appears to be disconnected")
+                    logger.warning("Platform WebSocket appears to be disconnected")
                     self.active_stream_id = None
                     return
 
@@ -210,21 +210,21 @@ class AudioStreamHandler:
                 if self.call_recorder:
                     await self.call_recorder.record_bot_audio(audio_delta.delta)
 
-                # Send audio chunk to telephony client
+                # Send audio chunk to platform client
                 stream_chunk = PlayStreamChunkMessage(
                     type=TelephonyEventType.PLAY_STREAM_CHUNK,
                     conversationId=self.conversation_id,
                     streamId=self.active_stream_id,
                     audioChunk=audio_delta.delta,
                 )
-                await self.telephony_websocket.send_json(stream_chunk.model_dump())
+                await self.platform_websocket.send_json(stream_chunk.model_dump())
                 logger.debug(
                     f"Sent audio chunk to client (size: {len(audio_delta.delta)} bytes)"
                 )
             except Exception as e:
                 logger.error(f"Error sending audio chunk: {e}")
                 logger.warning(
-                    "Telephony WebSocket appears to be disconnected, stopping audio stream"
+                    "Platform WebSocket appears to be disconnected, stopping audio stream"
                 )
                 self.active_stream_id = None
 
@@ -281,7 +281,7 @@ class AudioStreamHandler:
                     conversationId=self.conversation_id,
                     streamId=self.active_stream_id,
                 )
-                await self.telephony_websocket.send_json(stream_stop.model_dump())
+                await self.platform_websocket.send_json(stream_stop.model_dump())
                 logger.info(f"Stopped play stream: {self.active_stream_id}")
             except Exception as e:
                 logger.error(f"Error stopping audio stream: {e}")
@@ -305,7 +305,7 @@ class AudioStreamHandler:
         }
 
     def _is_websocket_closed(self) -> bool:
-        """Check if telephony WebSocket is closed.
+        """Check if platform WebSocket is closed.
 
         Returns:
             bool: True if the WebSocket is closed or in an unusable state
@@ -314,12 +314,12 @@ class AudioStreamHandler:
             from starlette.websockets import WebSocketState
 
             return (
-                not self.telephony_websocket
-                or self.telephony_websocket.client_state == WebSocketState.DISCONNECTED
+                not self.platform_websocket
+                or self.platform_websocket.client_state == WebSocketState.DISCONNECTED
             )
         except ImportError:
             # Fallback check without WebSocketState
-            return not self.telephony_websocket
+            return not self.platform_websocket
 
     async def close(self) -> None:
         """Close the audio stream handler and clean up resources."""
