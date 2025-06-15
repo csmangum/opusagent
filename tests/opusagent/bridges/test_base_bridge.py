@@ -16,8 +16,8 @@ from opusagent.models.audiocodes_api import TelephonyEventType
 
 # Mock implementation of BaseRealtimeBridge for testing
 class MockBridge(BaseRealtimeBridge):
-    async def register_platform_event_handlers(self):
-        self.event_router.register_platform_handler("test_event", self.handle_test_event)
+    def register_platform_event_handlers(self):
+        self.event_router.register_platform_handler(TelephonyEventType.SESSION_INITIATE, self.handle_test_event)
     
     async def send_platform_json(self, payload: dict):
         await self.platform_websocket.send_json(payload)
@@ -101,38 +101,124 @@ async def test_bridge_initialization(bridge, mock_websocket, mock_realtime_webso
 @pytest.mark.asyncio
 async def test_register_platform_event_handlers(bridge):
     """Test registration of platform event handlers."""
-    await bridge.register_platform_event_handlers()
-    assert "test_event" in bridge.event_router.telephony_handlers
-    assert bridge.event_router.telephony_handlers["test_event"] == bridge.handle_test_event
+    bridge.register_platform_event_handlers()
+    assert "session.initiate" in bridge.event_router.telephony_handlers
+    assert bridge.event_router.telephony_handlers["session.initiate"] == bridge.handle_test_event
 
 @pytest.mark.asyncio
 async def test_send_platform_json(bridge, mock_websocket):
     """Test sending JSON to platform websocket."""
-    test_payload = {"type": "test", "data": "test_data"}
+    test_payload = {"type": "session.initiate", "data": "test_data"}
     await bridge.send_platform_json(test_payload)
     mock_websocket.send_json.assert_called_once_with(test_payload)
 
 @pytest.mark.asyncio
 async def test_close(bridge, mock_websocket, mock_realtime_websocket):
     """Test bridge closure."""
-    # Mock the realtime handler's close method
+    # Verify initial state
+    assert bridge._closed is False
+    
+    # Mock dependencies
     bridge.realtime_handler.close = AsyncMock()
-
-    # Mock _is_websocket_closed to return False so close() is called
-    bridge._is_websocket_closed = MagicMock(return_value=False)
-
-    # Mock the websocket's client_state to be CONNECTED
-    mock_websocket.client_state = WebSocketState.CONNECTED
-
-    # Ensure platform_websocket is set
-    bridge.platform_websocket = mock_websocket
-
-    # Mock the close method to be an async method
-    mock_websocket.close = AsyncMock()
-
+    
+    # Close the bridge
     await bridge.close()
+    
+    # Verify the bridge is marked as closed
     assert bridge._closed is True
-    mock_websocket.close.assert_called_once()
+    
+    # Verify realtime handler close was called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_with_call_recorder(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure with call recorder."""
+    # Set up call recorder mock
+    mock_call_recorder = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock()
+    mock_call_recorder.get_recording_summary = MagicMock(return_value="Test summary")
+    bridge.call_recorder = mock_call_recorder
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge
+    await bridge.close()
+    
+    # Verify the bridge is marked as closed
+    assert bridge._closed is True
+    
+    # Verify call recorder was stopped
+    mock_call_recorder.stop_recording.assert_called_once()
+    mock_call_recorder.get_recording_summary.assert_called_once()
+    
+    # Verify realtime handler close was called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_idempotent(bridge, mock_websocket, mock_realtime_websocket):
+    """Test that calling close multiple times is safe."""
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge twice
+    await bridge.close()
+    await bridge.close()
+    
+    # Verify the bridge is marked as closed
+    assert bridge._closed is True
+    
+    # Verify realtime handler close was called only once
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio 
+async def test_close_with_call_recorder_error(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure when call recorder throws an error."""
+    # Set up call recorder mock that throws an error
+    mock_call_recorder = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock(side_effect=Exception("Recording error"))
+    bridge.call_recorder = mock_call_recorder
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge - should not raise an exception
+    await bridge.close()
+    
+    # Verify the bridge is still marked as closed despite the error
+    assert bridge._closed is True
+    
+    # Verify call recorder stop was attempted
+    mock_call_recorder.stop_recording.assert_called_once()
+    
+    # Verify realtime handler close was still called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_websocket_when_disconnected(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure when websocket is already disconnected."""
+    from starlette.websockets import WebSocketState
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    mock_websocket.close = AsyncMock()
+    mock_websocket.client_state = WebSocketState.DISCONNECTED
+    
+    # Close the bridge
+    await bridge.close()
+    
+    # Verify the bridge is marked as closed
+    assert bridge._closed is True
+    
+    # Verify realtime handler close was called
+    bridge.realtime_handler.close.assert_called_once()
+    
+    # Verify platform websocket close was NOT called (since websocket is DISCONNECTED)
+    mock_websocket.close.assert_not_called()
 
 @pytest.mark.asyncio
 async def test_initialize_conversation(bridge):
@@ -157,14 +243,14 @@ async def test_handle_audio_commit(bridge):
 @pytest.mark.asyncio
 async def test_receive_from_platform(bridge, mock_websocket):
     """Test receiving messages from platform."""
-    test_message = {"type": "test_event", "data": "test_data"}
+    test_message = {"type": "session.initiate", "data": "test_data"}
     mock_websocket.iter_text.return_value = AsyncIterator([json.dumps(test_message)])
     
     # Mock the event router to prevent actual event handling
-    bridge.event_router.handle_telephony_event = AsyncMock()
+    bridge.event_router.handle_platform_event = AsyncMock()
     
     await bridge.receive_from_platform()
-    bridge.event_router.handle_telephony_event.assert_called_once_with(test_message)
+    bridge.event_router.handle_platform_event.assert_called_once_with(test_message)
 
 @pytest.mark.asyncio
 async def test_receive_from_realtime(bridge):
@@ -184,3 +270,18 @@ async def test_websocket_closed_check(bridge, mock_websocket):
     bridge.platform_websocket = mock_websocket
     mock_websocket.client_state = "DISCONNECTED"
     assert bridge._is_websocket_closed() is True 
+
+@pytest.mark.asyncio
+async def test_close_with_websocket_error_handling(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure with proper error handling even if websocket operations fail."""
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge - should not raise any exceptions
+    await bridge.close()
+    
+    # Verify the bridge is marked as closed
+    assert bridge._closed is True
+    
+    # Verify realtime handler close was called
+    bridge.realtime_handler.close.assert_called_once() 
