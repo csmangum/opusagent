@@ -29,9 +29,9 @@ from twilio.twiml.voice_response import VoiceResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from opusagent.config.logging_config import configure_logging
-from opusagent.telephony_realtime_bridge import TelephonyRealtimeBridge
+from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
+from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.session_manager import SessionManager
-from opusagent.twilio_realtime_bridge import TwilioRealtimeBridge
 
 load_dotenv()
 
@@ -93,12 +93,12 @@ async def websocket_endpoint(websocket: WebSocket):
         )
         logger.info("Connected to OpenAI Realtime API")
 
-        # Create bridge instance
-        bridge = TelephonyRealtimeBridge(websocket, realtime_websocket)
+        # Create AudioCodes bridge instance
+        bridge = AudioCodesBridge(websocket, realtime_websocket)
 
         # Start receiving from both WebSockets
         await asyncio.gather(
-            bridge.receive_from_telephony(),
+            bridge.receive_from_platform(),
             bridge.receive_from_realtime(),
         )
 
@@ -134,22 +134,15 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
             close_timeout=10,
         ) as realtime_websocket:
             logger.info("OpenAI WebSocket connection established for Twilio")
-            bridge = TwilioRealtimeBridge(twilio_websocket, realtime_websocket)
+            bridge = TwilioBridge(twilio_websocket, realtime_websocket)
             logger.info("Twilio-Realtime bridge created")
             
-            try:
-                logger.info("Initializing Twilio realtime-websocket session...")
-                await bridge.initialize_openai_session()
-                logger.info("Twilio realtime-websocket session initialized")
-            except Exception as e:
-                logger.error(f"Error initializing Twilio realtime-websocket session: {e}")
-                raise
-
-            # Run both tasks and handle cleanup
+            # Start receiving from both WebSockets
             try:
                 logger.info("Starting Twilio bridge tasks...")
                 await asyncio.gather(
-                    bridge.receive_from_twilio(), bridge.receive_from_realtime()
+                    bridge.receive_from_platform(),
+                    bridge.receive_from_realtime()
                 )
             except Exception as e:
                 logger.error(f"Error in Twilio main connection loop: {e}")

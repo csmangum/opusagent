@@ -157,19 +157,19 @@ class TelephonyRealtimeBridge:
         )
 
         # Register telephony event handlers
-        self.event_router.register_telephony_handler(
+        self.event_router.register_platform_handler(
             TelephonyEventType.SESSION_INITIATE, self.handle_session_initiate
         )
-        self.event_router.register_telephony_handler(
+        self.event_router.register_platform_handler(
             TelephonyEventType.USER_STREAM_START, self.handle_user_stream_start
         )
-        self.event_router.register_telephony_handler(
+        self.event_router.register_platform_handler(
             TelephonyEventType.USER_STREAM_CHUNK, self.handle_user_stream_chunk
         )
-        self.event_router.register_telephony_handler(
+        self.event_router.register_platform_handler(
             TelephonyEventType.USER_STREAM_STOP, self.handle_user_stream_stop
         )
-        self.event_router.register_telephony_handler(
+        self.event_router.register_platform_handler(
             TelephonyEventType.SESSION_END, self.handle_session_end
         )
 
@@ -384,7 +384,7 @@ class TelephonyRealtimeBridge:
                     break
 
                 data = json.loads(message)
-                await self.event_router.handle_telephony_event(data)
+                await self.event_router.handle_platform_event(data)
 
         except WebSocketDisconnect:
             logger.info("Client disconnected.")

@@ -65,7 +65,7 @@ def mock_call_recorder():
 def audio_handler(mock_telephony_websocket, mock_realtime_websocket, mock_call_recorder):
     """Create an AudioStreamHandler instance with mocked dependencies."""
     return AudioStreamHandler(
-        telephony_websocket=mock_telephony_websocket,
+        platform_websocket=mock_telephony_websocket,
         realtime_websocket=mock_realtime_websocket,
         call_recorder=mock_call_recorder,
     )
@@ -149,10 +149,10 @@ async def test_handle_outgoing_audio_success(audio_handler):
     
     # Verify stream was started
     assert audio_handler.active_stream_id is not None
-    audio_handler.telephony_websocket.send_json.assert_called()
+    audio_handler.platform_websocket.send_json.assert_called()
     
     # Verify the audio was sent to telephony client
-    calls = audio_handler.telephony_websocket.send_json.call_args_list
+    calls = audio_handler.platform_websocket.send_json.call_args_list
     assert len(calls) >= 2  # Should have at least start and chunk messages
     
     # Verify stream start message
@@ -219,10 +219,10 @@ async def test_stop_stream_success(audio_handler):
     
     # Verify stream was stopped
     assert audio_handler.active_stream_id is None
-    audio_handler.telephony_websocket.send_json.assert_called()
+    audio_handler.platform_websocket.send_json.assert_called()
     
     # Verify stop message
-    stop_message = audio_handler.telephony_websocket.send_json.call_args[0][0]
+    stop_message = audio_handler.platform_websocket.send_json.call_args[0][0]
     assert stop_message["type"] == TelephonyEventType.PLAY_STREAM_STOP
     assert stop_message["conversationId"] == TEST_CONVERSATION_ID
 
@@ -281,7 +281,7 @@ async def test_handle_outgoing_audio_closed_connection(audio_handler):
     await audio_handler.handle_outgoing_audio(response_dict)
     
     # Verify no audio was sent
-    audio_handler.telephony_websocket.send_json.assert_not_called()
+    audio_handler.platform_websocket.send_json.assert_not_called()
     assert audio_handler.active_stream_id is None
 
 @pytest.mark.asyncio
@@ -305,14 +305,14 @@ async def test_get_audio_stats(audio_handler):
 async def test_websocket_closed_detection(audio_handler):
     """Test WebSocket closed state detection."""
     # Test with disconnected state
-    audio_handler.telephony_websocket.client_state = WebSocketState.DISCONNECTED
+    audio_handler.platform_websocket.client_state = WebSocketState.DISCONNECTED
     assert audio_handler._is_websocket_closed()
     
     # Test with None websocket
-    audio_handler.telephony_websocket = None
+    audio_handler.platform_websocket = None
     assert audio_handler._is_websocket_closed()
     
     # Test with connected state
-    audio_handler.telephony_websocket = AsyncMock()
-    audio_handler.telephony_websocket.client_state = WebSocketState.CONNECTED
+    audio_handler.platform_websocket = AsyncMock()
+    audio_handler.platform_websocket.client_state = WebSocketState.CONNECTED
     assert not audio_handler._is_websocket_closed() 

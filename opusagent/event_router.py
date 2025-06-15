@@ -40,7 +40,7 @@ class EventRouter:
             LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
         ]
     
-    def register_telephony_handler(self, event_type: TelephonyEventType, handler: Callable) -> None:
+    def register_platform_handler(self, event_type: TelephonyEventType, handler: Callable) -> None:
         """Register a handler for a telephony event type.
         
         Args:
@@ -60,7 +60,7 @@ class EventRouter:
         self.realtime_handlers[event_type] = handler
         logger.debug(f"Registered realtime handler for event type: {event_type}")
     
-    def _get_telephony_event_type(self, msg_type_str: str) -> Optional[TelephonyEventType]:
+    def _get_platform_event_type(self, msg_type_str: str) -> Optional[TelephonyEventType]:
         """Convert a string message type to a TelephonyEventType enum value.
         
         Args:
@@ -74,23 +74,23 @@ class EventRouter:
         except ValueError:
             return None
     
-    async def handle_telephony_event(self, data: Dict[str, Any]) -> None:
-        """Handle a telephony event.
+    async def handle_platform_event(self, data: Dict[str, Any]) -> None:
+        """Handle a platform event.
         
         Args:
             data: The event data containing the message type and other information
         """
         msg_type_str = data["type"]
-        msg_type = self._get_telephony_event_type(msg_type_str)
+        msg_type = self._get_platform_event_type(msg_type_str)
         
         if msg_type:
             # Log message type and audio chunk size if present
             if "audioChunk" in data:
                 logger.info(
-                    f"Received telephony message: {msg_type_str} with audio chunk size: {len(data['audioChunk'])} bytes"
+                    f"Received platform message: {msg_type_str} with audio chunk size: {len(data['audioChunk'])} bytes"
                 )
             else:
-                logger.info(f"Received telephony message: {msg_type_str}")
+                logger.info(f"Received platform message: {msg_type_str}")
                 
             # Dispatch to the appropriate handler
             handler = self.telephony_handlers.get(msg_type)
@@ -101,11 +101,11 @@ class EventRouter:
                     else:
                         handler(data)
                 except Exception as e:
-                    logger.error(f"Error in telephony event handler for {msg_type}: {e}")
+                    logger.error(f"Error in platform event handler for {msg_type}: {e}")
             else:
-                logger.warning(f"No handler for telephony message type: {msg_type}")
+                logger.warning(f"No handler for platform message type: {msg_type}")
         else:
-            logger.warning(f"Unknown telephony message type: {msg_type_str}")
+            logger.warning(f"Unknown platform message type: {msg_type_str}")
     
     async def handle_realtime_event(self, data: Dict[str, Any]) -> None:
         """Handle a realtime event.
