@@ -102,8 +102,8 @@ async def test_bridge_initialization(bridge, mock_websocket, mock_realtime_webso
 async def test_register_platform_event_handlers(bridge):
     """Test registration of platform event handlers."""
     bridge.register_platform_event_handlers()
-    assert "session.initiate" in bridge.event_router.telephony_handlers
-    assert bridge.event_router.telephony_handlers["session.initiate"] == bridge.handle_test_event
+    assert TelephonyEventType.SESSION_INITIATE in bridge.event_router.telephony_handlers
+    assert bridge.event_router.telephony_handlers[TelephonyEventType.SESSION_INITIATE] == bridge.handle_test_event
 
 @pytest.mark.asyncio
 async def test_send_platform_json(bridge, mock_websocket):
