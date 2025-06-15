@@ -7,13 +7,14 @@ handling AudioCodes-specific event types, message formats, and responses.
 from opusagent.bridges.base_bridge import BaseRealtimeBridge
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.audiocodes_api import (
-    TelephonyEventType,
     SessionAcceptedResponse,
+    TelephonyEventType,
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
 )
 
 logger = configure_logging("audiocodes_bridge")
+
 
 class AudioCodesBridge(BaseRealtimeBridge):
     """AudioCodes-specific implementation of the real-time bridge.
@@ -57,7 +58,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         logger.info(f"Session initiate received: {data}")
         conversation_id = data.get("conversationId")
         self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
-        
+
         await self.initialize_conversation(conversation_id)
         await self.send_session_accepted()
 
@@ -90,7 +91,9 @@ class AudioCodesBridge(BaseRealtimeBridge):
         Args:
             data (dict): User stream stop message data
         """
-        logger.info(f"User stream stop received for conversation: {self.conversation_id}")
+        logger.info(
+            f"User stream stop received for conversation: {self.conversation_id}"
+        )
 
         # Send user stream stopped response
         await self.send_user_stream_stopped()
@@ -134,4 +137,4 @@ class AudioCodesBridge(BaseRealtimeBridge):
                 type=TelephonyEventType.USER_STREAM_STOPPED,
                 conversationId=self.conversation_id,
             ).model_dump()
-        ) 
+        )

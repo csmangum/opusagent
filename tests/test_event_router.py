@@ -44,9 +44,9 @@ class TestEventRouter:
         assert len(event_router.log_event_types) > 0
         assert LogEventType.ERROR in event_router.log_event_types
 
-    def test_register_telephony_handler(self, event_router, mock_telephony_handler):
+    def test_register_platform_handler(self, event_router, mock_telephony_handler):
         """Test registering a telephony event handler."""
-        event_router.register_telephony_handler(
+        event_router.register_platform_handler(
             TelephonyEventType.SESSION_INITIATE, mock_telephony_handler
         )
         assert event_router.telephony_handlers[TelephonyEventType.SESSION_INITIATE] == mock_telephony_handler
@@ -58,38 +58,38 @@ class TestEventRouter:
         )
         assert event_router.realtime_handlers[ServerEventType.SESSION_CREATED] == mock_realtime_handler
 
-    def test_get_telephony_event_type_valid(self, event_router):
+    def test_get_platform_event_type_valid(self, event_router):
         """Test converting a valid telephony event type string."""
-        event_type = event_router._get_telephony_event_type("session.initiate")
+        event_type = event_router._get_platform_event_type("session.initiate")
         assert event_type == TelephonyEventType.SESSION_INITIATE
 
-    def test_get_telephony_event_type_invalid(self, event_router):
+    def test_get_platform_event_type_invalid(self, event_router):
         """Test converting an invalid telephony event type string."""
-        event_type = event_router._get_telephony_event_type("invalid.event")
+        event_type = event_router._get_platform_event_type("invalid.event")
         assert event_type is None
 
     @pytest.mark.asyncio
-    async def test_handle_telephony_event_valid(self, event_router, mock_telephony_handler):
+    async def test_handle_platform_event_valid(self, event_router, mock_telephony_handler):
         """Test handling a valid telephony event."""
-        event_router.register_telephony_handler(
+        event_router.register_platform_handler(
             TelephonyEventType.SESSION_INITIATE, mock_telephony_handler
         )
         data = {"type": "session.initiate", "conversationId": "test-123"}
-        await event_router.handle_telephony_event(data)
+        await event_router.handle_platform_event(data)
         mock_telephony_handler.assert_called_once_with(data)
 
     @pytest.mark.asyncio
-    async def test_handle_telephony_event_invalid(self, event_router):
+    async def test_handle_platform_event_invalid(self, event_router):
         """Test handling an invalid telephony event."""
         data = {"type": "invalid.event"}
-        await event_router.handle_telephony_event(data)
+        await event_router.handle_platform_event(data)
         # Should not raise any exceptions
 
     @pytest.mark.asyncio
-    async def test_handle_telephony_event_no_handler(self, event_router):
+    async def test_handle_platform_event_no_handler(self, event_router):
         """Test handling a telephony event with no registered handler."""
         data = {"type": "session.initiate"}
-        await event_router.handle_telephony_event(data)
+        await event_router.handle_platform_event(data)
         # Should not raise any exceptions
 
     @pytest.mark.asyncio
@@ -187,14 +187,14 @@ class TestEventRouter:
     @pytest.mark.asyncio
     async def test_handle_telephony_event_with_audio_chunk(self, event_router, mock_telephony_handler):
         """Test handling a telephony event with audio chunk."""
-        event_router.register_telephony_handler(
+        event_router.register_platform_handler(
             TelephonyEventType.USER_STREAM_CHUNK, mock_telephony_handler
         )
         data = {
             "type": "userStream.chunk",
             "audioChunk": "base64_encoded_audio_data"
         }
-        await event_router.handle_telephony_event(data)
+        await event_router.handle_platform_event(data)
         mock_telephony_handler.assert_called_once_with(data)
 
     @pytest.mark.asyncio
@@ -238,12 +238,12 @@ class TestEventRouter:
         # Should not raise any exceptions, error should be logged
 
     @pytest.mark.asyncio
-    async def test_handle_telephony_event_handler_error(self, event_router, mock_telephony_handler):
+    async def test_handle_platform_event_handler_error(self, event_router, mock_telephony_handler):
         """Test handling an error in a telephony event handler."""
-        event_router.register_telephony_handler(
+        event_router.register_platform_handler(
             TelephonyEventType.SESSION_INITIATE, mock_telephony_handler
         )
         mock_telephony_handler.side_effect = Exception("Test error")
         data = {"type": "session.initiate"}
-        await event_router.handle_telephony_event(data)
+        await event_router.handle_platform_event(data)
         # Should not raise any exceptions, error should be logged 

@@ -26,6 +26,7 @@ from opusagent.transcript_manager import TranscriptManager
 # Configure logging
 logger = configure_logging("base_bridge")
 
+
 class BaseRealtimeBridge(ABC):
     """Base bridge class for handling bidirectional communication between platforms and OpenAI Realtime API.
 
@@ -115,7 +116,7 @@ class BaseRealtimeBridge(ABC):
     @abstractmethod
     def register_platform_event_handlers(self):
         """Register platform-specific event handlers with the event router.
-        
+
         This method should be implemented by subclasses to register their specific
         event types and handlers with the event router.
         """
@@ -124,7 +125,7 @@ class BaseRealtimeBridge(ABC):
     @abstractmethod
     async def send_platform_json(self, payload: dict):
         """Send JSON payload to the platform WebSocket.
-        
+
         Args:
             payload (dict): The JSON payload to send
         """
@@ -164,6 +165,7 @@ class BaseRealtimeBridge(ABC):
         """
         try:
             from starlette.websockets import WebSocketState
+
             return (
                 not self.platform_websocket
                 or self.platform_websocket.client_state == WebSocketState.DISCONNECTED
@@ -241,7 +243,9 @@ class BaseRealtimeBridge(ABC):
                 base_output_dir="call_recordings",
             )
             await self.call_recorder.start_recording()
-            logger.info(f"Call recording started for conversation: {self.conversation_id}")
+            logger.info(
+                f"Call recording started for conversation: {self.conversation_id}"
+            )
 
             # Update handlers with call recorder
             self.function_handler.call_recorder = self.call_recorder
@@ -275,7 +279,9 @@ class BaseRealtimeBridge(ABC):
 
             # Double-check if response became inactive while we were setting pending input
             if not self.realtime_handler.response_active:
-                logger.info("Response became inactive while queuing - processing immediately")
+                logger.info(
+                    "Response became inactive while queuing - processing immediately"
+                )
                 await self.session_manager.create_response()
                 self.realtime_handler.pending_user_input = None
 
@@ -295,7 +301,7 @@ class BaseRealtimeBridge(ABC):
                     break
 
                 data = json.loads(message)
-                await self.event_router.handle_telephony_event(data)
+                await self.event_router.handle_platform_event(data)
 
         except Exception as e:
             logger.error(f"Error in receive_from_platform: {e}")
@@ -310,4 +316,4 @@ class BaseRealtimeBridge(ABC):
         Raises:
             Exception: For any errors during processing
         """
-        await self.realtime_handler.receive_from_realtime() 
+        await self.realtime_handler.receive_from_realtime()

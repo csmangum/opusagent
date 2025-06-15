@@ -17,7 +17,7 @@ from opusagent.models.audiocodes_api import TelephonyEventType
 # Mock implementation of BaseRealtimeBridge for testing
 class MockBridge(BaseRealtimeBridge):
     async def register_platform_event_handlers(self):
-        self.event_router.register_telephony_handler("test_event", self.handle_test_event)
+        self.event_router.register_platform_handler("test_event", self.handle_test_event)
     
     async def send_platform_json(self, payload: dict):
         await self.platform_websocket.send_json(payload)
