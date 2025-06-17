@@ -53,7 +53,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 PORT = int(os.getenv("PORT", 6060))
 SYSTEM_MESSAGE = (
-    "You are a customer service agent for Bank of Peril. You help customers with their banking needs. "
+    "You are a customer service agent. You help customers with their banking needs. "
     "When a customer contacts you, first greet them warmly, then listen to their request and call the call_intent function to identify their intent. "
     "After calling call_intent, use the function result to guide your response:\n"
     "- If intent is 'card_replacement', ask which type of card they need to replace (use the available_cards from the function result)\n"

@@ -183,6 +183,7 @@ def confirm_address(arguments: Dict[str, Any]) -> Dict[str, Any]:
     formatted_prompt = CONFIRM_ADDRESS_PROMPT.format(
         card_in_context=card_in_context, address_on_file=address_on_file
     )
+    logger.info(f"!!!! Formatted prompt: {formatted_prompt}")    
 
     logger.info(f"Address confirmation function called for {card_in_context}")
 
