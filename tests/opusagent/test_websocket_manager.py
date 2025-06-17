@@ -170,7 +170,7 @@ class TestWebSocketManager:
             yield mock_config
 
     @pytest.fixture
-    def manager(self, mock_config, event_loop):
+    async def manager(self, mock_config):
         """Create a WebSocketManager instance."""
         manager = WebSocketManager()
         yield manager
