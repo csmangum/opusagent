@@ -213,10 +213,7 @@ async def health_check():
         dict: Health status information
     """
     stats = websocket_manager.get_stats()
-    is_healthy = (
-        stats["healthy_connections"] > 0
-        or stats["total_connections"] < stats["max_connections"]
-    )
+    is_healthy = stats["healthy_connections"] > 0
 
     return {
         "status": "healthy" if is_healthy else "degraded",
@@ -250,7 +247,11 @@ async def get_config():
 async def shutdown_event():
     """Clean up resources on application shutdown."""
     logger.info("Application shutting down, cleaning up WebSocket connections...")
-    await websocket_manager.shutdown()
+    try:
+        await websocket_manager.shutdown()
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+        # Continue with shutdown even if there's an error
 
 
 if __name__ == "__main__":

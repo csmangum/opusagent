@@ -72,7 +72,9 @@ async def test_send_initial_conversation_item(session_manager, mock_websocket):
     assert first_call["item"]["role"] == "user"
     assert len(first_call["item"]["content"]) == 1
     assert first_call["item"]["content"][0]["type"] == "input_text"
-    assert "Bank of Peril" in first_call["item"]["content"][0]["text"]
+    assert "customer service agent" in first_call["item"]["content"][0]["text"]
+    assert "How can I help you today" in first_call["item"]["content"][0]["text"]
+    assert "call_intent function" in first_call["item"]["content"][0]["text"]
 
     # Get the second call (response create)
     second_call = json.loads(mock_websocket.send.call_args_list[1][0][0])
