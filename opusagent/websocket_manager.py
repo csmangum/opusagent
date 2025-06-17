@@ -110,7 +110,15 @@ class WebSocketManager:
     def _start_health_monitoring(self):
         """Start the background health monitoring task."""
         if not self._health_check_task:
-            self._health_check_task = asyncio.create_task(self._health_monitor_loop())
+            try:
+                # Only start health monitoring if there's a running event loop
+                asyncio.get_running_loop()
+                self._health_check_task = asyncio.create_task(self._health_monitor_loop())
+                logger.debug("Health monitoring task started")
+            except RuntimeError:
+                # No event loop running (e.g., during tests or module import)
+                logger.debug("No event loop running, health monitoring will start when first used")
+                pass
 
     async def _health_monitor_loop(self):
         """Background task for health monitoring and cleanup."""
@@ -188,6 +196,10 @@ class WebSocketManager:
         Raises:
             Exception: If unable to get or create a connection
         """
+        # Ensure health monitoring is started if not already
+        if not self._health_check_task:
+            self._start_health_monitoring()
+        
         # Try to find an existing healthy connection
         for conn in self._connections.values():
             if conn.can_accept_session:

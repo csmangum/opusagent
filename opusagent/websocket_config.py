@@ -7,40 +7,49 @@ allowing customization via environment variables.
 
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def safe_int(value: str, default: int) -> int:
+    """Safely convert a string to an integer, returning default if conversion fails."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class WebSocketConfig:
     """Configuration settings for the WebSocket manager."""
     
     # Connection pool settings
-    MAX_CONNECTIONS = int(os.getenv("WEBSOCKET_MAX_CONNECTIONS", "10"))
+    MAX_CONNECTIONS = safe_int(os.getenv("WEBSOCKET_MAX_CONNECTIONS"), 10)
     MAX_CONNECTION_AGE = float(os.getenv("WEBSOCKET_MAX_CONNECTION_AGE", "3600"))  # 1 hour
     MAX_IDLE_TIME = float(os.getenv("WEBSOCKET_MAX_IDLE_TIME", "300"))  # 5 minutes
     HEALTH_CHECK_INTERVAL = float(os.getenv("WEBSOCKET_HEALTH_CHECK_INTERVAL", "30"))  # 30 seconds
     
     # Connection settings per connection
-    MAX_SESSIONS_PER_CONNECTION = int(os.getenv("WEBSOCKET_MAX_SESSIONS_PER_CONNECTION", "10"))
+    MAX_SESSIONS_PER_CONNECTION = safe_int(os.getenv("WEBSOCKET_MAX_SESSIONS_PER_CONNECTION"), 10)
     
     # WebSocket connection parameters
-    PING_INTERVAL = int(os.getenv("WEBSOCKET_PING_INTERVAL", "20"))
-    PING_TIMEOUT = int(os.getenv("WEBSOCKET_PING_TIMEOUT", "30"))
-    CLOSE_TIMEOUT = int(os.getenv("WEBSOCKET_CLOSE_TIMEOUT", "10"))
+    PING_INTERVAL = safe_int(os.getenv("WEBSOCKET_PING_INTERVAL"), 20)
+    PING_TIMEOUT = safe_int(os.getenv("WEBSOCKET_PING_TIMEOUT"), 30)
+    CLOSE_TIMEOUT = safe_int(os.getenv("WEBSOCKET_CLOSE_TIMEOUT"), 10)
     
     # OpenAI API settings
-    OPENAI_MODEL = os.getenv("OPENAI_REALTIME_MODEL", "gpt-4o-realtime-preview-2024-12-17")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-realtime-preview-2024-12-17")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE_URL", "wss://api.openai.com")
     
     @classmethod
     def get_websocket_url(cls) -> str:
         """Get the OpenAI Realtime API WebSocket URL."""
-        return f"wss://api.openai.com/v1/realtime?model={cls.OPENAI_MODEL}"
+        return f"{cls.OPENAI_API_BASE_URL}/v1/realtime?model={cls.OPENAI_MODEL}"
     
     @classmethod
     def get_headers(cls) -> dict:
         """Get the headers for OpenAI API authentication."""
-        if not cls.OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
-        
         return {
             "Authorization": f"Bearer {cls.OPENAI_API_KEY}",
             "OpenAI-Beta": "realtime=v1",
@@ -85,5 +94,6 @@ class WebSocketConfig:
             "ping_timeout": cls.PING_TIMEOUT,
             "close_timeout": cls.CLOSE_TIMEOUT,
             "openai_model": cls.OPENAI_MODEL,
+            "openai_api_base_url": cls.OPENAI_API_BASE_URL,
             "websocket_url": cls.get_websocket_url(),
         } 
