@@ -76,7 +76,7 @@ Say goodbye to the customer.
 # System instruction for the card replacement flow
 SYSTEM_INSTRUCTION = """
 #! confirm this description of the flow
-You are a customer service agent for Bank of Peril. You help customers with their banking needs. 
+You are a customer service agent. You help customers with their banking needs. 
 When a customer contacts you, first greet them warmly, then listen to their request and call the call_intent function to identify their intent. 
 
 IMPORTANT: Pay close attention to ALL details the customer provides in their initial request. If they say something like "I lost my gold card" or "My silver card was stolen", extract BOTH the card type AND the reason in your call_intent function call.

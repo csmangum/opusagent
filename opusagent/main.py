@@ -11,27 +11,29 @@ handlers, and maintains conversation state throughout the call session.
 """
 
 import asyncio
-import os
-import sys
-from pathlib import Path
-import wave
 import base64
 import json
 import logging
+import os
+import sys
+import wave
+from pathlib import Path
 from typing import Optional
 
 import dotenv
 import websockets
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, Request, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
-from fastapi.middleware.cors import CORSMiddleware
 
-from opusagent.config.logging_config import configure_logging
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
+from opusagent.config.logging_config import configure_logging
 from opusagent.session_manager import SessionManager
+from opusagent.websocket_config import WebSocketConfig
+from opusagent.websocket_manager import websocket_manager
 
 load_dotenv()
 
@@ -65,12 +67,13 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+
 @app.websocket("/ws/telephony")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for handling telephony connections.
 
     This endpoint establishes a WebSocket connection with the telephony client
-    and creates a bridge to the OpenAI Realtime API.
+    and creates a bridge to the OpenAI Realtime API using the WebSocket manager.
 
     Args:
         websocket (WebSocket): The WebSocket connection from the telephony client
@@ -79,28 +82,18 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info("Telephony WebSocket connection accepted")
 
     try:
-        # Connect to OpenAI Realtime API with correct URL and parameters
-        realtime_websocket = await websockets.connect(
-            "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
-            subprotocols=["realtime"],
-            additional_headers={
-                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-                "OpenAI-Beta": "realtime=v1",
-            },
-            ping_interval=5,
-            ping_timeout=20,
-            close_timeout=10,
-        )
-        logger.info("Connected to OpenAI Realtime API")
+        # Get a managed connection to OpenAI Realtime API
+        async with websocket_manager.connection_context() as connection:
+            logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
-        # Create AudioCodes bridge instance
-        bridge = AudioCodesBridge(websocket, realtime_websocket)
+            # Create AudioCodes bridge instance
+            bridge = AudioCodesBridge(websocket, connection.websocket)
 
-        # Start receiving from both WebSockets
-        await asyncio.gather(
-            bridge.receive_from_platform(),
-            bridge.receive_from_realtime(),
-        )
+            # Start receiving from both WebSockets
+            await asyncio.gather(
+                bridge.receive_from_platform(),
+                bridge.receive_from_realtime(),
+            )
 
     except WebSocketDisconnect:
         logger.info("Telephony client disconnected")
@@ -108,8 +101,9 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"Error in websocket_endpoint: {e}")
     finally:
         # Ensure bridge is closed
-        if 'bridge' in locals():
+        if "bridge" in locals():
             await bridge.close()
+
 
 @app.websocket("/twilio-agent")
 async def handle_twilio_call(twilio_websocket: WebSocket):
@@ -121,28 +115,20 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 
     try:
         logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
-        
-        async with websockets.connect(
-            "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
-            subprotocols=["realtime"],
-            additional_headers={
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                "OpenAI-Beta": "realtime=v1",
-            },
-            ping_interval=5,
-            ping_timeout=20,
-            close_timeout=10,
-        ) as realtime_websocket:
-            logger.info("OpenAI WebSocket connection established for Twilio")
-            bridge = TwilioBridge(twilio_websocket, realtime_websocket)
+
+        # Get a managed connection to OpenAI Realtime API
+        async with websocket_manager.connection_context() as connection:
+            logger.info(
+                f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
+            )
+            bridge = TwilioBridge(twilio_websocket, connection.websocket)
             logger.info("Twilio-Realtime bridge created")
-            
+
             # Start receiving from both WebSockets
             try:
                 logger.info("Starting Twilio bridge tasks...")
                 await asyncio.gather(
-                    bridge.receive_from_platform(),
-                    bridge.receive_from_realtime()
+                    bridge.receive_from_platform(), bridge.receive_from_realtime()
                 )
             except Exception as e:
                 logger.error(f"Error in Twilio main connection loop: {e}")
@@ -150,6 +136,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
             finally:
                 logger.info("Closing Twilio bridge...")
                 await bridge.close()
+
     except websockets.exceptions.InvalidStatusCode as e:
         logger.error(f"Invalid status code from OpenAI (Twilio): {e}")
         logger.error(f"Response headers: {e.response_headers}")
@@ -167,11 +154,11 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 @app.post("/twilio/voice")
 async def twilio_voice(request: Request):
     """Handle incoming Twilio voice calls.
-    
+
     This endpoint receives incoming voice calls from Twilio and responds with TwiML
     instructions to connect the call to our WebSocket endpoint for real-time AI interaction.
     """
-    logger.info(f"------ Incoming Twilio voice call ------")    
+    logger.info(f"------ Incoming Twilio voice call ------")
     # Create a TwiML response
     response = VoiceResponse()
     logger.info(f" Response: {response}")
@@ -181,7 +168,7 @@ async def twilio_voice(request: Request):
     logger.info(f"------ {SERVER_URL} ------")
     connect.stream(url=SERVER_URL)
     logger.info(f"------ Connected call to WebSocket endpoint ------")
-    
+
     # Return XML response with proper Content-Type header
     return Response(content=str(response), media_type="application/xml")
 
@@ -201,8 +188,69 @@ async def root():
             "/ws/telephony": "WebSocket endpoint for AudioCodes VoiceAI Connect",
             "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
             "/twilio/voice": "Webhook endpoint for incoming Twilio voice calls",
+            "/stats": "Connection statistics and health information",
+            "/health": "Health check endpoint for service monitoring",
+            "/config": "Current WebSocket manager configuration",
         },
     }
+
+
+@app.get("/stats")
+async def get_stats():
+    """Get WebSocket connection statistics and health information.
+
+    Returns:
+        dict: Current connection pool statistics
+    """
+    return websocket_manager.get_stats()
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring service health.
+
+    Returns:
+        dict: Health status information
+    """
+    stats = websocket_manager.get_stats()
+    is_healthy = (
+        stats["healthy_connections"] > 0
+        or stats["total_connections"] < stats["max_connections"]
+    )
+
+    return {
+        "status": "healthy" if is_healthy else "degraded",
+        "websocket_manager": {
+            "healthy_connections": stats["healthy_connections"],
+            "total_connections": stats["total_connections"],
+            "max_connections": stats["max_connections"],
+        },
+        "message": (
+            "Service is operational"
+            if is_healthy
+            else "WebSocket connection issues detected"
+        ),
+    }
+
+
+@app.get("/config")
+async def get_config():
+    """Get current WebSocket manager configuration.
+
+    Returns:
+        dict: Current configuration settings
+    """
+    return {
+        "websocket_manager": WebSocketConfig.to_dict(),
+        "note": "Configuration is read from environment variables at startup",
+    }
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up resources on application shutdown."""
+    logger.info("Application shutting down, cleaning up WebSocket connections...")
+    await websocket_manager.shutdown()
 
 
 if __name__ == "__main__":
