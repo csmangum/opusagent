@@ -31,10 +31,11 @@ BRIDGE_URL = "ws://localhost:8000/ws/telephony"
 
 # Example conversation flows - modify these lists for your own testing
 REPLACEMENT_CARD_CONVERSATION = [
-    # "static/i_lost_my_gold_card.wav",  # "Hi, I need to replace my card"
-    "static/not_supposed_to_be_here.wav",  # "Hi, I need to replace my card"
-    "static/my_gold_card.wav",  # "My gold card"
-    "static/i_lost_it.wav",  # "I lost it"
+    "static/i_lost_my_gold_card.wav", 
+    # "static/not_supposed_to_be_here.wav",
+    "static/my_gold_card.wav",
+    "static/hold_on_a_sec.wav",
+    "static/i_lost_it.wav",
     "static/yes_that_address.wav",
     "static/thanks_thats_all.wav",
 ]

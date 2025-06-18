@@ -104,7 +104,7 @@ async def test_bridge_integration():
             conversation_id=conversation_id,
             websocket=mock_websocket,
             model=os.getenv(
-                "OPENAI_REALTIME_MODEL", "gpt-4o-realtime-preview-2024-12-17"
+                "OPENAI_REALTIME_MODEL", "gpt-4o-realtime-preview-2025-06-03"
             ),
         )
 
@@ -212,7 +212,7 @@ async def test_direct_client():
         logger.error("OPENAI_API_KEY environment variable not set in .env file")
         sys.exit(1)
 
-    model = os.getenv("OPENAI_REALTIME_MODEL", "gpt-4o-realtime-preview-2024-12-17")
+    model = os.getenv("OPENAI_REALTIME_MODEL", "gpt-4o-realtime-preview-2025-06-03")
     logger.info(f"Testing direct client connection with model: {model}")
 
     # Create and connect client
