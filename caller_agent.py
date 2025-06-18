@@ -94,6 +94,8 @@ IMPORTANT BEHAVIOR GUIDELINES:
 - {"Be patient and wait for responses" if self.patience_level > 7 else "Show impatience if calls take too long"}
 - {"Interrupt occasionally if you're eager" if self.tendency_to_interrupt > 0.5 else "Wait politely for responses"}
 
+{"PERFECT CALLER BEHAVIOR: Provide ALL necessary information in your FIRST message. Be direct and efficient. Don't wait for the agent to ask questions." if self.provides_clear_info >= 1.0 else ""}
+
 Respond naturally as a human caller would. Keep responses concise and conversational.
 """
         return base_prompt
@@ -123,7 +125,26 @@ class CallerScenario:
     def _card_replacement_prompt(self) -> str:
         card_type = self.context.get("card_type", "gold card")
         reason = self.context.get("reason", "lost")
-        return f"""
+        
+        # Check if this is a perfect caller
+        if self.context.get("perfect_caller", False):
+            return f"""
+SCENARIO: You need to replace your {card_type} because you {reason} it.
+
+GOAL: {self.goal.primary_goal}
+
+CONTEXT:
+- Card type: {card_type}
+- Reason for replacement: {reason}
+- You are a PERFECT caller with all information ready
+
+IMPORTANT: In your FIRST message, provide ALL necessary information:
+"Hi, I need to replace my lost gold card. Can you send it to the address on file?"
+
+Be direct, efficient, and provide complete information upfront. Don't wait for the agent to ask questions.
+"""
+        else:
+            return f"""
 SCENARIO: You need to replace your {card_type} because you {reason} it.
 
 GOAL: {self.goal.primary_goal}
@@ -845,7 +866,7 @@ def create_difficult_card_replacement_caller(
 def create_confused_elderly_caller(
     bridge_url: str = "ws://localhost:8000/ws/telephony",
 ) -> CallerAgent:
-    """Create a confused elderly caller."""
+    """Create a confused elderly caller who lost a card but isn't sure which one it was."""
 
     personality = CallerPersonality(
         type=PersonalityType.ELDERLY,
@@ -853,6 +874,8 @@ def create_confused_elderly_caller(
             "confused about technology",
             "asks for clarification",
             "polite but slow",
+            "unsure about details",
+            "needs help remembering",
         ],
         communication_style="Polite but needs lots of help",
         patience_level=8,
@@ -862,17 +885,23 @@ def create_confused_elderly_caller(
     )
 
     goal = CallerGoal(
-        primary_goal="Check my account balance",
-        secondary_goals=["Understand online banking"],
-        success_criteria=["balance provided", "offered help"],
-        failure_conditions=["hung up in frustration"],
+        primary_goal="Replace my lost card but I'm not sure which one it was",
+        secondary_goals=["Figure out which card I lost", "Get help with card replacement"],
+        success_criteria=["card identified", "replacement ordered", "delivery confirmed"],
+        failure_conditions=["hung up in frustration", "transferred to human"],
         max_conversation_turns=20,
     )
 
     scenario = CallerScenario(
-        scenario_type=ScenarioType.ACCOUNT_INQUIRY,
+        scenario_type=ScenarioType.CARD_REPLACEMENT,
         goal=goal,
-        context={"needs_simple_explanations": True},
+        context={
+            "card_type": "unknown",
+            "reason": "lost",
+            "confused_about_which_card": True,
+            "needs_simple_explanations": True,
+            "may_have_multiple_cards": True,
+        },
     )
 
     return CallerAgent(
@@ -926,6 +955,56 @@ def create_angry_complaint_caller(
     )
 
 
+def create_perfect_card_replacement_caller(
+    bridge_url: str = "ws://localhost:8000/ws/telephony",
+) -> CallerAgent:
+    """Create a perfect caller who provides all necessary information upfront."""
+
+    personality = CallerPersonality(
+        type=PersonalityType.NORMAL,
+        traits=[
+            "clear and direct",
+            "prepared with information",
+            "cooperative",
+            "efficient",
+            "polite but concise",
+        ],
+        communication_style="Direct and helpful",
+        patience_level=7,
+        tech_comfort=8,
+        tendency_to_interrupt=0.1,
+        provides_clear_info=1.0,  # Perfect information provision
+    )
+
+    goal = CallerGoal(
+        primary_goal="Replace lost gold card efficiently",
+        secondary_goals=["Confirm delivery to address on file", "Get replacement card quickly"],
+        success_criteria=["card replacement confirmed", "delivery address confirmed", "replacement ordered"],
+        failure_conditions=["transferred to human", "call terminated", "asked for additional verification"],
+        max_conversation_turns=5,  # Should be very quick
+    )
+
+    scenario = CallerScenario(
+        scenario_type=ScenarioType.CARD_REPLACEMENT,
+        goal=goal,
+        context={
+            "card_type": "gold card",
+            "reason": "lost",
+            "perfect_caller": True,
+            "has_all_info": True,
+            "wants_efficient_service": True,
+        },
+    )
+
+    return CallerAgent(
+        bridge_url=bridge_url,
+        personality=personality,
+        scenario=scenario,
+        caller_name="PerfectPat",
+        caller_phone="+15551111111",
+    )
+
+
 # Example usage script
 async def run_caller_agent_demo():
     """Run a demo of different caller agents."""
@@ -937,6 +1016,7 @@ async def run_caller_agent_demo():
         ("Difficult Card Replacement", create_difficult_card_replacement_caller),
         ("Confused Elderly", create_confused_elderly_caller),
         ("Angry Complaint", create_angry_complaint_caller),
+        ("Perfect Card Replacement", create_perfect_card_replacement_caller),
     ]
 
     for caller_name, caller_factory in callers:

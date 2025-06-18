@@ -34,9 +34,9 @@ async def example_1_basic_usage():
     
     # Test different predefined callers
     callers = [
-        ("Difficult Card Replacement", create_difficult_card_replacement_caller),
+        # ("Difficult Card Replacement", create_difficult_card_replacement_caller),
         ("Confused Elderly Customer", create_confused_elderly_caller),
-        ("Angry Complaint Customer", create_angry_complaint_caller),
+        # ("Angry Complaint Customer", create_angry_complaint_caller),
     ]
     
     for name, caller_factory in callers:

@@ -10,11 +10,11 @@
       "description": "Stubborn customer who lost their gold card and is difficult about providing verification information"
     },
     {
-      "name": "Confused Elderly Customer - Balance Inquiry",
+      "name": "Confused Elderly Customer - Lost Silver Card",
       "type": "predefined", 
       "scenario": "confused_elderly",
       "timeout": 120.0,
-      "description": "Elderly customer confused about technology who wants to check account balance"
+      "description": "Elderly customer who lost their silver card and is confused about the process"
     },
     {
       "name": "Angry Customer - Unauthorized Charges",
