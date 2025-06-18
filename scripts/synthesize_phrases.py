@@ -13,12 +13,16 @@ openai.api_key = OPENAI_API_KEY
 
 # List of phrases to synthesize
 phrases = [
-    "Uh, sorry, can you hold on a sec? ... Okay, I lost my card.",
-    "Wait, can you tell me when my last payment was?",
-    "Actually, I moved. Can you send it to 456 Oak Ave?"
+    "I need to replace my card.",
+    "It's my gold card.",
+    "Yeah, I lost it.",
+    "Yes, send it to the address on file.",
+    "Thanks, that's all I need.",
+    "I lost my gold card and need a new one",
+    "I'm not supposed to be here"
 ]
 
-VOICE = "ash"
+VOICE = "nova"
 OUTPUT_DIR = "output_audio"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -29,6 +33,7 @@ for idx, phrase in enumerate(phrases, 1):
         model="gpt-4o-mini-tts",
         voice=VOICE,
         input=phrase,
+        instructions="You are a customer of a bank looking to get your card replaced. You are speaking to a customer service representative. Be as normal as possible.",
         response_format="wav"
     )
     out_path = os.path.join(OUTPUT_DIR, f"replacement_card_{idx}.wav")
