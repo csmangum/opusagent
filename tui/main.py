@@ -111,6 +111,7 @@ class InteractiveTUIValidator(App):
         Binding("r", "start_recording", "Start Recording"),
         Binding("t", "stop_recording", "Stop Recording"),
         Binding("h", "help", "Help"),
+        Binding("ctrl+m", "review_mode", "Review Mode"),
         # Soundboard shortcuts
         Binding("1", "send_phrase_1", "Hello"),
         Binding("2", "send_phrase_2", "Bank Info"),  
@@ -438,6 +439,7 @@ System:
   Ctrl+L - Clear all logs
   Ctrl+E - Export logs
   Ctrl+R - Restart application
+  Ctrl+M - Open Call Review Mode
   q - Quit application
   h - Show this help
 
@@ -447,11 +449,39 @@ Getting Started:
 3. Click soundboard buttons or use number keys to send phrases
 4. Listen to bot responses through your speakers
 5. Monitor function calls and conversation flow in real-time
+6. Use Ctrl+M to open Call Review Mode for analyzing completed calls
 """
         
         if self.transcript_panel:
             self.transcript_panel.add_system_message(help_text)
         self.bell()
+
+    def action_review_mode(self) -> None:
+        """Launch the Call Review Interface."""
+        try:
+            import subprocess
+            import sys
+            
+            # Launch the review interface in a new process
+            review_script = Path(__file__).parent / "review_main.py"
+            subprocess.Popen([sys.executable, str(review_script), "--demo"])
+            
+            # Add notification to current interface
+            if self.events_panel:
+                self.events_panel.add_event(
+                    "review_mode_launched", 
+                    status="info", 
+                    details="Call Review Interface launched"
+                )
+            
+        except Exception as e:
+            logger.error(f"Failed to launch review mode: {e}")
+            if self.events_panel:
+                self.events_panel.add_event(
+                    "review_mode_error", 
+                    status="error", 
+                    details=f"Failed to launch review mode: {e}"
+                )
 
     def action_restart(self) -> None:
         """Restart the application."""
