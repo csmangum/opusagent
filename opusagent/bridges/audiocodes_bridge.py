@@ -117,7 +117,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
             SessionAcceptedResponse(
                 type=TelephonyEventType.SESSION_ACCEPTED,
                 conversationId=self.conversation_id,
-                mediaFormat=self.media_format,
+                mediaFormat=self.media_format or "raw/lpcm16",
             ).model_dump()
         )
 

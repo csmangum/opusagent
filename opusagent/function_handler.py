@@ -518,7 +518,7 @@ class FunctionHandler:
         """
         return self.active_function_calls.copy()
 
-    #! seperated out into agent specific handlers, part of the agent object
+    #! seperated out into agent specific handlers, part of the agent
     # Default function implementations
     def _func_get_balance(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """
