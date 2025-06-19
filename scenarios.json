@@ -1,0 +1,127 @@
+{
+  "description": "Caller Agent Test Scenarios",
+  "version": "1.0",
+  "scenarios": [
+    {
+      "name": "Difficult Card Replacement - Lost Gold Card",
+      "type": "predefined",
+      "scenario": "difficult_card_replacement",
+      "timeout": 90.0,
+      "description": "Stubborn customer who lost their gold card and is difficult about providing verification information"
+    },
+    {
+      "name": "Confused Elderly Customer - Lost Silver Card",
+      "type": "predefined", 
+      "scenario": "confused_elderly",
+      "timeout": 120.0,
+      "description": "Elderly customer who lost their silver card and is confused about the process"
+    },
+    {
+      "name": "Angry Customer - Unauthorized Charges",
+      "type": "predefined",
+      "scenario": "angry_complaint", 
+      "timeout": 60.0,
+      "description": "Very angry customer complaining about unauthorized charges on their account"
+    },
+    {
+      "name": "Impatient Business Customer - Loan Inquiry",
+      "type": "custom",
+      "personality": "impatient",
+      "scenario_type": "loan_application",
+      "goal": "Get information about business loan rates and apply quickly",
+      "caller_name": "BusinessBob",
+      "caller_phone": "+15559998888",
+      "timeout": 75.0,
+      "description": "Busy business owner who wants loan information but has no time for lengthy processes"
+    },
+    {
+      "name": "Tech-Savvy Customer - Online Banking Issue",
+      "type": "custom",
+      "personality": "tech_savvy",
+      "scenario_type": "general_inquiry",
+      "goal": "Resolve online banking login issues and set up mobile alerts",
+      "caller_name": "TechTim",
+      "caller_phone": "+15557776666",
+      "timeout": 60.0,
+      "description": "Tech-savvy customer who knows what they want but encountered a technical issue"
+    },
+    {
+      "name": "Suspicious Customer - Account Security",
+      "type": "custom",
+      "personality": "suspicious",
+      "scenario_type": "account_inquiry",
+      "goal": "Verify account security after receiving suspicious email",
+      "caller_name": "SuspiciousSue",
+      "caller_phone": "+15555554444",
+      "timeout": 90.0,
+      "description": "Customer who received phishing email and is suspicious of everything, including the bank"
+    },
+    {
+      "name": "Normal Customer - Simple Balance Check",
+      "type": "custom",
+      "personality": "normal",
+      "scenario_type": "account_inquiry",
+      "goal": "Check account balance and recent transactions",
+      "caller_name": "NormalNancy",
+      "caller_phone": "+15553332222",
+      "timeout": 45.0,
+      "description": "Regular customer with simple request - baseline test"
+    },
+    {
+      "name": "Confused Student - First Time Banking",
+      "type": "custom",
+      "personality": "confused",
+      "scenario_type": "general_inquiry",
+      "goal": "Learn about student checking accounts and debit cards",
+      "caller_name": "StudentSam",
+      "caller_phone": "+15551119999",
+      "timeout": 100.0,
+      "description": "College student opening first bank account, needs lots of explanation"
+    },
+    {
+      "name": "Elderly Customer - Stolen Card Emergency",
+      "type": "custom",
+      "personality": "elderly",
+      "scenario_type": "card_replacement",
+      "goal": "Report stolen card and get emergency replacement",
+      "caller_name": "ElderlyEd",
+      "caller_phone": "+15558887777",
+      "timeout": 120.0,
+      "description": "Elderly customer whose card was stolen, needs patient help through process"
+    },
+    {
+      "name": "Angry Customer - Fee Dispute",
+      "type": "custom",
+      "personality": "angry",
+      "scenario_type": "complaint",
+      "goal": "Get overdraft fees removed and account restriction lifted",
+      "caller_name": "AngryAl",
+      "caller_phone": "+15556665555",
+      "timeout": 80.0,
+      "description": "Customer angry about overdraft fees they think are unfair"
+    }
+  ],
+  "test_configurations": {
+    "quick_test": {
+      "description": "Quick smoke test with basic scenarios",
+      "scenarios": [0, 6, 1],
+      "parallel": false
+    },
+    "personality_test": {
+      "description": "Test all personality types",
+      "scenarios": [0, 1, 2, 3, 4, 5],
+      "parallel": false
+    },
+    "stress_test": {
+      "description": "All scenarios for comprehensive testing",
+      "scenarios": "all",
+      "parallel": false,
+      "repeat": 2
+    },
+    "difficult_customers": {
+      "description": "Focus on difficult customer interactions",
+      "scenarios": [0, 2, 5, 9],
+      "parallel": false
+    }
+  }
+} 

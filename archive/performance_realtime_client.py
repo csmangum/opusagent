@@ -36,7 +36,7 @@ if not OPENAI_API_KEY:
     )
 
 # Test configuration
-TEST_MODEL = "gpt-4o-realtime-preview"
+TEST_MODEL = "gpt-4o-realtime-preview-2025-06-03"
 TEST_VOICE = "alloy"
 
 # Performance test parameters

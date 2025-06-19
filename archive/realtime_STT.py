@@ -41,7 +41,7 @@ full_response = ""
 
 # WebSocket configuration
 # Try different model versions if one doesn't work
-MODEL_VERSION = "2024-12-17"  # Default version
+MODEL_VERSION = "2025-06-03"  # Default version
 url = f"wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-{MODEL_VERSION}"
 headers = ["Authorization: Bearer " + OPENAI_API_KEY, "OpenAI-Beta: realtime=v1"]
 
