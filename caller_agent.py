@@ -816,7 +816,7 @@ Keep responses natural and conversational. Don't be overly helpful or profession
 
 
 def create_difficult_card_replacement_caller(
-    bridge_url: str = "ws://localhost:8000/ws/telephony",
+    bridge_url: str = "ws://localhost:8000/caller-agent",
 ) -> CallerAgent:
     """Create a difficult caller who needs card replacement."""
 
@@ -864,7 +864,7 @@ def create_difficult_card_replacement_caller(
 
 
 def create_confused_elderly_caller(
-    bridge_url: str = "ws://localhost:8000/ws/telephony",
+    bridge_url: str = "ws://localhost:8000/caller-agent",
 ) -> CallerAgent:
     """Create a confused elderly caller who lost a card but isn't sure which one it was."""
 
@@ -914,7 +914,7 @@ def create_confused_elderly_caller(
 
 
 def create_angry_complaint_caller(
-    bridge_url: str = "ws://localhost:8000/ws/telephony",
+    bridge_url: str = "ws://localhost:8000/caller-agent",
 ) -> CallerAgent:
     """Create an angry caller with a complaint."""
 

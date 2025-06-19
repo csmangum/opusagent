@@ -29,6 +29,7 @@ from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
 
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
+from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.config.logging_config import configure_logging
 from opusagent.session_manager import SessionManager
@@ -103,6 +104,61 @@ async def websocket_endpoint(websocket: WebSocket):
         # Ensure bridge is closed
         if "bridge" in locals():
             await bridge.close()
+            
+            
+@app.websocket("/caller-agent")
+async def handle_caller_call(caller_websocket: WebSocket):
+    """Handle WebSocket connections from a *caller* agent (MockAudioCodesClient).
+
+    The caller-agent shares the same AudioCodes VAIC message schema as the
+    inbound /ws/telephony endpoint, but is used by our test harness / synthetic
+    caller agents defined in ``caller_agent.py``.  We keep it on a dedicated
+    route to avoid interfering with production traffic and so that we can apply
+    separate security rules in the future.
+    """
+
+    await caller_websocket.accept()
+    client_address = caller_websocket.client
+    logger.info(f"------ Caller connection accepted from {client_address} ------")
+
+    try:
+        logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
+
+        # Get a managed connection to OpenAI Realtime API
+        async with websocket_manager.connection_context() as connection:
+            logger.info(
+                f"OpenAI WebSocket connection established for Caller: {connection.connection_id}"
+            )
+
+            # Instantiate our caller side bridge
+            bridge = CallAgentBridge(caller_websocket, connection.websocket)
+            logger.info("Caller-Realtime bridge created")
+
+            # Start bidirectional tasks
+            try:
+                logger.info("Starting Caller bridge tasks...")
+                await asyncio.gather(
+                    bridge.receive_from_platform(), bridge.receive_from_realtime()
+                )
+            except Exception as e:
+                logger.error(f"Error in Caller connection loop: {e}")
+                raise
+            finally:
+                logger.info("Closing Caller bridge...")
+                await bridge.close()
+
+    except websockets.exceptions.InvalidStatusCode as e:
+        logger.error(f"Invalid status code from OpenAI (Caller): {e}")
+        logger.error(f"Response headers: {e.response_headers}")
+        await caller_websocket.close()
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.error(f"OpenAI connection closed (Caller): {e}")
+        logger.error(f"Close code: {e.code}")
+        logger.error(f"Close reason: {e.reason}")
+        await caller_websocket.close()
+    except Exception as e:
+        logger.error(f"Error establishing OpenAI connection (Caller): {e}")
+        await caller_websocket.close()
 
 
 @app.websocket("/twilio-agent")
@@ -188,6 +244,7 @@ async def root():
             "/ws/telephony": "WebSocket endpoint for AudioCodes VoiceAI Connect",
             "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
             "/twilio/voice": "Webhook endpoint for incoming Twilio voice calls",
+            "/caller-agent": "WebSocket endpoint for Caller test agents",
             "/stats": "Connection statistics and health information",
             "/health": "Health check endpoint for service monitoring",
             "/config": "Current WebSocket manager configuration",
