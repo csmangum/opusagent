@@ -5,17 +5,15 @@ including response state management, audio streaming, transcripts, and function 
 """
 
 import json
-import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import websockets
 
 from opusagent.audio_stream_handler import AudioStreamHandler
-from opusagent.call_recorder import CallRecorder
 from opusagent.config.logging_config import configure_logging
 from opusagent.event_router import EventRouter
 from opusagent.function_handler import FunctionHandler
-from opusagent.models.openai_api import LogEventType, ResponseDoneEvent, ServerEventType
+from opusagent.models.openai_api import ResponseDoneEvent, ServerEventType
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
 
@@ -44,7 +42,7 @@ class RealtimeHandler:
 
     def __init__(
         self,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        realtime_websocket,
         audio_handler: AudioStreamHandler,
         function_handler: FunctionHandler,
         session_manager: SessionManager,
@@ -70,7 +68,7 @@ class RealtimeHandler:
 
         # Response state tracking
         self.response_active = False
-        self.pending_user_input = None
+        self.pending_user_input: Optional[Dict[str, Any]] = None
         self.response_id_tracker = None
         self._closed = False
 

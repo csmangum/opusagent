@@ -49,7 +49,7 @@ def configure_logging(name: str = LOGGER_NAME, file_path: str = "logs/"):
     # Set encoding to utf-8 if possible (Python 3.7+)
     if hasattr(console_handler.stream, 'reconfigure'):
         try:
-            console_handler.stream.reconfigure(encoding='utf-8')
+            console_handler.stream.reconfigure(encoding='utf-8')  # type: ignore
         except Exception as e:
             logger.warning(f"Could not reconfigure console stream encoding: {e}")
     logger.addHandler(console_handler)

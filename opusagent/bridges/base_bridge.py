@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 
 import websockets
 from fastapi import WebSocket
+from websockets.sync.client import ClientConnection
 
 from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import CallRecorder
@@ -35,7 +36,7 @@ class BaseRealtimeBridge(ABC):
 
     Attributes:
         platform_websocket: Platform-specific WebSocket connection (e.g. FastAPI WebSocket)
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
         speech_detected (bool): Whether speech is currently being detected
@@ -55,13 +56,13 @@ class BaseRealtimeBridge(ABC):
     def __init__(
         self,
         platform_websocket,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        realtime_websocket: ClientConnection,
     ):
         """Initialize the bridge with WebSocket connections.
 
         Args:
             platform_websocket: Platform-specific WebSocket connection
-            realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+            realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
@@ -255,7 +256,7 @@ class BaseRealtimeBridge(ABC):
             # Initialize audio stream
             await self.audio_handler.initialize_stream(
                 conversation_id=self.conversation_id,
-                media_format=self.media_format,
+                media_format=self.media_format or "pcm16",
             )
 
     async def handle_audio_commit(self):

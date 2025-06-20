@@ -8,7 +8,7 @@ import logging
 import uuid
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any, Dict, Union, Callable
 
 from .prompts import (
     ACCOUNT_VERIFICATION_PROMPT,
@@ -541,14 +541,14 @@ ACCOUNT_INQUIRY_FUNCTIONS = OrderedDict([
 ])
 
 
-def get_account_inquiry_functions() -> Dict[str, Any]:
+def get_account_inquiry_functions() -> Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]]:  # type: ignore
     """
     Get all function implementations for the account inquiry flow.
 
     Returns:
         Dictionary mapping function names to callable implementations
     """
-    return ACCOUNT_INQUIRY_FUNCTIONS.copy()
+    return dict(ACCOUNT_INQUIRY_FUNCTIONS)  # type: ignore
 
 
 def get_function_by_name(function_name: str):
