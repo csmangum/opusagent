@@ -79,11 +79,15 @@ class BaseRealtimeBridge(ABC):
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
-        # Initialize function handler
-        self.function_handler = FunctionHandler(realtime_websocket)
-
         # Initialize call recorder (will be set up when conversation starts)
         self.call_recorder: Optional[CallRecorder] = None
+
+        # Initialize function handler
+        self.function_handler = FunctionHandler(
+            realtime_websocket, 
+            call_recorder=self.call_recorder, 
+            hang_up_callback=self.hang_up
+        )
 
         # Initialize transcript manager
         self.transcript_manager = TranscriptManager()
@@ -318,3 +322,47 @@ class BaseRealtimeBridge(ABC):
             Exception: For any errors during processing
         """
         await self.realtime_handler.receive_from_realtime()
+
+    async def hang_up(self, reason: str = "Call completed"):
+        """
+        Hang up the call by ending the session.
+        
+        This method is called when the AI determines the call should end,
+        either through completion of tasks or transfer to human.
+        
+        Args:
+            reason: The reason for hanging up the call
+        """
+        if self._closed:
+            logger.info(f"Bridge already closed, ignoring hang-up request: {reason}")
+            return
+            
+        logger.info(f"🔚 Hanging up call: {reason}")
+        
+        try:
+            # Send session end to platform if supported
+            await self.send_session_end(reason)
+            
+            # Close the bridge connections
+            await self.close()
+            
+            logger.info("✅ Call hang-up completed successfully")
+            
+        except Exception as e:
+            logger.error(f"❌ Error during hang-up: {e}")
+            # Still try to close connections
+            await self.close()
+
+    async def send_session_end(self, reason: str):
+        """
+        Send session end message to the platform.
+        
+        This method should be implemented by subclasses to send platform-specific
+        session end messages. Base implementation does nothing.
+        
+        Args:
+            reason: The reason for ending the session
+        """
+        logger.info(f"Base bridge send_session_end called with reason: {reason}")
+        # Subclasses should override this to send platform-specific session end messages
+        pass
