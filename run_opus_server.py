@@ -69,7 +69,7 @@ def main():
 
     # Verify OpenAI API key format
     api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key.startswith("sk-"):
+    if not api_key or not api_key.startswith("sk-"):
         logger.error("Invalid OpenAI API key format")
         print("\nError: OpenAI API key must start with 'sk-'")
         print("Please check your API key and try again.")
@@ -83,7 +83,7 @@ def main():
     logger.info(f"Environment: {os.getenv('ENV', 'production')}")
     logger.info(f"OpenAI API key configured: {bool(os.getenv('OPENAI_API_KEY'))}")
     logger.info(
-        f"OpenAI API key format: {'Valid' if api_key.startswith('sk-') else 'Invalid'}"
+        f"OpenAI API key format: {'Valid' if api_key and api_key.startswith('sk-') else 'Invalid'}"
     )
     logger.info("=========================")
 

@@ -99,23 +99,28 @@ class FunctionHandler:
     - Accumulation of streaming function call arguments
     - Execution of functions (sync/async)
     - Sending results back to the OpenAI Realtime API
+    - Detection of hang-up conditions and session termination
 
     Attributes:
         function_registry: Dictionary mapping function names to callable implementations
         active_function_calls: Dictionary tracking ongoing function calls by call_id
         realtime_websocket: WebSocket connection to OpenAI Realtime API for sending responses
+        hang_up_callback: Optional callback function to trigger hang-up from bridge
     """
 
-    def __init__(self, realtime_websocket, call_recorder=None, voice="verse"):
+    def __init__(self, realtime_websocket, call_recorder=None, voice="verse", hang_up_callback=None):
         """
         Initialize the function handler.
 
         Args:
             realtime_websocket: WebSocket connection to OpenAI Realtime API
             call_recorder: Optional CallRecorder instance for logging function calls
+            voice: Voice to use for responses
+            hang_up_callback: Optional callback to trigger hang-up from bridge
         """
         self.realtime_websocket = realtime_websocket
         self.call_recorder = call_recorder
+        self.hang_up_callback = hang_up_callback
         self.function_registry: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
         self.active_function_calls: Dict[str, Dict[str, Any]] = (
             {}
@@ -386,10 +391,10 @@ class FunctionHandler:
         self,
         function_name: str,
         arguments: Dict[str, Any],
-        call_id: str,
-        item_id: str,
-        output_index: int,
-        response_id: str,
+        call_id: Optional[str] = None,
+        item_id: Optional[str] = None,
+        output_index: Optional[int] = 0,
+        response_id: Optional[str] = None,
     ) -> None:
         """
         Execute a function and send the result back to OpenAI.
@@ -482,27 +487,113 @@ class FunctionHandler:
             await self.realtime_websocket.send(json.dumps(function_result_event))
             logger.info(f"✅ Function result sent successfully to OpenAI")
 
-            # After sending function result, trigger response generation
-            # This ensures the AI continues the conversation
-            logger.info("🚀 Triggering response generation after function execution...")
-            response_create = {
-                "type": "response.create",
-                "response": {
-                    "modalities": ["text", "audio"],
-                    "output_audio_format": "pcm16",
-                    "temperature": 0.8,
-                    "max_output_tokens": 4096,
-                    "voice": self.voice,
-                },
-            }
-            await self.realtime_websocket.send(json.dumps(response_create))
-            logger.info("✅ Response generation triggered successfully")
+            # Check if this function indicates the call should end
+            should_hang_up = self._should_trigger_hang_up(function_name, result)
+            
+            if should_hang_up:
+                logger.info(f"🔚 Function {function_name} indicates call should end")
+                # Schedule hang-up after a brief delay to allow final response
+                asyncio.create_task(self._schedule_hang_up(result))
+            else:
+                # After sending function result, trigger response generation
+                # This ensures the AI continues the conversation
+                logger.info("🚀 Triggering response generation after function execution...")
+                response_create = {
+                    "type": "response.create",
+                    "response": {
+                        "modalities": ["text", "audio"],
+                        "output_audio_format": "pcm16",
+                        "temperature": 0.8,
+                        "max_output_tokens": 4096,
+                        "voice": self.voice,
+                    },
+                }
+                await self.realtime_websocket.send(json.dumps(response_create))
+                logger.info("✅ Response generation triggered successfully")
 
         except Exception as e:
-            logger.error(f"🚨 Failed to send function result or trigger response: {e}")
-            import traceback
+            logger.error(f"❌ Error sending function result: {e}")
+            raise
 
-            logger.error(f"🚨 Send result traceback: {traceback.format_exc()}")
+    def _should_trigger_hang_up(self, function_name: str, result: Dict[str, Any]) -> bool:
+        """
+        Determine if a function result indicates the call should be ended.
+        
+        Args:
+            function_name: Name of the function that was executed
+            result: The result returned by the function
+            
+        Returns:
+            True if the call should be ended, False otherwise
+        """
+        # Check if the function explicitly indicates call should end
+        next_action = result.get("next_action", "")
+        if next_action == "end_call":
+            logger.info(f"Function {function_name} returned next_action: end_call")
+            return True
+        
+        # Check for specific functions that typically end calls
+        end_call_functions = ["wrap_up", "transfer_to_human"]
+        if function_name in end_call_functions:
+            logger.info(f"Function {function_name} is a call-ending function")
+            return True
+        
+        # Check if the result context indicates call completion
+        context = result.get("context", {})
+        stage = context.get("stage", "")
+        if stage in ["call_complete", "human_transfer"]:
+            logger.info(f"Function {function_name} reached completion stage: {stage}")
+            return True
+        
+        return False
+
+    async def _schedule_hang_up(self, result: Dict[str, Any]):
+        """
+        Schedule a hang-up after allowing time for the final AI response.
+        
+        Args:
+            result: The function result that triggered the hang-up
+        """
+        try:
+            # Give the AI time to generate and play its final response
+            hang_up_delay = 8.0  # 8 seconds should be enough for most responses
+            logger.info(f"⏰ Scheduling hang-up in {hang_up_delay} seconds...")
+            
+            await asyncio.sleep(hang_up_delay)
+            
+            # Determine hang-up reason from the function result
+            reason = self._get_hang_up_reason(result)
+            
+            if self.hang_up_callback:
+                logger.info(f"🔚 Triggering hang-up: {reason}")
+                await self.hang_up_callback(reason)
+            else:
+                logger.warning("🚨 No hang-up callback available - cannot end call")
+                
+        except Exception as e:
+            logger.error(f"❌ Error scheduling hang-up: {e}")
+
+    def _get_hang_up_reason(self, result: Dict[str, Any]) -> str:
+        """
+        Determine the appropriate hang-up reason from function result.
+        
+        Args:
+            result: The function result that triggered the hang-up
+            
+        Returns:
+            A descriptive reason for the hang-up
+        """
+        function_name = result.get("function_name", "unknown")
+        context = result.get("context", {})
+        stage = context.get("stage", "")
+        
+        if function_name == "wrap_up" or stage == "call_complete":
+            return "Call completed successfully - all tasks finished"
+        elif function_name == "transfer_to_human" or stage == "human_transfer":
+            transfer_id = result.get("transfer_id", "")
+            return f"Transferred to human agent - Reference: {transfer_id}"
+        else:
+            return f"Call ended after {function_name} completion"
 
     def clear_active_function_calls(self) -> None:
         """Clear all active function call state."""
@@ -518,7 +609,7 @@ class FunctionHandler:
         """
         return self.active_function_calls.copy()
 
-    #! seperated out into agent specific handlers, part of the agent object
+    #! seperated out into agent specific handlers, part of the agent
     # Default function implementations
     def _func_get_balance(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -558,9 +649,7 @@ class FunctionHandler:
         """
         intent = arguments.get("intent", "")
         if intent == "card_replacement":
-            logger.info(
-                f"Function call intent received: {arguments}"
-            )
+            logger.info(f"Function call intent received: {arguments}")
             # Return data that guides the AI's next response
             return {
                 "status": "success",
@@ -1151,7 +1240,9 @@ class FunctionHandler:
         reason = arguments.get("reason", "")
         address = arguments.get("address", "")
 
-        logger.info(f"Processing card replacement for {card} with reason {reason} to address {address}")
+        logger.info(
+            f"Processing card replacement for {card} with reason {reason} to address {address}"
+        )
 
         return {
             "status": "success",

@@ -32,6 +32,7 @@ from opusagent.models.openai_api import (  # Message models; Session models; Con
     ConversationItemTruncateEvent,
     ConversationItemType,
     ErrorEvent,
+    GetSessionConfigEvent,
     InputAudioBufferAppendEvent,
     InputAudioBufferClearedEvent,
     InputAudioBufferClearEvent,
@@ -73,6 +74,7 @@ from opusagent.models.openai_api import (  # Message models; Session models; Con
     ServerEvent,
     ServerEventType,
     SessionConfig,
+    SessionConfigEvent,
     SessionCreatedEvent,
     SessionUpdatedEvent,
     SessionUpdateEvent,
@@ -101,7 +103,7 @@ class TestMessageModels:
     def test_invalid_openai_message_role(self):
         """Test that an OpenAI message with invalid role raises a validation error."""
         with pytest.raises(ValidationError):
-            OpenAIMessage(role="invalid_role", content="Hello, world!")
+            OpenAIMessage(role="invalid_role", content="Hello, world!")  # type: ignore
 
 
 class TestSessionModels:
@@ -322,10 +324,15 @@ class TestClientEventImplementations:
     def test_valid_transcription_session_update_event(self):
         """Test that a valid transcription session update event can be created."""
         event = TranscriptionSessionUpdateEvent(
-            session={"language": "en", "model": "whisper-1"}
+            session={"input_audio_format": "pcm16", "output_audio_format": "pcm16"}
         )
         assert event.type == "transcription_session.update"
-        assert event.session == {"language": "en", "model": "whisper-1"}
+        assert event.session["input_audio_format"] == "pcm16"
+
+    def test_valid_get_session_config_event(self):
+        """Test that a valid get session config event can be created."""
+        event = GetSessionConfigEvent()
+        assert event.type == "session.get_config"
 
 
 class TestServerEventImplementations:
@@ -346,26 +353,33 @@ class TestServerEventImplementations:
     def test_valid_session_created_event(self):
         """Test that a valid session created event can be created."""
         event = SessionCreatedEvent(
-            session={"id": "session-123", "model": "gpt-4o", "created_at": 1672531200}
+            session={"id": "sess-123", "modalities": ["text", "audio"]}
         )
         assert event.type == "session.created"
-        assert event.session["id"] == "session-123"
+        assert event.session["id"] == "sess-123"
+
+    def test_valid_session_config_event(self):
+        """Test that a valid session config event can be created."""
+        event = SessionConfigEvent(
+            session={
+                "id": "sess-123",
+                "modalities": ["text", "audio"],
+                "model": "gpt-4o",
+            }
+        )
+        assert event.type == "session.config"
+        assert event.session["id"] == "sess-123"
         assert event.session["model"] == "gpt-4o"
 
     def test_valid_conversation_item_created_event(self):
         """Test that a valid conversation item created event can be created."""
         event = ConversationItemCreatedEvent(
-            item={
-                "id": "item-123",
-                "type": "message",
-                "role": "user",
-                "content": [{"type": "text", "text": "Hello"}],
-                "status": "completed",
-            }
+            item={"id": "item-123", "type": "message", "role": "user"},
+            previous_item_id="item-122",
         )
         assert event.type == "conversation.item.created"
         assert event.item["id"] == "item-123"
-        assert event.item["type"] == "message"
+        assert event.previous_item_id == "item-122"
 
     def test_valid_response_text_delta_event(self):
         """Test that a valid response text delta event can be created."""

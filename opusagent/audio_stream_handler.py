@@ -45,7 +45,7 @@ class AudioStreamHandler:
 
     Attributes:
         platform_websocket (WebSocket): FastAPI WebSocket connection for platform
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        realtime_websocket (Any): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
         active_stream_id (Optional[str]): Identifier for the current audio stream being played
@@ -58,14 +58,14 @@ class AudioStreamHandler:
     def __init__(
         self,
         platform_websocket: WebSocket,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        realtime_websocket: Any,
         call_recorder: Optional[CallRecorder] = None,
     ):
         """Initialize the audio stream handler.
 
         Args:
             platform_websocket (WebSocket): FastAPI WebSocket connection for platform
-            realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+            realtime_websocket (Any): WebSocket connection to OpenAI Realtime API
             call_recorder (Optional[CallRecorder]): Call recorder for logging audio
         """
         self.platform_websocket = platform_websocket

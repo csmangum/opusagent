@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 
 import websockets
 from fastapi import WebSocket
+from websockets.asyncio.client import ClientConnection
 
 from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import CallRecorder
@@ -35,7 +36,7 @@ class BaseRealtimeBridge(ABC):
 
     Attributes:
         platform_websocket: Platform-specific WebSocket connection (e.g. FastAPI WebSocket)
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
         speech_detected (bool): Whether speech is currently being detected
@@ -55,13 +56,13 @@ class BaseRealtimeBridge(ABC):
     def __init__(
         self,
         platform_websocket,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        realtime_websocket: ClientConnection,
     ):
         """Initialize the bridge with WebSocket connections.
 
         Args:
             platform_websocket: Platform-specific WebSocket connection
-            realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+            realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
@@ -78,11 +79,15 @@ class BaseRealtimeBridge(ABC):
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
-        # Initialize function handler
-        self.function_handler = FunctionHandler(realtime_websocket)
-
         # Initialize call recorder (will be set up when conversation starts)
         self.call_recorder: Optional[CallRecorder] = None
+
+        # Initialize function handler
+        self.function_handler = FunctionHandler(
+            realtime_websocket, 
+            call_recorder=self.call_recorder, 
+            hang_up_callback=self.hang_up
+        )
 
         # Initialize transcript manager
         self.transcript_manager = TranscriptManager()
@@ -255,7 +260,7 @@ class BaseRealtimeBridge(ABC):
             # Initialize audio stream
             await self.audio_handler.initialize_stream(
                 conversation_id=self.conversation_id,
-                media_format=self.media_format,
+                media_format=self.media_format or "pcm16",
             )
 
     async def handle_audio_commit(self):
@@ -317,3 +322,47 @@ class BaseRealtimeBridge(ABC):
             Exception: For any errors during processing
         """
         await self.realtime_handler.receive_from_realtime()
+
+    async def hang_up(self, reason: str = "Call completed"):
+        """
+        Hang up the call by ending the session.
+        
+        This method is called when the AI determines the call should end,
+        either through completion of tasks or transfer to human.
+        
+        Args:
+            reason: The reason for hanging up the call
+        """
+        if self._closed:
+            logger.info(f"Bridge already closed, ignoring hang-up request: {reason}")
+            return
+            
+        logger.info(f"🔚 Hanging up call: {reason}")
+        
+        try:
+            # Send session end to platform if supported
+            await self.send_session_end(reason)
+            
+            # Close the bridge connections
+            await self.close()
+            
+            logger.info("✅ Call hang-up completed successfully")
+            
+        except Exception as e:
+            logger.error(f"❌ Error during hang-up: {e}")
+            # Still try to close connections
+            await self.close()
+
+    async def send_session_end(self, reason: str):
+        """
+        Send session end message to the platform.
+        
+        This method should be implemented by subclasses to send platform-specific
+        session end messages. Base implementation does nothing.
+        
+        Args:
+            reason: The reason for ending the session
+        """
+        logger.info(f"Base bridge send_session_end called with reason: {reason}")
+        # Subclasses should override this to send platform-specific session end messages
+        pass

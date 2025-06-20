@@ -36,7 +36,7 @@ def test_base_flow_initialization():
 def test_base_flow_abstract_methods():
     """Test that BaseFlow requires implementation of abstract methods."""
     with pytest.raises(TypeError):
-        BaseFlow("test_flow")
+        BaseFlow("test_flow")  # type: ignore
 
 
 def test_base_flow_get_flow_info():

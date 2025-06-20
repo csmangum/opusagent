@@ -36,16 +36,16 @@ class SessionManager:
     management for the OpenAI Realtime API.
     
     Attributes:
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
         session_initialized (bool): Whether the session has been initialized
         conversation_id (Optional[str]): Current conversation ID
     """
     
-    def __init__(self, realtime_websocket: websockets.WebSocketClientProtocol):
+    def __init__(self, realtime_websocket):
         """Initialize the session manager.
         
         Args:
-            realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+            realtime_websocket: WebSocket connection to OpenAI Realtime API
         """
         self.realtime_websocket = realtime_websocket
         self.session_initialized = False
@@ -238,7 +238,7 @@ class SessionManager:
         await self.realtime_websocket.send(session_update.model_dump_json())
         self.session_initialized = True
 
-    async def send_initial_conversation_item(self):
+    async def send_initial_conversation_item(self) -> None:
         """Send the initial conversation item to start the AI interaction.
         
         This method creates and sends the first conversation item to the OpenAI Realtime API,

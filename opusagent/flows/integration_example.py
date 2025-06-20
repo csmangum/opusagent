@@ -30,7 +30,7 @@ class FlowIntegrationExample:
         self.flow_manager = create_default_flow_manager()
         self.function_handler = FunctionHandler(realtime_websocket)
 
-    def setup_flows(self, active_flows: List[str] = None):
+    def setup_flows(self, active_flows: List[str] = None):  # type: ignore
         """
         Set up flows for the session.
         
@@ -141,7 +141,7 @@ def modify_telephony_bridge_for_flows():
             "type": "session.update",
             "session": session_config
         }
-        
+        import json
         # Send to OpenAI
         await realtime_websocket.send(json.dumps(session_update))
 

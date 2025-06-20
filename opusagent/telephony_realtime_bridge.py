@@ -101,7 +101,7 @@ class TelephonyRealtimeBridge:
     def __init__(
         self,
         telephony_websocket: WebSocket,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        realtime_websocket: websockets.ClientConnection,
     ):
         """Initialize the bridge with WebSocket connections.
 
@@ -135,7 +135,7 @@ class TelephonyRealtimeBridge:
 
         # Initialize audio handler
         self.audio_handler = AudioStreamHandler(
-            telephony_websocket=telephony_websocket,
+            platform_websocket=telephony_websocket,
             realtime_websocket=realtime_websocket,
             call_recorder=self.call_recorder,
         )
@@ -230,7 +230,7 @@ class TelephonyRealtimeBridge:
         logger.info(f"Conversation started: {self.conversation_id}")
 
         # Get media format
-        self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
+        self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0] or "raw/lpcm16"
 
         # Initialize session with OpenAI Realtime API
         await self.session_manager.initialize_session()

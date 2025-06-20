@@ -10,21 +10,16 @@ import json
 import time
 from typing import Optional
 
-import websockets
-
 from opusagent.bridges.base_bridge import BaseRealtimeBridge
 from opusagent.config.logging_config import configure_logging
-from opusagent.models.openai_api import (
-    InputAudioBufferAppendEvent,
-    InputAudioBufferCommitEvent,
-)
+from opusagent.models.openai_api import InputAudioBufferAppendEvent
 from opusagent.models.twilio_api import (
     ConnectedMessage,
     DTMFMessage,
     MarkMessage,
     MediaMessage,
-    OutgoingMarkMessage,
     OutgoingMediaMessage,
+    OutgoingMediaPayload,
     StartMessage,
     StopMessage,
     TwilioEventType,
@@ -38,9 +33,7 @@ VOICE = "alloy"  # example voice, override as needed
 class TwilioBridge(BaseRealtimeBridge):
     """Twilio Media Streams implementation of the real-time bridge."""
 
-    def __init__(
-        self, platform_websocket, realtime_websocket: websockets.WebSocketClientProtocol
-    ):
+    def __init__(self, platform_websocket, realtime_websocket):
         super().__init__(platform_websocket, realtime_websocket)
         # Twilio-specific ids / state
         self.stream_sid: Optional[str] = None
@@ -57,24 +50,20 @@ class TwilioBridge(BaseRealtimeBridge):
         await self.platform_websocket.send_json(payload)
 
     def register_platform_event_handlers(self):
-        self.event_router.register_platform_handler(
-            TwilioEventType.CONNECTED, self.handle_connected
-        )
-        self.event_router.register_platform_handler(
-            TwilioEventType.START, self.handle_session_start
-        )
-        self.event_router.register_platform_handler(
-            TwilioEventType.MEDIA, self.handle_audio_data
-        )
-        self.event_router.register_platform_handler(
-            TwilioEventType.STOP, self.handle_session_end
-        )
-        self.event_router.register_platform_handler(
-            TwilioEventType.DTMF, self.handle_dtmf
-        )
-        self.event_router.register_platform_handler(
-            TwilioEventType.MARK, self.handle_mark
-        )
+        """Register Twilio-specific event handlers.
+        
+        This method creates a mapping of Twilio event types to their handlers,
+        similar to how TwilioRealtimeBridge handles events.
+        """
+        # Create event handler mappings for Twilio events
+        self.twilio_event_handlers = {
+            TwilioEventType.CONNECTED: self.handle_connected,
+            TwilioEventType.START: self.handle_session_start,
+            TwilioEventType.MEDIA: self.handle_audio_data,
+            TwilioEventType.STOP: self.handle_session_end,
+            TwilioEventType.DTMF: self.handle_dtmf,
+            TwilioEventType.MARK: self.handle_mark,
+        }
 
     # ------------------------------------------------------------------
     # Required abstract method implementations
@@ -189,6 +178,10 @@ class TwilioBridge(BaseRealtimeBridge):
             return pcm16_data[::2]
 
     async def send_audio_to_twilio(self, pcm16_data: bytes):
+        if not self.stream_sid:
+            logger.warning("Cannot send audio to Twilio: stream_sid not set")
+            return
+            
         mulaw = self._convert_pcm16_to_mulaw(pcm16_data)
         chunk_size = 160  # 20ms at 8kHz
         for i in range(0, len(mulaw), chunk_size):
@@ -198,9 +191,9 @@ class TwilioBridge(BaseRealtimeBridge):
             payload_b64 = base64.b64encode(chunk).decode()
             await self.send_platform_json(
                 OutgoingMediaMessage(
-                    event="media",
+                    event=TwilioEventType.MEDIA,
                     streamSid=self.stream_sid,
-                    media={"payload": payload_b64},
+                    media=OutgoingMediaPayload(payload=payload_b64),
                 ).model_dump()
             )
             await asyncio.sleep(0.02)
@@ -217,3 +210,61 @@ class TwilioBridge(BaseRealtimeBridge):
             await self.send_audio_to_twilio(pcm16)
         except Exception as e:
             logger.error(f"Error sending audio delta to Twilio: {e}")
+
+    # ------------------------------------------------------------------
+    # Override platform message handling for Twilio
+    # ------------------------------------------------------------------
+    async def receive_from_platform(self):
+        """Receive and process data from the Twilio WebSocket.
+
+        This method continuously listens for messages from the Twilio WebSocket,
+        processes them using Twilio-specific event handlers, and forwards them
+        to the OpenAI Realtime API.
+
+        Raises:
+            Exception: For any errors during processing
+        """
+        try:
+            async for message in self.platform_websocket.iter_text():
+                if self._closed:
+                    break
+
+                data = json.loads(message)
+                event_str = data.get("event")
+                
+                if event_str:
+                    # Convert string event type to enum
+                    try:
+                        event_type = TwilioEventType(event_str)
+                    except ValueError:
+                        logger.warning(f"Unknown Twilio event type: {event_str}")
+                        continue
+
+                    # Log message type (with size for media messages)
+                    if event_type == TwilioEventType.MEDIA:
+                        payload_size = len(data.get("media", {}).get("payload", ""))
+                        logger.debug(
+                            f"Received Twilio {event_str} (payload: {payload_size} bytes)"
+                        )
+                    else:
+                        logger.info(f"Received Twilio {event_str}")
+
+                    # Dispatch to appropriate handler
+                    handler = self.twilio_event_handlers.get(event_type)
+                    if handler:
+                        try:
+                            await handler(data)
+                            
+                            # Break loop on stop event
+                            if event_type == TwilioEventType.STOP:
+                                break
+                        except Exception as e:
+                            logger.error(f"Error in Twilio event handler for {event_type}: {e}")
+                    else:
+                        logger.warning(f"No handler for Twilio event: {event_type}")
+                else:
+                    logger.warning(f"Message missing event field: {data}")
+
+        except Exception as e:
+            logger.error(f"Error in receive_from_platform: {e}")
+            await self.close()

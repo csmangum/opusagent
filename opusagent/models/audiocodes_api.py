@@ -81,6 +81,13 @@ class BaseMessage(BaseModel):
         None, description="Unique conversation identifier"
     )
 
+    @field_validator("type")
+    def validate_type(cls, v):
+        """Validate that type is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Message type cannot be empty")
+        return v
+
     @field_validator("conversationId")
     def validate_conversation_id(cls, v):
         """Validate that conversation ID is a UUID if provided."""
@@ -463,11 +470,21 @@ class ActivityEvent(BaseModel):
     - start: Call initiation
     - dtmf: User pressed DTMF digits
     - hangup: Request to disconnect the call
+
+    According to AudioCodes documentation, activities may include additional fields
+    like id, timestamp, language, and parameters for start events.
     """
 
     type: Literal["event"]
     name: str = Field(..., description="Event name (start, dtmf, hangup)")
     value: Optional[str] = Field(None, description="Event value, e.g., DTMF digit")
+    # Additional fields from AudioCodes documentation
+    id: Optional[str] = Field(None, description="Unique identifier for the activity")
+    timestamp: Optional[str] = Field(None, description="ISO timestamp of the activity")
+    language: Optional[str] = Field(None, description="Language code (e.g., 'en-US')")
+    parameters: Optional[Dict[str, str]] = Field(
+        None, description="Additional parameters (for start events)"
+    )
 
     @field_validator("name")
     def validate_name(cls, v):
@@ -487,6 +504,25 @@ class ActivityEvent(BaseModel):
         if values.data.get("name") == "dtmf" and v is not None:
             if not v in "0123456789*#ABCD":
                 raise ValueError(f"Invalid DTMF value: {v}")
+        return v
+
+    @field_validator("timestamp")
+    def validate_timestamp(cls, v):
+        """Validate that timestamp is in ISO format if provided."""
+        if v is not None:
+            import re
+
+            # Basic ISO timestamp validation
+            iso_pattern = re.compile(
+                r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$"
+            )
+            if not iso_pattern.match(v):
+                import logging
+
+                from opusagent.config.constants import LOGGER_NAME
+
+                logger = logging.getLogger(LOGGER_NAME)
+                logger.warning(f"Timestamp doesn't match ISO format: {v}")
         return v
 
 
@@ -577,12 +613,15 @@ class ConnectionValidatedResponse(BaseMessage):
     success: bool = Field(..., description="Whether validation was successful")
 
 
-# Adding a model for userStream.speech.recognition that was in the docs
+# Model for userStream.speech.recognition response to AudioCodes
 class UserStreamRecognitionResponse(BaseMessage):
     """Model for userStream.speech.recognition response to AudioCodes.
 
     Sent by the bot to provide final recognition results.
     Recommended mainly for logging purposes.
+
+    Note: The AudioCodes documentation shows confidence as a string (e.g., "0.95"),
+    but this implementation expects a float for better type safety and validation.
 
     Example:
     {

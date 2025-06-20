@@ -7,7 +7,7 @@ Function implementations for the card replacement conversation flow.
 import logging
 import uuid
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from .prompts import (
     CONFIRM_ADDRESS_PROMPT,
@@ -360,14 +360,14 @@ CARD_REPLACEMENT_FUNCTIONS = OrderedDict(
 )
 
 
-def get_card_replacement_functions() -> Dict[str, Any]:
+def get_card_replacement_functions() -> Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]]:  # type: ignore
     """
     Get all function implementations for the card replacement flow.
 
     Returns:
         Dictionary mapping function names to callable implementations
     """
-    return CARD_REPLACEMENT_FUNCTIONS.copy()
+    return dict(CARD_REPLACEMENT_FUNCTIONS)  # type: ignore
 
 
 def get_function_by_name(function_name: str):

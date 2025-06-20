@@ -27,7 +27,6 @@ from pydantic import BaseModel
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.websocket_manager import create_websocket_manager
-
 from validate.mock_audiocodes_client import MockAudioCodesClient
 
 logger = configure_logging("caller_agent")
@@ -125,7 +124,7 @@ class CallerScenario:
     def _card_replacement_prompt(self) -> str:
         card_type = self.context.get("card_type", "gold card")
         reason = self.context.get("reason", "lost")
-        
+
         # Check if this is a perfect caller
         if self.context.get("perfect_caller", False):
             return f"""
@@ -224,7 +223,7 @@ class CallerAgent:
 
         # Initialize components
         self.mock_client: Optional[MockAudioCodesClient] = None
-        self.openai_websocket: Optional[websockets.WebSocketClientProtocol] = None
+        self.openai_websocket: Optional[Any] = None
         self.websocket_manager = create_websocket_manager()
 
         # State tracking
@@ -312,6 +311,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
 
         session_update = {"type": "session.update", "session": session_config}
 
+        if self.openai_websocket is None:
+            self.logger.error("OpenAI websocket not initialized")
+            return
+
         await self.openai_websocket.send(json.dumps(session_update))
         self.logger.info(
             f"Initialized OpenAI session for {self.personality.type.value} caller"
@@ -325,6 +328,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             True if call started successfully, False otherwise
         """
         try:
+            if self.mock_client is None:
+                self.logger.error("Mock client not initialized")
+                return False
+
             async with self.mock_client:
                 # Initiate session with bridge
                 success = await self.mock_client.initiate_session()
@@ -377,6 +384,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
         while self.conversation_turns < max_turns and self.conversation_active:
             try:
                 # Wait for agent response
+                if self.mock_client is None:
+                    self.logger.error("Mock client not initialized")
+                    break
+
                 agent_audio = await self.mock_client.wait_for_llm_response(timeout=45.0)
 
                 if agent_audio:
@@ -395,6 +406,12 @@ Keep responses natural and conversational. Don't be overly helpful or profession
                     if self._check_failure_conditions(agent_text):
                         self.logger.info("Failure conditions detected, ending call")
                         await self._end_call_unsuccessfully()
+                        break
+
+                    # Check if the agent is indicating the call should end
+                    if self._should_hang_up(agent_text):
+                        self.logger.info("Agent indicated call should end - ending call politely")
+                        await self._end_call_successfully()
                         break
 
                     # Generate caller response
@@ -429,50 +446,59 @@ Keep responses natural and conversational. Don't be overly helpful or profession
         """End the call successfully with a farewell message."""
         self.logger.info("Ending call successfully")
         self.conversation_active = False
-        
+
         try:
             # Generate farewell message
             farewell_audio = await self._generate_farewell_message(success=True)
-            
+
             if farewell_audio:
                 await self._send_audio_response(farewell_audio)
                 # Give the farewell time to play
                 await asyncio.sleep(2.0)
-            
+
             # End session with success reason
-            await self.mock_client.end_session("Call completed successfully - goals achieved")
-            
+            if self.mock_client is not None:
+                await self.mock_client.end_session(
+                    "Call completed successfully - goals achieved"
+                )
+
         except Exception as e:
             self.logger.error(f"Error ending call successfully: {e}")
             # Still try to end the session
-            await self.mock_client.end_session("Call completed")
+            if self.mock_client is not None:
+                await self.mock_client.end_session("Call completed")
 
     async def _end_call_unsuccessfully(self):
         """End the call unsuccessfully."""
         self.logger.info("Ending call unsuccessfully")
         self.conversation_active = False
-        
+
         try:
             # Generate farewell message (if personality allows)
-            if self.personality.type not in [PersonalityType.ANGRY, PersonalityType.DIFFICULT]:
+            if self.personality.type not in [
+                PersonalityType.ANGRY,
+                PersonalityType.DIFFICULT,
+            ]:
                 farewell_audio = await self._generate_farewell_message(success=False)
-                
+
                 if farewell_audio:
                     await self._send_audio_response(farewell_audio)
                     # Give the farewell time to play
                     await asyncio.sleep(1.5)
-            
+
             # End session with appropriate reason
             reason = "Call ended - goals not achieved"
             if self.conversation_turns >= self.scenario.goal.max_conversation_turns:
                 reason = "Call ended - maximum turns reached"
-            
-            await self.mock_client.end_session(reason)
-            
+
+            if self.mock_client is not None:
+                await self.mock_client.end_session(reason)
+
         except Exception as e:
             self.logger.error(f"Error ending call unsuccessfully: {e}")
             # Still try to end the session
-            await self.mock_client.end_session("Call ended")
+            if self.mock_client is not None:
+                await self.mock_client.end_session("Call ended")
 
     async def _generate_farewell_message(self, success: bool = True) -> Optional[bytes]:
         """Generate a farewell message based on success and personality."""
@@ -496,6 +522,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             },
         }
 
+        if self.openai_websocket is None:
+            self.logger.error("OpenAI websocket not initialized")
+            return None
+
         await self.openai_websocket.send(json.dumps(conversation_item))
 
         # Create response
@@ -516,10 +546,77 @@ Keep responses natural and conversational. Don't be overly helpful or profession
     def _check_failure_conditions(self, agent_text: str) -> bool:
         """Check if any failure conditions have been met."""
         text_lower = agent_text.lower()
-        
+
         for condition in self.scenario.goal.failure_conditions:
             if condition.lower() in text_lower:
                 self.logger.info(f"Failure condition detected: {condition}")
+                return True
+
+        return False
+
+    def _should_hang_up(self, agent_text: str) -> bool:
+        """
+        Detect if the agent is indicating the call should end.
+        
+        This method looks for various hang-up indicators in the agent's response
+        to determine if the caller should end the call.
+        
+        Args:
+            agent_text: The text from the agent's response
+            
+        Returns:
+            True if the call should be ended, False otherwise
+        """
+        text_lower = agent_text.lower()
+        
+        # Direct hang-up indicators
+        hang_up_phrases = [
+            "thank you for calling",
+            "have a great day",
+            "goodbye",
+            "is there anything else",
+            "that completes",
+            "that takes care of",
+            "we're all set",
+            "your replacement card",
+            "within 5-7 business days",
+            "within 3-5 business days",
+            "your request has been processed",
+            "transferring you now",
+            "please hold while i connect you",
+            "human agent will assist you"
+        ]
+        
+        for phrase in hang_up_phrases:
+            if phrase in text_lower:
+                self.logger.info(f"Hang-up indicator detected: '{phrase}'")
+                return True
+        
+        # Check for completion of specific scenarios
+        if self.scenario.type == ScenarioType.CARD_REPLACEMENT:
+            completion_phrases = [
+                "replacement card will be sent",
+                "new card will arrive",
+                "card has been ordered",
+                "replacement is complete"
+            ]
+            for phrase in completion_phrases:
+                if phrase in text_lower:
+                    self.logger.info(f"Card replacement completion detected: '{phrase}'")
+                    return True
+        
+        # Check if the agent is clearly wrapping up
+        wrap_up_indicators = [
+            ("thank", "call"),
+            ("appreciate", "time"),
+            ("pleasure", "help"),
+            ("anything else", "today"),
+            ("all set", "today")
+        ]
+        
+        for phrase1, phrase2 in wrap_up_indicators:
+            if phrase1 in text_lower and phrase2 in text_lower:
+                self.logger.info(f"Wrap-up detected: '{phrase1}' and '{phrase2}' in response")
                 return True
         
         return False
@@ -545,6 +642,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             },
         }
 
+        if self.openai_websocket is None:
+            self.logger.error("OpenAI websocket not initialized")
+            return None
+
         await self.openai_websocket.send(json.dumps(conversation_item))
 
         # Create response
@@ -565,7 +666,7 @@ Keep responses natural and conversational. Don't be overly helpful or profession
     async def _generate_response_to_text(self, text: str) -> Optional[bytes]:
         """Generate audio response to text input."""
         self.logger.info(f"Generating response to: {text}")
-        
+
         # Send text to OpenAI
         conversation_item = {
             "type": "conversation.item.create",
@@ -575,6 +676,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
                 "content": [{"type": "input_text", "text": text}],
             },
         }
+
+        if self.openai_websocket is None:
+            self.logger.error("OpenAI websocket not initialized")
+            return None
 
         await self.openai_websocket.send(json.dumps(conversation_item))
         self.logger.debug("Sent conversation item to OpenAI")
@@ -609,6 +714,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             timeout = 10.0  # 10 second timeout
             start_time = asyncio.get_event_loop().time()
 
+            if self.openai_websocket is None:
+                self.logger.error("OpenAI websocket not initialized")
+                return None
+
             async for message in self.openai_websocket:
                 if asyncio.get_event_loop().time() - start_time > timeout:
                     self.logger.warning("Timeout while collecting audio response")
@@ -638,7 +747,9 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             combined_audio = b""
             for chunk in audio_chunks:
                 combined_audio += base64.b64decode(chunk)
-            self.logger.info(f"Combined {len(audio_chunks)} audio chunks into {len(combined_audio)} bytes")
+            self.logger.info(
+                f"Combined {len(audio_chunks)} audio chunks into {len(combined_audio)} bytes"
+            )
             return combined_audio
         else:
             self.logger.warning("No audio chunks collected")
@@ -648,13 +759,13 @@ Keep responses natural and conversational. Don't be overly helpful or profession
     async def _send_audio_response(self, audio_data: bytes):
         """Send audio response to the bridge."""
         self.logger.info(f"Sending audio response: {len(audio_data)} bytes")
-        
+
         # Convert to WAV format and save temporarily
         temp_file_path = None
         try:
             # Resample from 24kHz (OpenAI) to 16kHz (bridge expected)
             resampled_audio = self._resample_audio_24k_to_16k(audio_data)
-            
+
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
                 temp_file_path = temp_file.name
                 with wave.open(temp_file, "wb") as wav_file:
@@ -666,6 +777,10 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             self.logger.debug(f"Created temp audio file: {temp_file_path}")
 
             # Send using mock client
+            if self.mock_client is None:
+                self.logger.error("Mock client not initialized, cannot send audio")
+                return
+
             success = await self.mock_client.send_user_audio(temp_file_path)
             if success:
                 self.logger.info("Audio response sent successfully")
@@ -687,7 +802,7 @@ Keep responses natural and conversational. Don't be overly helpful or profession
         """Resample audio from 24kHz to 16kHz using high-quality interpolation."""
         try:
             import audioop
-            
+
             # Use audioop.ratecv for proper resampling
             resampled_data, _ = audioop.ratecv(
                 audio_data,
@@ -695,34 +810,40 @@ Keep responses natural and conversational. Don't be overly helpful or profession
                 1,  # Number of channels
                 24000,  # From rate (OpenAI's rate)
                 16000,  # To rate (bridge expected rate)
-                None  # State for continuous resampling
+                None,  # State for continuous resampling
             )
-            
-            self.logger.debug(f"Resampled audio: {len(audio_data)} bytes (24kHz) -> {len(resampled_data)} bytes (16kHz)")
+
+            self.logger.debug(
+                f"Resampled audio: {len(audio_data)} bytes (24kHz) -> {len(resampled_data)} bytes (16kHz)"
+            )
             return resampled_data
-            
+
         except ImportError:
             # Fallback to simple resampling if audioop is not available
             self.logger.warning("audioop not available, using fallback resampling")
-            
+
             # Convert bytes to numpy array
             audio_array = np.frombuffer(audio_data, dtype=np.int16)
-            
+
             # Calculate resampling ratio (24kHz -> 16kHz = 2/3)
             ratio = 16000 / 24000  # 2/3
             original_length = len(audio_array)
             new_length = int(original_length * ratio)
-            
+
             # Use linear interpolation for resampling
             old_indices = np.linspace(0, original_length - 1, new_length)
-            resampled_array = np.interp(old_indices, np.arange(original_length), audio_array)
-            
+            resampled_array = np.interp(
+                old_indices, np.arange(original_length), audio_array
+            )
+
             # Convert back to bytes
             resampled_data = resampled_array.astype(np.int16).tobytes()
-            
-            self.logger.debug(f"Fallback resampled: {len(audio_data)} bytes -> {len(resampled_data)} bytes")
+
+            self.logger.debug(
+                f"Fallback resampled: {len(audio_data)} bytes -> {len(resampled_data)} bytes"
+            )
             return resampled_data
-            
+
         except Exception as e:
             self.logger.error(f"Error resampling audio: {e}")
             # Return original data if resampling fails
@@ -763,7 +884,7 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             "personality": self.personality.type.value,
             "scenario": self.scenario.type.value,
             "caller_name": self.caller_name,
-            "caller_phone": self.caller_phone
+            "caller_phone": self.caller_phone,
         }
 
     def get_call_results(self) -> Dict[str, Any]:
@@ -771,19 +892,20 @@ Keep responses natural and conversational. Don't be overly helpful or profession
         goals_achieved_count = len(self.goals_achieved)
         total_goals = len(self.scenario.goal.success_criteria)
         success_rate = goals_achieved_count / total_goals if total_goals > 0 else 0.0
-        
+
         return {
             "success": goals_achieved_count >= total_goals,
             "success_rate": success_rate,
             "goals_achieved": self.goals_achieved,
             "total_goals": total_goals,
             "conversation_turns": self.conversation_turns,
-            "max_turns_reached": self.conversation_turns >= self.scenario.goal.max_conversation_turns,
+            "max_turns_reached": self.conversation_turns
+            >= self.scenario.goal.max_conversation_turns,
             "personality": self.personality.type.value,
             "scenario": self.scenario.type.value,
             "caller_name": self.caller_name,
             "caller_phone": self.caller_phone,
-            "conversation_log": self.conversation_log.copy()
+            "conversation_log": self.conversation_log.copy(),
         }
 
     async def end_call(self, reason: str = "Manual call termination"):
@@ -791,25 +913,30 @@ Keep responses natural and conversational. Don't be overly helpful or profession
         if not self.conversation_active:
             self.logger.info("Call already ended")
             return
-        
+
         self.logger.info(f"Manually ending call: {reason}")
         self.conversation_active = False
-        
+
         try:
             # Generate a brief farewell if appropriate
-            if self.personality.type not in [PersonalityType.ANGRY, PersonalityType.DIFFICULT]:
+            if self.personality.type not in [
+                PersonalityType.ANGRY,
+                PersonalityType.DIFFICULT,
+            ]:
                 farewell_audio = await self._generate_farewell_message(success=False)
                 if farewell_audio:
                     await self._send_audio_response(farewell_audio)
                     await asyncio.sleep(1.0)
-            
+
             # End the session
-            await self.mock_client.end_session(reason)
-            
+            if self.mock_client is not None:
+                await self.mock_client.end_session(reason)
+
         except Exception as e:
             self.logger.error(f"Error ending call manually: {e}")
             # Still try to end the session
-            await self.mock_client.end_session("Call ended manually")
+            if self.mock_client is not None:
+                await self.mock_client.end_session("Call ended manually")
 
 
 # Predefined Personalities and Scenarios
@@ -886,8 +1013,15 @@ def create_confused_elderly_caller(
 
     goal = CallerGoal(
         primary_goal="Replace my lost card but I'm not sure which one it was",
-        secondary_goals=["Figure out which card I lost", "Get help with card replacement"],
-        success_criteria=["card identified", "replacement ordered", "delivery confirmed"],
+        secondary_goals=[
+            "Figure out which card I lost",
+            "Get help with card replacement",
+        ],
+        success_criteria=[
+            "card identified",
+            "replacement ordered",
+            "delivery confirmed",
+        ],
         failure_conditions=["hung up in frustration", "transferred to human"],
         max_conversation_turns=20,
     )
@@ -978,9 +1112,20 @@ def create_perfect_card_replacement_caller(
 
     goal = CallerGoal(
         primary_goal="Replace lost gold card efficiently",
-        secondary_goals=["Confirm delivery to address on file", "Get replacement card quickly"],
-        success_criteria=["card replacement confirmed", "delivery address confirmed", "replacement ordered"],
-        failure_conditions=["transferred to human", "call terminated", "asked for additional verification"],
+        secondary_goals=[
+            "Confirm delivery to address on file",
+            "Get replacement card quickly",
+        ],
+        success_criteria=[
+            "card replacement confirmed",
+            "delivery address confirmed",
+            "replacement ordered",
+        ],
+        failure_conditions=[
+            "transferred to human",
+            "call terminated",
+            "asked for additional verification",
+        ],
         max_conversation_turns=5,  # Should be very quick
     )
 

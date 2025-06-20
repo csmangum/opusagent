@@ -166,6 +166,10 @@ class AudioInterface:
         """Handle incoming WebSocket messages"""
         print("[DEBUG] _async_message_handler() started", file=sys.stderr)
         try:
+            if not self.ws:
+                print("[DEBUG] WebSocket is None, cannot handle messages", file=sys.stderr)
+                return
+                
             while self.connected:
                 message = await self.ws.recv()
                 try:
@@ -208,10 +212,13 @@ class AudioInterface:
             
     def _select_input_device(self):
         """Select the first available input device"""
+        if not self.p:
+            return None
         try:
             for i in range(self.p.get_device_count()):
                 device_info = self.p.get_device_info_by_index(i)
-                if device_info.get('maxInputChannels') > 0:
+                max_channels = device_info.get('maxInputChannels', 0)
+                if isinstance(max_channels, (int, float)) and max_channels > 0:
                     return i
             return None
         except Exception as e:
@@ -220,10 +227,13 @@ class AudioInterface:
 
     def _select_output_device(self):
         """Select the first available output device"""
+        if not self.p:
+            return None
         try:
             for i in range(self.p.get_device_count()):
                 device_info = self.p.get_device_info_by_index(i)
-                if device_info.get('maxOutputChannels') > 0:
+                max_channels = device_info.get('maxOutputChannels', 0)
+                if isinstance(max_channels, (int, float)) and max_channels > 0:
                     return i
             return None
         except Exception as e:
@@ -281,7 +291,7 @@ class AudioInterface:
                 self.audio_queue.put(processed_data)
                 
                 # Send audio data through WebSocket if connected
-                if self.connected and self.ws:
+                if self.connected and self.ws and self.loop:
                     try:
                         audio_message = {
                             "type": "audio",
@@ -355,7 +365,7 @@ class AudioInterface:
             if hasattr(self, 'output_stream'):
                 self.output_stream.stop_stream()
                 self.output_stream.close()
-            if hasattr(self, 'p'):
+            if hasattr(self, 'p') and self.p:
                 self.p.terminate()
         except Exception as e:
             print(f"[DEBUG] Cleanup error: {e}", file=sys.stderr)

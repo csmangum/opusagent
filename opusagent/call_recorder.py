@@ -436,7 +436,8 @@ class CallRecorder:
                 stereo_frames[:, 1] = mono_audio  # Right channel
             
             # Write to stereo file
-            self.stereo_wav.writeframes(stereo_frames.tobytes())
+            if self.stereo_wav:
+                self.stereo_wav.writeframes(stereo_frames.tobytes())
             
         except Exception as e:
             logger.error(f"Error writing stereo chunk: {e}")
@@ -704,7 +705,7 @@ class CallRecorder:
             logger.error(f"Error during cleanup: {e}")
     
     @classmethod
-    def test_sample_rate_detection(cls, audio_chunk_b64: str, test_rates: list = None) -> dict:
+    def test_sample_rate_detection(cls, audio_chunk_b64: str, test_rates: Optional[List[int]] = None) -> dict:
         """
         Test different sample rates to help detect the correct one.
         This is a debugging helper method.
