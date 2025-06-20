@@ -33,8 +33,8 @@ VOICE = "alloy"  # example voice, override as needed
 class TwilioBridge(BaseRealtimeBridge):
     """Twilio Media Streams implementation of the real-time bridge."""
 
-    def __init__(self, platform_websocket, realtime_websocket):
-        super().__init__(platform_websocket, realtime_websocket)
+    def __init__(self, platform_websocket, realtime_websocket, agent_id=None, intent_keywords=None):
+        super().__init__(platform_websocket, realtime_websocket, agent_id=agent_id, intent_keywords=intent_keywords)
         # Twilio-specific ids / state
         self.stream_sid: Optional[str] = None
         self.account_sid: Optional[str] = None

@@ -83,7 +83,10 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from opusagent.agents.agent_bridge_interface import AgentBridgeInterface
 
 from opusagent.config.constants import LOGGER_NAME
 
@@ -126,6 +129,10 @@ class FunctionHandler:
             {}
         )  # call_id -> {function_name, arguments_buffer, item_id, etc.}
         self.voice = voice
+        
+        # Agent integration
+        self.agent_interface: Optional['AgentBridgeInterface'] = None  # Will be set by bridge after agent initialization
+        
         # Register default functions
         self._register_default_functions()
 
@@ -437,6 +444,30 @@ class FunctionHandler:
                 else func(arguments)
             )
             logger.info(f"✅ Function {function_name} executed successfully: {result}")
+
+            # Process function result through agent if available
+            if self.agent_interface and self.agent_interface.is_agent_ready():
+                try:
+                    agent_response = await self.agent_interface.handle_function_result(function_name, result)
+                    logger.info(f"Agent processed function result: {agent_response.response_type}")
+                    
+                    # Update result with agent's processing
+                    if agent_response.message:
+                        result["agent_message"] = agent_response.message
+                    if agent_response.next_stage:
+                        result["next_stage"] = agent_response.next_stage
+                    if agent_response.metadata:
+                        result.update(agent_response.metadata)
+                        
+                    # Handle special agent responses
+                    if agent_response.response_type.value == "complete":
+                        result["next_action"] = "end_call"
+                    elif agent_response.response_type.value == "transfer":
+                        result["next_action"] = "transfer_to_human"
+                        result["transfer_reason"] = agent_response.transfer_reason
+                        
+                except Exception as e:
+                    logger.error(f"Error processing function result through agent: {e}")
 
             # Log function call to call recorder if available
             if self.call_recorder:

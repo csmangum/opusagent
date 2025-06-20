@@ -7,7 +7,7 @@ including session initialization, configuration, and conversation management.
 import asyncio
 import json
 import logging
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 import websockets
 from opusagent.models.openai_api import (
@@ -50,6 +50,10 @@ class SessionManager:
         self.realtime_websocket = realtime_websocket
         self.session_initialized = False
         self.conversation_id: Optional[str] = None
+        
+        # Configuration that can be overridden by agents
+        self.custom_instructions: Optional[str] = None
+        self.custom_tools: Optional[List[Dict[str, Any]]] = None
 
     async def initialize_session(self):
         """Initialize the OpenAI Realtime API session with configuration.
@@ -58,174 +62,178 @@ class SessionManager:
         including audio format settings, voice selection, system instructions, and other
         session parameters.
         """
+        # Use custom configuration if available, otherwise use defaults
+        instructions = self.custom_instructions or SESSION_PROMPT
+        tools = self.custom_tools or [
+            {
+                "type": "function",
+                "name": "get_balance",
+                "description": "Get the user's account balance.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            {
+                "type": "function",
+                "name": "transfer_funds",
+                "description": "Transfer funds to another account.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "amount": {"type": "number"},
+                        "to_account": {"type": "string"},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "transfer_to_human",
+                "description": "Transfer the conversation to a human agent.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "reason": {
+                            "type": "string",
+                            "description": "The reason for transferring to a human agent",
+                        },
+                        "priority": {
+                            "type": "string",
+                            "enum": ["low", "normal", "high"],
+                            "description": "The priority level of the transfer",
+                        },
+                        "context": {
+                            "type": "object",
+                            "description": "Additional context to pass to the human agent",
+                        },
+                    },
+                    "required": ["reason"],
+                },
+            },
+            {
+                "type": "function",
+                "name": "call_intent",
+                "description": "Get the user's intent.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "intent": {
+                            "type": "string",
+                            "enum": ["card_replacement", "account_inquiry", "other"],
+                        },
+                    },
+                    "required": ["intent"],
+                },
+            },
+            {
+                "type": "function",
+                "name": "member_account_confirmation",
+                "description": "Confirm which member account/card needs replacement.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "member_accounts": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of available member accounts/cards",
+                        },
+                        "organization_name": {"type": "string"},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "replacement_reason",
+                "description": "Collect the reason for card replacement.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "reason": {
+                            "type": "string",
+                            "enum": ["Lost", "Damaged", "Stolen", "Other"],
+                        },
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "confirm_address",
+                "description": "Confirm the address for card delivery.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "address_on_file": {"type": "string"},
+                        "confirmed_address": {"type": "string"},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "start_card_replacement",
+                "description": "Start the card replacement process.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "address_in_context": {"type": "string"},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "finish_card_replacement",
+                "description": "Finish the card replacement process and provide delivery information.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card_in_context": {"type": "string"},
+                        "address_in_context": {"type": "string"},
+                        "delivery_time": {"type": "string"},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "wrap_up",
+                "description": "Wrap up the call with closing remarks.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"organization_name": {"type": "string"}},
+                },
+            },
+            {
+                "type": "function",
+                "name": "process_replacement",
+                "description": "Process the card replacement",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "card": {
+                            "type": "string",
+                            "description": "The card to replace",
+                        },
+                        "reason": {
+                            "type": "string",
+                            "description": "The reason for the card replacement",
+                        },
+                        "address": {
+                            "type": "string",
+                            "description": "The address to send the replacement card",
+                        },
+                    },
+                    "required": ["card", "reason", "address"],
+                },
+            },
+        ]
+
         session_config = SessionConfig(
             input_audio_format="pcm16",
             output_audio_format="pcm16",
             voice=VOICE,
-            instructions=SESSION_PROMPT,
+            instructions=instructions,
             modalities=["text", "audio"],
             temperature=0.8,
             model=SELECTED_MODEL,
-            tools=[
-                {
-                    "type": "function",
-                    "name": "get_balance",
-                    "description": "Get the user's account balance.",
-                    "parameters": {"type": "object", "properties": {}},
-                },
-                {
-                    "type": "function",
-                    "name": "transfer_funds",
-                    "description": "Transfer funds to another account.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "amount": {"type": "number"},
-                            "to_account": {"type": "string"},
-                        },
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "transfer_to_human",
-                    "description": "Transfer the conversation to a human agent.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "reason": {
-                                "type": "string",
-                                "description": "The reason for transferring to a human agent",
-                            },
-                            "priority": {
-                                "type": "string",
-                                "enum": ["low", "normal", "high"],
-                                "description": "The priority level of the transfer",
-                            },
-                            "context": {
-                                "type": "object",
-                                "description": "Additional context to pass to the human agent",
-                            },
-                        },
-                        "required": ["reason"],
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "call_intent",
-                    "description": "Get the user's intent.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "intent": {
-                                "type": "string",
-                                "enum": ["card_replacement", "account_inquiry", "other"],
-                            },
-                        },
-                        "required": ["intent"],
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "member_account_confirmation",
-                    "description": "Confirm which member account/card needs replacement.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "member_accounts": {
-                                "type": "array",
-                                "items": {"type": "string"},
-                                "description": "List of available member accounts/cards",
-                            },
-                            "organization_name": {"type": "string"},
-                        },
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "replacement_reason",
-                    "description": "Collect the reason for card replacement.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "card_in_context": {"type": "string"},
-                            "reason": {
-                                "type": "string",
-                                "enum": ["Lost", "Damaged", "Stolen", "Other"],
-                            },
-                        },
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "confirm_address",
-                    "description": "Confirm the address for card delivery.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "card_in_context": {"type": "string"},
-                            "address_on_file": {"type": "string"},
-                            "confirmed_address": {"type": "string"},
-                        },
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "start_card_replacement",
-                    "description": "Start the card replacement process.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "card_in_context": {"type": "string"},
-                            "address_in_context": {"type": "string"},
-                        },
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "finish_card_replacement",
-                    "description": "Finish the card replacement process and provide delivery information.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "card_in_context": {"type": "string"},
-                            "address_in_context": {"type": "string"},
-                            "delivery_time": {"type": "string"},
-                        },
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "wrap_up",
-                    "description": "Wrap up the call with closing remarks.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {"organization_name": {"type": "string"}},
-                    },
-                },
-                {
-                    "type": "function",
-                    "name": "process_replacement",
-                    "description": "Process the card replacement",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "card": {
-                                "type": "string",
-                                "description": "The card to replace",
-                            },
-                            "reason": {
-                                "type": "string",
-                                "description": "The reason for the card replacement",
-                            },
-                            "address": {
-                                "type": "string",
-                                "description": "The address to send the replacement card",
-                            },
-                        },
-                        "required": ["card", "reason", "address"],
-                    },
-                },
-            ],
+            tools=tools,
             input_audio_noise_reduction={"type": "near_field"},
             input_audio_transcription={"model": "whisper-1"},
             max_response_output_tokens=4096,
@@ -310,4 +318,21 @@ class SessionManager:
             logger.info("Response creation triggered")
         except Exception as e:
             logger.error(f"Error creating response: {e}")
-            raise 
+            raise
+
+    def set_agent_configuration(self, instructions: str, tools: List[Dict[str, Any]]):
+        """Set custom instructions and tools from an agent.
+        
+        Args:
+            instructions: Custom system instructions from the agent
+            tools: Custom tool definitions from the agent
+        """
+        self.custom_instructions = instructions
+        self.custom_tools = tools
+        logger.info(f"Updated session configuration with {len(tools)} agent tools")
+
+    def clear_agent_configuration(self):
+        """Clear custom agent configuration, reverting to defaults."""
+        self.custom_instructions = None
+        self.custom_tools = None
+        logger.info("Cleared custom agent configuration") 

@@ -71,7 +71,7 @@ app.add_middleware(
 
 
 @app.websocket("/ws/telephony")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, agent_id: Optional[str] = None, intent: Optional[str] = None):
     """WebSocket endpoint for handling telephony connections.
 
     This endpoint establishes a WebSocket connection with the telephony client
@@ -79,17 +79,29 @@ async def websocket_endpoint(websocket: WebSocket):
 
     Args:
         websocket (WebSocket): The WebSocket connection from the telephony client
+        agent_id (str, optional): Specific agent ID to use for this conversation
+        intent (str, optional): Intent keywords to help select an appropriate agent
     """
     await websocket.accept()
-    logger.info("Telephony WebSocket connection accepted")
+    logger.info(f"Telephony WebSocket connection accepted with agent_id={agent_id}, intent={intent}")
 
     try:
         # Get a managed connection to OpenAI Realtime API
         async with websocket_manager.connection_context() as connection:
             logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
-            # Create AudioCodes bridge instance
-            bridge = AudioCodesBridge(websocket, connection.websocket)
+            # Parse intent keywords if provided
+            intent_keywords = None
+            if intent:
+                intent_keywords = [kw.strip() for kw in intent.split(",") if kw.strip()]
+
+            # Create AudioCodes bridge instance with agent configuration
+            bridge = AudioCodesBridge(
+                websocket, 
+                connection.websocket,
+                agent_id=agent_id,
+                intent_keywords=intent_keywords
+            )
 
             # Start receiving from both WebSockets
             await asyncio.gather(
@@ -108,7 +120,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.websocket("/caller-agent")
-async def handle_caller_call(caller_websocket: WebSocket):
+async def handle_caller_call(caller_websocket: WebSocket, agent_id: Optional[str] = None, intent: Optional[str] = None):
     """Handle WebSocket connections from a *caller* agent (MockAudioCodesClient).
 
     The caller-agent shares the same AudioCodes VAIC message schema as the
@@ -120,7 +132,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
 
     await caller_websocket.accept()
     client_address = caller_websocket.client
-    logger.info(f"------ Caller connection accepted from {client_address} ------")
+    logger.info(f"------ Caller connection accepted from {client_address} with agent_id={agent_id}, intent={intent} ------")
 
     try:
         logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
@@ -131,8 +143,18 @@ async def handle_caller_call(caller_websocket: WebSocket):
                 f"OpenAI WebSocket connection established for Caller: {connection.connection_id}"
             )
 
-            # Instantiate our caller side bridge
-            bridge = CallAgentBridge(caller_websocket, connection.websocket)
+            # Parse intent keywords if provided
+            intent_keywords = None
+            if intent:
+                intent_keywords = [kw.strip() for kw in intent.split(",") if kw.strip()]
+
+            # Instantiate our caller side bridge with agent configuration
+            bridge = CallAgentBridge(
+                caller_websocket, 
+                connection.websocket,
+                agent_id=agent_id,
+                intent_keywords=intent_keywords
+            )
             logger.info("Caller-Realtime bridge created")
 
             # Start bidirectional tasks
@@ -159,10 +181,10 @@ async def handle_caller_call(caller_websocket: WebSocket):
 
 
 @app.websocket("/twilio-agent")
-async def handle_twilio_call(twilio_websocket: WebSocket):
+async def handle_twilio_call(twilio_websocket: WebSocket, agent_id: Optional[str] = None, intent: Optional[str] = None):
     """Handle WebSocket connections between Twilio Media Streams and OpenAI."""
     client_address = twilio_websocket.client
-    logger.info(f"------ Incoming Twilio connection from {client_address} ------")
+    logger.info(f"------ Incoming Twilio connection from {client_address} with agent_id={agent_id}, intent={intent} ------")
     await twilio_websocket.accept()
     logger.info(f"------ Twilio connection accepted from {client_address} ------")
 
@@ -174,7 +196,18 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
             logger.info(
                 f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
             )
-            bridge = TwilioBridge(twilio_websocket, connection.websocket)
+            
+            # Parse intent keywords if provided
+            intent_keywords = None
+            if intent:
+                intent_keywords = [kw.strip() for kw in intent.split(",") if kw.strip()]
+                
+            bridge = TwilioBridge(
+                twilio_websocket, 
+                connection.websocket,
+                agent_id=agent_id,
+                intent_keywords=intent_keywords
+            )
             logger.info("Twilio-Realtime bridge created")
 
             # Start receiving from both WebSockets

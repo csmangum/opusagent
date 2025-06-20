@@ -9,7 +9,7 @@ import json
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 import websockets
 from fastapi import WebSocket
@@ -23,6 +23,7 @@ from opusagent.function_handler import FunctionHandler
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
+from opusagent.agents import AgentBridgeInterface, default_factory
 
 # Configure logging
 logger = configure_logging("base_bridge")
@@ -57,12 +58,16 @@ class BaseRealtimeBridge(ABC):
         self,
         platform_websocket,
         realtime_websocket: ClientConnection,
+        agent_id: Optional[str] = None,
+        intent_keywords: Optional[List[str]] = None,
     ):
         """Initialize the bridge with WebSocket connections.
 
         Args:
             platform_websocket: Platform-specific WebSocket connection
             realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
+            agent_id: Specific agent ID to use (optional)
+            intent_keywords: Keywords for agent selection (optional)
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
@@ -81,6 +86,11 @@ class BaseRealtimeBridge(ABC):
 
         # Initialize call recorder (will be set up when conversation starts)
         self.call_recorder: Optional[CallRecorder] = None
+
+        # Agent system
+        self.agent_interface: Optional[AgentBridgeInterface] = None
+        self.agent_id = agent_id
+        self.intent_keywords = intent_keywords
 
         # Initialize function handler
         self.function_handler = FunctionHandler(
@@ -236,10 +246,6 @@ class BaseRealtimeBridge(ABC):
         self.conversation_id = conversation_id or str(uuid.uuid4())
         logger.info(f"Conversation started: {self.conversation_id}")
 
-        # Initialize session with OpenAI Realtime API
-        await self.session_manager.initialize_session()
-        await self.session_manager.send_initial_conversation_item()
-
         # Initialize call recorder
         if self.conversation_id:
             self.call_recorder = CallRecorder(
@@ -262,6 +268,64 @@ class BaseRealtimeBridge(ABC):
                 conversation_id=self.conversation_id,
                 media_format=self.media_format or "pcm16",
             )
+
+        # Initialize agent system
+        await self._initialize_agent_system()
+
+        # Initialize session with OpenAI Realtime API (after agent is ready)
+        await self.session_manager.initialize_session()
+        await self.session_manager.send_initial_conversation_item()
+
+    async def _initialize_agent_system(self):
+        """Initialize the agent system for this conversation."""
+        try:
+            # Ensure we have a conversation ID
+            if not self.conversation_id:
+                logger.error("Cannot initialize agent system without conversation ID")
+                return
+
+            # Create agent bridge interface
+            self.agent_interface = AgentBridgeInterface(
+                conversation_id=self.conversation_id,
+                session_id=self.conversation_id,
+                agent_factory=default_factory,
+                call_recorder=self.call_recorder
+            )
+
+            # Initialize agent based on provided criteria
+            if self.agent_id:
+                success = await self.agent_interface.initialize_agent(agent_id=self.agent_id)
+                logger.info(f"Initialized agent by ID: {self.agent_id}, success: {success}")
+            elif self.intent_keywords:
+                success = await self.agent_interface.initialize_agent(intent_keywords=self.intent_keywords)
+                logger.info(f"Initialized agent by intent: {self.intent_keywords}, success: {success}")
+            else:
+                # Use default agent
+                success = await self.agent_interface.initialize_agent()
+                logger.info(f"Initialized default agent, success: {success}")
+
+            if not success:
+                logger.error("Failed to initialize agent - continuing without agent system")
+                self.agent_interface = None
+            else:
+                # Update session manager with agent configuration
+                if self.agent_interface.is_agent_ready():
+                    system_instruction = self.agent_interface.get_system_instruction()
+                    functions = self.agent_interface.get_available_functions()
+                    
+                    # Configure session manager with agent settings
+                    self.session_manager.set_agent_configuration(system_instruction, functions)
+                    
+                    # Link agent interface to function handler
+                    self.function_handler.agent_interface = self.agent_interface
+                    
+                    logger.info(f"Agent system initialized successfully with {len(functions)} functions")
+                else:
+                    logger.info("Agent system initialized but agent not ready yet")
+
+        except Exception as e:
+            logger.error(f"Error initializing agent system: {e}")
+            self.agent_interface = None
 
     async def handle_audio_commit(self):
         """Handle committing audio buffer and triggering response."""
