@@ -138,3 +138,25 @@ class AudioCodesBridge(BaseRealtimeBridge):
                 conversationId=self.conversation_id,
             ).model_dump()
         )
+
+    async def send_session_end(self, reason: str):
+        """Send AudioCodes-specific session end message.
+        
+        Args:
+            reason: The reason for ending the session
+        """
+        logger.info(f"Sending session end to AudioCodes: {reason}")
+        
+        session_end_message = {
+            "type": "session.end",
+            "conversationId": self.conversation_id,
+            "reasonCode": "normal",
+            "reason": reason
+        }
+        
+        try:
+            await self.send_platform_json(session_end_message)
+            logger.info("✅ Session end message sent to AudioCodes")
+        except Exception as e:
+            logger.error(f"❌ Error sending session end to AudioCodes: {e}")
+            # Don't raise - we still want to close the connection

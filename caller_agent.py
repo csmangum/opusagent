@@ -397,6 +397,12 @@ Keep responses natural and conversational. Don't be overly helpful or profession
                         await self._end_call_unsuccessfully()
                         break
 
+                    # Check if the agent is indicating the call should end
+                    if self._should_hang_up(agent_text):
+                        self.logger.info("Agent indicated call should end - ending call politely")
+                        await self._end_call_successfully()
+                        break
+
                     # Generate caller response
                     caller_response = await self._generate_response_to_text(agent_text)
 
@@ -520,6 +526,73 @@ Keep responses natural and conversational. Don't be overly helpful or profession
         for condition in self.scenario.goal.failure_conditions:
             if condition.lower() in text_lower:
                 self.logger.info(f"Failure condition detected: {condition}")
+                return True
+        
+        return False
+
+    def _should_hang_up(self, agent_text: str) -> bool:
+        """
+        Detect if the agent is indicating the call should end.
+        
+        This method looks for various hang-up indicators in the agent's response
+        to determine if the caller should end the call.
+        
+        Args:
+            agent_text: The text from the agent's response
+            
+        Returns:
+            True if the call should be ended, False otherwise
+        """
+        text_lower = agent_text.lower()
+        
+        # Direct hang-up indicators
+        hang_up_phrases = [
+            "thank you for calling",
+            "have a great day",
+            "goodbye",
+            "is there anything else",
+            "that completes",
+            "that takes care of",
+            "we're all set",
+            "your replacement card",
+            "within 5-7 business days",
+            "within 3-5 business days",
+            "your request has been processed",
+            "transferring you now",
+            "please hold while i connect you",
+            "human agent will assist you"
+        ]
+        
+        for phrase in hang_up_phrases:
+            if phrase in text_lower:
+                self.logger.info(f"Hang-up indicator detected: '{phrase}'")
+                return True
+        
+        # Check for completion of specific scenarios
+        if self.scenario.type == ScenarioType.CARD_REPLACEMENT:
+            completion_phrases = [
+                "replacement card will be sent",
+                "new card will arrive",
+                "card has been ordered",
+                "replacement is complete"
+            ]
+            for phrase in completion_phrases:
+                if phrase in text_lower:
+                    self.logger.info(f"Card replacement completion detected: '{phrase}'")
+                    return True
+        
+        # Check if the agent is clearly wrapping up
+        wrap_up_indicators = [
+            ("thank", "call"),
+            ("appreciate", "time"),
+            ("pleasure", "help"),
+            ("anything else", "today"),
+            ("all set", "today")
+        ]
+        
+        for phrase1, phrase2 in wrap_up_indicators:
+            if phrase1 in text_lower and phrase2 in text_lower:
+                self.logger.info(f"Wrap-up detected: '{phrase1}' and '{phrase2}' in response")
                 return True
         
         return False
