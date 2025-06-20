@@ -19,6 +19,8 @@ class TestLoggingConfig(unittest.TestCase):
         handler = logger.handlers[0]  # Check first handler (should be console handler)
         self.assertIsInstance(handler, logging.StreamHandler)
         formatter = handler.formatter
+        self.assertIsNotNone(formatter, "Handler should have a formatter")
+        assert formatter is not None  # Type assertion for linter
         self.assertEqual(formatter._fmt, "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 if __name__ == "__main__":

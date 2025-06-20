@@ -7,7 +7,6 @@ OpenAI Realtime API session management and conversation initialization.
 import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-import websockets
 
 from opusagent.session_manager import SessionManager
 from opusagent.models.openai_api import SessionConfig, SessionUpdateEvent
@@ -20,7 +19,7 @@ TEST_MODEL = "gpt-4o-realtime-preview-2025-06-03"
 @pytest.fixture
 def mock_websocket():
     """Create a mock WebSocket connection for testing."""
-    mock = AsyncMock(spec=websockets.WebSocketClientProtocol)
+    mock = AsyncMock()
     return mock
 
 @pytest.fixture
@@ -140,7 +139,7 @@ async def test_create_response_error_handling(session_manager, mock_websocket):
 async def test_session_manager_initialization():
     """Test SessionManager initialization with different WebSocket instances."""
     # Create a mock WebSocket
-    mock_websocket = AsyncMock(spec=websockets.WebSocketClientProtocol)
+    mock_websocket = AsyncMock()
     
     # Create SessionManager instance
     manager = SessionManager(mock_websocket)

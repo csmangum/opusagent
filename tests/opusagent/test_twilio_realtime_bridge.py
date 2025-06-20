@@ -608,8 +608,8 @@ class TestTwilioRealtimeBridge:
         mock_log = AsyncMock()
 
         # Update the handler mappings to use our mocks
-        self.bridge.realtime_event_handlers["session.created"] = mock_session
-        self.bridge.realtime_event_handlers["response.audio.delta"] = mock_audio
+        self.bridge.realtime_event_handlers[ServerEventType.SESSION_CREATED] = mock_session
+        self.bridge.realtime_event_handlers[ServerEventType.RESPONSE_AUDIO_DELTA] = mock_audio
 
         # Mock the individual handler methods that will be called
         with patch.object(self.bridge, "handle_log_event", mock_log):

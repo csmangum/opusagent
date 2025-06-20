@@ -48,9 +48,11 @@ from opusagent.models.twilio_api import (
     ConnectedMessage,
     DTMFMessage,
     MarkMessage,
+    MarkPayload,
     MediaMessage,
     OutgoingMarkMessage,
     OutgoingMediaMessage,
+    OutgoingMediaPayload,
     StartMessage,
     StopMessage,
     TwilioEventType,
@@ -117,8 +119,8 @@ class TwilioRealtimeBridge:
 
     def __init__(
         self,
-        twilio_websocket: WebSocket,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        twilio_websocket: Optional[WebSocket],
+        realtime_websocket: Any,
     ):
         """Initialize the bridge with WebSocket connections.
 
@@ -139,7 +141,7 @@ class TwilioRealtimeBridge:
         # Audio processing stats
         self.audio_chunks_sent = 0
         self.total_audio_bytes_sent = 0
-        
+
         # Small audio buffer for optimal chunk sizes (2-3 Twilio chunks = ~40-60ms)
         self.audio_buffer = []
 
@@ -149,8 +151,6 @@ class TwilioRealtimeBridge:
 
         # Mark counter for audio synchronization
         self.mark_counter = 0
-
-
 
         # Response state tracking to prevent race conditions
         self.response_active = False  # Track if response is being generated
@@ -212,7 +212,7 @@ class TwilioRealtimeBridge:
         """
         if not self._closed:
             self._closed = True
-            
+
             try:
                 if (
                     self.realtime_websocket
@@ -302,15 +302,15 @@ class TwilioRealtimeBridge:
                 try:
                     # Decode base64 to get mulaw audio bytes
                     mulaw_bytes = base64.b64decode(audio_payload)
-                    
+
                     # Add to small buffer for optimal chunk sizes
                     self.audio_buffer.append(mulaw_bytes)
-                    
+
                     # Send when we have 2 chunks (40ms) for better performance
                     if len(self.audio_buffer) >= 2:
                         # Combine buffered audio
                         combined_mulaw = b"".join(self.audio_buffer)
-                        
+
                         # Convert mulaw to pcm16
                         pcm16_audio = self._convert_mulaw_to_pcm16(combined_mulaw)
                         pcm16_b64 = base64.b64encode(pcm16_audio).decode("utf-8")
@@ -319,13 +319,17 @@ class TwilioRealtimeBridge:
                         audio_append = InputAudioBufferAppendEvent(
                             type="input_audio_buffer.append", audio=pcm16_b64
                         )
-                        await self.realtime_websocket.send(audio_append.model_dump_json())
+                        await self.realtime_websocket.send(
+                            audio_append.model_dump_json()
+                        )
 
                         self.audio_chunks_sent += 1
                         self.total_audio_bytes_sent += len(pcm16_audio)
 
-                        logger.debug(f"Sent audio chunk to OpenAI ({len(combined_mulaw)} mulaw bytes -> {len(pcm16_audio)} pcm16 bytes)")
-                        
+                        logger.debug(
+                            f"Sent audio chunk to OpenAI ({len(combined_mulaw)} mulaw bytes -> {len(pcm16_audio)} pcm16 bytes)"
+                        )
+
                         # Clear buffer
                         self.audio_buffer.clear()
 
@@ -359,8 +363,6 @@ class TwilioRealtimeBridge:
             # Simple placeholder - just repeat each byte twice to simulate 16-bit
             # This is NOT proper audio conversion and will sound terrible
             return b"".join([bytes([b, b]) for b in mulaw_data])
-
-
 
     async def handle_stop(self, data):
         """Handle 'stop' message from Twilio.
@@ -420,9 +422,11 @@ class TwilioRealtimeBridge:
                         type="input_audio_buffer.append", audio=pcm16_b64
                     )
                     await self.realtime_websocket.send(audio_append.model_dump_json())
-                    logger.debug(f"Sent remaining audio chunk to OpenAI ({len(combined_mulaw)} bytes)")
+                    logger.debug(
+                        f"Sent remaining audio chunk to OpenAI ({len(combined_mulaw)} bytes)"
+                    )
                     self.audio_buffer.clear()
-                
+
                 # Commit the buffer
                 buffer_commit = InputAudioBufferCommitEvent(
                     type="input_audio_buffer.commit"
@@ -447,19 +451,23 @@ class TwilioRealtimeBridge:
             # Queue the user input for processing after current response completes
             self.pending_user_input = {
                 "audio_committed": True,
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
-            logger.info(f"User input queued - response already active (response_id: {self.response_id_tracker})")
-            
+            logger.info(
+                f"User input queued - response already active (response_id: {self.response_id_tracker})"
+            )
+
             # Double-check if response became inactive while we were setting pending input
             if not self.response_active:
-                logger.info("Response became inactive while queuing - processing immediately")
+                logger.info(
+                    "Response became inactive while queuing - processing immediately"
+                )
                 await self._create_response()
                 self.pending_user_input = None
 
     async def _create_response(self):
         """Create a new response request to OpenAI Realtime API.
-        
+
         This helper method contains the response creation logic extracted from
         _trigger_response to enable reuse and better error handling.
         """
@@ -502,17 +510,17 @@ class TwilioRealtimeBridge:
         if response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
             logger.info("Speech started detected")
             self.speech_detected = True
-                
+
         elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
             logger.info("Speech stopped detected - committing audio buffer")
             self.speech_detected = False
-            
+
             # Immediately commit when speech stops for faster response
             try:
                 await self._commit_audio_buffer()
             except Exception as e:
                 logger.error(f"Error committing audio after speech stopped: {e}")
-                
+
         elif response_type == ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED:
             logger.info("Audio buffer committed confirmed by OpenAI")
 
@@ -536,32 +544,34 @@ class TwilioRealtimeBridge:
 
             # Convert PCM16 to mulaw for Twilio
             pcm16_data = base64.b64decode(audio_delta.delta)
-            
+
             # Resample from 24kHz to 8kHz before converting to mulaw
             pcm16_8k = self._resample_pcm16(pcm16_data, 24000, 8000)
             mulaw_data = self._convert_pcm16_to_mulaw(pcm16_8k)
-            
+
             # Split into 20ms chunks (160 bytes for 8kHz mulaw = 20ms)
             chunk_size = 160  # 20ms at 8000Hz
-            
+
             for i in range(0, len(mulaw_data), chunk_size):
-                chunk = mulaw_data[i:i + chunk_size]
-                
+                chunk = mulaw_data[i : i + chunk_size]
+
                 # Pad last chunk if needed
                 if len(chunk) < chunk_size:
-                    chunk += b'\x00' * (chunk_size - len(chunk))
-                
+                    chunk += b"\x00" * (chunk_size - len(chunk))
+
                 # Encode chunk as base64
                 chunk_b64 = base64.b64encode(chunk).decode("utf-8")
-                
+
                 # Send chunk to Twilio
                 media_message = OutgoingMediaMessage(
-                    event="media", streamSid=self.stream_sid, media={"payload": chunk_b64}
+                    event=TwilioEventType.MEDIA,
+                    streamSid=self.stream_sid,
+                    media=OutgoingMediaPayload(payload=chunk_b64),
                 )
 
                 await self.twilio_websocket.send_json(media_message.model_dump())
                 logger.debug(f"Sent audio chunk to Twilio ({len(chunk)} bytes mulaw)")
-                
+
                 # Small delay to maintain proper timing (20ms between chunks)
                 await asyncio.sleep(0.02)
 
@@ -606,6 +616,7 @@ class TwilioRealtimeBridge:
 
         try:
             import audioop
+
             # Use audioop.ratecv for the actual resampling
             resampled_data, _ = audioop.ratecv(
                 pcm16_data,
@@ -613,7 +624,7 @@ class TwilioRealtimeBridge:
                 1,  # Number of channels
                 from_rate,
                 to_rate,
-                None  # State for continuous resampling
+                None,  # State for continuous resampling
             )
             return resampled_data
 
@@ -622,20 +633,23 @@ class TwilioRealtimeBridge:
             # Fallback to simpler resampling if advanced methods fail
             try:
                 import audioop
+
                 # Basic resampling without filtering
-                resampled_data, _ = audioop.ratecv(pcm16_data, 2, 1, from_rate, to_rate, None)
+                resampled_data, _ = audioop.ratecv(
+                    pcm16_data, 2, 1, from_rate, to_rate, None
+                )
                 return resampled_data
             except Exception as e2:
                 logger.error(f"Fallback resampling also failed: {e2}")
                 # Last resort: simple sample dropping/duplication
                 ratio = from_rate / to_rate
                 if ratio > 1:  # Downsampling
-                    return pcm16_data[::int(ratio * 2)]
+                    return pcm16_data[:: int(ratio * 2)]
                 else:  # Upsampling
-                    repeat_factor = int(1/ratio)
+                    repeat_factor = int(1 / ratio)
                     result = bytearray()
                     for i in range(0, len(pcm16_data), 2):
-                        sample = pcm16_data[i:i+2]
+                        sample = pcm16_data[i : i + 2]
                         result.extend(sample * repeat_factor)
                     return bytes(result)
 
@@ -649,11 +663,14 @@ class TwilioRealtimeBridge:
             mark_name = f"audio_complete_{self.mark_counter}"
 
             mark_message = OutgoingMarkMessage(
-                event="mark", streamSid=self.stream_sid, mark={"name": mark_name}
+                event=TwilioEventType.MARK,
+                streamSid=self.stream_sid,
+                mark=MarkPayload(name=mark_name),
             )
 
-            await self.twilio_websocket.send_json(mark_message.model_dump())
-            logger.info(f"Sent mark to Twilio: {mark_name}")
+            if self.twilio_websocket:
+                await self.twilio_websocket.send_json(mark_message.model_dump())
+                logger.info(f"Sent mark to Twilio: {mark_name}")
 
     async def handle_response_created(self, response_dict):
         """Handle response created events from the OpenAI Realtime API.
@@ -667,7 +684,7 @@ class TwilioRealtimeBridge:
         response_data = response_dict.get("response", {})
         self.response_id_tracker = response_data.get("id")
         logger.info(f"Response generation started: {self.response_id_tracker}")
-        
+
         # Log pending input status for debugging
         if self.pending_user_input:
             logger.info(f"Note: Pending user input exists while starting new response")
@@ -684,7 +701,9 @@ class TwilioRealtimeBridge:
         response_done = ResponseDoneEvent(**response_dict)
         self.response_active = False
         self.response_id_tracker = None  # Reset response ID tracker
-        response_id = response_done.response.get("id") if response_done.response else None
+        response_id = (
+            response_done.response.get("id") if response_done.response else None
+        )
         logger.info(f"Response generation completed: {response_id}")
 
         # Process any pending user input that was queued during response generation
@@ -784,6 +803,10 @@ class TwilioRealtimeBridge:
 
     async def receive_from_twilio(self):
         """Receive and process messages from Twilio Media Streams WebSocket."""
+        if not self.twilio_websocket:
+            logger.warning("Twilio websocket is None, cannot receive messages")
+            return
+            
         try:
             async for message in self.twilio_websocket.iter_text():
                 if self._closed:
@@ -834,9 +857,12 @@ class TwilioRealtimeBridge:
 
                 response_dict = json.loads(openai_message)
                 response_type = response_dict["type"]
-                
+
                 # Log all OpenAI events for debugging
-                if response_type in ["response.audio.delta", "response.audio_transcript.delta"]:
+                if response_type in [
+                    "response.audio.delta",
+                    "response.audio_transcript.delta",
+                ]:
                     logger.debug(f"Received OpenAI message type: {response_type}")
                 else:
                     logger.info(f"Received OpenAI message type: {response_type}")
@@ -877,7 +903,7 @@ class TwilioRealtimeBridge:
             logger.error(f"OpenAI Error: {error_code} - {error_message}")
         elif response_type == "input_audio_buffer.speech_started":
             logger.info("OpenAI detected speech started")
-        elif response_type == "input_audio_buffer.speech_stopped": 
+        elif response_type == "input_audio_buffer.speech_stopped":
             logger.info("OpenAI detected speech stopped")
         elif response_type == "input_audio_buffer.committed":
             logger.info("OpenAI confirmed audio buffer committed")

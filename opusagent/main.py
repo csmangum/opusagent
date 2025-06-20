@@ -27,6 +27,7 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
+from websockets.exceptions import ConnectionClosed
 
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
@@ -104,8 +105,8 @@ async def websocket_endpoint(websocket: WebSocket):
         # Ensure bridge is closed
         if "bridge" in locals():
             await bridge.close()
-            
-            
+
+
 @app.websocket("/caller-agent")
 async def handle_caller_call(caller_websocket: WebSocket):
     """Handle WebSocket connections from a *caller* agent (MockAudioCodesClient).
@@ -147,10 +148,6 @@ async def handle_caller_call(caller_websocket: WebSocket):
                 logger.info("Closing Caller bridge...")
                 await bridge.close()
 
-    except websockets.exceptions.InvalidStatusCode as e:
-        logger.error(f"Invalid status code from OpenAI (Caller): {e}")
-        logger.error(f"Response headers: {e.response_headers}")
-        await caller_websocket.close()
     except websockets.exceptions.ConnectionClosed as e:
         logger.error(f"OpenAI connection closed (Caller): {e}")
         logger.error(f"Close code: {e.code}")
@@ -193,10 +190,6 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
                 logger.info("Closing Twilio bridge...")
                 await bridge.close()
 
-    except websockets.exceptions.InvalidStatusCode as e:
-        logger.error(f"Invalid status code from OpenAI (Twilio): {e}")
-        logger.error(f"Response headers: {e.response_headers}")
-        await twilio_websocket.close()
     except websockets.exceptions.ConnectionClosed as e:
         logger.error(f"OpenAI connection closed (Twilio): {e}")
         logger.error(f"Close code: {e.code}")
@@ -222,7 +215,7 @@ async def twilio_voice(request: Request):
     connect = response.connect()
     logger.info(f"------ Connecting call to WebSocket endpoint ------")
     logger.info(f"------ {SERVER_URL} ------")
-    connect.stream(url=SERVER_URL)
+    connect.stream(url=SERVER_URL) # type: ignore
     logger.info(f"------ Connected call to WebSocket endpoint ------")
 
     # Return XML response with proper Content-Type header
@@ -320,11 +313,6 @@ if __name__ == "__main__":
         app,
         host=HOST,
         port=PORT,
-        # Optimized WebSocket settings for low latency audio streaming
-        websocket_ping_interval=10,  # Reduce ping frequency to avoid interference with audio
-        websocket_max_size=4194304,  # 4MB - optimal for audio chunks without excessive buffering
-        websocket_ping_timeout=30,  # Longer timeout for stability
-        # Use HTTP/1.1 for lower overhead than HTTP/2
         http="h11",
         # Additional performance optimizations
         loop="asyncio",

@@ -6,44 +6,46 @@ and that the validation rules work as expected for Twilio Media Streams WebSocke
 """
 
 import base64
+
 import pytest
 from pydantic import ValidationError
 
 from opusagent.models.twilio_api import (
-    TwilioEventType,
-    BaseTwilioMessage,
-    TwilioMessageWithSequence,
-    TwilioMessageWithStreamSid,
-    ConnectedMessage,
-    MediaFormat,
-    StartMetadata,
-    StartMessage,
-    MediaPayload,
-    MediaMessage,
-    StopMetadata,
-    StopMessage,
-    DTMFPayload,
-    DTMFMessage,
-    MarkPayload,
-    MarkMessage,
-    OutgoingMediaPayload,
-    OutgoingMediaMessage,
-    OutgoingMarkMessage,
-    ClearMessage,
-    IncomingMessage,
-    OutgoingMessage,
-    TwilioMessage,
-    SID_PATTERN,
     DTMF_PATTERN,
+    SID_PATTERN,
+    SUPPORTED_CHANNELS,
     SUPPORTED_ENCODINGS,
     SUPPORTED_SAMPLE_RATES,
-    SUPPORTED_CHANNELS,
+    BaseTwilioMessage,
+    ClearMessage,
+    ConnectedMessage,
+    DTMFMessage,
+    DTMFPayload,
+    IncomingMessage,
+    MarkMessage,
+    MarkPayload,
+    MediaFormat,
+    MediaMessage,
+    MediaPayload,
+    OutgoingMarkMessage,
+    OutgoingMediaMessage,
+    OutgoingMediaPayload,
+    OutgoingMessage,
+    StartMessage,
+    StartMetadata,
+    StopMessage,
+    StopMetadata,
+    TwilioEventType,
+    TwilioMessage,
+    TwilioMessageWithSequence,
+    TwilioMessageWithStreamSid,
 )
 
 # Test SIDs - Using clearly fake test values
 TEST_ACCOUNT_SID = "ACtest1234567890abcdef1234567890abcdef"
 TEST_CALL_SID = "CAtest1234567890abcdef1234567890abcdef"
 TEST_STREAM_SID = "MStest1234567890abcdef1234567890abcdef"
+
 
 class TestTwilioEventType:
     """Tests for the TwilioEventType enum."""
@@ -77,8 +79,8 @@ class TestConstants:
         invalid_sids = [
             "invalid",
             "MS1234567890ABCDEF1234567890abcdef",  # Uppercase in hex part
-            "MS1234567890abcdef1234567890abcde",   # Too short
-            "MS1234567890abcdef1234567890abcdeff", # Too long
+            "MS1234567890abcdef1234567890abcde",  # Too short
+            "MS1234567890abcdef1234567890abcdeff",  # Too long
             "ms1234567890abcdef1234567890abcdef",  # Lowercase prefix
         ]
         for sid in invalid_sids:
@@ -87,7 +89,24 @@ class TestConstants:
     def test_dtmf_pattern(self):
         """Test that DTMF pattern validation works correctly."""
         # Valid DTMF digits
-        valid_dtmf = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "#", "A", "B", "C", "D"]
+        valid_dtmf = [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "*",
+            "#",
+            "A",
+            "B",
+            "C",
+            "D",
+        ]
         for digit in valid_dtmf:
             assert DTMF_PATTERN.match(digit) is not None
 
@@ -113,8 +132,9 @@ class TestBaseTwilioMessage:
 
     def test_missing_event(self):
         """Test that a message without an event raises a validation error."""
+        # Test with missing event parameter (not empty string)
         with pytest.raises(ValidationError):
-            BaseTwilioMessage()
+            BaseTwilioMessage() # type: ignore
 
 
 class TestTwilioMessageWithSequence:
@@ -128,8 +148,9 @@ class TestTwilioMessageWithSequence:
 
     def test_missing_sequence_number(self):
         """Test that a message without a sequence number raises a validation error."""
+        # Test with missing sequence number parameter (not empty string)
         with pytest.raises(ValidationError):
-            TwilioMessageWithSequence(event="test.event")
+            TwilioMessageWithSequence(event="test.event") # type: ignore
 
 
 class TestTwilioMessageWithStreamSid:
@@ -138,8 +159,7 @@ class TestTwilioMessageWithStreamSid:
     def test_valid_stream_sid_message(self):
         """Test that a valid stream SID message can be created."""
         message = TwilioMessageWithStreamSid(
-            event="test.event",
-            streamSid=TEST_STREAM_SID
+            event="test.event", streamSid=TEST_STREAM_SID
         )
         assert message.event == "test.event"
         assert message.streamSid == TEST_STREAM_SID
@@ -148,15 +168,15 @@ class TestTwilioMessageWithStreamSid:
         """Test that an invalid stream SID format logs a warning but doesn't fail."""
         # This should not raise an exception but will log a warning
         message = TwilioMessageWithStreamSid(
-            event="test.event",
-            streamSid="invalid-sid"
+            event="test.event", streamSid="invalid-sid"
         )
         assert message.streamSid == "invalid-sid"
 
     def test_missing_stream_sid(self):
         """Test that a message without a stream SID raises a validation error."""
+        # Test with missing stream SID parameter (not empty string)
         with pytest.raises(ValidationError):
-            TwilioMessageWithStreamSid(event="test.event")
+            TwilioMessageWithStreamSid(event="test.event") # type: ignore
 
 
 class TestConnectedMessage:
@@ -165,9 +185,7 @@ class TestConnectedMessage:
     def test_valid_connected_message(self):
         """Test that a valid connected message can be created."""
         message = ConnectedMessage(
-            event="connected",
-            protocol="Call",
-            version="1.0.0"
+            event=TwilioEventType.CONNECTED, protocol="Call", version="1.0.0"
         )
         assert message.event == "connected"
         assert message.protocol == "Call"
@@ -176,16 +194,22 @@ class TestConnectedMessage:
     def test_invalid_protocol(self):
         """Test that an invalid protocol logs a warning but doesn't fail."""
         message = ConnectedMessage(
-            event="connected",
-            protocol="InvalidProtocol",
-            version="1.0.0"
+            event=TwilioEventType.CONNECTED, protocol="InvalidProtocol", version="1.0.0"
         )
         assert message.protocol == "InvalidProtocol"
 
     def test_missing_required_fields(self):
         """Test that missing required fields raise validation errors."""
+        # Test with missing protocol parameter
         with pytest.raises(ValidationError):
-            ConnectedMessage(event="connected")
+            ConnectedMessage(
+                event=TwilioEventType.CONNECTED, version="1.0.0"
+            ) # type: ignore
+        # Test with missing version parameter
+        with pytest.raises(ValidationError):
+            ConnectedMessage(
+                event=TwilioEventType.CONNECTED, protocol="Call"
+            ) # type: ignore
 
 
 class TestMediaFormat:
@@ -193,11 +217,7 @@ class TestMediaFormat:
 
     def test_valid_media_format(self):
         """Test that a valid media format can be created."""
-        format = MediaFormat(
-            encoding="audio/x-mulaw",
-            sampleRate=8000,
-            channels=1
-        )
+        format = MediaFormat(encoding="audio/x-mulaw", sampleRate=8000, channels=1)
         assert format.encoding == "audio/x-mulaw"
         assert format.sampleRate == 8000
         assert format.channels == 1
@@ -205,29 +225,17 @@ class TestMediaFormat:
     def test_invalid_encoding(self):
         """Test that an invalid encoding raises a validation error."""
         with pytest.raises(ValidationError):
-            MediaFormat(
-                encoding="invalid/encoding",
-                sampleRate=8000,
-                channels=1
-            )
+            MediaFormat(encoding="invalid/encoding", sampleRate=8000, channels=1)
 
     def test_invalid_sample_rate(self):
         """Test that an invalid sample rate raises a validation error."""
         with pytest.raises(ValidationError):
-            MediaFormat(
-                encoding="audio/x-mulaw",
-                sampleRate=44100,
-                channels=1
-            )
+            MediaFormat(encoding="audio/x-mulaw", sampleRate=44100, channels=1)
 
     def test_invalid_channels(self):
         """Test that an invalid channel count raises a validation error."""
         with pytest.raises(ValidationError):
-            MediaFormat(
-                encoding="audio/x-mulaw",
-                sampleRate=8000,
-                channels=2
-            )
+            MediaFormat(encoding="audio/x-mulaw", sampleRate=8000, channels=2)
 
 
 class TestStartMetadata:
@@ -242,10 +250,8 @@ class TestStartMetadata:
             tracks=["inbound", "outbound"],
             customParameters={"param1": "value1"},
             mediaFormat=MediaFormat(
-                encoding="audio/x-mulaw",
-                sampleRate=8000,
-                channels=1
-            )
+                encoding="audio/x-mulaw", sampleRate=8000, channels=1
+            ),
         )
         assert "inbound" in metadata.tracks
         assert "outbound" in metadata.tracks
@@ -260,10 +266,8 @@ class TestStartMetadata:
                 callSid=TEST_CALL_SID,
                 tracks=["invalid_track"],
                 mediaFormat=MediaFormat(
-                    encoding="audio/x-mulaw",
-                    sampleRate=8000,
-                    channels=1
-                )
+                    encoding="audio/x-mulaw", sampleRate=8000, channels=1
+                ),
             )
 
     def test_empty_custom_parameters(self):
@@ -274,10 +278,8 @@ class TestStartMetadata:
             callSid=TEST_CALL_SID,
             tracks=["inbound"],
             mediaFormat=MediaFormat(
-                encoding="audio/x-mulaw",
-                sampleRate=8000,
-                channels=1
-            )
+                encoding="audio/x-mulaw", sampleRate=8000, channels=1
+            ),
         )
         assert metadata.customParameters == {}
 
@@ -288,7 +290,7 @@ class TestStartMessage:
     def test_valid_start_message(self):
         """Test that a valid start message can be created."""
         message = StartMessage(
-            event="start",
+            event=TwilioEventType.START,
             sequenceNumber="1",
             streamSid=TEST_STREAM_SID,
             start=StartMetadata(
@@ -297,11 +299,9 @@ class TestStartMessage:
                 callSid=TEST_CALL_SID,
                 tracks=["inbound"],
                 mediaFormat=MediaFormat(
-                    encoding="audio/x-mulaw",
-                    sampleRate=8000,
-                    channels=1
-                )
-            )
+                    encoding="audio/x-mulaw", sampleRate=8000, channels=1
+                ),
+            ),
         )
         assert message.event == "start"
         assert message.sequenceNumber == "1"
@@ -315,10 +315,7 @@ class TestMediaPayload:
         """Test that a valid media payload can be created."""
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
         payload = MediaPayload(
-            track="inbound",
-            chunk="1",
-            timestamp="1000",
-            payload=audio_data
+            track="inbound", chunk="1", timestamp="1000", payload=audio_data
         )
         assert payload.track == "inbound"
         assert payload.chunk == "1"
@@ -330,21 +327,13 @@ class TestMediaPayload:
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
         with pytest.raises(ValidationError):
             MediaPayload(
-                track="invalid_track",
-                chunk="1",
-                timestamp="1000",
-                payload=audio_data
+                track="invalid_track", chunk="1", timestamp="1000", payload=audio_data
             )
 
     def test_empty_payload(self):
         """Test that an empty payload raises a validation error."""
         with pytest.raises(ValidationError):
-            MediaPayload(
-                track="inbound",
-                chunk="1",
-                timestamp="1000",
-                payload=""
-            )
+            MediaPayload(track="inbound", chunk="1", timestamp="1000", payload="")
 
     def test_invalid_base64_payload(self):
         """Test that an invalid base64 payload raises a validation error."""
@@ -353,7 +342,7 @@ class TestMediaPayload:
                 track="inbound",
                 chunk="1",
                 timestamp="1000",
-                payload="not valid base64!"
+                payload="not valid base64!",
             )
 
 
@@ -364,15 +353,12 @@ class TestMediaMessage:
         """Test that a valid media message can be created."""
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
         message = MediaMessage(
-            event="media",
+            event=TwilioEventType.MEDIA,
             sequenceNumber="2",
             streamSid=TEST_STREAM_SID,
             media=MediaPayload(
-                track="inbound",
-                chunk="1",
-                timestamp="1000",
-                payload=audio_data
-            )
+                track="inbound", chunk="1", timestamp="1000", payload=audio_data
+            ),
         )
         assert message.event == "media"
         assert message.media.track == "inbound"
@@ -384,13 +370,10 @@ class TestStopMessage:
     def test_valid_stop_message(self):
         """Test that a valid stop message can be created."""
         message = StopMessage(
-            event="stop",
+            event=TwilioEventType.STOP,
             sequenceNumber="5",
             streamSid=TEST_STREAM_SID,
-            stop=StopMetadata(
-                accountSid=TEST_ACCOUNT_SID,
-                callSid=TEST_CALL_SID
-            )
+            stop=StopMetadata(accountSid=TEST_ACCOUNT_SID, callSid=TEST_CALL_SID),
         )
         assert message.event == "stop"
         assert message.stop.accountSid == TEST_ACCOUNT_SID
@@ -422,10 +405,10 @@ class TestDTMFMessage:
     def test_valid_dtmf_message(self):
         """Test that a valid DTMF message can be created."""
         message = DTMFMessage(
-            event="dtmf",
+            event=TwilioEventType.DTMF,
             sequenceNumber="3",
             streamSid=TEST_STREAM_SID,
-            dtmf=DTMFPayload(track="inbound_track", digit="5")
+            dtmf=DTMFPayload(track="inbound_track", digit="5"),
         )
         assert message.event == "dtmf"
         assert message.dtmf.digit == "5"
@@ -446,10 +429,10 @@ class TestMarkMessage:
     def test_valid_mark_message(self):
         """Test that a valid mark message can be created."""
         message = MarkMessage(
-            event="mark",
+            event=TwilioEventType.MARK,
             sequenceNumber="4",
             streamSid=TEST_STREAM_SID,
-            mark=MarkPayload(name="test_mark")
+            mark=MarkPayload(name="test_mark"),
         )
         assert message.event == "mark"
         assert message.mark.name == "test_mark"
@@ -482,9 +465,9 @@ class TestOutgoingMediaMessage:
         """Test that a valid outgoing media message can be created."""
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
         message = OutgoingMediaMessage(
-            event="media",
+            event=TwilioEventType.MEDIA,
             streamSid=TEST_STREAM_SID,
-            media=OutgoingMediaPayload(payload=audio_data)
+            media=OutgoingMediaPayload(payload=audio_data),
         )
         assert message.event == "media"
         assert message.media.payload == audio_data
@@ -496,9 +479,9 @@ class TestOutgoingMarkMessage:
     def test_valid_outgoing_mark_message(self):
         """Test that a valid outgoing mark message can be created."""
         message = OutgoingMarkMessage(
-            event="mark",
+            event=TwilioEventType.MARK,
             streamSid=TEST_STREAM_SID,
-            mark=MarkPayload(name="my_mark")
+            mark=MarkPayload(name="my_mark"),
         )
         assert message.event == "mark"
         assert message.mark.name == "my_mark"
@@ -509,10 +492,7 @@ class TestClearMessage:
 
     def test_valid_clear_message(self):
         """Test that a valid clear message can be created."""
-        message = ClearMessage(
-            event="clear",
-            streamSid=TEST_STREAM_SID
-        )
+        message = ClearMessage(event=TwilioEventType.CLEAR, streamSid=TEST_STREAM_SID)
         assert message.event == "clear"
         assert message.streamSid == TEST_STREAM_SID
 
@@ -524,9 +504,7 @@ class TestUnionTypes:
         """Test that incoming message union works correctly."""
         # Test ConnectedMessage
         connected = ConnectedMessage(
-            event="connected",
-            protocol="Call",
-            version="1.0.0"
+            event=TwilioEventType.CONNECTED, protocol="Call", version="1.0.0"
         )
         # Should be valid as IncomingMessage
         incoming: IncomingMessage = connected
@@ -535,15 +513,12 @@ class TestUnionTypes:
         # Test MediaMessage
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
         media = MediaMessage(
-            event="media",
+            event=TwilioEventType.MEDIA,
             sequenceNumber="2",
             streamSid=TEST_STREAM_SID,
             media=MediaPayload(
-                track="inbound",
-                chunk="1",
-                timestamp="1000",
-                payload=audio_data
-            )
+                track="inbound", chunk="1", timestamp="1000", payload=audio_data
+            ),
         )
         incoming = media
         assert isinstance(incoming, MediaMessage)
@@ -553,18 +528,15 @@ class TestUnionTypes:
         # Test OutgoingMediaMessage
         audio_data = base64.b64encode(b"test audio data").decode("utf-8")
         outgoing_media = OutgoingMediaMessage(
-            event="media",
+            event=TwilioEventType.MEDIA,
             streamSid=TEST_STREAM_SID,
-            media=OutgoingMediaPayload(payload=audio_data)
+            media=OutgoingMediaPayload(payload=audio_data),
         )
         outgoing: OutgoingMessage = outgoing_media
         assert isinstance(outgoing, OutgoingMediaMessage)
 
         # Test ClearMessage
-        clear = ClearMessage(
-            event="clear",
-            streamSid=TEST_STREAM_SID
-        )
+        clear = ClearMessage(event=TwilioEventType.CLEAR, streamSid=TEST_STREAM_SID)
         outgoing = clear
         assert isinstance(outgoing, ClearMessage)
 
@@ -572,18 +544,13 @@ class TestUnionTypes:
         """Test that TwilioMessage union includes both incoming and outgoing."""
         # Test with incoming message
         connected = ConnectedMessage(
-            event="connected",
-            protocol="Call",
-            version="1.0.0"
+            event=TwilioEventType.CONNECTED, protocol="Call", version="1.0.0"
         )
         twilio_msg: TwilioMessage = connected
         assert isinstance(twilio_msg, ConnectedMessage)
 
         # Test with outgoing message
-        clear = ClearMessage(
-            event="clear",
-            streamSid=TEST_STREAM_SID
-        )
+        clear = ClearMessage(event=TwilioEventType.CLEAR, streamSid=TEST_STREAM_SID)
         twilio_msg = clear
         assert isinstance(twilio_msg, ClearMessage)
 
@@ -603,10 +570,7 @@ class TestEdgeCases:
         # Test minimum valid chunk number
         audio_data = base64.b64encode(b"test").decode("utf-8")
         payload = MediaPayload(
-            track="inbound",
-            chunk="0",
-            timestamp="0",
-            payload=audio_data
+            track="inbound", chunk="0", timestamp="0", payload=audio_data
         )
         assert payload.chunk == "0"
 
@@ -620,4 +584,4 @@ class TestEdgeCases:
         large_data = b"x" * 10000  # 10KB of data
         audio_data = base64.b64encode(large_data).decode("utf-8")
         payload = OutgoingMediaPayload(payload=audio_data)
-        assert len(payload.payload) > 10000 
+        assert len(payload.payload) > 10000

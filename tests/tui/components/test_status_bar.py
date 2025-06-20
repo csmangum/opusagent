@@ -20,8 +20,9 @@ async def test_status_bar_update_methods():
         bar.increment_message_count()
         bar.increment_error_count()
         status_widget = bar.query_one("#status-text", Static)
-        assert "Connected" in status_widget.renderable
-        assert "Playing" in status_widget.renderable
-        assert "123" in status_widget.renderable
-        assert "Messages: 1" in status_widget.renderable
-        assert "Errors: 1" in status_widget.renderable 
+        status_text = str(status_widget.renderable)
+        assert "Connected" in status_text
+        assert "Playing" in status_text
+        assert "123" in status_text
+        assert "Messages: 1" in status_text
+        assert "Errors: 1" in status_text 

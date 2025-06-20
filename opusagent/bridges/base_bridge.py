@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 
 import websockets
 from fastapi import WebSocket
-from websockets.sync.client import ClientConnection
+from websockets.asyncio.client import ClientConnection
 
 from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import CallRecorder

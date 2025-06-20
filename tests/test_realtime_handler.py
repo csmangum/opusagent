@@ -22,7 +22,7 @@ from opusagent.transcript_manager import TranscriptManager
 @pytest.fixture
 def mock_websocket():
     """Create a mock WebSocket client."""
-    return AsyncMock(spec=websockets.WebSocketClientProtocol)
+    return AsyncMock()
 
 
 @pytest.fixture

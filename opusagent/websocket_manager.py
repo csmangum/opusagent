@@ -11,10 +11,11 @@ import os
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import websockets
-from websockets.exceptions import ConnectionClosed, InvalidStatusCode
+from websockets.exceptions import ConnectionClosed
+from websockets.typing import Subprotocol
 
 from opusagent.websocket_config import WebSocketConfig
 
@@ -23,39 +24,39 @@ logger = logging.getLogger(__name__)
 
 class MockWebSocketWrapper:
     """Wrapper to make MockRealtimeClient compatible with websockets interface."""
-    
+
     def __init__(self, mock_client):
         self.mock_client = mock_client
         self.closed = False
         self.open = True
-    
+
     async def send(self, message):
         """Send a message through the mock client."""
-        if hasattr(self.mock_client, '_ws') and self.mock_client._ws:
+        if hasattr(self.mock_client, "_ws") and self.mock_client._ws:
             await self.mock_client._ws.send(message)
         else:
             # If no mock server is running, just log the message
             logger.debug(f"[MOCK] Would send: {message}")
-    
+
     async def recv(self):
         """Receive a message through the mock client."""
-        if hasattr(self.mock_client, '_ws') and self.mock_client._ws:
+        if hasattr(self.mock_client, "_ws") and self.mock_client._ws:
             return await self.mock_client._ws.recv()
         else:
             # Simulate a delay and return a mock message
             await asyncio.sleep(0.1)
             return '{"type": "session.created", "session": {"id": "mock_session"}}'
-    
+
     async def close(self):
         """Close the mock connection."""
         self.closed = True
         self.open = False
-        if hasattr(self.mock_client, 'disconnect'):
+        if hasattr(self.mock_client, "disconnect"):
             await self.mock_client.disconnect()
-    
+
     def __aiter__(self):
         return self
-    
+
     async def __anext__(self):
         try:
             message = await self.recv()
@@ -67,9 +68,7 @@ class MockWebSocketWrapper:
 class RealtimeConnection:
     """Wrapper for a WebSocket connection to OpenAI Realtime API."""
 
-    def __init__(
-        self, websocket: websockets.WebSocketClientProtocol, connection_id: str
-    ):
+    def __init__(self, websocket: Any, connection_id: str):
         self.websocket = websocket
         self.connection_id = connection_id
         self.created_at = time.time()
@@ -162,11 +161,15 @@ class WebSocketManager:
             try:
                 # Only start health monitoring if there's a running event loop
                 asyncio.get_running_loop()
-                self._health_check_task = asyncio.create_task(self._health_monitor_loop())
+                self._health_check_task = asyncio.create_task(
+                    self._health_monitor_loop()
+                )
                 logger.debug("Health monitoring task started")
             except RuntimeError:
                 # No event loop running (e.g., during tests or module import)
-                logger.debug("No event loop running, health monitoring will start when first used")
+                logger.debug(
+                    "No event loop running, health monitoring will start when first used"
+                )
                 pass
 
     async def _health_monitor_loop(self):
@@ -213,7 +216,9 @@ class WebSocketManager:
 
     async def _create_connection(self) -> RealtimeConnection:
         """Create a new WebSocket connection to OpenAI or mock server."""
-        connection_id = f"{'mock' if self.use_mock else 'openai'}_{uuid.uuid4().hex[:8]}"
+        connection_id = (
+            f"{'mock' if self.use_mock else 'openai'}_{uuid.uuid4().hex[:8]}"
+        )
 
         try:
             if self.use_mock:
@@ -222,7 +227,7 @@ class WebSocketManager:
             else:
                 websocket = await websockets.connect(
                     self._url,
-                    subprotocols=["realtime"],
+                    subprotocols=[Subprotocol("realtime")],
                     additional_headers=self._headers,
                     ping_interval=WebSocketConfig.PING_INTERVAL,
                     ping_timeout=WebSocketConfig.PING_TIMEOUT,
@@ -235,7 +240,9 @@ class WebSocketManager:
             return connection
 
         except Exception as e:
-            logger.error(f"Failed to create {'mock' if self.use_mock else 'OpenAI'} connection: {e}")
+            logger.error(
+                f"Failed to create {'mock' if self.use_mock else 'OpenAI'} connection: {e}"
+            )
             raise
 
     async def _create_mock_connection(self):
@@ -243,22 +250,26 @@ class WebSocketManager:
         try:
             # Try to import the mock client
             from validate.mock_realtime_client import MockRealtimeClient
-            
+
             # Create mock client
             mock_client = MockRealtimeClient()
-            
+
             try:
                 # Try to connect to mock server if it's running
                 await mock_client.connect(self.mock_server_url)
                 logger.info(f"Connected to mock server at {self.mock_server_url}")
                 return MockWebSocketWrapper(mock_client)
             except Exception as server_error:
-                logger.warning(f"Mock server not running at {self.mock_server_url}: {server_error}")
+                logger.warning(
+                    f"Mock server not running at {self.mock_server_url}: {server_error}"
+                )
                 # Return a mock wrapper that doesn't require a server
                 return MockWebSocketWrapper(mock_client)
-                
+
         except ImportError:
-            logger.error("MockRealtimeClient not available. Cannot create mock connection.")
+            logger.error(
+                "MockRealtimeClient not available. Cannot create mock connection."
+            )
             raise
 
     async def get_connection(self) -> RealtimeConnection:
@@ -274,7 +285,7 @@ class WebSocketManager:
         # Ensure health monitoring is started if not already
         if not self._health_check_task:
             self._start_health_monitoring()
-        
+
         # Try to find an existing healthy connection
         for conn in self._connections.values():
             if conn.can_accept_session:
@@ -377,28 +388,34 @@ class WebSocketManager:
 # Initialize with environment variable support for mock mode
 _use_mock = os.getenv("OPUSAGENT_USE_MOCK", "false").lower() == "true"
 _mock_server_url = os.getenv("OPUSAGENT_MOCK_SERVER_URL", "ws://localhost:8080")
-websocket_manager = WebSocketManager(use_mock=_use_mock, mock_server_url=_mock_server_url)
+websocket_manager = WebSocketManager(
+    use_mock=_use_mock, mock_server_url=_mock_server_url
+)
 
 
-def create_websocket_manager(use_mock: bool = False, mock_server_url: Optional[str] = None) -> WebSocketManager:
+def create_websocket_manager(
+    use_mock: bool = False, mock_server_url: Optional[str] = None
+) -> WebSocketManager:
     """Factory function to create a WebSocket manager with specified configuration.
-    
+
     Args:
         use_mock: Whether to use mock connections instead of real OpenAI API
         mock_server_url: URL for mock server (if use_mock is True)
-    
+
     Returns:
         Configured WebSocketManager instance
     """
     return WebSocketManager(use_mock=use_mock, mock_server_url=mock_server_url)
 
 
-def create_mock_websocket_manager(mock_server_url: str = "ws://localhost:8080") -> WebSocketManager:
+def create_mock_websocket_manager(
+    mock_server_url: str = "ws://localhost:8080",
+) -> WebSocketManager:
     """Create a WebSocket manager configured for mock mode.
-    
+
     Args:
         mock_server_url: URL for the mock server
-    
+
     Returns:
         WebSocketManager configured for mock mode
     """
@@ -407,7 +424,7 @@ def create_mock_websocket_manager(mock_server_url: str = "ws://localhost:8080") 
 
 def get_websocket_manager() -> WebSocketManager:
     """Get the global WebSocket manager instance.
-    
+
     Returns:
         The global websocket_manager instance
     """

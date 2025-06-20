@@ -20,6 +20,7 @@ class TestAudioResampling:
     def setup_method(self):
         """Set up test fixtures."""
         self.twilio_websocket = MagicMock()
+        self.twilio_websocket.send_json = MagicMock()  # Add send_json method
         self.realtime_websocket = MagicMock()
         self.bridge = TwilioRealtimeBridge(
             twilio_websocket=self.twilio_websocket,
@@ -97,7 +98,7 @@ class TestAudioResampling:
                     mock_convert.assert_called_once_with(b"resampled_8k_audio")
 
                     # Verify audio was sent to Twilio
-                    assert self.bridge.twilio_websocket.send_json.called
+                    assert self.twilio_websocket.send_json.called
 
     def test_audio_chunk_timing_with_resampling(self):
         """Test that audio chunks maintain proper timing after resampling."""

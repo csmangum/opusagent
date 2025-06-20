@@ -386,10 +386,10 @@ class FunctionHandler:
         self,
         function_name: str,
         arguments: Dict[str, Any],
-        call_id: str,
-        item_id: str,
-        output_index: int,
-        response_id: str,
+        call_id: Optional[str] = None,
+        item_id: Optional[str] = None,
+        output_index: Optional[int] = 0,
+        response_id: Optional[str] = None,
     ) -> None:
         """
         Execute a function and send the result back to OpenAI.
@@ -558,9 +558,7 @@ class FunctionHandler:
         """
         intent = arguments.get("intent", "")
         if intent == "card_replacement":
-            logger.info(
-                f"Function call intent received: {arguments}"
-            )
+            logger.info(f"Function call intent received: {arguments}")
             # Return data that guides the AI's next response
             return {
                 "status": "success",
@@ -1151,7 +1149,9 @@ class FunctionHandler:
         reason = arguments.get("reason", "")
         address = arguments.get("address", "")
 
-        logger.info(f"Processing card replacement for {card} with reason {reason} to address {address}")
+        logger.info(
+            f"Processing card replacement for {card} with reason {reason} to address {address}"
+        )
 
         return {
             "status": "success",

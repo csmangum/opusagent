@@ -81,6 +81,13 @@ class BaseMessage(BaseModel):
         None, description="Unique conversation identifier"
     )
 
+    @field_validator("type")
+    def validate_type(cls, v):
+        """Validate that type is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Message type cannot be empty")
+        return v
+
     @field_validator("conversationId")
     def validate_conversation_id(cls, v):
         """Validate that conversation ID is a UUID if provided."""
