@@ -7,7 +7,7 @@ Function implementations for the card replacement conversation flow.
 import logging
 import uuid
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from .prompts import (
     CONFIRM_ADDRESS_PROMPT,
