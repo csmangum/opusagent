@@ -47,7 +47,11 @@ class MockRealtimeClient:
         session_config: Optional[SessionConfig] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
-        self.session_config = session_config or SessionConfig()
+        self.session_config = session_config or SessionConfig(
+            model="gpt-4o-realtime-preview-2025-06-03",
+            modalities=["text", "audio"],
+            voice="alloy"
+        )
         
         # Session state
         self.session_id = str(uuid.uuid4())

@@ -11,13 +11,56 @@ from opusagent.models.audiocodes_api import (
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
 )
+from opusagent.models.openai_api import SessionConfig
 
+# Test constants
+TEST_VOICE = "verse"
+TEST_MODEL = "gpt-4o-realtime-preview-2025-06-03"
+
+@pytest.fixture
+def test_session_config():
+    """Create a test session configuration."""
+    return SessionConfig(
+        input_audio_format="pcm16",
+        output_audio_format="pcm16",
+        voice=TEST_VOICE,
+        instructions="You are a test customer service agent.",
+        modalities=["text", "audio"],
+        temperature=0.8,
+        model=TEST_MODEL,
+        tools=[
+            {
+                "type": "function",
+                "name": "route_call",
+                "description": "Route the call to the appropriate function based on the intent of the call.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "intent": {"type": "string", "enum": ["Card Replacement", "Account Inquiry", "Account Management", "Transaction Dispute", "Other"]},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "human_handoff",
+                "description": "Transfer the conversation to a human agent.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "reason": {"type": "string", "description": "The reason for transferring to a human agent"},
+                        "priority": {"type": "string", "enum": ["low", "normal", "high"], "description": "The priority level of the transfer"},
+                        "context": {"type": "object", "description": "Additional context for the human agent"},
+                    },
+                },
+            },
+        ],
+    )
 
 @pytest.fixture
 async def mock_websocket():
-    websocket = AsyncMock(spec=WebSocket)
+    websocket = AsyncMock()
     websocket.send_json = AsyncMock()
-    websocket.receive_text = AsyncMock()
+    websocket.send_text = AsyncMock()
     websocket.close = AsyncMock()
     return websocket
 
@@ -32,8 +75,8 @@ async def mock_realtime_websocket():
 
 
 @pytest.fixture
-async def bridge(mock_websocket, mock_realtime_websocket):
-    bridge = AudioCodesBridge(mock_websocket, mock_realtime_websocket)
+async def bridge(mock_websocket, mock_realtime_websocket, test_session_config):
+    bridge = AudioCodesBridge(mock_websocket, mock_realtime_websocket, test_session_config)
     # Mock the dependencies to avoid actual initialization
     bridge.session_manager.initialize_session = AsyncMock()
     bridge.session_manager.send_initial_conversation_item = AsyncMock()

@@ -23,6 +23,7 @@ from opusagent.function_handler import FunctionHandler
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
+from opusagent.models.openai_api import SessionConfig
 
 # Configure logging
 logger = configure_logging("base_bridge")
@@ -51,25 +52,29 @@ class BaseRealtimeBridge(ABC):
         event_router (EventRouter): Router for handling platform and realtime events
         transcript_manager (TranscriptManager): Manager for handling transcripts
         realtime_handler (RealtimeHandler): Handler for OpenAI Realtime API communication
+        session_config (SessionConfig): Predefined session configuration for the OpenAI Realtime API
     """
 
     def __init__(
         self,
         platform_websocket,
         realtime_websocket: ClientConnection,
+        session_config: SessionConfig,
     ):
-        """Initialize the bridge with WebSocket connections.
+        """Initialize the base realtime bridge.
 
         Args:
-            platform_websocket: Platform-specific WebSocket connection
-            realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
+            platform_websocket: WebSocket connection to the platform (Twilio, AudioCodes, etc.)
+            realtime_websocket: WebSocket connection to OpenAI Realtime API
+            session_config: Predefined session configuration for the OpenAI Realtime API
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
+        self.session_config = session_config
+        self._closed = False
         self.conversation_id: Optional[str] = None
         self.media_format: Optional[str] = None
         self.speech_detected = False
-        self._closed = False
 
         # Audio buffer tracking for debugging
         self.audio_chunks_sent = 0
@@ -79,13 +84,14 @@ class BaseRealtimeBridge(ABC):
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
-        # Initialize call recorder (will be set up when conversation starts)
+        # Initialize call recorder
         self.call_recorder: Optional[CallRecorder] = None
 
         # Initialize function handler
         self.function_handler = FunctionHandler(
-            realtime_websocket, 
-            call_recorder=self.call_recorder, 
+            realtime_websocket=realtime_websocket,
+            call_recorder=self.call_recorder,
+            voice=session_config.voice or "verse",
             hang_up_callback=self.hang_up
         )
 
@@ -100,7 +106,7 @@ class BaseRealtimeBridge(ABC):
         )
 
         # Initialize session manager
-        self.session_manager = SessionManager(realtime_websocket)
+        self.session_manager = SessionManager(realtime_websocket, session_config)
 
         # Initialize event router
         self.event_router = EventRouter()

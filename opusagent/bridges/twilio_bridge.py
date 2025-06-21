@@ -12,7 +12,7 @@ from typing import Optional
 
 from opusagent.bridges.base_bridge import BaseRealtimeBridge
 from opusagent.config.logging_config import configure_logging
-from opusagent.models.openai_api import InputAudioBufferAppendEvent
+from opusagent.models.openai_api import InputAudioBufferAppendEvent, SessionConfig
 from opusagent.models.twilio_api import (
     ConnectedMessage,
     DTMFMessage,
@@ -33,8 +33,8 @@ VOICE = "alloy"  # example voice, override as needed
 class TwilioBridge(BaseRealtimeBridge):
     """Twilio Media Streams implementation of the real-time bridge."""
 
-    def __init__(self, platform_websocket, realtime_websocket):
-        super().__init__(platform_websocket, realtime_websocket)
+    def __init__(self, platform_websocket, realtime_websocket, session_config: SessionConfig):
+        super().__init__(platform_websocket, realtime_websocket, session_config)
         # Twilio-specific ids / state
         self.stream_sid: Optional[str] = None
         self.account_sid: Optional[str] = None

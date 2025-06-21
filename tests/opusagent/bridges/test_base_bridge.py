@@ -13,6 +13,7 @@ from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.models.audiocodes_api import TelephonyEventType
+from opusagent.models.openai_api import SessionConfig
 
 # Mock implementation of BaseRealtimeBridge for testing
 class MockBridge(BaseRealtimeBridge):
@@ -73,8 +74,18 @@ async def mock_realtime_websocket():
     return websocket
 
 @pytest.fixture
-async def bridge(mock_websocket, mock_realtime_websocket):
-    bridge = MockBridge(mock_websocket, mock_realtime_websocket)
+def test_session_config():
+    return SessionConfig(
+        input_audio_format="pcm16",
+        output_audio_format="pcm16",
+        voice="verse",
+        instructions="Test instructions",
+        tools=[],
+    )
+
+@pytest.fixture
+async def bridge(mock_websocket, mock_realtime_websocket, test_session_config):
+    bridge = MockBridge(mock_websocket, mock_realtime_websocket, test_session_config)
     return bridge
 
 @pytest.mark.asyncio

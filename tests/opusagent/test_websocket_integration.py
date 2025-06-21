@@ -196,10 +196,14 @@ class TestWebSocketManagerWebSocketEndpoints:
                 # Verify websocket manager was used
                 mock_manager.connection_context.assert_called_once()
                 
-                # Verify bridge was created with managed connection
-                mock_bridge_classes['audiocodes'].assert_called_once_with(
-                    mock_websocket, mock_connection.websocket
-                )
+                # Verify bridge was created with managed connection and session_config
+                mock_bridge_classes['audiocodes'].assert_called_once()
+                call_args = mock_bridge_classes['audiocodes'].call_args
+                assert len(call_args[0]) == 3  # Should have 3 positional arguments
+                assert call_args[0][0] == mock_websocket  # First arg: websocket
+                assert call_args[0][1] == mock_connection.websocket  # Second arg: managed websocket
+                # Third arg should be session_config (we can't easily mock it, so just check it exists)
+                assert call_args[0][2] is not None
 
     @pytest.mark.asyncio
     async def test_twilio_websocket_with_manager(self, mock_connection, mock_bridge_classes):
@@ -226,10 +230,14 @@ class TestWebSocketManagerWebSocketEndpoints:
                 # Verify websocket manager was used
                 mock_manager.connection_context.assert_called_once()
                 
-                # Verify bridge was created with managed connection
-                mock_bridge_classes['twilio'].assert_called_once_with(
-                    mock_websocket, mock_connection.websocket
-                )
+                # Verify bridge was created with managed connection and session_config
+                mock_bridge_classes['twilio'].assert_called_once()
+                call_args = mock_bridge_classes['twilio'].call_args
+                assert len(call_args[0]) == 3  # Should have 3 positional arguments
+                assert call_args[0][0] == mock_websocket  # First arg: websocket
+                assert call_args[0][1] == mock_connection.websocket  # Second arg: managed websocket
+                # Third arg should be session_config (we can't easily mock it, so just check it exists)
+                assert call_args[0][2] is not None
 
     @pytest.mark.asyncio
     async def test_websocket_endpoint_exception_handling(self, mock_connection, mock_bridge_classes):
