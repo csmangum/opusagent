@@ -85,9 +85,9 @@ import logging
 import uuid
 from typing import Any, Callable, Dict, Optional
 
-from opusagent.config.constants import LOGGER_NAME
+from opusagent.config.logging_config import configure_logging
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = configure_logging("function_handler")
 
 
 class FunctionHandler:
@@ -108,7 +108,13 @@ class FunctionHandler:
         hang_up_callback: Optional callback function to trigger hang-up from bridge
     """
 
-    def __init__(self, realtime_websocket, call_recorder=None, voice="verse", hang_up_callback=None):
+    def __init__(
+        self,
+        realtime_websocket,
+        call_recorder=None,
+        voice="verse",
+        hang_up_callback=None,
+    ):
         """
         Initialize the function handler.
 
@@ -489,7 +495,7 @@ class FunctionHandler:
 
             # Check if this function indicates the call should end
             should_hang_up = self._should_trigger_hang_up(function_name, result)
-            
+
             if should_hang_up:
                 logger.info(f"🔚 Function {function_name} indicates call should end")
                 # Schedule hang-up after a brief delay to allow final response
@@ -497,7 +503,9 @@ class FunctionHandler:
             else:
                 # After sending function result, trigger response generation
                 # This ensures the AI continues the conversation
-                logger.info("🚀 Triggering response generation after function execution...")
+                logger.info(
+                    "🚀 Triggering response generation after function execution..."
+                )
                 response_create = {
                     "type": "response.create",
                     "response": {
@@ -515,14 +523,16 @@ class FunctionHandler:
             logger.error(f"❌ Error sending function result: {e}")
             raise
 
-    def _should_trigger_hang_up(self, function_name: str, result: Dict[str, Any]) -> bool:
+    def _should_trigger_hang_up(
+        self, function_name: str, result: Dict[str, Any]
+    ) -> bool:
         """
         Determine if a function result indicates the call should be ended.
-        
+
         Args:
             function_name: Name of the function that was executed
             result: The result returned by the function
-            
+
         Returns:
             True if the call should be ended, False otherwise
         """
@@ -531,26 +541,26 @@ class FunctionHandler:
         if next_action == "end_call":
             logger.info(f"Function {function_name} returned next_action: end_call")
             return True
-        
+
         # Check for specific functions that typically end calls
         end_call_functions = ["wrap_up", "transfer_to_human"]
         if function_name in end_call_functions:
             logger.info(f"Function {function_name} is a call-ending function")
             return True
-        
+
         # Check if the result context indicates call completion
         context = result.get("context", {})
         stage = context.get("stage", "")
         if stage in ["call_complete", "human_transfer"]:
             logger.info(f"Function {function_name} reached completion stage: {stage}")
             return True
-        
+
         return False
 
     async def _schedule_hang_up(self, result: Dict[str, Any]):
         """
         Schedule a hang-up after allowing time for the final AI response.
-        
+
         Args:
             result: The function result that triggered the hang-up
         """
@@ -558,35 +568,35 @@ class FunctionHandler:
             # Give the AI time to generate and play its final response
             hang_up_delay = 8.0  # 8 seconds should be enough for most responses
             logger.info(f"⏰ Scheduling hang-up in {hang_up_delay} seconds...")
-            
+
             await asyncio.sleep(hang_up_delay)
-            
+
             # Determine hang-up reason from the function result
             reason = self._get_hang_up_reason(result)
-            
+
             if self.hang_up_callback:
                 logger.info(f"🔚 Triggering hang-up: {reason}")
                 await self.hang_up_callback(reason)
             else:
                 logger.warning("🚨 No hang-up callback available - cannot end call")
-                
+
         except Exception as e:
             logger.error(f"❌ Error scheduling hang-up: {e}")
 
     def _get_hang_up_reason(self, result: Dict[str, Any]) -> str:
         """
         Determine the appropriate hang-up reason from function result.
-        
+
         Args:
             result: The function result that triggered the hang-up
-            
+
         Returns:
             A descriptive reason for the hang-up
         """
         function_name = result.get("function_name", "unknown")
         context = result.get("context", {})
         stage = context.get("stage", "")
-        
+
         if function_name == "wrap_up" or stage == "call_complete":
             return "Call completed successfully - all tasks finished"
         elif function_name == "transfer_to_human" or stage == "human_transfer":

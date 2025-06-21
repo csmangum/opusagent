@@ -234,6 +234,7 @@ class BaseRealtimeBridge(ABC):
         pass
 
     async def initialize_conversation(self, conversation_id: Optional[str] = None):
+        #! Agent should do this
         """Initialize a new conversation with OpenAI.
 
         Args:
