@@ -34,7 +34,7 @@ from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.config.logging_config import configure_logging
 from opusagent.session_manager import SessionManager
-from opusagent.websocket_config import WebSocketConfig
+from opusagent.config.websocket_config import WebSocketConfig
 from opusagent.websocket_manager import websocket_manager
 
 load_dotenv()

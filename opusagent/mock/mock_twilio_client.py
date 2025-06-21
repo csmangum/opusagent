@@ -13,7 +13,7 @@ import logging
 import uuid
 import wave
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import websockets
@@ -31,14 +31,14 @@ class MockTwilioClient:
     def __init__(
         self,
         bridge_url: str,
-        stream_sid: str = None,
-        account_sid: str = None,
-        call_sid: str = None,
-        logger: logging.Logger = None,
+        stream_sid: Optional[str] = None,
+        account_sid: Optional[str] = None,
+        call_sid: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
     ):
         self.bridge_url = bridge_url
         self.logger = logger or logging.getLogger(__name__)
-        self._ws: Optional[websockets.WebSocketClientProtocol] = None
+        self._ws: Optional[websockets.WebSocketClientProtocol] = None  # type: ignore
         self.received_messages: List[Dict[str, Any]] = []
 
         # Twilio identifiers
@@ -84,6 +84,8 @@ class MockTwilioClient:
     async def _message_handler(self):
         """Handle incoming messages from the bridge."""
         try:
+            if self._ws is None:
+                return
             async for message in self._ws:
                 try:
                     data = json.loads(message)
@@ -146,6 +148,10 @@ class MockTwilioClient:
 
     async def send_connected(self) -> bool:
         """Send the initial 'connected' message."""
+        if self._ws is None:
+            self.logger.error("[MOCK TWILIO] WebSocket not connected")
+            return False
+            
         connected_msg = {
             "event": "connected",
             "protocol": "Call",
@@ -157,10 +163,14 @@ class MockTwilioClient:
         self.logger.info("[MOCK TWILIO] Sent connected message")
         return True
 
-    async def send_start(self, tracks: List[str] = None) -> bool:
+    async def send_start(self, tracks: Optional[List[str]] = None) -> bool:
         """Send the 'start' message with stream metadata."""
         if not self.connected:
             self.logger.error("[MOCK TWILIO] Must send connected message first")
+            return False
+
+        if self._ws is None:
+            self.logger.error("[MOCK TWILIO] WebSocket not connected")
             return False
 
         tracks = tracks or ["inbound", "outbound"]
@@ -194,6 +204,10 @@ class MockTwilioClient:
             self.logger.error("[MOCK TWILIO] Stream not started")
             return False
 
+        if self._ws is None:
+            self.logger.error("[MOCK TWILIO] WebSocket not connected")
+            return False
+
         media_msg = {
             "event": "media",
             "sequenceNumber": self._get_next_sequence(),
@@ -215,6 +229,10 @@ class MockTwilioClient:
             self.logger.error("[MOCK TWILIO] Stream not started")
             return False
 
+        if self._ws is None:
+            self.logger.error("[MOCK TWILIO] WebSocket not connected")
+            return False
+
         stop_msg = {
             "event": "stop",
             "sequenceNumber": self._get_next_sequence(),
@@ -234,6 +252,10 @@ class MockTwilioClient:
         """Send a DTMF message."""
         if not self.stream_started:
             self.logger.error("[MOCK TWILIO] Stream not started")
+            return False
+
+        if self._ws is None:
+            self.logger.error("[MOCK TWILIO] WebSocket not connected")
             return False
 
         dtmf_msg = {
@@ -324,17 +346,17 @@ class MockTwilioClient:
     def _load_audio_as_mulaw_chunks(self, file_path: str, chunk_duration: float = 0.02) -> List[str]:
         """Load audio file and convert to mulaw chunks for Twilio."""
         try:
-            file_path = Path(file_path)
-            if not file_path.exists():
+            file_path_obj = Path(file_path)
+            if not file_path_obj.exists():
                 self.logger.error(f"[MOCK TWILIO] Audio file not found: {file_path}")
                 return []
 
-            with wave.open(str(file_path), "rb") as wav_file:
+            with wave.open(str(file_path_obj), "rb") as wav_file:
                 channels = wav_file.getnchannels()
                 sample_width = wav_file.getsampwidth()
                 frame_rate = wav_file.getframerate()
 
-                self.logger.info(f"[MOCK TWILIO] Loading audio: {file_path.name}")
+                self.logger.info(f"[MOCK TWILIO] Loading audio: {file_path_obj.name}")
                 self.logger.info(f"   Format: {channels}ch, {sample_width*8}bit, {frame_rate}Hz")
 
                 audio_data = wav_file.readframes(wav_file.getnframes())
@@ -352,7 +374,7 @@ class MockTwilioClient:
                     audio_array = np.frombuffer(audio_data, dtype=np.int16)
                     number_of_samples = round(len(audio_array) * 8000 / frame_rate)
                     audio_array = signal.resample(audio_array, number_of_samples)
-                    audio_array = audio_array.astype(np.int16)
+                    audio_array = np.array(audio_array, dtype=np.int16)
                     audio_data = audio_array.tobytes()
                     frame_rate = 8000
 

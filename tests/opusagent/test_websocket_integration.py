@@ -338,7 +338,7 @@ class TestWebSocketManagerConfiguration:
 
     def test_websocket_manager_config_validation(self):
         """Test that WebSocket manager validates configuration."""
-        from opusagent.websocket_config import WebSocketConfig
+        from opusagent.config.websocket_config import WebSocketConfig
         
         # This should work with default configuration
         # (assuming OPENAI_API_KEY is not required for this test)

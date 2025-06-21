@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 import statistics
 
-from caller_agent import (
+from opusagent.caller_agent import (
     CallerAgent, PersonalityType, ScenarioType, CallerPersonality,
     CallerGoal, CallerScenario,
     create_difficult_card_replacement_caller,

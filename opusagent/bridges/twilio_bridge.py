@@ -52,8 +52,7 @@ class TwilioBridge(BaseRealtimeBridge):
     def register_platform_event_handlers(self):
         """Register Twilio-specific event handlers.
         
-        This method creates a mapping of Twilio event types to their handlers,
-        similar to how TwilioRealtimeBridge handles events.
+        This method creates a mapping of Twilio event types to their handlers
         """
         # Create event handler mappings for Twilio events
         self.twilio_event_handlers = {

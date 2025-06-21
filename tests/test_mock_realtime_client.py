@@ -18,7 +18,7 @@ from opusagent.models.openai_api import (
     SessionConfig,
 )
 
-from validate.mock_realtime_client import MockRealtimeClient
+from opusagent.mock.mock_realtime_client import MockRealtimeClient
 
 
 class TestMockRealtimeClient(unittest.TestCase):
