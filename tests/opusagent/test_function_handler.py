@@ -24,9 +24,8 @@ def test_initialization(function_handler, mock_websocket):
     assert function_handler.realtime_websocket == mock_websocket
     assert isinstance(function_handler.function_registry, dict)
     assert isinstance(function_handler.active_function_calls, dict)
-    assert "get_balance" in function_handler.function_registry
-    assert "transfer_funds" in function_handler.function_registry
-    assert "call_intent" in function_handler.function_registry
+    # Functions are no longer automatically registered
+    assert len(function_handler.function_registry) == 0
 
 
 def test_register_function(function_handler):
@@ -61,16 +60,22 @@ def test_get_registered_functions(function_handler):
     """Test getting list of registered functions."""
     functions = function_handler.get_registered_functions()
     assert isinstance(functions, list)
-    assert "get_balance" in functions
-    assert "transfer_funds" in functions
-    assert "call_intent" in functions
+    # Functions are no longer automatically registered
+    assert len(functions) == 0
 
 
 @pytest.mark.asyncio
 async def test_handle_function_call(function_handler):
     """Test handling a function call event."""
+
+    # Register a test function first
+    def test_func(args):
+        return {"result": "test"}
+
+    function_handler.register_function("test_func", test_func)
+
     test_args = {
-        "arguments": json.dumps({"function_name": "get_balance", "account_id": "123"}),
+        "arguments": json.dumps({"function_name": "test_func", "param": "value"}),
         "call_id": "test_call_1",
         "item_id": "test_item_1",
         "output_index": 0,
@@ -90,7 +95,7 @@ async def test_handle_function_call_arguments_delta(function_handler):
     # First delta
     delta1 = {
         "call_id": "test_call_1",
-        "delta": '{"function_name": "get_balance", "account_id": "',
+        "delta": '{"function_name": "test_func", "param": "',
         "item_id": "test_item_1",
         "output_index": 0,
         "response_id": "test_response_1",
@@ -100,7 +105,7 @@ async def test_handle_function_call_arguments_delta(function_handler):
     # Second delta
     delta2 = {
         "call_id": "test_call_1",
-        "delta": '123"}',
+        "delta": 'value"}',
         "item_id": "test_item_1",
         "output_index": 0,
         "response_id": "test_response_1",
@@ -112,20 +117,27 @@ async def test_handle_function_call_arguments_delta(function_handler):
     accumulated = function_handler.active_function_calls["test_call_1"][
         "arguments_buffer"
     ]
-    assert accumulated == '{"function_name": "get_balance", "account_id": "123"}'
+    assert accumulated == '{"function_name": "test_func", "param": "value"}'
 
 
 @pytest.mark.asyncio
 async def test_handle_function_call_arguments_done(function_handler):
     """Test handling function call arguments completion."""
+
+    # Register a test function first
+    def test_func(args):
+        return {"result": "test"}
+
+    function_handler.register_function("test_func", test_func)
+
     # First set up some accumulated arguments
     call_id = "test_call_1"
     function_handler.active_function_calls[call_id] = {
-        "arguments_buffer": '{"function_name": "get_balance", "account_id": "123"}',
+        "arguments_buffer": '{"function_name": "test_func", "param": "value"}',
         "item_id": "test_item_1",
         "output_index": 0,
         "response_id": "test_response_1",
-        "function_name": "get_balance",
+        "function_name": "test_func",
     }
 
     # Send the done event
@@ -163,25 +175,40 @@ def test_get_active_function_calls(function_handler):
     assert active_calls == test_data
 
 
-def test_default_functions(function_handler):
-    """Test the default function implementations."""
-    # Test get_balance
-    balance_result = function_handler._func_get_balance({"account_id": "123"})
-    assert isinstance(balance_result, dict)
+def test_customer_service_functions_registration(function_handler):
+    """Test that customer service functions can be registered and work correctly."""
+    from opusagent.customer_service_agent import register_customer_service_functions
+
+    # Register customer service functions
+    register_customer_service_functions(function_handler)
+
+    # Check that functions are registered
+    registered_functions = function_handler.get_registered_functions()
+    expected_functions = [
+        "get_balance",
+        "transfer_funds",
+        "call_intent",
+        "process_replacement",
+        "transfer_to_human",
+    ]
+
+    for func_name in expected_functions:
+        assert func_name in registered_functions
+
+    # Test that functions work correctly
+    balance_result = function_handler.function_registry["get_balance"](
+        {"account_number": "123"}
+    )
     assert "balance" in balance_result
+    assert balance_result["status"] == "success"
 
-    # Test transfer_funds
-    transfer_result = function_handler._func_transfer_funds(
-        {"from_account": "123", "to_account": "456", "amount": 100}
+    transfer_result = function_handler.function_registry["transfer_funds"](
+        {
+            "from_account": "123",
+            "to_account": "456",
+            "amount": 100,
+            "transfer_type": "internal",
+        }
     )
-    assert isinstance(transfer_result, dict)
-    assert "status" in transfer_result
     assert transfer_result["status"] == "success"
-
-    # Test call_intent
-    intent_result = function_handler._func_call_intent(
-        {"intent": "test_intent", "parameters": {"param1": "value1"}}
-    )
-    assert isinstance(intent_result, dict)
-    assert "status" in intent_result
-    assert intent_result["status"] == "success"
+    assert "transaction_id" in transfer_result
