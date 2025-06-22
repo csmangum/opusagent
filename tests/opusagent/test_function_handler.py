@@ -187,7 +187,6 @@ def test_customer_service_functions_registration(function_handler):
     expected_functions = [
         "get_balance",
         "transfer_funds",
-        "call_intent",
         "process_replacement",
         "transfer_to_human",
     ]
