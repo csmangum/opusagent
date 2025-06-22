@@ -15,7 +15,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from opusagent.caller_agent import create_perfect_card_replacement_caller
+from opusagent.caller_agent import create_minimal_card_replacement_caller, create_perfect_card_replacement_caller
 
 # Configure logging
 logging.basicConfig(
@@ -31,7 +31,8 @@ async def test_perfect_caller():
     logger.info("=" * 50)
 
     # Create the perfect caller
-    caller = create_perfect_card_replacement_caller()
+    # caller = create_perfect_card_replacement_caller()
+    caller = create_minimal_card_replacement_caller()
 
     try:
         async with caller:

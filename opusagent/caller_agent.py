@@ -142,6 +142,24 @@ IMPORTANT: In your FIRST message, provide ALL necessary information:
 
 Be direct, efficient, and provide complete information upfront. Don't wait for the agent to ask questions.
 """
+        # Check if this is a minimal caller
+        elif self.context.get("minimal_caller", False):
+            return f"""
+SCENARIO: You need a new card but you're not sure about the details.
+
+GOAL: {self.goal.primary_goal}
+
+CONTEXT:
+- You are a MINIMAL caller who provides basic information
+- You start with just "Hi I need a new card"
+- You wait for the agent to ask questions
+- You provide information when asked, but don't volunteer details
+
+IMPORTANT: Start your FIRST message with just:
+"Hi I need a new card"
+
+Don't provide additional details unless the agent asks. Be cooperative when questioned, but start minimal.
+"""
         else:
             return f"""
 SCENARIO: You need to replace your {card_type} because you {reason} it.
@@ -1156,6 +1174,66 @@ def create_perfect_card_replacement_caller(
     )
 
 
+def create_minimal_card_replacement_caller(
+    bridge_url: str = "ws://localhost:8000/ws/telephony",
+) -> CallerAgent:
+    """Create a minimal caller who starts with just 'Hi I need a new card'."""
+
+    personality = CallerPersonality(
+        type=PersonalityType.NORMAL,
+        traits=[
+            "minimal information",
+            "waits for questions",
+            "cooperative when asked",
+            "polite but brief",
+            "doesn't volunteer details",
+        ],
+        communication_style="Brief and waits for guidance",
+        patience_level=6,
+        tech_comfort=5,
+        tendency_to_interrupt=0.2,
+        provides_clear_info=0.3,  # Minimal information provision
+    )
+
+    goal = CallerGoal(
+        primary_goal="Get a new card replacement",
+        secondary_goals=[
+            "Provide information when asked",
+            "Complete the replacement process",
+        ],
+        success_criteria=[
+            "card replacement confirmed",
+            "replacement ordered",
+        ],
+        failure_conditions=[
+            "transferred to human",
+            "call terminated",
+            "frustrated with process",
+        ],
+        max_conversation_turns=10,
+    )
+
+    scenario = CallerScenario(
+        scenario_type=ScenarioType.CARD_REPLACEMENT,
+        goal=goal,
+        context={
+            "card_type": "unknown",
+            "reason": "unknown",
+            "minimal_caller": True,
+            "provides_info_when_asked": True,
+            "starts_with_basic_request": True,
+        },
+    )
+
+    return CallerAgent(
+        bridge_url=bridge_url,
+        personality=personality,
+        scenario=scenario,
+        caller_name="MinimalMike",
+        caller_phone="+15552222222",
+    )
+
+
 # Example usage script
 async def run_caller_agent_demo():
     """Run a demo of different caller agents."""
@@ -1168,6 +1246,7 @@ async def run_caller_agent_demo():
         ("Confused Elderly", create_confused_elderly_caller),
         ("Angry Complaint", create_angry_complaint_caller),
         ("Perfect Card Replacement", create_perfect_card_replacement_caller),
+        ("Minimal Card Replacement", create_minimal_card_replacement_caller),
     ]
 
     for caller_name, caller_factory in callers:
