@@ -14,9 +14,6 @@ from opusagent.models.tool_models import (
 
 logger = configure_logging("customer_service_agent")
 
-#! Need to define and register function for each tool
-#! remove call_intent tool, not needed
-
 SESSION_PROMPT = """
 You are a customer service agent handling a call from a customer.
 
@@ -26,10 +23,10 @@ The intent of the call can be one of the following:
 * Card Replacement --> call the `process_replacement` function
 * Account Inquiry --> call the `get_balance` function
 * Account Management --> call the `transfer_funds` function
-* Transaction Dispute --> call the `call_intent` function
+* Transaction Dispute --> call the `human_handoff` function
 * Other --> call the `human_handoff` function
 
-If the call is for another reason or the caller ever asks to speak to a human, call the `human_handoff` function.
+    If the call is for another reason or the caller ever asks to speak to a human, call the `human_handoff` function.
 
 Start by greeting the customer: "Thank you for calling, how can I help you today?"
 """
@@ -219,29 +216,33 @@ def func_process_replacement(arguments: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Formatted prompt and guidance for card replacement
     """
-    card_type = arguments.get("card_type", "")
-    reason = arguments.get("reason", "")
-    delivery_address = arguments.get("delivery_address", "")
-
-    logger.info(
-        f"Processing card replacement for {card_type} with reason {reason} to address {delivery_address}"
-    )
+    card_type = arguments.get("card_type", None)
+    reason = arguments.get("reason", None)
+    delivery_address = arguments.get("delivery_address", None)
 
     # Generate a replacement reference number
     replacement_id = f"CR-{uuid.uuid4().hex[:8].upper()}"
+    
+    if card_type is None:
+        prompt_guidance = "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
+        next_action = "ask_card_type"
+    elif reason is None:
+        prompt_guidance = "Ask the customer why they need to replace their card."
+        next_action = "ask_reason"
+    elif delivery_address is None:
+        prompt_guidance = "Ask the customer where they want their replacement card delivered."
+        next_action = "ask_delivery_address"
+    else:
+        prompt_guidance = f"Your {card_type} replacement has been processed. Your replacement ID is {replacement_id}. The new card will be delivered to {delivery_address} within 5-7 business days."
+        next_action = "wrap_up"
 
     return {
         "status": "success",
         "function_name": "process_replacement",
-        "replacement_id": replacement_id,
-        "card_type": card_type,
-        "reason": reason,
-        "delivery_address": delivery_address,
-        "delivery_time": "5-7 business days",
-        "prompt_guidance": f"Your {card_type} replacement has been processed. Your replacement ID is {replacement_id}. The new card will be delivered to {delivery_address} within 5-7 business days.",
-        "next_action": "wrap_up",
+        "prompt_guidance": prompt_guidance,
+        "next_action": next_action,
         "context": {
-            "stage": "replacement_processed",
+            "stage": "replacement_processing",
             "card_type": card_type,
             "reason": reason,
             "delivery_address": delivery_address,

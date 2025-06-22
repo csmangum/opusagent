@@ -31,8 +31,8 @@ async def test_perfect_caller():
     logger.info("=" * 50)
 
     # Create the perfect caller
-    # caller = create_perfect_card_replacement_caller()
-    caller = create_minimal_card_replacement_caller()
+    caller = create_perfect_card_replacement_caller()
+    # caller = create_minimal_card_replacement_caller()
 
     try:
         async with caller:
