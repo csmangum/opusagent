@@ -26,7 +26,7 @@ The intent of the call can be one of the following:
 * Transaction Dispute --> call the `human_handoff` function
 * Other --> call the `human_handoff` function
 
-    If the call is for another reason or the caller ever asks to speak to a human, call the `human_handoff` function.
+If the call is for another reason or the caller ever asks to speak to a human, call the `human_handoff` function.
 
 Start by greeting the customer: "Thank you for calling, how can I help you today?"
 """
