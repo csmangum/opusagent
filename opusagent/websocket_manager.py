@@ -17,7 +17,7 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Subprotocol
 
-from opusagent.websocket_config import WebSocketConfig
+from opusagent.config.websocket_config import WebSocketConfig
 
 logger = logging.getLogger(__name__)
 
@@ -249,7 +249,7 @@ class WebSocketManager:
         """Create a mock WebSocket connection for testing."""
         try:
             # Try to import the mock client
-            from validate.mock_realtime_client import MockRealtimeClient
+            from opusagent.mock.mock_realtime_client import MockRealtimeClient
 
             # Create mock client
             mock_client = MockRealtimeClient()

@@ -13,7 +13,7 @@ import logging
 import uuid
 import wave
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import websockets
@@ -32,13 +32,13 @@ class MockAudioCodesClient:
         bridge_url: str,
         bot_name: str = "TestBot",
         caller: str = "+15551234567",
-        logger: logging.Logger = None,
+        logger: Optional[logging.Logger] = None,
     ):
         self.bridge_url = bridge_url
         self.bot_name = bot_name
         self.caller = caller
         self.logger = logger or logging.getLogger(__name__)
-        self._ws: Optional[websockets.WebSocketClientProtocol] = None
+        self._ws: Optional[Any] = None
         self.received_messages: List[Dict[str, Any]] = []
 
         # Session state
@@ -83,6 +83,10 @@ class MockAudioCodesClient:
     async def _message_handler(self):
         """Handle incoming messages from the bridge."""
         try:
+            if self._ws is None:
+                self.logger.error("[MOCK] WebSocket connection is None")
+                return
+                
             async for message in self._ws:
                 try:
                     data = json.loads(message)
@@ -162,6 +166,10 @@ class MockAudioCodesClient:
 
     async def initiate_session(self, conversation_id: Optional[str] = None) -> bool:
         """Send session.initiate to the bridge."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
         self.conversation_id = conversation_id or str(uuid.uuid4())
 
         session_initiate = {
@@ -208,6 +216,10 @@ class MockAudioCodesClient:
         self, audio_file_path: str, chunk_delay: float = 0.02
     ) -> bool:
         """Send user audio to the bridge."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
         audio_chunks = self._load_audio_chunks(audio_file_path)
         if not audio_chunks:
             return False
@@ -276,6 +288,10 @@ class MockAudioCodesClient:
 
     async def end_session(self, reason: str = "Test completed"):
         """End the session gracefully."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return
+            
         if self.conversation_id:
             session_end = {
                 "type": "session.end",
@@ -289,17 +305,17 @@ class MockAudioCodesClient:
     def _load_audio_chunks(self, file_path: str, chunk_size: int = 32000) -> List[str]:
         """Load and chunk audio file."""
         try:
-            file_path = Path(file_path)
-            if not file_path.exists():
-                self.logger.error(f"[MOCK] Audio file not found: {file_path}")
+            file_path_obj = Path(file_path)
+            if not file_path_obj.exists():
+                self.logger.error(f"[MOCK] Audio file not found: {file_path_obj}")
                 return []
 
-            with wave.open(str(file_path), "rb") as wav_file:
+            with wave.open(str(file_path_obj), "rb") as wav_file:
                 channels = wav_file.getnchannels()
                 sample_width = wav_file.getsampwidth()
                 frame_rate = wav_file.getframerate()
 
-                self.logger.info(f"[MOCK] Loading audio: {file_path.name}")
+                self.logger.info(f"[MOCK] Loading audio: {file_path_obj.name}")
                 self.logger.info(
                     f"   Format: {channels}ch, {sample_width*8}bit, {frame_rate}Hz"
                 )
@@ -312,7 +328,7 @@ class MockAudioCodesClient:
                     audio_array = np.frombuffer(audio_data, dtype=np.int16)
                     number_of_samples = round(len(audio_array) * 16000 / frame_rate)
                     audio_array = signal.resample(audio_array, number_of_samples)
-                    audio_array = audio_array.astype(np.int16)
+                    audio_array = np.array(audio_array, dtype=np.int16)
                     audio_data = audio_array.tobytes()
                     frame_rate = 16000
 
@@ -347,13 +363,13 @@ class MockAudioCodesClient:
         if self.greeting_audio_chunks:
             self._save_chunks_to_wav(
                 self.greeting_audio_chunks,
-                output_path / f"greeting_{self.conversation_id[:8]}.wav",
+                output_path / f"greeting_{self.conversation_id[:8] if self.conversation_id else 'unknown'}.wav",
             )
 
         if self.response_audio_chunks:
             self._save_chunks_to_wav(
                 self.response_audio_chunks,
-                output_path / f"response_{self.conversation_id[:8]}.wav",
+                output_path / f"response_{self.conversation_id[:8] if self.conversation_id else 'unknown'}.wav",
             )
 
     def _save_chunks_to_wav(self, chunks: List[str], filepath: Path):
@@ -500,7 +516,7 @@ class MockAudioCodesClient:
             output_path.mkdir(exist_ok=True)
             
             if audio_chunks:
-                filename = f"turn_{turn_number:02d}_response_{self.conversation_id[:8]}.wav"
+                filename = f"turn_{turn_number:02d}_response_{self.conversation_id[:8] if self.conversation_id else 'unknown'}.wav"
                 self._save_chunks_to_wav(audio_chunks, output_path / filename)
                 
         except Exception as e:

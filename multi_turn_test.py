@@ -18,7 +18,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from opusagent.config.logging_config import configure_logging
-from validate.mock_audiocodes_client import MockAudioCodesClient
+from opusagent.mock.mock_audiocodes_client import MockAudioCodesClient
 
 # Load environment variables
 load_dotenv()
@@ -31,7 +31,7 @@ BRIDGE_URL = "ws://localhost:8000/ws/telephony"
 
 # Example conversation flows - modify these lists for your own testing
 REPLACEMENT_CARD_CONVERSATION = [
-    "static/i_lost_my_gold_card.wav", 
+    "static/i_lost_my_gold_card.wav",
     # "static/not_supposed_to_be_here.wav",
     "static/my_gold_card.wav",
     "static/hold_on_a_sec.wav",

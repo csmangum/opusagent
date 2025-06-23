@@ -33,9 +33,10 @@ from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.config.logging_config import configure_logging
+from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
-from opusagent.websocket_config import WebSocketConfig
-from opusagent.websocket_manager import websocket_manager
+from opusagent.config.websocket_config import WebSocketConfig
+from opusagent.websocket_manager import websocket_manager, WebSocketManager
 
 load_dotenv()
 
@@ -89,7 +90,7 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
             # Create AudioCodes bridge instance
-            bridge = AudioCodesBridge(websocket, connection.websocket)
+            bridge = AudioCodesBridge(websocket, connection.websocket, session_config)
 
             # Start receiving from both WebSockets
             await asyncio.gather(
@@ -132,7 +133,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
             )
 
             # Instantiate our caller side bridge
-            bridge = CallAgentBridge(caller_websocket, connection.websocket)
+            bridge = CallAgentBridge(caller_websocket, connection.websocket, session_config)
             logger.info("Caller-Realtime bridge created")
 
             # Start bidirectional tasks
@@ -174,7 +175,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
             logger.info(
                 f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
             )
-            bridge = TwilioBridge(twilio_websocket, connection.websocket)
+            bridge = TwilioBridge(twilio_websocket, connection.websocket, session_config)
             logger.info("Twilio-Realtime bridge created")
 
             # Start receiving from both WebSockets

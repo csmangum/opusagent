@@ -13,9 +13,10 @@ import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Callable
 
 import websockets
+from websockets.asyncio.client import ClientConnection
 from pydantic import BaseModel, Field
 
 from opusagent.models.openai_api import (
@@ -46,16 +47,20 @@ class MockRealtimeClient:
         session_config: Optional[SessionConfig] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
-        self.session_config = session_config or SessionConfig()
+        self.session_config = session_config or SessionConfig(
+            model="gpt-4o-realtime-preview-2025-06-03",
+            modalities=["text", "audio"],
+            voice="alloy"
+        )
         
         # Session state
         self.session_id = str(uuid.uuid4())
         self.conversation_id = str(uuid.uuid4())
         self.connected = False
-        self._ws: Optional[websockets.WebSocketClientProtocol] = None
+        self._ws: Optional[ClientConnection] = None
         
         # Event handling
-        self._event_handlers: Dict[str, List[callable]] = {}
+        self._event_handlers: Dict[str, List[Callable]] = {}
         self._message_queue: asyncio.Queue = asyncio.Queue()
         self._response_queue: asyncio.Queue = asyncio.Queue()
         
@@ -80,7 +85,7 @@ class MockRealtimeClient:
         self.register_event_handler(ClientEventType.RESPONSE_CREATE, self._handle_response_create)
         self.register_event_handler(ClientEventType.RESPONSE_CANCEL, self._handle_response_cancel)
 
-    def register_event_handler(self, event_type: str, handler: callable):
+    def register_event_handler(self, event_type: str, handler: Callable):
         """Register an event handler."""
         if event_type not in self._event_handlers:
             self._event_handlers[event_type] = []
@@ -108,6 +113,9 @@ class MockRealtimeClient:
 
     async def _message_handler(self):
         """Handle incoming messages."""
+        if not self._ws:
+            return
+            
         try:
             async for message in self._ws:
                 try:

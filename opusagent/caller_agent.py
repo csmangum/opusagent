@@ -26,8 +26,8 @@ import websockets
 from pydantic import BaseModel
 
 from opusagent.config.logging_config import configure_logging
+from opusagent.mock.mock_audiocodes_client import MockAudioCodesClient
 from opusagent.websocket_manager import create_websocket_manager
-from validate.mock_audiocodes_client import MockAudioCodesClient
 
 logger = configure_logging("caller_agent")
 
@@ -141,6 +141,24 @@ IMPORTANT: In your FIRST message, provide ALL necessary information:
 "Hi, I need to replace my lost gold card. Can you send it to the address on file?"
 
 Be direct, efficient, and provide complete information upfront. Don't wait for the agent to ask questions.
+"""
+        # Check if this is a minimal caller
+        elif self.context.get("minimal_caller", False):
+            return f"""
+SCENARIO: You need a new card but you're not sure about the details.
+
+GOAL: {self.goal.primary_goal}
+
+CONTEXT:
+- You are a MINIMAL caller who provides basic information
+- You start with just "Hi I need a new card"
+- You wait for the agent to ask questions
+- You provide information when asked, but don't volunteer details
+
+IMPORTANT: Start your FIRST message with just:
+"Hi I need a new card"
+
+Don't provide additional details unless the agent asks. Be cooperative when questioned, but start minimal.
 """
         else:
             return f"""
@@ -410,7 +428,9 @@ Keep responses natural and conversational. Don't be overly helpful or profession
 
                     # Check if the agent is indicating the call should end
                     if self._should_hang_up(agent_text):
-                        self.logger.info("Agent indicated call should end - ending call politely")
+                        self.logger.info(
+                            "Agent indicated call should end - ending call politely"
+                        )
                         await self._end_call_successfully()
                         break
 
@@ -557,18 +577,18 @@ Keep responses natural and conversational. Don't be overly helpful or profession
     def _should_hang_up(self, agent_text: str) -> bool:
         """
         Detect if the agent is indicating the call should end.
-        
+
         This method looks for various hang-up indicators in the agent's response
         to determine if the caller should end the call.
-        
+
         Args:
             agent_text: The text from the agent's response
-            
+
         Returns:
             True if the call should be ended, False otherwise
         """
         text_lower = agent_text.lower()
-        
+
         # Direct hang-up indicators
         hang_up_phrases = [
             "thank you for calling",
@@ -584,41 +604,45 @@ Keep responses natural and conversational. Don't be overly helpful or profession
             "your request has been processed",
             "transferring you now",
             "please hold while i connect you",
-            "human agent will assist you"
+            "human agent will assist you",
         ]
-        
+
         for phrase in hang_up_phrases:
             if phrase in text_lower:
                 self.logger.info(f"Hang-up indicator detected: '{phrase}'")
                 return True
-        
+
         # Check for completion of specific scenarios
         if self.scenario.type == ScenarioType.CARD_REPLACEMENT:
             completion_phrases = [
                 "replacement card will be sent",
                 "new card will arrive",
                 "card has been ordered",
-                "replacement is complete"
+                "replacement is complete",
             ]
             for phrase in completion_phrases:
                 if phrase in text_lower:
-                    self.logger.info(f"Card replacement completion detected: '{phrase}'")
+                    self.logger.info(
+                        f"Card replacement completion detected: '{phrase}'"
+                    )
                     return True
-        
+
         # Check if the agent is clearly wrapping up
         wrap_up_indicators = [
             ("thank", "call"),
             ("appreciate", "time"),
             ("pleasure", "help"),
             ("anything else", "today"),
-            ("all set", "today")
+            ("all set", "today"),
         ]
-        
+
         for phrase1, phrase2 in wrap_up_indicators:
             if phrase1 in text_lower and phrase2 in text_lower:
-                self.logger.info(f"Wrap-up detected: '{phrase1}' and '{phrase2}' in response")
+                self.logger.info(
+                    f"Wrap-up detected: '{phrase1}' and '{phrase2}' in response"
+                )
                 return True
-        
+
         return False
 
     async def _start_conversation(self):
@@ -1150,6 +1174,66 @@ def create_perfect_card_replacement_caller(
     )
 
 
+def create_minimal_card_replacement_caller(
+    bridge_url: str = "ws://localhost:8000/ws/telephony",
+) -> CallerAgent:
+    """Create a minimal caller who starts with just 'Hi I need a new card'."""
+
+    personality = CallerPersonality(
+        type=PersonalityType.NORMAL,
+        traits=[
+            "minimal information",
+            "waits for questions",
+            "cooperative when asked",
+            "polite but brief",
+            "doesn't volunteer details",
+        ],
+        communication_style="Brief and waits for guidance",
+        patience_level=6,
+        tech_comfort=5,
+        tendency_to_interrupt=0.2,
+        provides_clear_info=0.3,  # Minimal information provision
+    )
+
+    goal = CallerGoal(
+        primary_goal="Get a new card replacement",
+        secondary_goals=[
+            "Provide information when asked",
+            "Complete the replacement process",
+        ],
+        success_criteria=[
+            "card replacement confirmed",
+            "replacement ordered",
+        ],
+        failure_conditions=[
+            "transferred to human",
+            "call terminated",
+            "frustrated with process",
+        ],
+        max_conversation_turns=10,
+    )
+
+    scenario = CallerScenario(
+        scenario_type=ScenarioType.CARD_REPLACEMENT,
+        goal=goal,
+        context={
+            "card_type": "unknown",
+            "reason": "unknown",
+            "minimal_caller": True,
+            "provides_info_when_asked": True,
+            "starts_with_basic_request": True,
+        },
+    )
+
+    return CallerAgent(
+        bridge_url=bridge_url,
+        personality=personality,
+        scenario=scenario,
+        caller_name="MinimalMike",
+        caller_phone="+15552222222",
+    )
+
+
 # Example usage script
 async def run_caller_agent_demo():
     """Run a demo of different caller agents."""
@@ -1162,6 +1246,7 @@ async def run_caller_agent_demo():
         ("Confused Elderly", create_confused_elderly_caller),
         ("Angry Complaint", create_angry_complaint_caller),
         ("Perfect Card Replacement", create_perfect_card_replacement_caller),
+        ("Minimal Card Replacement", create_minimal_card_replacement_caller),
     ]
 
     for caller_name, caller_factory in callers:

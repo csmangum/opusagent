@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 import pytest
 
-from validate.mock_twilio_client import MockTwilioClient
+from opusagent.mock.mock_twilio_client import MockTwilioClient
 
 
 @pytest.mark.asyncio

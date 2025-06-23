@@ -8,3 +8,4 @@ maintain consistent naming throughout the codebase.
 
 # Logger name used throughout the application
 LOGGER_NAME = "opusagent"
+VOICE = "verse"
