@@ -1,7 +1,6 @@
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.config.logging_config import configure_logging
 
-
 logger = configure_logging("call_agent_bridge")
 
 
@@ -33,9 +32,34 @@ class CallAgentBridge(AudioCodesBridge):
     AudioCodes / Twilio bridges.
     """
 
-    # NOTE:  No additional implementation is required right now because all the
-    #        AudioCodes message semantics are sufficient for the caller side as
-    #        well.  The class is defined explicitly so that we can wire it up in
-    #        ``main.handle_caller_call`` and keep the log namespaces clean.
+    def __init__(self, platform_websocket, realtime_websocket, session_config):
+        """Initialize the caller-side bridge.
 
-    pass 
+        Besides the standard AudioCodes behaviour we also need to make sure the
+        *caller* specific function set (``hang_up`` etc.) is registered with the
+        :class:`~opusagent.function_handler.FunctionHandler`.  The
+        :class:`~opusagent.bridges.base_bridge.BaseRealtimeBridge` base class
+        automatically registers the **customer-service** functions which are
+        useful for the agent that answers the phone, but for the synthetic
+        caller we want its own tools instead.
+        """
+
+        # Call parent constructor first (this wires up audio / event routing)
+        super().__init__(platform_websocket, realtime_websocket, session_config)
+
+        # Register the caller-side functions (e.g. ``hang_up``)
+        #! Make function registration be outside of the class
+        try:
+            from opusagent.caller_agent import register_caller_functions
+
+            register_caller_functions(self.function_handler)
+            logger.info("Caller functions registered with function handler")
+        except Exception as e:
+            logger.error(f"Failed to register caller functions: {e}")
+
+        # Optionally, we could unregister customer-service functions here to
+        # avoid name collisions.  Right now there are no overlapping names so
+        # we leave them in place.
+
+    # NOTE:  No further implementation is required right now – message routing
+    #        and audio streaming are inherited from AudioCodesBridge.
