@@ -32,6 +32,7 @@ from websockets.exceptions import ConnectionClosed
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
+from opusagent.bridges.dual_agent_bridge import DualAgentBridge
 from opusagent.config.logging_config import configure_logging
 from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
@@ -201,6 +202,33 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
         await twilio_websocket.close()
 
 
+@app.websocket("/agent-conversation")
+async def agent_conversation_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for caller agent to CS agent conversations.
+    
+    This endpoint enables direct conversations between a caller agent and
+    customer service agent without external telephony platforms.
+    """
+    await websocket.accept()
+    client_address = websocket.client
+    logger.info(f"------ Agent conversation request from {client_address} ------")
+    
+    try:
+        # Create and initialize dual agent bridge
+        bridge = DualAgentBridge()
+        logger.info(f"Created dual agent bridge: {bridge.conversation_id}")
+        
+        # Initialize both OpenAI connections and start conversation
+        await bridge.initialize_connections()
+        
+    except Exception as e:
+        logger.error(f"Error in agent conversation: {e}")
+        await bridge.close()
+    finally:
+        logger.info("Agent conversation ended")
+        await websocket.close()
+
+
 @app.post("/twilio/voice")
 async def twilio_voice(request: Request):
     """Handle incoming Twilio voice calls.
@@ -239,6 +267,7 @@ async def root():
             "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
             "/twilio/voice": "Webhook endpoint for incoming Twilio voice calls",
             "/caller-agent": "WebSocket endpoint for Caller test agents",
+            "/agent-conversation": "WebSocket endpoint for caller agent to CS agent conversations",
             "/stats": "Connection statistics and health information",
             "/health": "Health check endpoint for service monitoring",
             "/config": "Current WebSocket manager configuration",
