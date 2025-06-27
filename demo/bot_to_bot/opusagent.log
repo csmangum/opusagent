@@ -1,0 +1,1417 @@
+2025-06-26 17:12:17,223 - run - INFO - Logging configured
+2025-06-26 17:12:17,225 - run - INFO - === Server Configuration ===
+2025-06-26 17:12:17,226 - run - INFO - Host: 0.0.0.0
+2025-06-26 17:12:17,226 - run - INFO - Port: 8000
+2025-06-26 17:12:17,226 - run - INFO - Log level: DEBUG
+2025-06-26 17:12:17,226 - run - INFO - Environment: production
+2025-06-26 17:12:17,226 - run - INFO - OpenAI API key configured: True
+2025-06-26 17:12:17,226 - run - INFO - OpenAI API key format: Valid
+2025-06-26 17:12:17,226 - run - INFO - =========================
+2025-06-26 17:12:17,227 - run - INFO - Starting server with uvicorn...
+2025-06-26 17:12:17,659 - call_recorder - INFO - Logging configured
+2025-06-26 17:12:17,732 - event_router - INFO - Logging configured
+2025-06-26 17:12:17,733 - function_handler - INFO - Logging configured
+2025-06-26 17:12:17,735 - session_manager - INFO - Logging configured
+2025-06-26 17:12:17,736 - transcript_manager - INFO - Logging configured
+2025-06-26 17:12:17,737 - realtime_handler - INFO - Logging configured
+2025-06-26 17:12:17,737 - base_bridge - INFO - Logging configured
+2025-06-26 17:12:17,737 - audiocodes_bridge - INFO - Logging configured
+2025-06-26 17:12:17,738 - call_agent_bridge - INFO - Logging configured
+2025-06-26 17:12:17,739 - twilio_bridge - INFO - Logging configured
+2025-06-26 17:12:17,746 - caller_agent - INFO - Logging configured
+2025-06-26 17:12:17,750 - customer_service_agent - INFO - Logging configured
+2025-06-26 17:12:17,754 - dual_agent_bridge - INFO - Logging configured
+2025-06-26 17:12:17,756 - main - INFO - Logging configured
+2025-06-26 17:12:21,960 - main - INFO - ------ Agent conversation request from Address(host='127.0.0.1', port=57324) ------
+2025-06-26 17:12:21,960 - dual_agent_bridge - INFO - DualAgentBridge created for conversation: 5348760a-5597-4579-a59d-7da7656baf09
+2025-06-26 17:12:21,961 - main - INFO - Created dual agent bridge: 5348760a-5597-4579-a59d-7da7656baf09
+2025-06-26 17:12:22,754 - dual_agent_bridge - INFO - Caller connection: openai_88bc901b
+2025-06-26 17:12:22,754 - dual_agent_bridge - INFO - CS connection: openai_504e1971
+2025-06-26 17:12:22,754 - dual_agent_bridge - INFO - Caller agent voice: alloy
+2025-06-26 17:12:22,754 - dual_agent_bridge - INFO - CS agent voice: verse
+2025-06-26 17:12:22,755 - call_recorder - INFO - CallRecorder initialized for conversation 5348760a-5597-4579-a59d-7da7656baf09
+2025-06-26 17:12:22,755 - call_recorder - INFO - Recording directory: agent_conversations\5348760a-5597-4579-a59d-7da7656baf09_20250626_171222
+2025-06-26 17:12:22,756 - call_recorder - INFO - Audio settings - Caller: 16000Hz, Bot: 24000Hz, Target: 16000Hz
+2025-06-26 17:12:22,756 - dual_agent_bridge - INFO - Configured call recorder for agent-to-agent conversation (both agents at 24kHz)
+2025-06-26 17:12:22,757 - call_recorder - INFO - WAV files initialized for recording
+2025-06-26 17:12:22,757 - call_recorder - INFO - Recording started for conversation 5348760a-5597-4579-a59d-7da7656baf09
+2025-06-26 17:12:22,757 - dual_agent_bridge - INFO - Call recording started for agent conversation: 5348760a-5597-4579-a59d-7da7656baf09
+2025-06-26 17:12:22,758 - dual_agent_bridge - INFO - Caller session initialized
+2025-06-26 17:12:22,758 - dual_agent_bridge - INFO - CS session initialized
+2025-06-26 17:12:22,759 - dual_agent_bridge - DEBUG - Caller message: session.created
+2025-06-26 17:12:22,759 - dual_agent_bridge - INFO - Both agents ready, conversation can begin
+2025-06-26 17:12:22,759 - dual_agent_bridge - INFO - Recording agent conversation to: agent_conversations\5348760a-5597-4579-a59d-7da7656baf09_20250626_171222
+2025-06-26 17:12:22,759 - dual_agent_bridge - DEBUG - CS message: session.created
+2025-06-26 17:12:22,891 - dual_agent_bridge - DEBUG - Caller message: session.updated
+2025-06-26 17:12:22,893 - dual_agent_bridge - DEBUG - CS message: session.updated
+2025-06-26 17:12:22,893 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:22,901 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:23,741 - dual_agent_bridge - INFO - Starting conversation with CS agent greeting
+2025-06-26 17:12:23,743 - dual_agent_bridge - INFO - Response triggered for cs (voice: verse)
+2025-06-26 17:12:23,813 - dual_agent_bridge - DEBUG - CS started speaking
+2025-06-26 17:12:23,813 - dual_agent_bridge - DEBUG - CS message: response.created
+2025-06-26 17:12:24,424 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:24,424 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:24,453 - dual_agent_bridge - DEBUG - CS message: response.content_part.added
+2025-06-26 17:12:24,453 - dual_agent_bridge - INFO - CS transcript: Thank
+2025-06-26 17:12:24,453 - call_recorder - INFO - Transcript added: [bot] Thank...
+2025-06-26 17:12:24,454 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,456 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:24,456 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:24,456 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,462 - dual_agent_bridge - INFO - CS transcript:  for
+2025-06-26 17:12:24,462 - call_recorder - INFO - Transcript added: [bot]  for...
+2025-06-26 17:12:24,462 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,472 - dual_agent_bridge - INFO - CS transcript:  calling
+2025-06-26 17:12:24,472 - call_recorder - INFO - Transcript added: [bot]  calling...
+2025-06-26 17:12:24,473 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,477 - dual_agent_bridge - INFO - CS transcript: ,
+2025-06-26 17:12:24,477 - call_recorder - INFO - Transcript added: [bot] ,...
+2025-06-26 17:12:24,477 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,612 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:24,612 - call_recorder - INFO - Bot audio chunk #1: Original: 4800 bytes (100.0ms @ 24000Hz), Resampled: 3200 bytes (100.0ms @ 16000Hz)
+2025-06-26 17:12:24,612 - call_recorder - WARNING - Duration ratio mismatch: got 1.000, expected 0.667. This may indicate incorrect sample rate assumptions.
+2025-06-26 17:12:24,612 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,714 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:24,714 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,714 - dual_agent_bridge - INFO - CS transcript:  how
+2025-06-26 17:12:24,714 - call_recorder - INFO - Transcript added: [bot]  how...
+2025-06-26 17:12:24,729 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,846 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:24,846 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,846 - dual_agent_bridge - INFO - CS transcript:  can
+2025-06-26 17:12:24,846 - call_recorder - INFO - Transcript added: [bot]  can...
+2025-06-26 17:12:24,846 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,846 - dual_agent_bridge - INFO - CS transcript:  I
+2025-06-26 17:12:24,846 - call_recorder - INFO - Transcript added: [bot]  I...
+2025-06-26 17:12:24,846 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,881 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:24,881 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,888 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:24,888 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:24,888 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,889 - dual_agent_bridge - INFO - CS transcript:  help
+2025-06-26 17:12:24,889 - call_recorder - INFO - Transcript added: [bot]  help...
+2025-06-26 17:12:24,889 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,889 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:24,889 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:24,889 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,889 - dual_agent_bridge - INFO - CS transcript:  today
+2025-06-26 17:12:24,889 - call_recorder - INFO - Transcript added: [bot]  today...
+2025-06-26 17:12:24,889 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,890 - dual_agent_bridge - INFO - CS transcript: ?
+2025-06-26 17:12:24,890 - call_recorder - INFO - Transcript added: [bot] ?...
+2025-06-26 17:12:24,890 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:24,975 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:24,975 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,991 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:24,991 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:24,991 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:25,003 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:25,117 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18848 -> 12565 samples, 785.3ms -> 785.3ms
+2025-06-26 17:12:25,117 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:25,117 - dual_agent_bridge - INFO - CS finished speaking, triggering caller response
+2025-06-26 17:12:25,117 - dual_agent_bridge - INFO - Response triggered for caller (voice: alloy)
+2025-06-26 17:12:25,117 - dual_agent_bridge - DEBUG - CS message: response.audio.done
+2025-06-26 17:12:25,117 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.done
+2025-06-26 17:12:25,117 - dual_agent_bridge - DEBUG - CS message: response.content_part.done
+2025-06-26 17:12:25,117 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:25,117 - dual_agent_bridge - DEBUG - CS message: response.done
+2025-06-26 17:12:25,130 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:25,283 - dual_agent_bridge - DEBUG - Caller started speaking
+2025-06-26 17:12:25,283 - dual_agent_bridge - DEBUG - Caller message: response.created
+2025-06-26 17:12:25,723 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:25,723 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:26,253 - dual_agent_bridge - DEBUG - Caller message: response.output_item.added
+2025-06-26 17:12:26,253 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:26,269 - dual_agent_bridge - DEBUG - Caller message: response.content_part.added
+2025-06-26 17:12:26,270 - dual_agent_bridge - INFO - Caller transcript: Hi
+2025-06-26 17:12:26,271 - call_recorder - INFO - Transcript added: [caller] Hi...
+2025-06-26 17:12:26,271 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,280 - dual_agent_bridge - INFO - Caller transcript:  there
+2025-06-26 17:12:26,280 - call_recorder - INFO - Transcript added: [caller]  there...
+2025-06-26 17:12:26,281 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,287 - dual_agent_bridge - INFO - Caller transcript: !
+2025-06-26 17:12:26,288 - call_recorder - INFO - Transcript added: [caller] !...
+2025-06-26 17:12:26,288 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,294 - dual_agent_bridge - INFO - Caller transcript:  Thanks
+2025-06-26 17:12:26,294 - call_recorder - INFO - Transcript added: [caller]  Thanks...
+2025-06-26 17:12:26,294 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,303 - dual_agent_bridge - INFO - Caller transcript:  for
+2025-06-26 17:12:26,303 - call_recorder - INFO - Transcript added: [caller]  for...
+2025-06-26 17:12:26,303 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,484 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:26,484 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,591 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:26,591 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,734 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:26,734 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,734 - dual_agent_bridge - INFO - Caller transcript:  taking
+2025-06-26 17:12:26,734 - call_recorder - INFO - Transcript added: [caller]  taking...
+2025-06-26 17:12:26,734 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,734 - dual_agent_bridge - INFO - Caller transcript:  my
+2025-06-26 17:12:26,734 - call_recorder - INFO - Transcript added: [caller]  my...
+2025-06-26 17:12:26,734 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,734 - dual_agent_bridge - INFO - Caller transcript:  call
+2025-06-26 17:12:26,734 - call_recorder - INFO - Transcript added: [caller]  call...
+2025-06-26 17:12:26,734 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,734 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:26,734 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:26,734 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,768 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:26,768 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,793 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:26,793 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:26,793 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,793 - dual_agent_bridge - INFO - Caller transcript:  I've
+2025-06-26 17:12:26,793 - call_recorder - INFO - Transcript added: [caller]  I've...
+2025-06-26 17:12:26,793 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,881 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:26,881 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,908 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:26,908 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:26,922 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:26,922 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:26,922 - dual_agent_bridge - INFO - Caller transcript:  run
+2025-06-26 17:12:26,923 - call_recorder - INFO - Transcript added: [caller]  run...
+2025-06-26 17:12:26,923 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,923 - dual_agent_bridge - INFO - Caller transcript:  into
+2025-06-26 17:12:26,923 - call_recorder - INFO - Transcript added: [caller]  into...
+2025-06-26 17:12:26,923 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,924 - dual_agent_bridge - INFO - Caller transcript:  a
+2025-06-26 17:12:26,924 - call_recorder - INFO - Transcript added: [caller]  a...
+2025-06-26 17:12:26,924 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,924 - dual_agent_bridge - INFO - Caller transcript:  bit
+2025-06-26 17:12:26,924 - call_recorder - INFO - Transcript added: [caller]  bit...
+2025-06-26 17:12:26,924 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,931 - dual_agent_bridge - INFO - Caller transcript:  of
+2025-06-26 17:12:26,931 - call_recorder - INFO - Transcript added: [caller]  of...
+2025-06-26 17:12:26,931 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,932 - dual_agent_bridge - INFO - Caller transcript:  an
+2025-06-26 17:12:26,932 - call_recorder - INFO - Transcript added: [caller]  an...
+2025-06-26 17:12:26,932 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,941 - dual_agent_bridge - INFO - Caller transcript:  issue
+2025-06-26 17:12:26,941 - call_recorder - INFO - Transcript added: [caller]  issue...
+2025-06-26 17:12:26,941 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:26,941 - dual_agent_bridge - INFO - Caller transcript: —I
+2025-06-26 17:12:26,941 - call_recorder - INFO - Transcript added: [caller] —I...
+2025-06-26 17:12:26,941 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,059 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:27,060 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:27,063 - dual_agent_bridge - INFO - Caller transcript: 've
+2025-06-26 17:12:27,064 - call_recorder - INFO - Transcript added: [caller] 've...
+2025-06-26 17:12:27,064 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,064 - dual_agent_bridge - INFO - Caller transcript:  lost
+2025-06-26 17:12:27,064 - call_recorder - INFO - Transcript added: [caller]  lost...
+2025-06-26 17:12:27,064 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,071 - dual_agent_bridge - INFO - Caller transcript:  my
+2025-06-26 17:12:27,071 - call_recorder - INFO - Transcript added: [caller]  my...
+2025-06-26 17:12:27,071 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,079 - dual_agent_bridge - INFO - Caller transcript:  gold
+2025-06-26 17:12:27,079 - call_recorder - INFO - Transcript added: [caller]  gold...
+2025-06-26 17:12:27,079 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,089 - dual_agent_bridge - INFO - Caller transcript:  card
+2025-06-26 17:12:27,089 - call_recorder - INFO - Transcript added: [caller]  card...
+2025-06-26 17:12:27,089 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,101 - dual_agent_bridge - INFO - Caller transcript:  and
+2025-06-26 17:12:27,101 - call_recorder - INFO - Transcript added: [caller]  and...
+2025-06-26 17:12:27,103 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,109 - dual_agent_bridge - INFO - Caller transcript:  I
+2025-06-26 17:12:27,109 - call_recorder - INFO - Transcript added: [caller]  I...
+2025-06-26 17:12:27,109 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,111 - dual_agent_bridge - INFO - Caller transcript:  need
+2025-06-26 17:12:27,111 - call_recorder - INFO - Transcript added: [caller]  need...
+2025-06-26 17:12:27,112 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,119 - dual_agent_bridge - INFO - Caller transcript:  to
+2025-06-26 17:12:27,119 - call_recorder - INFO - Transcript added: [caller]  to...
+2025-06-26 17:12:27,119 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,124 - dual_agent_bridge - INFO - Caller transcript:  get
+2025-06-26 17:12:27,124 - call_recorder - INFO - Transcript added: [caller]  get...
+2025-06-26 17:12:27,124 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,137 - dual_agent_bridge - INFO - Caller transcript:  it
+2025-06-26 17:12:27,137 - call_recorder - INFO - Transcript added: [caller]  it...
+2025-06-26 17:12:27,137 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,148 - dual_agent_bridge - INFO - Caller transcript:  replaced
+2025-06-26 17:12:27,148 - call_recorder - INFO - Transcript added: [caller]  replaced...
+2025-06-26 17:12:27,148 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,149 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:27,149 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:27,149 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,228 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:27,229 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:27,380 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:27,381 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:27,572 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:27,573 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:27,573 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:27,689 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:27,689 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:27,725 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:27,725 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:27,726 - dual_agent_bridge - INFO - Caller transcript:  Could
+2025-06-26 17:12:27,726 - call_recorder - INFO - Transcript added: [caller]  Could...
+2025-06-26 17:12:27,726 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,726 - dual_agent_bridge - INFO - Caller transcript:  you
+2025-06-26 17:12:27,726 - call_recorder - INFO - Transcript added: [caller]  you...
+2025-06-26 17:12:27,726 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,727 - dual_agent_bridge - INFO - Caller transcript:  help
+2025-06-26 17:12:27,727 - call_recorder - INFO - Transcript added: [caller]  help...
+2025-06-26 17:12:27,727 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,742 - dual_agent_bridge - INFO - Caller transcript:  me
+2025-06-26 17:12:27,742 - call_recorder - INFO - Transcript added: [caller]  me...
+2025-06-26 17:12:27,742 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,742 - dual_agent_bridge - INFO - Caller transcript:  with
+2025-06-26 17:12:27,743 - call_recorder - INFO - Transcript added: [caller]  with...
+2025-06-26 17:12:27,743 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,747 - dual_agent_bridge - INFO - Caller transcript:  that
+2025-06-26 17:12:27,747 - call_recorder - INFO - Transcript added: [caller]  that...
+2025-06-26 17:12:27,747 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,755 - dual_agent_bridge - INFO - Caller transcript: ,
+2025-06-26 17:12:27,756 - call_recorder - INFO - Transcript added: [caller] ,...
+2025-06-26 17:12:27,756 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,765 - dual_agent_bridge - INFO - Caller transcript:  please
+2025-06-26 17:12:27,765 - call_recorder - INFO - Transcript added: [caller]  please...
+2025-06-26 17:12:27,765 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,773 - dual_agent_bridge - INFO - Caller transcript: ?
+2025-06-26 17:12:27,773 - call_recorder - INFO - Transcript added: [caller] ?...
+2025-06-26 17:12:27,774 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:27,969 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:27,970 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:28,126 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:28,127 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:28,282 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:28,283 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:28,363 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:28,364 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24848 -> 16565 samples, 1035.3ms -> 1035.3ms
+2025-06-26 17:12:28,365 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:28,365 - dual_agent_bridge - INFO - Caller finished speaking, triggering CS response
+2025-06-26 17:12:28,365 - dual_agent_bridge - INFO - Response triggered for cs (voice: verse)
+2025-06-26 17:12:28,366 - dual_agent_bridge - DEBUG - Caller message: response.audio.done
+2025-06-26 17:12:28,366 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.done
+2025-06-26 17:12:28,366 - dual_agent_bridge - DEBUG - Caller message: response.content_part.done
+2025-06-26 17:12:28,366 - dual_agent_bridge - DEBUG - Caller message: response.output_item.done
+2025-06-26 17:12:28,366 - dual_agent_bridge - DEBUG - Caller message: response.done
+2025-06-26 17:12:28,382 - dual_agent_bridge - DEBUG - Caller message: rate_limits.updated
+2025-06-26 17:12:28,563 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:28,564 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:28,569 - dual_agent_bridge - DEBUG - CS started speaking
+2025-06-26 17:12:28,569 - dual_agent_bridge - DEBUG - CS message: response.created
+2025-06-26 17:12:28,606 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:28,606 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:29,381 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:29,381 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:29,548 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:29,549 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:29,557 - dual_agent_bridge - DEBUG - CS message: response.content_part.added
+2025-06-26 17:12:29,557 - dual_agent_bridge - INFO - CS transcript: Of
+2025-06-26 17:12:29,557 - call_recorder - INFO - Transcript added: [bot] Of...
+2025-06-26 17:12:29,557 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,561 - dual_agent_bridge - INFO - CS transcript:  course
+2025-06-26 17:12:29,561 - call_recorder - INFO - Transcript added: [bot]  course...
+2025-06-26 17:12:29,561 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,567 - dual_agent_bridge - INFO - CS transcript: ,
+2025-06-26 17:12:29,567 - call_recorder - INFO - Transcript added: [bot] ,...
+2025-06-26 17:12:29,567 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,609 - dual_agent_bridge - INFO - CS transcript:  I
+2025-06-26 17:12:29,609 - call_recorder - INFO - Transcript added: [bot]  I...
+2025-06-26 17:12:29,610 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,610 - dual_agent_bridge - INFO - CS transcript:  can
+2025-06-26 17:12:29,610 - call_recorder - INFO - Transcript added: [bot]  can...
+2025-06-26 17:12:29,610 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,611 - dual_agent_bridge - INFO - CS transcript:  help
+2025-06-26 17:12:29,611 - call_recorder - INFO - Transcript added: [bot]  help...
+2025-06-26 17:12:29,611 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,754 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:29,754 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:29,825 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:29,826 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:29,826 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:29,828 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:29,828 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:29,828 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,959 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:29,959 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:29,959 - dual_agent_bridge - INFO - CS transcript:  with
+2025-06-26 17:12:29,959 - call_recorder - INFO - Transcript added: [bot]  with...
+2025-06-26 17:12:29,959 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:29,959 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:29,959 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:29,977 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:29,978 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,001 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:30,001 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,001 - dual_agent_bridge - INFO - CS transcript:  that
+2025-06-26 17:12:30,001 - call_recorder - INFO - Transcript added: [bot]  that...
+2025-06-26 17:12:30,001 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,003 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:30,003 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:30,003 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,121 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:30,121 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,121 - dual_agent_bridge - INFO - CS transcript:  I'll
+2025-06-26 17:12:30,121 - call_recorder - INFO - Transcript added: [bot]  I'll...
+2025-06-26 17:12:30,121 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,127 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:30,127 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:30,127 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,130 - dual_agent_bridge - INFO - CS transcript:  need
+2025-06-26 17:12:30,130 - call_recorder - INFO - Transcript added: [bot]  need...
+2025-06-26 17:12:30,130 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,130 - dual_agent_bridge - INFO - CS transcript:  to
+2025-06-26 17:12:30,130 - call_recorder - INFO - Transcript added: [bot]  to...
+2025-06-26 17:12:30,130 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,131 - dual_agent_bridge - INFO - CS transcript:  gather
+2025-06-26 17:12:30,131 - call_recorder - INFO - Transcript added: [bot]  gather...
+2025-06-26 17:12:30,131 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,131 - dual_agent_bridge - INFO - CS transcript:  some
+2025-06-26 17:12:30,131 - call_recorder - INFO - Transcript added: [bot]  some...
+2025-06-26 17:12:30,131 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,132 - dual_agent_bridge - INFO - CS transcript:  information
+2025-06-26 17:12:30,132 - call_recorder - INFO - Transcript added: [bot]  information...
+2025-06-26 17:12:30,132 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,261 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:30,262 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,287 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:30,287 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:30,355 - dual_agent_bridge - INFO - CS transcript:  to
+2025-06-26 17:12:30,355 - call_recorder - INFO - Transcript added: [bot]  to...
+2025-06-26 17:12:30,356 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,357 - dual_agent_bridge - INFO - CS transcript:  proceed
+2025-06-26 17:12:30,357 - call_recorder - INFO - Transcript added: [bot]  proceed...
+2025-06-26 17:12:30,357 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,358 - dual_agent_bridge - INFO - CS transcript:  with
+2025-06-26 17:12:30,358 - call_recorder - INFO - Transcript added: [bot]  with...
+2025-06-26 17:12:30,359 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,359 - dual_agent_bridge - INFO - CS transcript:  replacing
+2025-06-26 17:12:30,359 - call_recorder - INFO - Transcript added: [bot]  replacing...
+2025-06-26 17:12:30,359 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,359 - dual_agent_bridge - INFO - CS transcript:  your
+2025-06-26 17:12:30,360 - call_recorder - INFO - Transcript added: [bot]  your...
+2025-06-26 17:12:30,360 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,362 - dual_agent_bridge - INFO - CS transcript:  gold
+2025-06-26 17:12:30,362 - call_recorder - INFO - Transcript added: [bot]  gold...
+2025-06-26 17:12:30,362 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,376 - dual_agent_bridge - INFO - CS transcript:  card
+2025-06-26 17:12:30,376 - call_recorder - INFO - Transcript added: [bot]  card...
+2025-06-26 17:12:30,376 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,379 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:30,379 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:30,379 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,500 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:30,500 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,632 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:30,632 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,698 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:30,698 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:30,759 - dual_agent_bridge - INFO - CS transcript:  Could
+2025-06-26 17:12:30,759 - call_recorder - INFO - Transcript added: [bot]  Could...
+2025-06-26 17:12:30,759 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,759 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:30,775 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:30,775 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:30,775 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:30,776 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,776 - dual_agent_bridge - INFO - CS transcript:  please
+2025-06-26 17:12:30,777 - call_recorder - INFO - Transcript added: [bot]  please...
+2025-06-26 17:12:30,778 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,778 - dual_agent_bridge - INFO - CS transcript:  provide
+2025-06-26 17:12:30,778 - call_recorder - INFO - Transcript added: [bot]  provide...
+2025-06-26 17:12:30,778 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,787 - dual_agent_bridge - INFO - CS transcript:  me
+2025-06-26 17:12:30,787 - call_recorder - INFO - Transcript added: [bot]  me...
+2025-06-26 17:12:30,787 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:30,972 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:30,972 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:30,972 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:31,105 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:31,105 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:31,183 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:31,184 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:31,184 - dual_agent_bridge - INFO - CS transcript:  with
+2025-06-26 17:12:31,184 - call_recorder - INFO - Transcript added: [bot]  with...
+2025-06-26 17:12:31,184 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,185 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:31,185 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:31,185 - dual_agent_bridge - INFO - CS transcript:  your
+2025-06-26 17:12:31,185 - call_recorder - INFO - Transcript added: [bot]  your...
+2025-06-26 17:12:31,185 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,186 - dual_agent_bridge - INFO - CS transcript:  delivery
+2025-06-26 17:12:31,186 - call_recorder - INFO - Transcript added: [bot]  delivery...
+2025-06-26 17:12:31,186 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,211 - dual_agent_bridge - INFO - CS transcript:  address
+2025-06-26 17:12:31,212 - call_recorder - INFO - Transcript added: [bot]  address...
+2025-06-26 17:12:31,212 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,212 - dual_agent_bridge - INFO - CS transcript:  for
+2025-06-26 17:12:31,212 - call_recorder - INFO - Transcript added: [bot]  for...
+2025-06-26 17:12:31,212 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,213 - dual_agent_bridge - INFO - CS transcript:  the
+2025-06-26 17:12:31,213 - call_recorder - INFO - Transcript added: [bot]  the...
+2025-06-26 17:12:31,213 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,276 - dual_agent_bridge - INFO - CS transcript:  replacement
+2025-06-26 17:12:31,277 - call_recorder - INFO - Transcript added: [bot]  replacement...
+2025-06-26 17:12:31,277 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,368 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:31,368 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:31,544 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:31,558 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:31,622 - dual_agent_bridge - INFO - CS transcript:  card
+2025-06-26 17:12:31,622 - call_recorder - INFO - Transcript added: [bot]  card...
+2025-06-26 17:12:31,622 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,623 - dual_agent_bridge - INFO - CS transcript: ?
+2025-06-26 17:12:31,623 - call_recorder - INFO - Transcript added: [bot] ?...
+2025-06-26 17:12:31,623 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:31,718 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:31,718 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:31,869 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:31,869 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:31,869 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:32,004 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24848 -> 16565 samples, 1035.3ms -> 1035.3ms
+2025-06-26 17:12:32,004 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:32,005 - dual_agent_bridge - INFO - CS finished speaking, triggering caller response
+2025-06-26 17:12:32,005 - dual_agent_bridge - INFO - Response triggered for caller (voice: alloy)
+2025-06-26 17:12:32,005 - dual_agent_bridge - DEBUG - CS message: response.audio.done
+2025-06-26 17:12:32,006 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.done
+2025-06-26 17:12:32,006 - dual_agent_bridge - DEBUG - CS message: response.content_part.done
+2025-06-26 17:12:32,007 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:32,007 - dual_agent_bridge - DEBUG - CS message: response.done
+2025-06-26 17:12:32,007 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:32,018 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:32,019 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:32,073 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:32,073 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:32,187 - dual_agent_bridge - DEBUG - Caller started speaking
+2025-06-26 17:12:32,187 - dual_agent_bridge - DEBUG - Caller message: response.created
+2025-06-26 17:12:32,632 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:32,633 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:33,512 - dual_agent_bridge - DEBUG - Caller message: response.output_item.added
+2025-06-26 17:12:33,513 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:33,528 - dual_agent_bridge - DEBUG - Caller message: response.content_part.added
+2025-06-26 17:12:33,528 - dual_agent_bridge - INFO - Caller transcript: Certainly
+2025-06-26 17:12:33,528 - call_recorder - INFO - Transcript added: [caller] Certainly...
+2025-06-26 17:12:33,529 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:33,533 - dual_agent_bridge - INFO - Caller transcript: !
+2025-06-26 17:12:33,533 - call_recorder - INFO - Transcript added: [caller] !...
+2025-06-26 17:12:33,533 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:33,541 - dual_agent_bridge - INFO - Caller transcript:  My
+2025-06-26 17:12:33,541 - call_recorder - INFO - Transcript added: [caller]  My...
+2025-06-26 17:12:33,542 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:33,554 - dual_agent_bridge - INFO - Caller transcript:  delivery
+2025-06-26 17:12:33,555 - call_recorder - INFO - Transcript added: [caller]  delivery...
+2025-06-26 17:12:33,555 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:33,896 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:33,897 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:33,952 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:33,953 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,095 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:34,095 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,095 - dual_agent_bridge - INFO - Caller transcript:  address
+2025-06-26 17:12:34,095 - call_recorder - INFO - Transcript added: [caller]  address...
+2025-06-26 17:12:34,095 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,095 - dual_agent_bridge - INFO - Caller transcript:  is
+2025-06-26 17:12:34,095 - call_recorder - INFO - Transcript added: [caller]  is...
+2025-06-26 17:12:34,095 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,137 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:34,137 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,328 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:34,328 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:34,328 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,328 - dual_agent_bridge - INFO - Caller transcript:  
+2025-06-26 17:12:34,328 - call_recorder - INFO - Transcript added: [caller]  ...
+2025-06-26 17:12:34,328 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,328 - dual_agent_bridge - INFO - Caller transcript: 123
+2025-06-26 17:12:34,328 - call_recorder - INFO - Transcript added: [caller] 123...
+2025-06-26 17:12:34,328 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,328 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:34,328 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,340 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:34,340 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,341 - dual_agent_bridge - INFO - Caller transcript:  Maple
+2025-06-26 17:12:34,341 - call_recorder - INFO - Transcript added: [caller]  Maple...
+2025-06-26 17:12:34,341 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,341 - dual_agent_bridge - INFO - Caller transcript:  Street
+2025-06-26 17:12:34,341 - call_recorder - INFO - Transcript added: [caller]  Street...
+2025-06-26 17:12:34,341 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,341 - dual_agent_bridge - INFO - Caller transcript: ,
+2025-06-26 17:12:34,341 - call_recorder - INFO - Transcript added: [caller] ,...
+2025-06-26 17:12:34,341 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,342 - dual_agent_bridge - INFO - Caller transcript:  Springfield
+2025-06-26 17:12:34,342 - call_recorder - INFO - Transcript added: [caller]  Springfield...
+2025-06-26 17:12:34,342 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,342 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:34,342 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:34,342 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,430 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:34,430 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,430 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:34,430 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:34,447 - dual_agent_bridge - INFO - Caller transcript:  Is
+2025-06-26 17:12:34,448 - call_recorder - INFO - Transcript added: [caller]  Is...
+2025-06-26 17:12:34,448 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,454 - dual_agent_bridge - INFO - Caller transcript:  there
+2025-06-26 17:12:34,454 - call_recorder - INFO - Transcript added: [caller]  there...
+2025-06-26 17:12:34,454 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,464 - dual_agent_bridge - INFO - Caller transcript:  anything
+2025-06-26 17:12:34,465 - call_recorder - INFO - Transcript added: [caller]  anything...
+2025-06-26 17:12:34,465 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,470 - dual_agent_bridge - INFO - Caller transcript:  else
+2025-06-26 17:12:34,471 - call_recorder - INFO - Transcript added: [caller]  else...
+2025-06-26 17:12:34,471 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,476 - dual_agent_bridge - INFO - Caller transcript:  you
+2025-06-26 17:12:34,476 - call_recorder - INFO - Transcript added: [caller]  you...
+2025-06-26 17:12:34,476 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,485 - dual_agent_bridge - INFO - Caller transcript:  need
+2025-06-26 17:12:34,485 - call_recorder - INFO - Transcript added: [caller]  need...
+2025-06-26 17:12:34,486 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,491 - dual_agent_bridge - INFO - Caller transcript:  from
+2025-06-26 17:12:34,491 - call_recorder - INFO - Transcript added: [caller]  from...
+2025-06-26 17:12:34,491 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,498 - dual_agent_bridge - INFO - Caller transcript:  me
+2025-06-26 17:12:34,498 - call_recorder - INFO - Transcript added: [caller]  me...
+2025-06-26 17:12:34,502 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,508 - dual_agent_bridge - INFO - Caller transcript: ?
+2025-06-26 17:12:34,508 - call_recorder - INFO - Transcript added: [caller] ?...
+2025-06-26 17:12:34,508 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:34,581 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:34,581 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,742 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:34,742 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:34,742 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,905 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:34,905 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:34,905 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:34,905 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:35,057 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:35,057 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:35,133 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 23648 -> 15765 samples, 985.3ms -> 985.3ms
+2025-06-26 17:12:35,134 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:35,134 - dual_agent_bridge - INFO - Caller finished speaking, triggering CS response
+2025-06-26 17:12:35,134 - dual_agent_bridge - INFO - Response triggered for cs (voice: verse)
+2025-06-26 17:12:35,135 - dual_agent_bridge - DEBUG - Caller message: response.audio.done
+2025-06-26 17:12:35,135 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.done
+2025-06-26 17:12:35,135 - dual_agent_bridge - DEBUG - Caller message: response.content_part.done
+2025-06-26 17:12:35,135 - dual_agent_bridge - DEBUG - Caller message: response.output_item.done
+2025-06-26 17:12:35,136 - dual_agent_bridge - DEBUG - Caller message: response.done
+2025-06-26 17:12:35,140 - dual_agent_bridge - DEBUG - Caller message: rate_limits.updated
+2025-06-26 17:12:35,320 - dual_agent_bridge - DEBUG - CS started speaking
+2025-06-26 17:12:35,320 - dual_agent_bridge - DEBUG - CS message: response.created
+2025-06-26 17:12:35,414 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:35,414 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:36,468 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:36,468 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:36,488 - dual_agent_bridge - DEBUG - CS message: response.content_part.added
+2025-06-26 17:12:36,490 - dual_agent_bridge - INFO - CS transcript: Thank
+2025-06-26 17:12:36,490 - call_recorder - INFO - Transcript added: [bot] Thank...
+2025-06-26 17:12:36,490 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:36,495 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:36,495 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:36,495 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:36,507 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:36,507 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:36,507 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:36,644 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:36,660 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:36,736 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:36,736 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:36,752 - dual_agent_bridge - INFO - CS transcript:  I've
+2025-06-26 17:12:36,752 - call_recorder - INFO - Transcript added: [bot]  I've...
+2025-06-26 17:12:36,752 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:36,886 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:36,886 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:36,886 - dual_agent_bridge - INFO - CS transcript:  noted
+2025-06-26 17:12:36,886 - call_recorder - INFO - Transcript added: [bot]  noted...
+2025-06-26 17:12:36,886 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:36,930 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:36,930 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:36,930 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:36,933 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:36,933 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:36,933 - dual_agent_bridge - INFO - CS transcript:  the
+2025-06-26 17:12:36,933 - call_recorder - INFO - Transcript added: [bot]  the...
+2025-06-26 17:12:36,933 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:36,933 - dual_agent_bridge - INFO - CS transcript:  delivery
+2025-06-26 17:12:36,933 - call_recorder - INFO - Transcript added: [bot]  delivery...
+2025-06-26 17:12:36,933 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,030 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:37,030 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:37,033 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:37,033 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:37,033 - dual_agent_bridge - INFO - CS transcript:  address
+2025-06-26 17:12:37,034 - call_recorder - INFO - Transcript added: [bot]  address...
+2025-06-26 17:12:37,034 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,037 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:37,037 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:37,037 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:37,037 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:37,037 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,052 - dual_agent_bridge - INFO - CS transcript:  I'll
+2025-06-26 17:12:37,052 - call_recorder - INFO - Transcript added: [bot]  I'll...
+2025-06-26 17:12:37,052 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,053 - dual_agent_bridge - INFO - CS transcript:  proceed
+2025-06-26 17:12:37,054 - call_recorder - INFO - Transcript added: [bot]  proceed...
+2025-06-26 17:12:37,054 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,054 - dual_agent_bridge - INFO - CS transcript:  with
+2025-06-26 17:12:37,055 - call_recorder - INFO - Transcript added: [bot]  with...
+2025-06-26 17:12:37,055 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,154 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:37,154 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:37,227 - dual_agent_bridge - INFO - CS transcript:  replacing
+2025-06-26 17:12:37,227 - call_recorder - INFO - Transcript added: [bot]  replacing...
+2025-06-26 17:12:37,227 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,233 - dual_agent_bridge - INFO - CS transcript:  your
+2025-06-26 17:12:37,233 - call_recorder - INFO - Transcript added: [bot]  your...
+2025-06-26 17:12:37,234 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,239 - dual_agent_bridge - INFO - CS transcript:  lost
+2025-06-26 17:12:37,239 - call_recorder - INFO - Transcript added: [bot]  lost...
+2025-06-26 17:12:37,239 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,249 - dual_agent_bridge - INFO - CS transcript:  gold
+2025-06-26 17:12:37,249 - call_recorder - INFO - Transcript added: [bot]  gold...
+2025-06-26 17:12:37,249 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,254 - dual_agent_bridge - INFO - CS transcript:  card
+2025-06-26 17:12:37,254 - call_recorder - INFO - Transcript added: [bot]  card...
+2025-06-26 17:12:37,257 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,263 - dual_agent_bridge - INFO - CS transcript:  now
+2025-06-26 17:12:37,263 - call_recorder - INFO - Transcript added: [bot]  now...
+2025-06-26 17:12:37,263 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,270 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:37,271 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:37,271 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,347 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:37,347 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:37,347 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:37,513 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:37,513 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:37,513 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:37,513 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:37,642 - dual_agent_bridge - INFO - CS transcript:  Please
+2025-06-26 17:12:37,642 - call_recorder - INFO - Transcript added: [bot]  Please...
+2025-06-26 17:12:37,642 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,662 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:37,662 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:37,662 - dual_agent_bridge - INFO - CS transcript:  hold
+2025-06-26 17:12:37,662 - call_recorder - INFO - Transcript added: [bot]  hold...
+2025-06-26 17:12:37,662 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,662 - dual_agent_bridge - INFO - CS transcript:  for
+2025-06-26 17:12:37,662 - call_recorder - INFO - Transcript added: [bot]  for...
+2025-06-26 17:12:37,662 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,662 - dual_agent_bridge - INFO - CS transcript:  a
+2025-06-26 17:12:37,662 - call_recorder - INFO - Transcript added: [bot]  a...
+2025-06-26 17:12:37,662 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,673 - dual_agent_bridge - INFO - CS transcript:  moment
+2025-06-26 17:12:37,673 - call_recorder - INFO - Transcript added: [bot]  moment...
+2025-06-26 17:12:37,673 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,681 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:37,682 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:37,682 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:37,775 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:37,775 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:37,880 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:37,880 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:38,032 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:38,034 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:38,037 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:38,037 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:38,197 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:38,197 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 33248 -> 22165 samples, 1385.3ms -> 1385.3ms
+2025-06-26 17:12:38,197 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:38,213 - dual_agent_bridge - INFO - CS finished speaking, triggering caller response
+2025-06-26 17:12:38,213 - dual_agent_bridge - INFO - Response triggered for caller (voice: alloy)
+2025-06-26 17:12:38,215 - dual_agent_bridge - DEBUG - CS message: response.audio.done
+2025-06-26 17:12:38,215 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.done
+2025-06-26 17:12:38,215 - dual_agent_bridge - DEBUG - CS message: response.content_part.done
+2025-06-26 17:12:38,216 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:38,216 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:38,420 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:38,420 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:38,420 - dual_agent_bridge - DEBUG - Caller started speaking
+2025-06-26 17:12:38,420 - dual_agent_bridge - DEBUG - Caller message: response.created
+2025-06-26 17:12:39,300 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:39,300 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:39,300 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,300 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,316 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,317 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,327 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,338 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,343 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,351 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,365 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,384 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,385 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,385 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,387 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,399 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,408 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,420 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,426 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:39,454 - call_recorder - INFO - Function call logged: process_replacement
+2025-06-26 17:12:39,454 - dual_agent_bridge - INFO - Recorded function call: process_replacement
+2025-06-26 17:12:39,454 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.done
+2025-06-26 17:12:39,454 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:39,459 - dual_agent_bridge - DEBUG - CS message: response.done
+2025-06-26 17:12:39,471 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:39,707 - dual_agent_bridge - DEBUG - Caller message: response.output_item.added
+2025-06-26 17:12:39,707 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:39,722 - dual_agent_bridge - DEBUG - Caller message: response.content_part.added
+2025-06-26 17:12:39,722 - dual_agent_bridge - INFO - Caller transcript: Sure
+2025-06-26 17:12:39,722 - call_recorder - INFO - Transcript added: [caller] Sure...
+2025-06-26 17:12:39,722 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:39,728 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:39,728 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:39,729 - dual_agent_bridge - INFO - Caller transcript: ,
+2025-06-26 17:12:39,729 - call_recorder - INFO - Transcript added: [caller] ,...
+2025-06-26 17:12:39,730 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:39,737 - dual_agent_bridge - INFO - Caller transcript:  I'll
+2025-06-26 17:12:39,737 - call_recorder - INFO - Transcript added: [caller]  I'll...
+2025-06-26 17:12:39,737 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:39,744 - dual_agent_bridge - INFO - Caller transcript:  hold
+2025-06-26 17:12:39,744 - call_recorder - INFO - Transcript added: [caller]  hold...
+2025-06-26 17:12:39,744 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:39,752 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:39,752 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:39,752 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:39,764 - dual_agent_bridge - INFO - Caller transcript:  Thank
+2025-06-26 17:12:39,764 - call_recorder - INFO - Transcript added: [caller]  Thank...
+2025-06-26 17:12:39,765 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:39,917 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:39,917 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,043 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:40,043 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:40,043 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,126 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:40,126 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:40,197 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:40,197 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,197 - dual_agent_bridge - INFO - Caller transcript:  you
+2025-06-26 17:12:40,197 - call_recorder - INFO - Transcript added: [caller]  you...
+2025-06-26 17:12:40,197 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:40,197 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:40,197 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:40,197 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:40,227 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:40,227 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,233 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:40,234 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,347 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:40,347 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,396 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:40,396 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 17648 -> 11765 samples, 735.3ms -> 735.3ms
+2025-06-26 17:12:40,396 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:40,396 - dual_agent_bridge - INFO - Caller finished speaking, triggering CS response
+2025-06-26 17:12:40,396 - dual_agent_bridge - INFO - Response triggered for cs (voice: verse)
+2025-06-26 17:12:40,396 - dual_agent_bridge - DEBUG - Caller message: response.audio.done
+2025-06-26 17:12:40,396 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.done
+2025-06-26 17:12:40,396 - dual_agent_bridge - DEBUG - Caller message: response.content_part.done
+2025-06-26 17:12:40,396 - dual_agent_bridge - DEBUG - Caller message: response.output_item.done
+2025-06-26 17:12:40,409 - dual_agent_bridge - DEBUG - Caller message: response.done
+2025-06-26 17:12:40,416 - dual_agent_bridge - DEBUG - Caller message: rate_limits.updated
+2025-06-26 17:12:40,544 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:40,544 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:40,553 - dual_agent_bridge - DEBUG - CS started speaking
+2025-06-26 17:12:40,553 - dual_agent_bridge - DEBUG - CS message: response.created
+2025-06-26 17:12:41,162 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:41,162 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:41,170 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:41,170 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:41,399 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:41,399 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:41,428 - dual_agent_bridge - DEBUG - CS message: response.content_part.added
+2025-06-26 17:12:41,428 - dual_agent_bridge - INFO - CS transcript: You're
+2025-06-26 17:12:41,429 - call_recorder - INFO - Transcript added: [bot] You're...
+2025-06-26 17:12:41,429 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,429 - dual_agent_bridge - INFO - CS transcript:  welcome
+2025-06-26 17:12:41,430 - call_recorder - INFO - Transcript added: [bot]  welcome...
+2025-06-26 17:12:41,430 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,442 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:41,442 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:41,442 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,578 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:41,578 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:41,724 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:41,724 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:41,809 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:41,809 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:41,839 - dual_agent_bridge - INFO - CS transcript:  I'll
+2025-06-26 17:12:41,839 - call_recorder - INFO - Transcript added: [bot]  I'll...
+2025-06-26 17:12:41,840 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,841 - dual_agent_bridge - INFO - CS transcript:  complete
+2025-06-26 17:12:41,841 - call_recorder - INFO - Transcript added: [bot]  complete...
+2025-06-26 17:12:41,841 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,865 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:41,865 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:41,904 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:41,904 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:41,904 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:41,904 - dual_agent_bridge - INFO - CS transcript:  the
+2025-06-26 17:12:41,904 - call_recorder - INFO - Transcript added: [bot]  the...
+2025-06-26 17:12:41,904 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,904 - dual_agent_bridge - INFO - CS transcript:  request
+2025-06-26 17:12:41,904 - call_recorder - INFO - Transcript added: [bot]  request...
+2025-06-26 17:12:41,904 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:41,996 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:41,996 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:42,030 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:42,030 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:42,167 - dual_agent_bridge - INFO - CS transcript:  and
+2025-06-26 17:12:42,168 - call_recorder - INFO - Transcript added: [bot]  and...
+2025-06-26 17:12:42,168 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,177 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:42,178 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:42,178 - dual_agent_bridge - INFO - CS transcript:  let
+2025-06-26 17:12:42,178 - call_recorder - INFO - Transcript added: [bot]  let...
+2025-06-26 17:12:42,178 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,179 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:42,180 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:42,180 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,188 - dual_agent_bridge - INFO - CS transcript:  know
+2025-06-26 17:12:42,188 - call_recorder - INFO - Transcript added: [bot]  know...
+2025-06-26 17:12:42,188 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,189 - dual_agent_bridge - INFO - CS transcript:  once
+2025-06-26 17:12:42,189 - call_recorder - INFO - Transcript added: [bot]  once...
+2025-06-26 17:12:42,189 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,193 - dual_agent_bridge - INFO - CS transcript:  it's
+2025-06-26 17:12:42,193 - call_recorder - INFO - Transcript added: [bot]  it's...
+2025-06-26 17:12:42,193 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,193 - dual_agent_bridge - INFO - CS transcript:  done
+2025-06-26 17:12:42,193 - call_recorder - INFO - Transcript added: [bot]  done...
+2025-06-26 17:12:42,193 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,194 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:42,194 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:42,194 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:42,247 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:42,247 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:42,350 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:42,350 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:42,373 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:42,380 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18848 -> 12565 samples, 785.3ms -> 785.3ms
+2025-06-26 17:12:42,380 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:42,459 - dual_agent_bridge - INFO - CS finished speaking, triggering caller response
+2025-06-26 17:12:42,459 - dual_agent_bridge - INFO - Response triggered for caller (voice: alloy)
+2025-06-26 17:12:42,459 - dual_agent_bridge - DEBUG - CS message: response.audio.done
+2025-06-26 17:12:42,459 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.done
+2025-06-26 17:12:42,459 - dual_agent_bridge - DEBUG - CS message: response.content_part.done
+2025-06-26 17:12:42,459 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:42,459 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:42,532 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:42,533 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:42,592 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:42,592 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:42,592 - dual_agent_bridge - DEBUG - Caller started speaking
+2025-06-26 17:12:42,592 - dual_agent_bridge - DEBUG - Caller message: response.created
+2025-06-26 17:12:43,295 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:43,295 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:43,313 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:43,313 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:43,313 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,318 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,323 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,330 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,342 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,349 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,356 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,363 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,370 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,381 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,388 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,394 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,410 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,411 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,416 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,428 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,432 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.delta
+2025-06-26 17:12:43,461 - call_recorder - INFO - Function call logged: process_replacement
+2025-06-26 17:12:43,461 - dual_agent_bridge - INFO - Recorded function call: process_replacement
+2025-06-26 17:12:43,461 - dual_agent_bridge - DEBUG - CS message: response.function_call_arguments.done
+2025-06-26 17:12:43,461 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:43,461 - dual_agent_bridge - DEBUG - CS message: response.done
+2025-06-26 17:12:43,474 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:44,070 - dual_agent_bridge - DEBUG - Caller message: response.output_item.added
+2025-06-26 17:12:44,071 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:44,071 - dual_agent_bridge - DEBUG - Caller message: response.content_part.added
+2025-06-26 17:12:44,072 - dual_agent_bridge - INFO - Caller transcript: Great
+2025-06-26 17:12:44,072 - call_recorder - INFO - Transcript added: [caller] Great...
+2025-06-26 17:12:44,072 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:44,103 - dual_agent_bridge - INFO - Caller transcript: ,
+2025-06-26 17:12:44,104 - call_recorder - INFO - Transcript added: [caller] ,...
+2025-06-26 17:12:44,104 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:44,104 - dual_agent_bridge - INFO - Caller transcript:  I
+2025-06-26 17:12:44,104 - call_recorder - INFO - Transcript added: [caller]  I...
+2025-06-26 17:12:44,104 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:44,105 - dual_agent_bridge - INFO - Caller transcript:  appreciate
+2025-06-26 17:12:44,105 - call_recorder - INFO - Transcript added: [caller]  appreciate...
+2025-06-26 17:12:44,105 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:44,105 - dual_agent_bridge - INFO - Caller transcript:  it
+2025-06-26 17:12:44,106 - call_recorder - INFO - Transcript added: [caller]  it...
+2025-06-26 17:12:44,106 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:44,118 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:44,118 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:44,118 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:44,263 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:44,264 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:44,390 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:44,390 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:44,546 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:44,546 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:44,570 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:44,571 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:44,587 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:44,587 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:44,588 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:44,693 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:44,693 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:44,731 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18848 -> 12565 samples, 785.3ms -> 785.3ms
+2025-06-26 17:12:44,732 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:44,733 - dual_agent_bridge - INFO - Caller finished speaking, triggering CS response
+2025-06-26 17:12:44,733 - dual_agent_bridge - INFO - Response triggered for cs (voice: verse)
+2025-06-26 17:12:44,733 - dual_agent_bridge - DEBUG - Caller message: response.audio.done
+2025-06-26 17:12:44,733 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.done
+2025-06-26 17:12:44,733 - dual_agent_bridge - DEBUG - Caller message: response.content_part.done
+2025-06-26 17:12:44,733 - dual_agent_bridge - DEBUG - Caller message: response.output_item.done
+2025-06-26 17:12:44,748 - dual_agent_bridge - DEBUG - Caller message: response.done
+2025-06-26 17:12:44,748 - dual_agent_bridge - DEBUG - Caller message: rate_limits.updated
+2025-06-26 17:12:44,868 - dual_agent_bridge - DEBUG - CS started speaking
+2025-06-26 17:12:44,869 - dual_agent_bridge - DEBUG - CS message: response.created
+2025-06-26 17:12:45,230 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:45,230 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:46,485 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:46,485 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:46,597 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:46,597 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:46,616 - dual_agent_bridge - DEBUG - CS message: response.content_part.added
+2025-06-26 17:12:46,617 - dual_agent_bridge - INFO - CS transcript: Your
+2025-06-26 17:12:46,617 - call_recorder - INFO - Transcript added: [bot] Your...
+2025-06-26 17:12:46,618 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:46,620 - dual_agent_bridge - INFO - CS transcript:  request
+2025-06-26 17:12:46,620 - call_recorder - INFO - Transcript added: [bot]  request...
+2025-06-26 17:12:46,620 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:46,628 - dual_agent_bridge - INFO - CS transcript:  for
+2025-06-26 17:12:46,628 - call_recorder - INFO - Transcript added: [bot]  for...
+2025-06-26 17:12:46,628 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:46,767 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:46,767 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:46,883 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:46,883 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,015 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:47,015 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,015 - dual_agent_bridge - INFO - CS transcript:  a
+2025-06-26 17:12:47,015 - call_recorder - INFO - Transcript added: [bot]  a...
+2025-06-26 17:12:47,015 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,015 - dual_agent_bridge - INFO - CS transcript:  replacement
+2025-06-26 17:12:47,015 - call_recorder - INFO - Transcript added: [bot]  replacement...
+2025-06-26 17:12:47,015 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,015 - dual_agent_bridge - INFO - CS transcript:  gold
+2025-06-26 17:12:47,015 - call_recorder - INFO - Transcript added: [bot]  gold...
+2025-06-26 17:12:47,015 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,048 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:47,048 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,048 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:47,048 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:47,048 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,048 - dual_agent_bridge - INFO - CS transcript:  card
+2025-06-26 17:12:47,048 - call_recorder - INFO - Transcript added: [bot]  card...
+2025-06-26 17:12:47,048 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,137 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:47,137 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,175 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:47,175 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,178 - dual_agent_bridge - INFO - CS transcript:  has
+2025-06-26 17:12:47,178 - call_recorder - INFO - Transcript added: [bot]  has...
+2025-06-26 17:12:47,178 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,178 - dual_agent_bridge - INFO - CS transcript:  been
+2025-06-26 17:12:47,178 - call_recorder - INFO - Transcript added: [bot]  been...
+2025-06-26 17:12:47,178 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,179 - dual_agent_bridge - INFO - CS transcript:  processed
+2025-06-26 17:12:47,179 - call_recorder - INFO - Transcript added: [bot]  processed...
+2025-06-26 17:12:47,180 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,180 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:47,180 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:47,180 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,181 - dual_agent_bridge - INFO - CS transcript:  Is
+2025-06-26 17:12:47,181 - call_recorder - INFO - Transcript added: [bot]  Is...
+2025-06-26 17:12:47,181 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,181 - dual_agent_bridge - INFO - CS transcript:  there
+2025-06-26 17:12:47,181 - call_recorder - INFO - Transcript added: [bot]  there...
+2025-06-26 17:12:47,182 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,182 - dual_agent_bridge - INFO - CS transcript:  anything
+2025-06-26 17:12:47,182 - call_recorder - INFO - Transcript added: [bot]  anything...
+2025-06-26 17:12:47,182 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,237 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:47,243 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:47,297 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:47,297 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,374 - dual_agent_bridge - INFO - CS transcript:  else
+2025-06-26 17:12:47,374 - call_recorder - INFO - Transcript added: [bot]  else...
+2025-06-26 17:12:47,374 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,374 - dual_agent_bridge - INFO - CS transcript:  I
+2025-06-26 17:12:47,374 - call_recorder - INFO - Transcript added: [bot]  I...
+2025-06-26 17:12:47,374 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,390 - dual_agent_bridge - INFO - CS transcript:  can
+2025-06-26 17:12:47,391 - call_recorder - INFO - Transcript added: [bot]  can...
+2025-06-26 17:12:47,391 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,395 - dual_agent_bridge - INFO - CS transcript:  assist
+2025-06-26 17:12:47,395 - call_recorder - INFO - Transcript added: [bot]  assist...
+2025-06-26 17:12:47,396 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,404 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:47,404 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:47,404 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,414 - dual_agent_bridge - INFO - CS transcript:  with
+2025-06-26 17:12:47,414 - call_recorder - INFO - Transcript added: [bot]  with...
+2025-06-26 17:12:47,414 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,426 - dual_agent_bridge - INFO - CS transcript:  today
+2025-06-26 17:12:47,426 - call_recorder - INFO - Transcript added: [bot]  today...
+2025-06-26 17:12:47,426 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,429 - dual_agent_bridge - INFO - CS transcript: ?
+2025-06-26 17:12:47,429 - call_recorder - INFO - Transcript added: [bot] ?...
+2025-06-26 17:12:47,429 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:47,506 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:47,507 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,654 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:47,670 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:47,670 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,791 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:47,791 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:47,822 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:47,822 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,984 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:47,984 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:47,995 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 14048 -> 9365 samples, 585.3ms -> 585.3ms
+2025-06-26 17:12:47,995 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:48,014 - dual_agent_bridge - INFO - CS finished speaking, triggering caller response
+2025-06-26 17:12:48,015 - dual_agent_bridge - INFO - Response triggered for caller (voice: alloy)
+2025-06-26 17:12:48,015 - dual_agent_bridge - DEBUG - CS message: response.audio.done
+2025-06-26 17:12:48,015 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.done
+2025-06-26 17:12:48,016 - dual_agent_bridge - DEBUG - CS message: response.content_part.done
+2025-06-26 17:12:48,016 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:48,019 - dual_agent_bridge - DEBUG - CS message: response.done
+2025-06-26 17:12:48,048 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:48,189 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:48,189 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:48,218 - dual_agent_bridge - DEBUG - Caller started speaking
+2025-06-26 17:12:48,218 - dual_agent_bridge - DEBUG - Caller message: response.created
+2025-06-26 17:12:48,849 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:48,849 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:49,975 - dual_agent_bridge - DEBUG - Caller message: response.output_item.added
+2025-06-26 17:12:49,975 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:49,984 - dual_agent_bridge - DEBUG - Caller message: response.content_part.added
+2025-06-26 17:12:49,984 - dual_agent_bridge - INFO - Caller transcript: Thank
+2025-06-26 17:12:49,984 - call_recorder - INFO - Transcript added: [caller] Thank...
+2025-06-26 17:12:49,992 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,007 - dual_agent_bridge - INFO - Caller transcript:  you
+2025-06-26 17:12:50,008 - call_recorder - INFO - Transcript added: [caller]  you...
+2025-06-26 17:12:50,008 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,008 - dual_agent_bridge - INFO - Caller transcript:  so
+2025-06-26 17:12:50,008 - call_recorder - INFO - Transcript added: [caller]  so...
+2025-06-26 17:12:50,008 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,017 - dual_agent_bridge - INFO - Caller transcript:  much
+2025-06-26 17:12:50,017 - call_recorder - INFO - Transcript added: [caller]  much...
+2025-06-26 17:12:50,017 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,021 - dual_agent_bridge - INFO - Caller transcript:  for
+2025-06-26 17:12:50,021 - call_recorder - INFO - Transcript added: [caller]  for...
+2025-06-26 17:12:50,021 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,182 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:50,183 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,296 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:50,296 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,449 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:50,449 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,449 - dual_agent_bridge - INFO - Caller transcript:  processing
+2025-06-26 17:12:50,449 - call_recorder - INFO - Transcript added: [caller]  processing...
+2025-06-26 17:12:50,449 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,449 - dual_agent_bridge - INFO - Caller transcript:  that
+2025-06-26 17:12:50,449 - call_recorder - INFO - Transcript added: [caller]  that...
+2025-06-26 17:12:50,449 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,490 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:50,490 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:50,491 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,497 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:50,497 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,507 - dual_agent_bridge - INFO - Caller transcript:  for
+2025-06-26 17:12:50,507 - call_recorder - INFO - Transcript added: [caller]  for...
+2025-06-26 17:12:50,507 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,508 - dual_agent_bridge - INFO - Caller transcript:  me
+2025-06-26 17:12:50,508 - call_recorder - INFO - Transcript added: [caller]  me...
+2025-06-26 17:12:50,508 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,508 - dual_agent_bridge - INFO - Caller transcript: .
+2025-06-26 17:12:50,508 - call_recorder - INFO - Transcript added: [caller] ....
+2025-06-26 17:12:50,508 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,600 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:50,600 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:50,629 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:50,629 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,645 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:50,645 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,645 - dual_agent_bridge - INFO - Caller transcript:  Could
+2025-06-26 17:12:50,645 - call_recorder - INFO - Transcript added: [caller]  Could...
+2025-06-26 17:12:50,645 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,646 - dual_agent_bridge - INFO - Caller transcript:  you
+2025-06-26 17:12:50,646 - call_recorder - INFO - Transcript added: [caller]  you...
+2025-06-26 17:12:50,646 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,646 - dual_agent_bridge - INFO - Caller transcript:  tell
+2025-06-26 17:12:50,646 - call_recorder - INFO - Transcript added: [caller]  tell...
+2025-06-26 17:12:50,646 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,646 - dual_agent_bridge - INFO - Caller transcript:  me
+2025-06-26 17:12:50,646 - call_recorder - INFO - Transcript added: [caller]  me...
+2025-06-26 17:12:50,647 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,647 - dual_agent_bridge - INFO - Caller transcript:  how
+2025-06-26 17:12:50,647 - call_recorder - INFO - Transcript added: [caller]  how...
+2025-06-26 17:12:50,647 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,647 - dual_agent_bridge - INFO - Caller transcript:  long
+2025-06-26 17:12:50,647 - call_recorder - INFO - Transcript added: [caller]  long...
+2025-06-26 17:12:50,647 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,648 - dual_agent_bridge - INFO - Caller transcript:  it
+2025-06-26 17:12:50,648 - call_recorder - INFO - Transcript added: [caller]  it...
+2025-06-26 17:12:50,648 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,648 - dual_agent_bridge - INFO - Caller transcript:  will
+2025-06-26 17:12:50,648 - call_recorder - INFO - Transcript added: [caller]  will...
+2025-06-26 17:12:50,648 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,648 - dual_agent_bridge - INFO - Caller transcript:  take
+2025-06-26 17:12:50,648 - call_recorder - INFO - Transcript added: [caller]  take...
+2025-06-26 17:12:50,648 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,648 - dual_agent_bridge - INFO - Caller transcript:  for
+2025-06-26 17:12:50,650 - call_recorder - INFO - Transcript added: [caller]  for...
+2025-06-26 17:12:50,650 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,789 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:50,789 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:50,789 - dual_agent_bridge - INFO - Caller transcript:  the
+2025-06-26 17:12:50,789 - call_recorder - INFO - Transcript added: [caller]  the...
+2025-06-26 17:12:50,789 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,808 - dual_agent_bridge - INFO - Caller transcript:  replacement
+2025-06-26 17:12:50,808 - call_recorder - INFO - Transcript added: [caller]  replacement...
+2025-06-26 17:12:50,808 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,836 - dual_agent_bridge - INFO - Caller transcript:  card
+2025-06-26 17:12:50,836 - call_recorder - INFO - Transcript added: [caller]  card...
+2025-06-26 17:12:50,836 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,836 - dual_agent_bridge - INFO - Caller transcript:  to
+2025-06-26 17:12:50,838 - call_recorder - INFO - Transcript added: [caller]  to...
+2025-06-26 17:12:50,838 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,838 - dual_agent_bridge - INFO - Caller transcript:  arrive
+2025-06-26 17:12:50,838 - call_recorder - INFO - Transcript added: [caller]  arrive...
+2025-06-26 17:12:50,838 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,843 - dual_agent_bridge - INFO - Caller transcript: ?
+2025-06-26 17:12:50,843 - call_recorder - INFO - Transcript added: [caller] ?...
+2025-06-26 17:12:50,843 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.delta
+2025-06-26 17:12:50,905 - dual_agent_bridge - DEBUG - Committed audio buffer to CS agent
+2025-06-26 17:12:50,914 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:50,914 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:51,072 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:51,072 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:51,072 - dual_agent_bridge - DEBUG - CS message: input_audio_buffer.committed
+2025-06-26 17:12:51,072 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:51,221 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:51,221 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:51,240 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 14048 -> 9365 samples, 585.3ms -> 585.3ms
+2025-06-26 17:12:51,240 - dual_agent_bridge - DEBUG - Caller message: response.audio.delta
+2025-06-26 17:12:51,254 - dual_agent_bridge - INFO - Caller finished speaking, triggering CS response
+2025-06-26 17:12:51,258 - dual_agent_bridge - INFO - Response triggered for cs (voice: verse)
+2025-06-26 17:12:51,258 - dual_agent_bridge - DEBUG - Caller message: response.audio.done
+2025-06-26 17:12:51,258 - dual_agent_bridge - DEBUG - Caller message: response.audio_transcript.done
+2025-06-26 17:12:51,258 - dual_agent_bridge - DEBUG - Caller message: response.content_part.done
+2025-06-26 17:12:51,259 - dual_agent_bridge - DEBUG - Caller message: response.output_item.done
+2025-06-26 17:12:51,259 - dual_agent_bridge - DEBUG - Caller message: response.done
+2025-06-26 17:12:51,259 - dual_agent_bridge - DEBUG - Caller message: rate_limits.updated
+2025-06-26 17:12:51,480 - dual_agent_bridge - DEBUG - CS started speaking
+2025-06-26 17:12:51,480 - dual_agent_bridge - DEBUG - CS message: response.created
+2025-06-26 17:12:51,644 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:51,645 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:51,717 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:51,718 - dual_agent_bridge - DEBUG - CS message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:52,824 - dual_agent_bridge - DEBUG - CS message: response.output_item.added
+2025-06-26 17:12:52,824 - dual_agent_bridge - DEBUG - CS message: conversation.item.created
+2025-06-26 17:12:52,835 - dual_agent_bridge - DEBUG - CS message: response.content_part.added
+2025-06-26 17:12:52,835 - dual_agent_bridge - INFO - CS transcript: Your
+2025-06-26 17:12:52,835 - call_recorder - INFO - Transcript added: [bot] Your...
+2025-06-26 17:12:52,835 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:52,860 - dual_agent_bridge - INFO - CS transcript:  replacement
+2025-06-26 17:12:52,860 - call_recorder - INFO - Transcript added: [bot]  replacement...
+2025-06-26 17:12:52,860 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:52,860 - dual_agent_bridge - INFO - CS transcript:  gold
+2025-06-26 17:12:52,861 - call_recorder - INFO - Transcript added: [bot]  gold...
+2025-06-26 17:12:52,862 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:52,992 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-26 17:12:52,992 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,134 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:53,134 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-26 17:12:53,134 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,134 - dual_agent_bridge - INFO - CS transcript:  card
+2025-06-26 17:12:53,134 - call_recorder - INFO - Transcript added: [bot]  card...
+2025-06-26 17:12:53,134 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,242 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:53,242 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,242 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:53,242 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:53,274 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:53,274 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,276 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:53,276 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,276 - dual_agent_bridge - INFO - CS transcript:  should
+2025-06-26 17:12:53,276 - call_recorder - INFO - Transcript added: [bot]  should...
+2025-06-26 17:12:53,276 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,276 - dual_agent_bridge - INFO - CS transcript:  arrive
+2025-06-26 17:12:53,276 - call_recorder - INFO - Transcript added: [bot]  arrive...
+2025-06-26 17:12:53,281 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,282 - dual_agent_bridge - INFO - CS transcript:  within
+2025-06-26 17:12:53,282 - call_recorder - INFO - Transcript added: [bot]  within...
+2025-06-26 17:12:53,282 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,369 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-26 17:12:53,369 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,369 - dual_agent_bridge - INFO - CS transcript:  
+2025-06-26 17:12:53,369 - call_recorder - INFO - Transcript added: [bot]  ...
+2025-06-26 17:12:53,369 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,393 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:53,394 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-26 17:12:53,394 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,394 - dual_agent_bridge - INFO - CS transcript: 5
+2025-06-26 17:12:53,394 - call_recorder - INFO - Transcript added: [bot] 5...
+2025-06-26 17:12:53,394 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,394 - dual_agent_bridge - INFO - CS transcript: -
+2025-06-26 17:12:53,396 - call_recorder - INFO - Transcript added: [bot] -...
+2025-06-26 17:12:53,396 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,396 - dual_agent_bridge - INFO - CS transcript: 7
+2025-06-26 17:12:53,396 - call_recorder - INFO - Transcript added: [bot] 7...
+2025-06-26 17:12:53,396 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,397 - dual_agent_bridge - INFO - CS transcript:  business
+2025-06-26 17:12:53,397 - call_recorder - INFO - Transcript added: [bot]  business...
+2025-06-26 17:12:53,397 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,397 - dual_agent_bridge - INFO - CS transcript:  days
+2025-06-26 17:12:53,397 - call_recorder - INFO - Transcript added: [bot]  days...
+2025-06-26 17:12:53,397 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,397 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:53,397 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:53,398 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,512 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-26 17:12:53,512 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,550 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:53,551 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:53,599 - dual_agent_bridge - INFO - CS transcript:  If
+2025-06-26 17:12:53,600 - call_recorder - INFO - Transcript added: [bot]  If...
+2025-06-26 17:12:53,600 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,606 - dual_agent_bridge - INFO - CS transcript:  you
+2025-06-26 17:12:53,607 - call_recorder - INFO - Transcript added: [bot]  you...
+2025-06-26 17:12:53,607 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,614 - dual_agent_bridge - INFO - CS transcript:  need
+2025-06-26 17:12:53,614 - call_recorder - INFO - Transcript added: [bot]  need...
+2025-06-26 17:12:53,614 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,623 - dual_agent_bridge - INFO - CS transcript:  further
+2025-06-26 17:12:53,623 - call_recorder - INFO - Transcript added: [bot]  further...
+2025-06-26 17:12:53,623 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,630 - dual_agent_bridge - INFO - CS transcript:  assistance
+2025-06-26 17:12:53,630 - call_recorder - INFO - Transcript added: [bot]  assistance...
+2025-06-26 17:12:53,630 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,637 - dual_agent_bridge - INFO - CS transcript:  or
+2025-06-26 17:12:53,637 - call_recorder - INFO - Transcript added: [bot]  or...
+2025-06-26 17:12:53,637 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:53,724 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:53,724 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:53,882 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:53,882 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:54,007 - dual_agent_bridge - INFO - CS transcript:  have
+2025-06-26 17:12:54,007 - call_recorder - INFO - Transcript added: [bot]  have...
+2025-06-26 17:12:54,007 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,026 - dual_agent_bridge - INFO - CS transcript:  any
+2025-06-26 17:12:54,027 - call_recorder - INFO - Transcript added: [bot]  any...
+2025-06-26 17:12:54,028 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,042 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:54,042 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:54,043 - dual_agent_bridge - INFO - CS transcript:  other
+2025-06-26 17:12:54,043 - call_recorder - INFO - Transcript added: [bot]  other...
+2025-06-26 17:12:54,044 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,044 - dual_agent_bridge - INFO - CS transcript:  questions
+2025-06-26 17:12:54,045 - call_recorder - INFO - Transcript added: [bot]  questions...
+2025-06-26 17:12:54,045 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,052 - dual_agent_bridge - INFO - CS transcript: ,
+2025-06-26 17:12:54,052 - call_recorder - INFO - Transcript added: [bot] ,...
+2025-06-26 17:12:54,053 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,053 - dual_agent_bridge - INFO - CS transcript:  feel
+2025-06-26 17:12:54,053 - call_recorder - INFO - Transcript added: [bot]  feel...
+2025-06-26 17:12:54,053 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,086 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:54,086 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:54,252 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:54,252 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:54,263 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:54,279 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:54,279 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:54,406 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:54,406 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:54,422 - dual_agent_bridge - INFO - CS transcript:  free
+2025-06-26 17:12:54,422 - call_recorder - INFO - Transcript added: [bot]  free...
+2025-06-26 17:12:54,422 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,440 - dual_agent_bridge - INFO - CS transcript:  to
+2025-06-26 17:12:54,440 - call_recorder - INFO - Transcript added: [bot]  to...
+2025-06-26 17:12:54,440 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,443 - dual_agent_bridge - INFO - CS transcript:  call
+2025-06-26 17:12:54,443 - call_recorder - INFO - Transcript added: [bot]  call...
+2025-06-26 17:12:54,445 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,450 - dual_agent_bridge - INFO - CS transcript:  us
+2025-06-26 17:12:54,450 - call_recorder - INFO - Transcript added: [bot]  us...
+2025-06-26 17:12:54,450 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,459 - dual_agent_bridge - INFO - CS transcript:  back
+2025-06-26 17:12:54,459 - call_recorder - INFO - Transcript added: [bot]  back...
+2025-06-26 17:12:54,459 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,470 - dual_agent_bridge - INFO - CS transcript: .
+2025-06-26 17:12:54,471 - call_recorder - INFO - Transcript added: [bot] ....
+2025-06-26 17:12:54,471 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,476 - dual_agent_bridge - INFO - CS transcript:  Have
+2025-06-26 17:12:54,476 - call_recorder - INFO - Transcript added: [bot]  Have...
+2025-06-26 17:12:54,480 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,485 - dual_agent_bridge - INFO - CS transcript:  a
+2025-06-26 17:12:54,485 - call_recorder - INFO - Transcript added: [bot]  a...
+2025-06-26 17:12:54,485 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,488 - dual_agent_bridge - INFO - CS transcript:  great
+2025-06-26 17:12:54,489 - call_recorder - INFO - Transcript added: [bot]  great...
+2025-06-26 17:12:54,489 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,492 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:54,492 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:54,492 - dual_agent_bridge - INFO - CS transcript:  day
+2025-06-26 17:12:54,496 - call_recorder - INFO - Transcript added: [bot]  day...
+2025-06-26 17:12:54,496 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,509 - dual_agent_bridge - INFO - CS transcript: !
+2025-06-26 17:12:54,509 - call_recorder - INFO - Transcript added: [bot] !...
+2025-06-26 17:12:54,510 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.delta
+2025-06-26 17:12:54,666 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:54,666 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:54,829 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:54,829 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:54,982 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-26 17:12:54,982 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:55,138 - dual_agent_bridge - DEBUG - Committed audio buffer to caller agent
+2025-06-26 17:12:55,138 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 35648 -> 23765 samples, 1485.3ms -> 1485.3ms
+2025-06-26 17:12:55,138 - dual_agent_bridge - DEBUG - CS message: response.audio.delta
+2025-06-26 17:12:55,154 - dual_agent_bridge - INFO - CS finished speaking, triggering caller response
+2025-06-26 17:12:55,154 - dual_agent_bridge - INFO - Response triggered for caller (voice: alloy)
+2025-06-26 17:12:55,154 - dual_agent_bridge - DEBUG - CS message: response.audio.done
+2025-06-26 17:12:55,158 - dual_agent_bridge - DEBUG - CS message: response.audio_transcript.done
+2025-06-26 17:12:55,158 - dual_agent_bridge - DEBUG - CS message: response.content_part.done
+2025-06-26 17:12:55,159 - dual_agent_bridge - DEBUG - CS message: response.output_item.done
+2025-06-26 17:12:55,164 - dual_agent_bridge - DEBUG - CS message: response.done
+2025-06-26 17:12:55,172 - dual_agent_bridge - DEBUG - CS message: rate_limits.updated
+2025-06-26 17:12:55,374 - dual_agent_bridge - DEBUG - Caller message: input_audio_buffer.committed
+2025-06-26 17:12:55,374 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:55,374 - dual_agent_bridge - DEBUG - Caller started speaking
+2025-06-26 17:12:55,374 - dual_agent_bridge - DEBUG - Caller message: response.created
+2025-06-26 17:12:55,406 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:55,406 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:56,933 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.delta
+2025-06-26 17:12:56,933 - dual_agent_bridge - DEBUG - Caller message: conversation.item.input_audio_transcription.completed
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: response.output_item.added
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: conversation.item.created
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,365 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,381 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,381 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,381 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,381 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,395 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,395 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,399 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,403 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,403 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,410 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,410 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.delta
+2025-06-26 17:12:57,436 - dual_agent_bridge - DEBUG - Caller message: response.function_call_arguments.done
+2025-06-26 17:12:57,436 - dual_agent_bridge - DEBUG - Caller message: response.output_item.done
+2025-06-26 17:12:57,436 - dual_agent_bridge - DEBUG - Caller turn completed
+2025-06-26 17:12:57,436 - dual_agent_bridge - DEBUG - Caller message: response.done
+2025-06-26 17:12:57,462 - dual_agent_bridge - DEBUG - Caller message: rate_limits.updated

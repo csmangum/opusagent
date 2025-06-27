@@ -43,6 +43,7 @@ The agent-to-agent conversation feature enables:
 ### Audio Routing
 - **Caller → CS**: Caller's audio output becomes CS agent's audio input
 - **CS → Caller**: CS agent's audio output becomes caller's audio input
+- **Voice Distinction**: Caller uses "alloy" voice, CS agent uses "verse" voice
 - **Buffering**: Small audio buffers prevent timing issues
 - **Transcription**: Both directions are transcribed and logged
 

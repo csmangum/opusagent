@@ -125,11 +125,13 @@ Greet customers warmly and help them with loan applications.
 
 A successful conversation looks like:
 ```
-[Caller] Hi, I need help with my account
-[CS Agent] Thank you for calling! How can I help you today?
-[Caller] I lost my debit card and need a replacement
-[CS Agent] I can definitely help you with that card replacement...
+[Caller - "alloy" voice] Hi, I need help with my account
+[CS Agent - "verse" voice] Thank you for calling! How can I help you today?
+[Caller - "alloy" voice] I lost my debit card and need a replacement
+[CS Agent - "verse" voice] I can definitely help you with that card replacement...
 ```
+
+**Voice Distinction**: The caller uses the "alloy" voice while the CS agent uses the "verse" voice, making it easy to distinguish between the two agents in the audio recordings.
 
 ## 📚 Next Steps
 

@@ -55,6 +55,11 @@ class DualAgentBridge:
         self._caller_ready = False
         self._cs_ready = False
         
+        # Turn management
+        self._current_speaker = None  # "caller" or "cs" or None
+        self._turn_lock = asyncio.Lock()
+        self._waiting_for_response = False
+        
         # Call recording
         self.call_recorder: Optional[CallRecorder] = None
         
@@ -79,6 +84,10 @@ class DualAgentBridge:
             
             logger.info(f"Caller connection: {caller_conn.connection_id}")
             logger.info(f"CS connection: {cs_conn.connection_id}")
+            
+            # Log voice configuration for clarity
+            logger.info(f"Caller agent voice: {self.caller_session_config.voice}")
+            logger.info(f"CS agent voice: {self.cs_session_config.voice}")
             
             # Initialize call recording
             await self._initialize_call_recording()
@@ -108,6 +117,12 @@ class DualAgentBridge:
                 base_output_dir="agent_conversations",
                 bot_sample_rate=24000  # OpenAI Realtime API uses 24kHz
             )
+            
+            # For agent-to-agent conversations, both agents use 24kHz
+            # Override the default caller sample rate
+            self.call_recorder.caller_sample_rate = 24000
+            logger.info("Configured call recorder for agent-to-agent conversation (both agents at 24kHz)")
+            
             await self.call_recorder.start_recording()
             logger.info(f"Call recording started for agent conversation: {self.conversation_id}")
         except Exception as e:
@@ -128,7 +143,8 @@ class DualAgentBridge:
         await self.caller_connection.websocket.send(json.dumps(session_update))
         logger.info("Caller session initialized")
         
-        # Send initial conversation context for caller
+        # Set up caller context but don't trigger initial response
+        # The caller will respond after hearing the CS agent's greeting
         initial_message = {
             "type": "conversation.item.create",
             "item": {
@@ -136,16 +152,12 @@ class DualAgentBridge:
                 "role": "user",
                 "content": [{
                     "type": "input_text",
-                    "text": "You are calling the bank's customer service. Start the conversation."
+                    "text": "You are calling the bank's customer service. Wait for the agent to greet you, then explain your problem."
                 }]
             }
         }
         
         await self.caller_connection.websocket.send(json.dumps(initial_message))
-        await asyncio.sleep(1)
-        
-        # Trigger initial caller response
-        await self._create_response(self.caller_connection.websocket, "caller")
         self._caller_ready = True
     
     async def _initialize_cs_session(self):
@@ -160,23 +172,48 @@ class DualAgentBridge:
         
         await self.cs_connection.websocket.send(json.dumps(session_update))
         logger.info("CS session initialized")
+        
+        # Add initial context for CS agent to start with greeting
+        initial_message = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message", 
+                "role": "user",
+                "content": [{
+                    "type": "input_text",
+                    "text": "A customer is calling. Answer the phone and greet them professionally."
+                }]
+            }
+        }
+        
+        await self.cs_connection.websocket.send(json.dumps(initial_message))
         self._cs_ready = True
     
     async def _create_response(self, websocket, agent_type: str):
         """Create a response for the specified agent."""
+        # Use appropriate configuration for each agent
+        if agent_type == "caller":
+            voice = self.caller_session_config.voice
+            temperature = self.caller_session_config.temperature
+            max_tokens = self.caller_session_config.max_response_output_tokens
+        else:  # cs agent
+            voice = self.cs_session_config.voice
+            temperature = self.cs_session_config.temperature
+            max_tokens = self.cs_session_config.max_response_output_tokens
+        
         response_create = {
             "type": "response.create",
             "response": {
                 "modalities": ["text", "audio"],
                 "output_audio_format": "pcm16",
-                "temperature": 0.8,
-                "max_output_tokens": 4096,
-                "voice": "verse"
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+                "voice": voice
             }
         }
         
         await websocket.send(json.dumps(response_create))
-        logger.info(f"Response triggered for {agent_type}")
+        logger.info(f"Response triggered for {agent_type} (voice: {voice})")
     
     async def _handle_caller_messages(self):
         """Handle messages from caller agent OpenAI session."""
@@ -219,7 +256,14 @@ class DualAgentBridge:
             
         message_type = data.get("type")
         
-        if message_type == "response.audio.delta":
+        if message_type == "response.created":
+            # Caller started speaking
+            async with self._turn_lock:
+                self._current_speaker = "caller"
+                self._waiting_for_response = False
+                logger.debug("Caller started speaking")
+        
+        elif message_type == "response.audio.delta":
             # Route caller audio to CS agent
             audio_data = data.get("delta", "")
             if audio_data:
@@ -230,8 +274,19 @@ class DualAgentBridge:
                 
         elif message_type == "response.audio.done":
             # Caller finished speaking, trigger CS response
-            logger.info("Caller finished speaking, triggering CS response")
-            await self._create_response(self.cs_connection.websocket, "cs")
+            async with self._turn_lock:
+                if self._current_speaker == "caller" and not self._waiting_for_response:
+                    logger.info("Caller finished speaking, triggering CS response")
+                    self._current_speaker = None
+                    self._waiting_for_response = True
+                    await self._create_response(self.cs_connection.websocket, "cs")
+                
+        elif message_type == "response.done":
+            # Caller completely finished their turn
+            async with self._turn_lock:
+                if self._current_speaker == "caller":
+                    self._current_speaker = None
+                    logger.debug("Caller turn completed")
             
         elif message_type == "response.audio_transcript.delta":
             # Log and record caller transcript
@@ -255,7 +310,14 @@ class DualAgentBridge:
             
         message_type = data.get("type")
         
-        if message_type == "response.audio.delta":
+        if message_type == "response.created":
+            # CS started speaking
+            async with self._turn_lock:
+                self._current_speaker = "cs"
+                self._waiting_for_response = False
+                logger.debug("CS started speaking")
+        
+        elif message_type == "response.audio.delta":
             # Route CS audio to caller agent as input
             audio_data = data.get("delta", "")
             if audio_data:
@@ -266,8 +328,19 @@ class DualAgentBridge:
                 
         elif message_type == "response.audio.done":
             # CS finished speaking, trigger caller response
-            logger.info("CS finished speaking, triggering caller response")
-            await self._create_response(self.caller_connection.websocket, "caller")
+            async with self._turn_lock:
+                if self._current_speaker == "cs" and not self._waiting_for_response:
+                    logger.info("CS finished speaking, triggering caller response")
+                    self._current_speaker = None
+                    self._waiting_for_response = True
+                    await self._create_response(self.caller_connection.websocket, "caller")
+                
+        elif message_type == "response.done":
+            # CS completely finished their turn
+            async with self._turn_lock:
+                if self._current_speaker == "cs":
+                    self._current_speaker = None
+                    logger.debug("CS turn completed")
             
         elif message_type == "response.audio_transcript.delta":
             # Log and record CS transcript
@@ -384,6 +457,12 @@ class DualAgentBridge:
             logger.info(f"Recording agent conversation to: {self.call_recorder.recording_dir}")
         else:
             logger.warning("No call recorder available - conversation will not be recorded")
+        
+        # Start conversation with CS agent greeting
+        await asyncio.sleep(1)  # Brief pause before starting
+        if self.cs_connection:
+            logger.info("Starting conversation with CS agent greeting")
+            await self._create_response(self.cs_connection.websocket, "cs")
         
         # Monitor for conversation end conditions
         conversation_duration = 0
