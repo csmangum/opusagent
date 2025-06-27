@@ -95,16 +95,28 @@ class RealtimeConnection:
     @property
     def can_accept_session(self) -> bool:
         """Check if this connection can accept another session."""
+        try:
+            # Check if websocket is still open
+            websocket_open = getattr(self.websocket, 'closed', None) is False or getattr(self.websocket, 'close_code', None) is None
+        except:
+            websocket_open = False
+            
         return (
             self.is_healthy
             and self.session_count < self.max_sessions
-            and self.websocket.open
+            and websocket_open
         )
 
     async def close(self):
         """Close the WebSocket connection."""
         try:
-            if not self.websocket.closed:
+            # Safely check if websocket is already closed
+            try:
+                websocket_closed = getattr(self.websocket, 'closed', False) or getattr(self.websocket, 'close_code', None) is not None
+            except:
+                websocket_closed = True
+                
+            if not websocket_closed:
                 await self.websocket.close()
         except Exception as e:
             logger.warning(f"Error closing connection {self.connection_id}: {e}")
@@ -190,9 +202,15 @@ class WebSocketManager:
         to_remove = []
 
         for conn_id, conn in self._connections.items():
+            try:
+                # Safely check if websocket is closed
+                websocket_closed = getattr(conn.websocket, 'closed', False) or getattr(conn.websocket, 'close_code', None) is not None
+            except:
+                websocket_closed = True
+                
             should_remove = (
                 not conn.is_healthy
-                or conn.websocket.closed
+                or websocket_closed
                 or conn.age_seconds > self.max_connection_age
                 or conn.idle_seconds > self.max_idle_time
             )
