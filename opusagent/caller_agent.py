@@ -5,6 +5,9 @@ import logging
 import uuid
 
 from opusagent.config.constants import VOICE
+
+# Use a different voice for the caller agent to distinguish from CS agent
+CALLER_VOICE = "alloy"  # CS agent uses "verse", caller uses "alloy"
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.openai_api import SessionConfig
 from opusagent.models.tool_models import (
@@ -243,6 +246,16 @@ SYSTEM_PROMPT = f"""
 IMPORTANT: You are the CALLER, not the agent. You're calling the bank for help.
 Respond as a customer would, not as a customer service representative.
 Keep responses natural and conversational. Don't be overly helpful or professional.
+
+CONVERSATION FLOW:
+- WAIT for the customer service agent to greet you first
+- When they ask how they can help, explain your problem: "I've lost my gold card and need to get it replaced"
+- Answer their questions clearly and provide any information they request
+- Continue the conversation until your problem is fully resolved
+- Ask follow-up questions if you need clarification
+- Don't end the call until you have a complete solution
+
+Remember: The agent will speak first to greet you. Then you explain that you need to get your lost gold card replaced. Be persistent but polite in getting this done.
 """
 
 # ==============================
@@ -372,7 +385,7 @@ session_config = SessionConfig(
     model="gpt-4o-realtime-preview-2025-06-03",
     input_audio_format="pcm16",
     output_audio_format="pcm16",
-    voice=VOICE,
+    voice=CALLER_VOICE,  # Use distinct voice for caller agent
     instructions=SYSTEM_PROMPT,
     modalities=["text", "audio"],
     temperature=0.8,
