@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-feature-settings: 'cv03', 'cv04', 'cv11';
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-neutral-300 rounded-lg shadow-sm;
+  }
+  
+  .btn-primary {
+    @apply bg-neutral-900 text-white px-4 py-2 rounded-md hover:bg-neutral-800 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-neutral-100 text-neutral-900 px-4 py-2 rounded-md hover:bg-neutral-200 transition-colors;
+  }
+}

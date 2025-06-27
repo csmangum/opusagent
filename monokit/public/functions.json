@@ -1,0 +1,89 @@
+[
+  {
+    "id": 1,
+    "timestamp": "00:12",
+    "function": "get_account_info",
+    "parameters": {
+      "customer_id": "CUST_12345",
+      "include_status": true,
+      "include_recent_activity": true
+    },
+    "result": {
+      "status": "success",
+      "account_found": true,
+      "account_status": "active",
+      "last_activity": "2024-12-14T15:30:00Z",
+      "customer_tier": "premium"
+    }
+  },
+  {
+    "id": 2,
+    "timestamp": "00:25",
+    "function": "check_recent_transactions",
+    "parameters": {
+      "account_id": "ACC_67890",
+      "days": 7,
+      "include_pending": true
+    },
+    "result": {
+      "status": "success",
+      "transaction_count": 12,
+      "pending_count": 1,
+      "total_amount": 2847.50,
+      "unusual_activity_detected": true
+    }
+  },
+  {
+    "id": 3,
+    "timestamp": "00:38",
+    "function": "get_security_alerts",
+    "parameters": {
+      "account_id": "ACC_67890",
+      "alert_type": "fraud_prevention"
+    },
+    "result": {
+      "status": "success",
+      "alerts": [
+        {
+          "id": "ALERT_001",
+          "type": "spending_pattern_anomaly",
+          "severity": "medium",
+          "triggered_at": "2024-12-15T08:45:00Z",
+          "description": "Unusual spending pattern detected"
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "timestamp": "00:55",
+    "function": "remove_card_hold",
+    "parameters": {
+      "card_number": "****-****-****-9012",
+      "hold_reason": "fraud_prevention",
+      "agent_id": "AGENT_789"
+    },
+    "result": {
+      "status": "success",
+      "hold_removed": true,
+      "estimated_activation_time": "5_minutes",
+      "confirmation_id": "CONF_ABC123"
+    }
+  },
+  {
+    "id": 5,
+    "timestamp": "01:18",
+    "function": "create_notification_preference",
+    "parameters": {
+      "customer_id": "CUST_12345",
+      "notification_type": "large_purchase_alert",
+      "threshold": 500.00,
+      "method": "sms"
+    },
+    "result": {
+      "status": "success",
+      "preference_id": "PREF_456",
+      "active": true
+    }
+  }
+]

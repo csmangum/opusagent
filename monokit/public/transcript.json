@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "timestamp": "00:02",
+    "speaker": "Agent",
+    "message": "Hello! Thank you for calling Bank of Peril. How can I help you today?"
+  },
+  {
+    "id": 2,
+    "timestamp": "00:05",
+    "speaker": "Customer",
+    "message": "Hi, I need help with my credit card. It was declined this morning."
+  },
+  {
+    "id": 3,
+    "timestamp": "00:10",
+    "speaker": "Agent",
+    "message": "I understand that must be frustrating. Let me look into your account right away."
+  },
+  {
+    "id": 4,
+    "timestamp": "00:15",
+    "speaker": "Customer",
+    "message": "Thank you. My card number is 4532-1234-5678-9012."
+  },
+  {
+    "id": 5,
+    "timestamp": "00:22",
+    "speaker": "Agent",
+    "message": "Perfect, I can see your account now. Let me check the recent transactions."
+  },
+  {
+    "id": 6,
+    "timestamp": "00:35",
+    "speaker": "Agent",
+    "message": "I can see there was a temporary hold placed on your card due to an unusual spending pattern. This is a security measure."
+  },
+  {
+    "id": 7,
+    "timestamp": "00:45",
+    "speaker": "Customer",
+    "message": "Oh, that makes sense. I did make some large purchases yesterday for a home renovation project."
+  },
+  {
+    "id": 8,
+    "timestamp": "00:52",
+    "speaker": "Agent",
+    "message": "That explains it perfectly. I'll remove the hold right now and your card should be active within 5 minutes."
+  },
+  {
+    "id": 9,
+    "timestamp": "01:05",
+    "speaker": "Customer",
+    "message": "That's wonderful! Is there anything I can do to prevent this in the future?"
+  },
+  {
+    "id": 10,
+    "timestamp": "01:12",
+    "speaker": "Agent",
+    "message": "Yes, for large purchases, you can call us beforehand or use our mobile app to notify us of planned expenses."
+  }
+]
