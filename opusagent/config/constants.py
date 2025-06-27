@@ -8,4 +8,6 @@ maintain consistent naming throughout the codebase.
 
 # Logger name used throughout the application
 LOGGER_NAME = "opusagent"
+
+# Default voice for CS agent (caller agent uses "alloy" for distinction)
 VOICE = "verse"
