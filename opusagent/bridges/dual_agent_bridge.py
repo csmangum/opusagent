@@ -13,9 +13,10 @@ from typing import Optional, Dict, Any
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.websocket_manager import websocket_manager, RealtimeConnection
-from opusagent.caller_agent import session_config as caller_session_config  
 from opusagent.customer_service_agent import session_config as cs_session_config
 from opusagent.call_recorder import CallRecorder, AudioChannel, TranscriptType
+from opusagent.callers import get_caller_config, register_caller_functions, CallerType
+from opusagent.transcript_manager import TranscriptManager
 
 logger = configure_logging("dual_agent_bridge")
 
@@ -30,20 +31,22 @@ class DualAgentBridge:
     Audio is routed bidirectionally between the agents to enable conversation.
     """
     
-    def __init__(self, conversation_id: Optional[str] = None):
+    def __init__(self, caller_type: str = CallerType.TYPICAL, conversation_id: Optional[str] = None):
         """Initialize the dual agent bridge.
         
         Args:
+            caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
             conversation_id: Optional conversation ID for tracking
         """
         self.conversation_id = conversation_id or str(uuid.uuid4())
+        self.caller_type = caller_type
         
         # OpenAI Realtime connections
         self.caller_connection: Optional[RealtimeConnection] = None
         self.cs_connection: Optional[RealtimeConnection] = None
         
         # Session configurations
-        self.caller_session_config = caller_session_config
+        self.caller_session_config = get_caller_config(caller_type)
         self.cs_session_config = cs_session_config
         
         # Audio routing state
@@ -63,7 +66,11 @@ class DualAgentBridge:
         # Call recording
         self.call_recorder: Optional[CallRecorder] = None
         
-        logger.info(f"DualAgentBridge created for conversation: {self.conversation_id}")
+        # Transcript managers for both agents
+        self.caller_transcript_manager: Optional[TranscriptManager] = None
+        self.cs_transcript_manager: Optional[TranscriptManager] = None
+        
+        logger.info(f"DualAgentBridge created for conversation: {self.conversation_id} with {caller_type} caller")
     
     async def initialize_connections(self):
         """Initialize both OpenAI Realtime connections."""
@@ -88,6 +95,7 @@ class DualAgentBridge:
             # Log voice configuration for clarity
             logger.info(f"Caller agent voice: {self.caller_session_config.voice}")
             logger.info(f"CS agent voice: {self.cs_session_config.voice}")
+            logger.info(f"Caller type: {self.caller_type}")
             
             # Initialize call recording
             await self._initialize_call_recording()
@@ -125,10 +133,18 @@ class DualAgentBridge:
             
             await self.call_recorder.start_recording()
             logger.info(f"Call recording started for agent conversation: {self.conversation_id}")
+            
+            # Initialize transcript managers
+            self.caller_transcript_manager = TranscriptManager(self.call_recorder)
+            self.cs_transcript_manager = TranscriptManager(self.call_recorder)
+            logger.info("Transcript managers initialized for both agents")
+            
         except Exception as e:
             logger.error(f"Failed to initialize call recording: {e}")
             # Continue without recording rather than fail the entire conversation
             self.call_recorder = None
+            self.caller_transcript_manager = None
+            self.cs_transcript_manager = None
     
     async def _initialize_caller_session(self):
         """Initialize the caller agent OpenAI session."""
@@ -289,17 +305,25 @@ class DualAgentBridge:
                     logger.debug("Caller turn completed")
             
         elif message_type == "response.audio_transcript.delta":
-            # Log and record caller transcript
+            # Log and record caller transcript using transcript manager
             transcript = data.get("delta", "")
-            if transcript:
+            if transcript and self.caller_transcript_manager:
+                await self.caller_transcript_manager.handle_output_transcript_delta(transcript)
+            elif transcript:
                 logger.info(f"Caller transcript: {transcript}")
-                # Record transcript for caller (treat as input from caller perspective)
+                # Fallback: Record transcript for caller (treat as input from caller perspective)
                 if self.call_recorder:
                     await self.call_recorder.add_transcript(
                         text=transcript,
                         channel=AudioChannel.CALLER,
                         transcript_type=TranscriptType.OUTPUT  # Caller's output
                     )
+                
+        elif message_type == "response.audio_transcript.done":
+            # Handle caller transcript completion
+            if self.caller_transcript_manager:
+                await self.caller_transcript_manager.handle_output_transcript_completed()
+            logger.debug("Caller transcript completed")
                 
         logger.debug(f"Caller message: {message_type}")
     
@@ -343,11 +367,13 @@ class DualAgentBridge:
                     logger.debug("CS turn completed")
             
         elif message_type == "response.audio_transcript.delta":
-            # Log and record CS transcript
+            # Log and record CS transcript using transcript manager
             transcript = data.get("delta", "")
-            if transcript:
+            if transcript and self.cs_transcript_manager:
+                await self.cs_transcript_manager.handle_output_transcript_delta(transcript)
+            elif transcript:
                 logger.info(f"CS transcript: {transcript}")
-                # Record transcript for CS agent (as bot response)
+                # Fallback: Record transcript for CS agent (as bot response)
                 if self.call_recorder:
                     await self.call_recorder.add_transcript(
                         text=transcript,
@@ -355,6 +381,12 @@ class DualAgentBridge:
                         transcript_type=TranscriptType.OUTPUT  # Bot's output
                     )
                     
+        elif message_type == "response.audio_transcript.done":
+            # Handle CS transcript completion
+            if self.cs_transcript_manager:
+                await self.cs_transcript_manager.handle_output_transcript_completed()
+            logger.debug("CS transcript completed")
+                
         elif message_type == "response.function_call_arguments.done":
             # Record function calls made by CS agent
             if self.call_recorder:
