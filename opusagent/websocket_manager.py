@@ -97,7 +97,7 @@ class RealtimeConnection:
         """Check if this connection can accept another session."""
         try:
             # Check if websocket is still open
-            websocket_open = getattr(self.websocket, 'closed', None) is False or getattr(self.websocket, 'close_code', None) is None
+            websocket_open = getattr(self.websocket, 'closed', None) is False and getattr(self.websocket, 'close_code', None) is None
         except:
             websocket_open = False
             
