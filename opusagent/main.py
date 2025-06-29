@@ -38,6 +38,7 @@ from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
 from opusagent.config.websocket_config import WebSocketConfig
 from opusagent.websocket_manager import websocket_manager, WebSocketManager
+from opusagent.callers import get_available_caller_types, get_caller_description
 
 load_dotenv()
 
@@ -203,19 +204,23 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 
 
 @app.websocket("/agent-conversation")
-async def agent_conversation_endpoint(websocket: WebSocket):
+async def agent_conversation_endpoint(websocket: WebSocket, caller_type: str = "typical"):
     """WebSocket endpoint for caller agent to CS agent conversations.
     
     This endpoint enables direct conversations between a caller agent and
     customer service agent without external telephony platforms.
+    
+    Args:
+        websocket: The WebSocket connection
+        caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
     """
     await websocket.accept()
     client_address = websocket.client
-    logger.info(f"------ Agent conversation request from {client_address} ------")
+    logger.info(f"------ Agent conversation request from {client_address} with {caller_type} caller ------")
     
     try:
-        # Create and initialize dual agent bridge
-        bridge = DualAgentBridge()
+        # Create and initialize dual agent bridge with specified caller type
+        bridge = DualAgentBridge(caller_type=caller_type)
         logger.info(f"Created dual agent bridge: {bridge.conversation_id}")
         
         # Initialize both OpenAI connections and start conversation
@@ -223,7 +228,8 @@ async def agent_conversation_endpoint(websocket: WebSocket):
         
     except Exception as e:
         logger.error(f"Error in agent conversation: {e}")
-        await bridge.close()
+        if 'bridge' in locals():
+            await bridge.close()
     finally:
         logger.info("Agent conversation ended")
         await websocket.close()
@@ -267,11 +273,22 @@ async def root():
             "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
             "/twilio/voice": "Webhook endpoint for incoming Twilio voice calls",
             "/caller-agent": "WebSocket endpoint for Caller test agents",
-            "/agent-conversation": "WebSocket endpoint for caller agent to CS agent conversations",
+            "/agent-conversation": "WebSocket endpoint for caller agent to CS agent conversations (use ?caller_type=<type>)",
+            "/caller-types": "Get available caller types and their descriptions",
             "/stats": "Connection statistics and health information",
             "/health": "Health check endpoint for service monitoring",
             "/config": "Current WebSocket manager configuration",
         },
+        "caller_types": {
+            "typical": "Cooperative, patient caller",
+            "frustrated": "Impatient, demanding caller", 
+            "elderly": "Patient, polite caller needing guidance",
+            "hurried": "Caller in a rush wanting quick service"
+        },
+        "example_usage": {
+            "agent_conversation": "/agent-conversation?caller_type=frustrated",
+            "caller_types": "/caller-types"
+        }
     }
 
 
@@ -320,6 +337,24 @@ async def get_config():
     return {
         "websocket_manager": WebSocketConfig.to_dict(),
         "note": "Configuration is read from environment variables at startup",
+    }
+
+
+@app.get("/caller-types")
+async def get_caller_types():
+    """Get available caller types and their descriptions.
+    
+    Returns:
+        dict: Available caller types with descriptions
+    """
+    caller_types = {}
+    for caller_type in get_available_caller_types():
+        caller_types[caller_type] = get_caller_description(caller_type)
+    
+    return {
+        "available_caller_types": caller_types,
+        "usage": "Use ?caller_type=<type> query parameter with /agent-conversation endpoint",
+        "example": "/agent-conversation?caller_type=frustrated"
     }
 
 

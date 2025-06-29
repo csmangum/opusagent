@@ -13,9 +13,9 @@ from typing import Optional, Dict, Any
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.websocket_manager import websocket_manager, RealtimeConnection
-from opusagent.caller_agent import session_config as caller_session_config  
 from opusagent.customer_service_agent import session_config as cs_session_config
 from opusagent.call_recorder import CallRecorder, AudioChannel, TranscriptType
+from opusagent.callers import get_caller_config, register_caller_functions, CallerType
 
 logger = configure_logging("dual_agent_bridge")
 
@@ -30,20 +30,22 @@ class DualAgentBridge:
     Audio is routed bidirectionally between the agents to enable conversation.
     """
     
-    def __init__(self, conversation_id: Optional[str] = None):
+    def __init__(self, caller_type: str = CallerType.TYPICAL, conversation_id: Optional[str] = None):
         """Initialize the dual agent bridge.
         
         Args:
+            caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
             conversation_id: Optional conversation ID for tracking
         """
         self.conversation_id = conversation_id or str(uuid.uuid4())
+        self.caller_type = caller_type
         
         # OpenAI Realtime connections
         self.caller_connection: Optional[RealtimeConnection] = None
         self.cs_connection: Optional[RealtimeConnection] = None
         
         # Session configurations
-        self.caller_session_config = caller_session_config
+        self.caller_session_config = get_caller_config(caller_type)
         self.cs_session_config = cs_session_config
         
         # Audio routing state
@@ -63,7 +65,7 @@ class DualAgentBridge:
         # Call recording
         self.call_recorder: Optional[CallRecorder] = None
         
-        logger.info(f"DualAgentBridge created for conversation: {self.conversation_id}")
+        logger.info(f"DualAgentBridge created for conversation: {self.conversation_id} with {caller_type} caller")
     
     async def initialize_connections(self):
         """Initialize both OpenAI Realtime connections."""
@@ -88,6 +90,7 @@ class DualAgentBridge:
             # Log voice configuration for clarity
             logger.info(f"Caller agent voice: {self.caller_session_config.voice}")
             logger.info(f"CS agent voice: {self.cs_session_config.voice}")
+            logger.info(f"Caller type: {self.caller_type}")
             
             # Initialize call recording
             await self._initialize_call_recording()

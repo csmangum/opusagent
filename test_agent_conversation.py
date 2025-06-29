@@ -1,74 +1,95 @@
 #!/usr/bin/env python3
 """
-Test script for agent-to-agent conversations.
+Test script for agent conversation endpoint with different caller types.
 
-This script starts a conversation between the caller agent and customer service agent
-by connecting to the dual agent bridge endpoint.
+This script demonstrates how to connect to the agent conversation endpoint
+and test different caller personalities.
 """
 
 import asyncio
-import logging
+import json
 import websockets
-from pathlib import Path
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("agent_conversation_test")
+from typing import Optional
 
 
-async def test_agent_conversation(server_url: str = "ws://localhost:8000"):
-    """Test agent-to-agent conversation by connecting to the bridge endpoint.
+async def test_agent_conversation(caller_type: str = "typical", duration: int = 30):
+    """
+    Test agent conversation with a specific caller type.
     
     Args:
-        server_url: Base URL of the server
+        caller_type: Type of caller to test (typical, frustrated, elderly, hurried)
+        duration: Duration to run the conversation in seconds
     """
-    endpoint_url = f"{server_url}/agent-conversation"
+    uri = f"ws://localhost:8000/agent-conversation?caller_type={caller_type}"
     
-    logger.info(f"Starting agent conversation test...")
-    logger.info(f"Connecting to: {endpoint_url}")
+    print(f"Connecting to agent conversation with {caller_type} caller...")
+    print(f"URI: {uri}")
+    print(f"Duration: {duration} seconds")
+    print("-" * 50)
     
     try:
-        # Connect to the agent conversation endpoint
-        async with websockets.connect(endpoint_url) as websocket:
-            logger.info("Connected to agent conversation endpoint")
+        async with websockets.connect(uri) as websocket:
+            print(f"Connected! Testing {caller_type} caller for {duration} seconds...")
             
-            # The dual agent bridge will handle the conversation internally
-            # We just need to keep the connection alive and monitor
-            logger.info("Conversation started - monitoring for completion...")
+            # Keep the connection alive for the specified duration
+            await asyncio.sleep(duration)
             
-            # Wait for the conversation to complete
-            # The bridge will close the connection when done
-            try:
-                await websocket.wait_closed()
-                logger.info("Conversation completed - connection closed")
-            except websockets.exceptions.ConnectionClosed:
-                logger.info("Connection closed by server")
-                
-    except ConnectionRefusedError:
-        logger.error(f"Could not connect to {endpoint_url}")
-        logger.error("Make sure the server is running with: python -m opusagent.main")
+            print(f"Test completed for {caller_type} caller")
+            
+    except websockets.exceptions.ConnectionClosed:
+        print("Connection closed by server")
     except Exception as e:
-        logger.error(f"Error during conversation: {e}")
+        print(f"Error during test: {e}")
+
+
+async def get_available_caller_types():
+    """Get available caller types from the server."""
+    import aiohttp
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://localhost:8000/caller-types") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data
+                else:
+                    print(f"Error getting caller types: {response.status}")
+                    return None
+    except Exception as e:
+        print(f"Error connecting to server: {e}")
+        return None
 
 
 async def main():
-    """Main test function."""
-    logger.info("=" * 60)
-    logger.info("AGENT-TO-AGENT CONVERSATION TEST")
-    logger.info("=" * 60)
+    """Main function to run the test."""
+    print("Agent Conversation Test")
+    print("=" * 50)
     
-    try:
-        await test_agent_conversation()
-    except KeyboardInterrupt:
-        logger.info("Test interrupted by user")
-    except Exception as e:
-        logger.error(f"Test failed: {e}")
+    # Get available caller types
+    caller_types_data = await get_available_caller_types()
+    if caller_types_data:
+        print("Available caller types:")
+        for caller_type, description in caller_types_data["available_caller_types"].items():
+            print(f"  - {caller_type}: {description}")
+        print()
     
-    logger.info("Test completed")
+    # Test each caller type
+    # caller_types = ["typical", "frustrated", "elderly", "hurried"]
+    caller_types = ["typical"]
+    
+    for caller_type in caller_types:
+        print(f"\nTesting {caller_type.upper()} caller...")
+        await test_agent_conversation(caller_type, duration=15)
+        print(f"Completed {caller_type} caller test")
+        print("-" * 30)
+    
+    print("\nAll tests completed!")
 
 
 if __name__ == "__main__":
+    print("Make sure the server is running on localhost:8000")
+    print("Run: python opusagent/main.py")
+    print()
+    
+    # Run the test
     asyncio.run(main()) 
