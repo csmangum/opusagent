@@ -34,6 +34,7 @@ class TestRealtimeConnection:
         websocket = AsyncMock()
         websocket.open = True
         websocket.closed = False
+        websocket.close_code = None  # Ensure close_code is None for correct close logic
         return websocket
 
     @pytest.fixture
@@ -93,7 +94,7 @@ class TestRealtimeConnection:
 
     def test_can_accept_session_websocket_closed(self, connection, mock_websocket):
         """Test can_accept_session when WebSocket is closed."""
-        mock_websocket.open = False
+        mock_websocket.closed = True  # Set closed to True to simulate closed websocket
         assert connection.can_accept_session is False
 
     @pytest.mark.asyncio
@@ -145,6 +146,7 @@ class TestWebSocketManager:
             mock_websocket = AsyncMock()
             mock_websocket.open = True
             mock_websocket.closed = False
+            mock_websocket.close_code = None  # Ensure close_code is None for correct close logic
             # Make the mock return an awaitable coroutine
             future = event_loop.create_future()
             future.set_result(mock_websocket)
