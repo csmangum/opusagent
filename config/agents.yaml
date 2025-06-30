@@ -1,0 +1,96 @@
+# Agent Configuration for OpusAgent
+# This file defines different agent types and their configurations
+
+agents:
+  customer_service:
+    default:
+      type: "customer_service"
+      name: "Default CS Agent"
+      role: "Customer Support Representative"
+      specialization: "general"
+      voice: "verse"
+      temperature: 0.8
+      max_response_output_tokens: 4096
+      
+    banking:
+      type: "customer_service"
+      name: "Banking CS Agent"
+      role: "Banking Customer Support Representative"
+      specialization: "banking"
+      voice: "verse"
+      temperature: 0.7
+      max_response_output_tokens: 4096
+      
+    healthcare:
+      type: "customer_service"
+      name: "Healthcare CS Agent"
+      role: "Healthcare Customer Support Representative"
+      specialization: "healthcare"
+      voice: "verse"
+      temperature: 0.6
+      max_response_output_tokens: 4096
+
+  caller:
+    typical:
+      type: "caller"
+      name: "Typical Caller"
+      role: "Cooperative Customer"
+      personality_type: "typical"
+      scenario_type: "card_replacement"
+      voice: "alloy"
+      temperature: 0.8
+      max_response_output_tokens: 4096
+      
+    frustrated:
+      type: "caller"
+      name: "Frustrated Caller"
+      role: "Impatient Customer"
+      personality_type: "frustrated"
+      scenario_type: "complaint"
+      voice: "alloy"
+      temperature: 0.9
+      max_response_output_tokens: 4096
+      
+    elderly:
+      type: "caller"
+      name: "Elderly Caller"
+      role: "Senior Customer"
+      personality_type: "elderly"
+      scenario_type: "account_inquiry"
+      voice: "alloy"
+      temperature: 0.7
+      max_response_output_tokens: 4096
+      
+    hurried:
+      type: "caller"
+      name: "Hurried Caller"
+      role: "Busy Customer"
+      personality_type: "hurried"
+      scenario_type: "card_replacement"
+      voice: "alloy"
+      temperature: 0.8
+      max_response_output_tokens: 4096
+
+# Environment-specific overrides
+environments:
+  development:
+    # Use more verbose logging and debugging features
+    customer_service:
+      default:
+        temperature: 0.9  # More creative for testing
+        
+  production:
+    # Use more conservative settings for production
+    customer_service:
+      default:
+        temperature: 0.6  # More deterministic
+        max_response_output_tokens: 2048  # Shorter responses
+        
+  testing:
+    # Use consistent settings for testing
+    customer_service:
+      default:
+        temperature: 0.5  # Very deterministic
+    caller:
+      typical:
+        temperature: 0.5  # Predictable responses
