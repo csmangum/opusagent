@@ -41,6 +41,9 @@ class TwilioBridge(BaseRealtimeBridge):
         self.call_sid: Optional[str] = None
         self.audio_buffer = []  # small buffer before relaying to OpenAI
         self.mark_counter = 0
+        
+        # Override the audio handler's outgoing audio method to use Twilio-specific sending
+        self.audio_handler.handle_outgoing_audio = self.handle_outgoing_audio_twilio
 
     # ------------------------------------------------------------------
     # Platform-specific plumbing
@@ -163,26 +166,94 @@ class TwilioBridge(BaseRealtimeBridge):
     def _convert_mulaw_to_pcm16(self, mulaw_bytes: bytes) -> bytes:
         try:
             import audioop
-
             return audioop.ulaw2lin(mulaw_bytes, 2)
-        except Exception:
-            return b"".join(bytes([b, b]) for b in mulaw_bytes)
+        except Exception as e:
+            logger.warning(f"audioop.ulaw2lin failed, using fallback conversion: {e}")
+            # Fallback: implement μ-law to PCM16 conversion
+            pcm16_bytes = bytearray()
+            for mulaw_byte in mulaw_bytes:
+                # μ-law to linear conversion table (simplified)
+                # This is a basic implementation - for production, use a proper lookup table
+                mulaw_val = mulaw_byte ^ 0xFF  # Invert μ-law
+                sign = mulaw_val & 0x80
+                exponent = (mulaw_val >> 4) & 0x07
+                mantissa = mulaw_val & 0x0F
+                
+                if exponent == 0:
+                    linear = mantissa << 1
+                else:
+                    linear = (mantissa | 0x10) << (exponent - 1)
+                
+                if sign:
+                    linear = -linear
+                
+                # Convert to 16-bit signed integer
+                pcm16_val = max(-32768, min(32767, linear * 256))
+                pcm16_bytes.extend(pcm16_val.to_bytes(2, byteorder='little', signed=True))
+            
+            return bytes(pcm16_bytes)
 
     def _convert_pcm16_to_mulaw(self, pcm16_data: bytes) -> bytes:
         try:
             import audioop
-
             return audioop.lin2ulaw(pcm16_data, 2)
-        except Exception:
-            return pcm16_data[::2]
+        except Exception as e:
+            logger.warning(f"audioop.lin2ulaw failed, using fallback conversion: {e}")
+            # Fallback: implement PCM16 to μ-law conversion
+            mulaw_bytes = bytearray()
+            
+            # Process 16-bit samples (2 bytes each)
+            for i in range(0, len(pcm16_data), 2):
+                if i + 1 >= len(pcm16_data):
+                    break
+                    
+                # Convert 2 bytes to 16-bit signed integer
+                pcm16_val = int.from_bytes(pcm16_data[i:i+2], byteorder='little', signed=True)
+                
+                # Clamp to valid range
+                pcm16_val = max(-32768, min(32767, pcm16_val))
+                
+                # Convert to μ-law
+                if pcm16_val < 0:
+                    sign = 0x80
+                    pcm16_val = -pcm16_val
+                else:
+                    sign = 0x00
+                
+                # Find the highest set bit (exponent)
+                if pcm16_val == 0:
+                    exponent = 0
+                    mantissa = 0
+                else:
+                    # Find the highest set bit
+                    highest_bit = pcm16_val.bit_length() - 1
+                    exponent = max(0, min(7, highest_bit - 4))
+                    mantissa = (pcm16_val >> (exponent + 3)) & 0x0F
+                
+                # Combine into μ-law byte
+                mulaw_byte = sign | (exponent << 4) | mantissa
+                mulaw_bytes.append(mulaw_byte ^ 0xFF)  # Invert μ-law
+            
+            return bytes(mulaw_bytes)
 
     async def send_audio_to_twilio(self, pcm16_data: bytes):
         if not self.stream_sid:
             logger.warning("Cannot send audio to Twilio: stream_sid not set")
             return
             
-        mulaw = self._convert_pcm16_to_mulaw(pcm16_data)
+        logger.debug(f"Sending {len(pcm16_data)} bytes of PCM16 audio to Twilio")
+        
+        # Resample from 24kHz to 8kHz if needed
+        # OpenAI sends 24kHz PCM16, but Twilio expects 8kHz μ-law
+        resampled_pcm16 = self._resample_audio(pcm16_data, 24000, 8000)
+        logger.debug(f"Resampled from 24kHz to 8kHz: {len(pcm16_data)} -> {len(resampled_pcm16)} bytes")
+        
+        # Convert to μ-law
+        mulaw = self._convert_pcm16_to_mulaw(resampled_pcm16)
+        logger.debug(f"Converted to {len(mulaw)} bytes of μ-law audio")
+        
         chunk_size = 160  # 20ms at 8kHz
+        chunks_sent = 0
         for i in range(0, len(mulaw), chunk_size):
             chunk = mulaw[i : i + chunk_size]
             if len(chunk) < chunk_size:
@@ -195,20 +266,87 @@ class TwilioBridge(BaseRealtimeBridge):
                     media=OutgoingMediaPayload(payload=payload_b64),
                 ).model_dump()
             )
+            chunks_sent += 1
             await asyncio.sleep(0.02)
+        
+        logger.debug(f"Sent {chunks_sent} audio chunks to Twilio")
 
-    # ------------------------------------------------------------------
-    # Overriding realtime audio handler for outgoing audio
-    # ------------------------------------------------------------------
-    async def handle_audio_response_delta(self, response_dict):
-        delta = response_dict.get("delta")
-        if not delta:
-            return
+    def _resample_audio(self, audio_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
+        """Resample audio from one sample rate to another.
+        
+        Args:
+            audio_bytes: Raw audio bytes (16-bit PCM)
+            from_rate: Source sample rate
+            to_rate: Target sample rate
+            
+        Returns:
+            Resampled audio bytes
+        """
+        if from_rate == to_rate:
+            return audio_bytes
+            
         try:
-            pcm16 = base64.b64decode(delta)
-            await self.send_audio_to_twilio(pcm16)
+            import numpy as np
+            
+            # Convert bytes to numpy array
+            audio_array = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float64)
+            
+            # Calculate resampling parameters
+            ratio = to_rate / from_rate
+            original_length = len(audio_array)
+            new_length = int(original_length * ratio)
+            
+            # Use linear interpolation for resampling
+            if ratio > 1:
+                # Upsampling - use linear interpolation
+                old_indices = np.linspace(0, original_length - 1, new_length)
+                resampled_audio = np.interp(old_indices, np.arange(original_length), audio_array)
+            else:
+                # Downsampling - apply simple low-pass filter first to prevent aliasing
+                # Simple moving average as low-pass filter
+                filter_size = max(1, int(1 / ratio))
+                if filter_size > 1:
+                    # Apply simple moving average filter
+                    filtered_audio = np.convolve(audio_array, np.ones(filter_size)/filter_size, mode='same')
+                else:
+                    filtered_audio = audio_array
+                
+                # Then downsample
+                old_indices = np.linspace(0, original_length - 1, new_length)
+                resampled_audio = np.interp(old_indices, np.arange(original_length), filtered_audio)
+            
+            # Convert back to int16 with proper clipping
+            resampled_audio = np.clip(resampled_audio, -32768, 32767).astype(np.int16)
+            
+            # Log resampling details for debugging
+            original_duration_ms = (original_length / from_rate) * 1000
+            resampled_duration_ms = (new_length / to_rate) * 1000
+            logger.debug(
+                f"Audio resampling: {from_rate}Hz -> {to_rate}Hz, "
+                f"{original_length} -> {new_length} samples, "
+                f"{original_duration_ms:.1f}ms -> {resampled_duration_ms:.1f}ms"
+            )
+            
+            return resampled_audio.tobytes()
+            
+        except ImportError:
+            logger.warning("NumPy not available for resampling, using simple decimation")
+            # Fallback: simple decimation (not ideal but better than nothing)
+            if ratio < 1:
+                # Downsampling - take every nth sample
+                step = int(1 / ratio)
+                audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+                resampled_audio = audio_array[::step]
+                return resampled_audio.tobytes()
+            else:
+                # Upsampling - repeat samples (not ideal but simple)
+                step = int(ratio)
+                audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+                resampled_audio = np.repeat(audio_array, step)
+                return resampled_audio.tobytes()
         except Exception as e:
-            logger.error(f"Error sending audio delta to Twilio: {e}")
+            logger.error(f"Error resampling audio from {from_rate}Hz to {to_rate}Hz: {e}")
+            return audio_bytes  # Return original on error
 
     # ------------------------------------------------------------------
     # Override platform message handling for Twilio
@@ -267,3 +405,39 @@ class TwilioBridge(BaseRealtimeBridge):
         except Exception as e:
             logger.error(f"Error in receive_from_platform: {e}")
             await self.close()
+
+    async def handle_outgoing_audio_twilio(self, response_dict):
+        """Twilio-specific implementation of handle_outgoing_audio.
+        
+        This method is used to override the AudioStreamHandler's handle_outgoing_audio
+        method to use Twilio-specific message formats instead of AudioCodes formats.
+        """
+        try:
+            # Parse audio delta event
+            from opusagent.models.openai_api import ResponseAudioDeltaEvent
+            audio_delta = ResponseAudioDeltaEvent(**response_dict)
+
+            # Check if connections are still active
+            if self._closed or not self.conversation_id:
+                logger.debug(
+                    "Skipping audio delta - connection closed or no conversation ID"
+                )
+                return
+
+            # Check if platform websocket is available and not closed
+            if not self.platform_websocket:
+                logger.debug(
+                    "Skipping audio delta - platform websocket is unavailable"
+                )
+                return
+
+            # Record bot audio if recorder is available
+            if self.call_recorder:
+                await self.call_recorder.record_bot_audio(audio_delta.delta)
+
+            # Send audio to Twilio using our Twilio-specific method
+            pcm16 = base64.b64decode(audio_delta.delta)
+            await self.send_audio_to_twilio(pcm16)
+            
+        except Exception as e:
+            logger.error(f"Error in Twilio audio handler: {e}")
