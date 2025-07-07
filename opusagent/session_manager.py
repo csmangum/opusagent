@@ -102,7 +102,7 @@ class SessionManager:
                 "response": {
                     "modalities": ["text", "audio"],
                     "output_audio_format": "pcm16",
-                    "temperature": 0.8,
+                    "temperature": 0.6,  # Minimum allowed by API, optimized for consistency
                     "max_output_tokens": 4096,
                     "voice": self.session_config.voice,
                 },
@@ -131,7 +131,7 @@ class SessionManager:
                 "response": {
                     "modalities": ["text", "audio"],
                     "output_audio_format": "pcm16",
-                    "temperature": 0.8,
+                    "temperature": 0.6,  # Minimum allowed by API, optimized for consistency
                     "max_output_tokens": 4096,
                     "voice": self.session_config.voice,
                 },

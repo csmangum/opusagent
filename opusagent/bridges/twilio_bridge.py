@@ -25,6 +25,9 @@ from opusagent.models.twilio_api import (
     TwilioEventType,
 )
 
+# Import the proper audio utilities
+from tui.utils.audio_utils import AudioUtils
+
 logger = configure_logging("twilio_bridge")
 
 VOICE = "alloy"  # example voice, override as needed
@@ -42,8 +45,22 @@ class TwilioBridge(BaseRealtimeBridge):
         self.audio_buffer = []  # small buffer before relaying to OpenAI
         self.mark_counter = 0
         
+        # Check audio processing dependencies
+        self._check_audio_dependencies()
+        
         # Override the audio handler's outgoing audio method to use Twilio-specific sending
         self.audio_handler.handle_outgoing_audio = self.handle_outgoing_audio_twilio
+
+    def _check_audio_dependencies(self):
+        """Check if audio processing dependencies are available."""
+        try:
+            # Try to import required libraries
+            import librosa
+            import numpy as np
+            logger.info("High-quality audio processing available (librosa + numpy)")
+        except ImportError as e:
+            logger.warning(f"Audio processing dependencies not available: {e}")
+            logger.warning("Audio quality may be degraded. Install librosa and numpy for best results.")
 
     # ------------------------------------------------------------------
     # Platform-specific plumbing
@@ -164,84 +181,58 @@ class TwilioBridge(BaseRealtimeBridge):
     # Helper conversions
     # ------------------------------------------------------------------
     def _convert_mulaw_to_pcm16(self, mulaw_bytes: bytes) -> bytes:
+        """Convert μ-law to PCM16 using audioop or proper fallback."""
         try:
             import audioop
             return audioop.ulaw2lin(mulaw_bytes, 2)
         except Exception as e:
-            logger.warning(f"audioop.ulaw2lin failed, using fallback conversion: {e}")
-            # Fallback: implement μ-law to PCM16 conversion
-            pcm16_bytes = bytearray()
-            for mulaw_byte in mulaw_bytes:
-                # μ-law to linear conversion table (simplified)
-                # This is a basic implementation - for production, use a proper lookup table
-                mulaw_val = mulaw_byte ^ 0xFF  # Invert μ-law
-                sign = mulaw_val & 0x80
-                exponent = (mulaw_val >> 4) & 0x07
-                mantissa = mulaw_val & 0x0F
-                
-                if exponent == 0:
-                    linear = mantissa << 1
-                else:
-                    linear = (mantissa | 0x10) << (exponent - 1)
-                
-                if sign:
-                    linear = -linear
-                
-                # Convert to 16-bit signed integer
-                pcm16_val = max(-32768, min(32767, linear * 256))
-                pcm16_bytes.extend(pcm16_val.to_bytes(2, byteorder='little', signed=True))
-            
-            return bytes(pcm16_bytes)
+            logger.warning(f"audioop.ulaw2lin failed, using AudioUtils fallback: {e}")
+            # Use proper μ-law conversion from AudioUtils
+            return AudioUtils._ulaw_to_pcm16(mulaw_bytes)
 
     def _convert_pcm16_to_mulaw(self, pcm16_data: bytes) -> bytes:
+        """Convert PCM16 to μ-law using audioop or proper fallback."""
         try:
             import audioop
             return audioop.lin2ulaw(pcm16_data, 2)
         except Exception as e:
-            logger.warning(f"audioop.lin2ulaw failed, using fallback conversion: {e}")
-            # Fallback: implement PCM16 to μ-law conversion
-            mulaw_bytes = bytearray()
-            
-            # Process 16-bit samples (2 bytes each)
-            for i in range(0, len(pcm16_data), 2):
-                if i + 1 >= len(pcm16_data):
-                    break
-                    
-                # Convert 2 bytes to 16-bit signed integer
-                pcm16_val = int.from_bytes(pcm16_data[i:i+2], byteorder='little', signed=True)
-                
-                # Clamp to valid range
-                pcm16_val = max(-32768, min(32767, pcm16_val))
-                
-                # Convert to μ-law
-                if pcm16_val < 0:
-                    sign = 0x80
-                    pcm16_val = -pcm16_val
-                else:
-                    sign = 0x00
-                
-                # Find the highest set bit (exponent)
-                if pcm16_val == 0:
-                    exponent = 0
-                    mantissa = 0
-                else:
-                    # Find the highest set bit
-                    highest_bit = pcm16_val.bit_length() - 1
-                    exponent = max(0, min(7, highest_bit - 4))
-                    mantissa = (pcm16_val >> (exponent + 3)) & 0x0F
-                
-                # Combine into μ-law byte
-                mulaw_byte = sign | (exponent << 4) | mantissa
-                mulaw_bytes.append(mulaw_byte ^ 0xFF)  # Invert μ-law
-            
-            return bytes(mulaw_bytes)
+            logger.warning(f"audioop.lin2ulaw failed, using AudioUtils fallback: {e}")
+            # Use proper μ-law conversion from AudioUtils
+            return AudioUtils._pcm16_to_ulaw(pcm16_data)
 
     async def send_audio_to_twilio(self, pcm16_data: bytes):
+        """Send audio to Twilio with improved quality and error handling.
+        
+        Key improvements:
+        - High-quality resampling using librosa with proper anti-aliasing
+        - Correct μ-law conversion using lookup tables
+        - Audio level monitoring and quality validation
+        - Proper μ-law silence padding (0x80 instead of 0x00)
+        - Better timing control for consistent 20ms intervals
+        - Comprehensive error handling
+        """
         if not self.stream_sid:
             logger.warning("Cannot send audio to Twilio: stream_sid not set")
             return
             
+        if not pcm16_data:
+            logger.debug("Skipping empty audio data")
+            return
+            
         logger.debug(f"Sending {len(pcm16_data)} bytes of PCM16 audio to Twilio")
+        
+        # Calculate audio level for monitoring and quality validation
+        try:
+            audio_level = AudioUtils.visualize_audio_level(pcm16_data, max_bars=5)
+            logger.debug(f"Audio level: {audio_level}")
+            
+            # Validate audio quality - warn about potential issues
+            if audio_level.count("▁") == len(audio_level):
+                logger.warning("Audio appears to be silent or very quiet")
+            elif audio_level.count("█") > len(audio_level) * 0.8:
+                logger.warning("Audio may be clipping - levels very high")
+        except Exception as e:
+            logger.debug(f"Could not calculate audio level: {e}")
         
         # Resample from 24kHz to 8kHz if needed
         # OpenAI sends 24kHz PCM16, but Twilio expects 8kHz μ-law
@@ -252,27 +243,45 @@ class TwilioBridge(BaseRealtimeBridge):
         mulaw = self._convert_pcm16_to_mulaw(resampled_pcm16)
         logger.debug(f"Converted to {len(mulaw)} bytes of μ-law audio")
         
+        # Send audio in 20ms chunks (160 bytes at 8kHz)
         chunk_size = 160  # 20ms at 8kHz
         chunks_sent = 0
+        start_time = time.time()
+        
         for i in range(0, len(mulaw), chunk_size):
             chunk = mulaw[i : i + chunk_size]
             if len(chunk) < chunk_size:
-                chunk += b"\x00" * (chunk_size - len(chunk))
+                # Pad with silence instead of zeros for better audio quality
+                chunk += b"\x80" * (chunk_size - len(chunk))  # μ-law silence is 0x80, not 0x00
+            
             payload_b64 = base64.b64encode(chunk).decode()
-            await self.send_platform_json(
-                OutgoingMediaMessage(
-                    event=TwilioEventType.MEDIA,
-                    streamSid=self.stream_sid,
-                    media=OutgoingMediaPayload(payload=payload_b64),
-                ).model_dump()
-            )
-            chunks_sent += 1
-            await asyncio.sleep(0.02)
+            
+            try:
+                await self.send_platform_json(
+                    OutgoingMediaMessage(
+                        event=TwilioEventType.MEDIA,
+                        streamSid=self.stream_sid,
+                        media=OutgoingMediaPayload(payload=payload_b64),
+                    ).model_dump()
+                )
+                chunks_sent += 1
+                
+                # Better timing control - maintain consistent 20ms intervals
+                expected_time = start_time + (chunks_sent * 0.02)
+                current_time = time.time()
+                sleep_time = max(0, expected_time - current_time)
+                if sleep_time > 0:
+                    await asyncio.sleep(sleep_time)
+                    
+            except Exception as e:
+                logger.error(f"Error sending audio chunk {chunks_sent}: {e}")
+                break
         
-        logger.debug(f"Sent {chunks_sent} audio chunks to Twilio")
+        total_time = time.time() - start_time
+        logger.debug(f"Sent {chunks_sent} audio chunks to Twilio in {total_time:.2f}s")
 
     def _resample_audio(self, audio_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
-        """Resample audio from one sample rate to another.
+        """Resample audio using high-quality AudioUtils implementation.
         
         Args:
             audio_bytes: Raw audio bytes (16-bit PCM)
@@ -285,65 +294,29 @@ class TwilioBridge(BaseRealtimeBridge):
         if from_rate == to_rate:
             return audio_bytes
             
+        # Use AudioUtils for high-quality resampling with proper anti-aliasing
         try:
-            import numpy as np
-            
-            # Convert bytes to numpy array
-            audio_array = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float64)
-            
-            # Calculate resampling parameters
-            ratio = to_rate / from_rate
-            original_length = len(audio_array)
-            new_length = int(original_length * ratio)
-            
-            # Use linear interpolation for resampling
-            if ratio > 1:
-                # Upsampling - use linear interpolation
-                old_indices = np.linspace(0, original_length - 1, new_length)
-                resampled_audio = np.interp(old_indices, np.arange(original_length), audio_array)
-            else:
-                # Downsampling - apply simple low-pass filter first to prevent aliasing
-                # Simple moving average as low-pass filter
-                filter_size = max(1, int(1 / ratio))
-                if filter_size > 1:
-                    # Apply simple moving average filter
-                    filtered_audio = np.convolve(audio_array, np.ones(filter_size)/filter_size, mode='same')
-                else:
-                    filtered_audio = audio_array
-                
-                # Then downsample
-                old_indices = np.linspace(0, original_length - 1, new_length)
-                resampled_audio = np.interp(old_indices, np.arange(original_length), filtered_audio)
-            
-            # Convert back to int16 with proper clipping
-            resampled_audio = np.clip(resampled_audio, -32768, 32767).astype(np.int16)
+            resampled_audio = AudioUtils.resample_audio(
+                audio_bytes, 
+                from_rate, 
+                to_rate, 
+                channels=1, 
+                sample_width=2
+            )
             
             # Log resampling details for debugging
-            original_duration_ms = (original_length / from_rate) * 1000
-            resampled_duration_ms = (new_length / to_rate) * 1000
+            original_samples = len(audio_bytes) // 2
+            resampled_samples = len(resampled_audio) // 2
+            original_duration_ms = (original_samples / from_rate) * 1000
+            resampled_duration_ms = (resampled_samples / to_rate) * 1000
             logger.debug(
                 f"Audio resampling: {from_rate}Hz -> {to_rate}Hz, "
-                f"{original_length} -> {new_length} samples, "
+                f"{original_samples} -> {resampled_samples} samples, "
                 f"{original_duration_ms:.1f}ms -> {resampled_duration_ms:.1f}ms"
             )
             
-            return resampled_audio.tobytes()
+            return resampled_audio
             
-        except ImportError:
-            logger.warning("NumPy not available for resampling, using simple decimation")
-            # Fallback: simple decimation (not ideal but better than nothing)
-            if ratio < 1:
-                # Downsampling - take every nth sample
-                step = int(1 / ratio)
-                audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
-                resampled_audio = audio_array[::step]
-                return resampled_audio.tobytes()
-            else:
-                # Upsampling - repeat samples (not ideal but simple)
-                step = int(ratio)
-                audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
-                resampled_audio = np.repeat(audio_array, step)
-                return resampled_audio.tobytes()
         except Exception as e:
             logger.error(f"Error resampling audio from {from_rate}Hz to {to_rate}Hz: {e}")
             return audio_bytes  # Return original on error

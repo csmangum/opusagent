@@ -325,6 +325,13 @@ class DualAgentBridge:
                 await self.caller_transcript_manager.handle_output_transcript_completed()
             logger.debug("Caller transcript completed")
                 
+        elif message_type == "error":
+            # Handle error messages from caller agent
+            error_code = data.get("error", {}).get("code", "unknown")
+            error_message = data.get("error", {}).get("message", "Unknown error")
+            logger.error(f"Caller agent error: {error_code} - {error_message}")
+            # Don't close the connection immediately, just log the error
+                
         logger.debug(f"Caller message: {message_type}")
     
     async def _process_cs_message(self, data: Dict[str, Any]):
@@ -386,6 +393,13 @@ class DualAgentBridge:
             if self.cs_transcript_manager:
                 await self.cs_transcript_manager.handle_output_transcript_completed()
             logger.debug("CS transcript completed")
+                
+        elif message_type == "error":
+            # Handle error messages from CS agent
+            error_code = data.get("error", {}).get("code", "unknown")
+            error_message = data.get("error", {}).get("message", "Unknown error")
+            logger.error(f"CS agent error: {error_code} - {error_message}")
+            # Don't close the connection immediately, just log the error
                 
         elif message_type == "response.function_call_arguments.done":
             # Record function calls made by CS agent
