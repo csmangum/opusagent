@@ -132,7 +132,7 @@ async def test_send_initial_conversation_item(session_manager, mock_websocket):
     assert second_call["type"] == "response.create"
     assert second_call["response"]["modalities"] == ["text", "audio"]
     assert second_call["response"]["output_audio_format"] == "pcm16"
-    assert second_call["response"]["temperature"] == 0.8
+    assert second_call["response"]["temperature"] == 0.6
     assert second_call["response"]["max_output_tokens"] == 4096
     assert second_call["response"]["voice"] == TEST_VOICE
 
@@ -150,7 +150,7 @@ async def test_create_response(session_manager, mock_websocket):
     assert sent_data["type"] == "response.create"
     assert sent_data["response"]["modalities"] == ["text", "audio"]
     assert sent_data["response"]["output_audio_format"] == "pcm16"
-    assert sent_data["response"]["temperature"] == 0.8
+    assert sent_data["response"]["temperature"] == 0.6
     assert sent_data["response"]["max_output_tokens"] == 4096
     assert sent_data["response"]["voice"] == TEST_VOICE
 
