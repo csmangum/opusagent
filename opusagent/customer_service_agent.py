@@ -325,10 +325,10 @@ session_config = SessionConfig(
     voice=VOICE,  # CS agent uses "verse" voice
     instructions=SESSION_PROMPT,
     modalities=["text", "audio"],
-    temperature=0.8,
+    temperature=0.6,  # Minimum allowed by API, reduced from 0.8 for consistency
     tools=TOOLS,
     input_audio_noise_reduction={"type": "near_field"},
     input_audio_transcription={"model": "whisper-1"},
     max_response_output_tokens=4096,
-    tool_choice="auto",
+    tool_choice="auto",  # Keep as auto since "required" is not supported in SessionConfig
 )

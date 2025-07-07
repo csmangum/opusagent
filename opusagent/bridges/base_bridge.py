@@ -15,6 +15,7 @@ import websockets
 from fastapi import WebSocket
 from websockets.asyncio.client import ClientConnection
 
+from opusagent.audio_quality_monitor import QualityThresholds
 from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import CallRecorder
 from opusagent.config.logging_config import configure_logging
@@ -103,11 +104,21 @@ class BaseRealtimeBridge(ABC):
         # Initialize transcript manager
         self.transcript_manager = TranscriptManager()
 
-        # Initialize audio handler
+        # Configure quality monitoring thresholds
+        quality_thresholds = QualityThresholds(
+            min_snr_db=20.0,           # Minimum signal-to-noise ratio
+            max_thd_percent=1.0,       # Maximum total harmonic distortion  
+            max_clipping_percent=0.1,  # Maximum acceptable clipping
+            min_quality_score=60.0,    # Minimum overall quality score
+        )
+
+        # Initialize audio handler with quality monitoring enabled
         self.audio_handler = AudioStreamHandler(
             platform_websocket=platform_websocket,
             realtime_websocket=realtime_websocket,
             call_recorder=self.call_recorder,
+            enable_quality_monitoring=True,  # Enable monitoring
+            quality_thresholds=quality_thresholds,
         )
 
         # Initialize session manager
