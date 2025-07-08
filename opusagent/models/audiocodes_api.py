@@ -48,6 +48,11 @@ class TelephonyEventType(str, enum.Enum):
     USER_STREAM_SPEECH_HYPOTHESIS = "userStream.speech.hypothesis"
     USER_STREAM_SPEECH_RECOGNITION = "userStream.speech.recognition"
 
+    # New speech events for Voice Activity Detection (VAD)
+    USER_STREAM_SPEECH_STARTED = "userStream.speech.started"
+    USER_STREAM_SPEECH_STOPPED = "userStream.speech.stopped"
+    USER_STREAM_SPEECH_COMMITTED = "userStream.speech.committed"
+
     # Play stream events
     PLAY_STREAM_START = "playStream.start"
     PLAY_STREAM_CHUNK = "playStream.chunk"
@@ -64,7 +69,18 @@ PHONE_PATTERN: Pattern = re.compile(r"^\+?[0-9\- ]{6,15}$")
 UUID_PATTERN: Pattern = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 )
-SUPPORTED_MEDIA_FORMATS = ["raw/lpcm16", "audio/wav", "audio/mp3", "audio/alaw"]
+
+# Updated supported media formats from latest AudioCodes documentation
+SUPPORTED_MEDIA_FORMATS = [
+    "raw/mulaw",  # Mu-Law encoded (8 bit, 8 kHz) without a header
+    "wav/mulaw",  # Mu-Law encoded (8 bit, 8 kHz) with a WAV header
+    "raw/lpcm16",  # Linear PCM (16 bit, 16 kHz) without a header
+    "wav/lpcm16",  # Linear PCM (16 bit, 16 kHz) with a WAV header
+    "raw/lpcm16_8",  # Linear PCM (16 bit, 8 kHz) without a header
+    "wav/lpcm16_8",  # Linear PCM (16 bit, 8 kHz) with a WAV header
+    "raw/lpcm16_24",  # Linear PCM (16 bit, 24 kHz) without a header (VAIC-E-3.24.1+)
+    "wav/lpcm16_24",  # Linear PCM (16 bit, 24 kHz) with a WAV header (VAIC-E-3.24.1+)
+]
 
 
 # Base Models
@@ -74,11 +90,19 @@ class BaseMessage(BaseModel):
     All messages exchanged between VoiceAI Connect Enterprise and the bot
     must include at least the 'type' field, and messages from VoiceAI Connect
     to the bot include a 'conversationId' field.
+
+    When using Agent Assist mode, several messages should include an optional
+    participant parameter to indicate which participant (e.g., "caller") the
+    message refers to.
     """
 
     type: str = Field(..., description="Message type identifier")
     conversationId: Optional[str] = Field(
         None, description="Unique conversation identifier"
+    )
+    participant: Optional[str] = Field(
+        None,
+        description="Participant identifier (e.g., 'caller') for Agent Assist mode",
     )
 
     @field_validator("type")
@@ -257,7 +281,8 @@ class UserStreamStartMessage(BaseMessage):
     Example:
     {
       "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
-      "type": "userStream.start"
+      "type": "userStream.start",
+      "participant": "caller"
     }
     """
 
@@ -275,6 +300,7 @@ class UserStreamChunkMessage(BaseMessage):
     {
       "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
       "type": "userStream.chunk",
+      "participant": "caller",
       "audioChunk": "Base64EncodedAudioData"
     }
     """
@@ -305,7 +331,8 @@ class UserStreamStopMessage(BaseMessage):
     Example:
     {
       "conversationId": "4a5b4b9d-dab7-42d0-a977-6740c9349588",
-      "type": "userStream.stop"
+      "type": "userStream.stop",
+      "participant": "caller"
     }
     """
 
@@ -320,7 +347,8 @@ class UserStreamStartedResponse(BaseMessage):
 
     Example:
     {
-      "type": "userStream.started"
+      "type": "userStream.started",
+      "participant": "caller"
     }
     """
 
@@ -335,7 +363,8 @@ class UserStreamStoppedResponse(BaseMessage):
 
     Example:
     {
-      "type": "userStream.stopped"
+      "type": "userStream.stopped",
+      "participant": "caller"
     }
     """
 
@@ -351,6 +380,7 @@ class UserStreamHypothesisResponse(BaseMessage):
     Example:
     {
       "type": "userStream.speech.hypothesis",
+      "participant": "caller",
       "alternatives": [
         {
           "text": "How are"
@@ -373,6 +403,67 @@ class UserStreamHypothesisResponse(BaseMessage):
             if "text" not in alt:
                 raise ValueError("Each hypothesis must contain 'text' field")
         return v
+
+
+# New Speech Events for Voice Activity Detection (VAD)
+class UserStreamSpeechStartedResponse(BaseMessage):
+    """Model for userStream.speech.started response to AudioCodes.
+
+    Sent by the bot to indicate that the start of user speech was detected.
+    This message applies when the bot handles Voice Activity Detection (VAD).
+    Using this message is recommended, as VoiceAI Connect relies on it to handle barge-in and timeouts.
+
+    Example:
+    {
+      "type": "userStream.speech.started"
+    }
+    """
+
+    type: Literal[TelephonyEventType.USER_STREAM_SPEECH_STARTED]
+    participantId: Optional[str] = Field(
+        None,
+        description="For agent-assist calls, specifies the participant whose speech was detected",
+    )
+
+
+class UserStreamSpeechStoppedResponse(BaseMessage):
+    """Model for userStream.speech.stopped response to AudioCodes.
+
+    Sent by the bot to indicate that the end of user speech was detected.
+    This message applies when the bot handles Voice Activity Detection (VAD).
+    Using this message is recommended, as VoiceAI Connect relies on it to handle barge-in and timeouts.
+
+    Example:
+    {
+      "type": "userStream.speech.stopped"
+    }
+    """
+
+    type: Literal[TelephonyEventType.USER_STREAM_SPEECH_STOPPED]
+    participantId: Optional[str] = Field(
+        None,
+        description="For agent-assist calls, specifies the participant whose end of speech was detected",
+    )
+
+
+class UserStreamSpeechCommittedResponse(BaseMessage):
+    """Model for userStream.speech.committed response to AudioCodes.
+
+    Sent by the bot to indicate that the user's speech was committed for processing by the bot.
+    This message applies when the bot handles Voice Activity Detection (VAD).
+    Using this message is recommended, as VoiceAI Connect relies on it to handle barge-in and timeouts.
+
+    Example:
+    {
+      "type": "userStream.speech.committed"
+    }
+    """
+
+    type: Literal[TelephonyEventType.USER_STREAM_SPEECH_COMMITTED]
+    participantId: Optional[str] = Field(
+        None,
+        description="For agent-assist calls, specifies the participant whose speech was committed",
+    )
 
 
 # Play Stream Messages
@@ -401,6 +492,13 @@ class PlayStreamStartMessage(BaseMessage):
     mediaFormat: str = Field(
         ...,
         description="Audio format of the stream (must be one of the formats specified in session.initiate)",
+    )
+    altText: Optional[str] = Field(
+        None, description="Optional alternative text to be logged"
+    )
+    activityParams: Optional[Dict[str, str]] = Field(
+        None,
+        description="Optional additional activity parameters (e.g., expectAnotherBotMessage)",
     )
 
     @field_validator("mediaFormat")
@@ -470,13 +568,14 @@ class ActivityEvent(BaseModel):
     - start: Call initiation
     - dtmf: User pressed DTMF digits
     - hangup: Request to disconnect the call
+    - playUrl: Playing an audio buffer to the user
 
     According to AudioCodes documentation, activities may include additional fields
     like id, timestamp, language, and parameters for start events.
     """
 
     type: Literal["event"]
-    name: str = Field(..., description="Event name (start, dtmf, hangup)")
+    name: str = Field(..., description="Event name (start, dtmf, hangup, playUrl)")
     value: Optional[str] = Field(None, description="Event value, e.g., DTMF digit")
     # Additional fields from AudioCodes documentation
     id: Optional[str] = Field(None, description="Unique identifier for the activity")
@@ -485,11 +584,14 @@ class ActivityEvent(BaseModel):
     parameters: Optional[Dict[str, str]] = Field(
         None, description="Additional parameters (for start events)"
     )
+    activityParams: Optional[Dict[str, str]] = Field(
+        None, description="Additional activity parameters (for playUrl events)"
+    )
 
     @field_validator("name")
     def validate_name(cls, v):
         """Validate that event name is a known type."""
-        if v not in ["start", "dtmf", "hangup"]:
+        if v not in ["start", "dtmf", "hangup", "playUrl"]:
             import logging
 
             from opusagent.config.constants import LOGGER_NAME
@@ -530,7 +632,7 @@ class ActivitiesMessage(BaseMessage):
     """Model for activities message from AudioCodes.
 
     Activities messages are used for various events like call initiation,
-    DTMF digit presses, or call hangup requests.
+    DTMF digit presses, call hangup requests, or playing audio buffers.
 
     Example for call initiation:
     {
@@ -564,6 +666,22 @@ class ActivitiesMessage(BaseMessage):
           "timestamp": "2022-07-20T07:15:48.239Z",
           "language": "en-US",
           "value": "123"
+        }
+      ]
+    }
+
+    Example for playing audio buffer:
+    {
+      "type": "activities",
+      "activities": [
+        {
+          "type": "event",
+          "name": "playUrl",
+          "activityParams": {
+            "playUrlAltText": "Welcome to our example",
+            "playUrlUrl": "data:audio/wav;base64,UklGRmK4AABXQVZFZm10IBIAAAAGAA...",
+            "playUrlMediaFormat": "wav/lpcm16"
+          }
         }
       ]
     }
@@ -626,6 +744,7 @@ class UserStreamRecognitionResponse(BaseMessage):
     Example:
     {
       "type": "userStream.speech.recognition",
+      "participant": "caller",
       "alternatives": [
         {
           "text": "How are you.",
@@ -676,6 +795,9 @@ OutgoingMessage = Union[
     UserStreamStoppedResponse,
     UserStreamHypothesisResponse,
     UserStreamRecognitionResponse,
+    UserStreamSpeechStartedResponse,
+    UserStreamSpeechStoppedResponse,
+    UserStreamSpeechCommittedResponse,
     PlayStreamStartMessage,
     PlayStreamChunkMessage,
     PlayStreamStopMessage,

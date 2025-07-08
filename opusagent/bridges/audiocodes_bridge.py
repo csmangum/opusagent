@@ -9,6 +9,9 @@ from opusagent.config.logging_config import configure_logging
 from opusagent.models.audiocodes_api import (
     SessionAcceptedResponse,
     TelephonyEventType,
+    UserStreamSpeechCommittedResponse,
+    UserStreamSpeechStartedResponse,
+    UserStreamSpeechStoppedResponse,
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
 )
@@ -22,6 +25,13 @@ class AudioCodesBridge(BaseRealtimeBridge):
     This class implements the AudioCodes-specific event handling and message formatting
     while inheriting the core bridge functionality from BaseRealtimeBridge.
     """
+
+    def __init__(self, *args, **kwargs):
+        """Initialize AudioCodes bridge with participant tracking."""
+        super().__init__(*args, **kwargs)
+        self.current_participant: str = (
+            "caller"  # Default participant for single-party calls
+        )
 
     def register_platform_event_handlers(self):
         """Register AudioCodes-specific event handlers with the event router."""
@@ -39,6 +49,17 @@ class AudioCodesBridge(BaseRealtimeBridge):
         )
         self.event_router.register_platform_handler(
             TelephonyEventType.SESSION_END, self.handle_session_end
+        )
+
+        # Register handlers for the new VAD speech events from OpenAI Realtime API
+        self.event_router.register_realtime_handler(
+            "input_audio_buffer.speech_started", self.handle_speech_started
+        )
+        self.event_router.register_realtime_handler(
+            "input_audio_buffer.speech_stopped", self.handle_speech_stopped
+        )
+        self.event_router.register_realtime_handler(
+            "input_audio_buffer.committed", self.handle_speech_committed
         )
 
     async def send_platform_json(self, payload: dict):
@@ -69,6 +90,12 @@ class AudioCodesBridge(BaseRealtimeBridge):
             data (dict): User stream start message data
         """
         logger.info(f"User stream start received: {data}")
+
+        # Extract participant if provided (for Agent Assist mode)
+        participant = data.get("participant")
+        if participant:
+            self.current_participant = participant
+            logger.info(f"Audio stream participant: {participant}")
 
         # Reset audio tracking counters for new stream
         self.audio_chunks_sent = 0
@@ -111,49 +138,112 @@ class AudioCodesBridge(BaseRealtimeBridge):
         await self.close()
         logger.info("AudioCodes-Realtime bridge closed")
 
+    async def handle_speech_started(self, data: dict):
+        """Handle speech started event from OpenAI Realtime API.
+
+        Args:
+            data (dict): Speech started event data
+        """
+        logger.info("Speech started detected - sending to AudioCodes")
+        await self.send_speech_started()
+
+    async def handle_speech_stopped(self, data: dict):
+        """Handle speech stopped event from OpenAI Realtime API.
+
+        Args:
+            data (dict): Speech stopped event data
+        """
+        logger.info("Speech stopped detected - sending to AudioCodes")
+        await self.send_speech_stopped()
+
+    async def handle_speech_committed(self, data: dict):
+        """Handle speech committed event from OpenAI Realtime API.
+
+        Args:
+            data (dict): Speech committed event data
+        """
+        logger.info("Speech committed detected - sending to AudioCodes")
+        await self.send_speech_committed()
+
     async def send_session_accepted(self):
         """Send AudioCodes-specific session accepted response."""
-        await self.send_platform_json(
-            SessionAcceptedResponse(
-                type=TelephonyEventType.SESSION_ACCEPTED,
-                conversationId=self.conversation_id,
-                mediaFormat=self.media_format or "raw/lpcm16",
-            ).model_dump()
-        )
+        kwargs = {
+            "type": TelephonyEventType.SESSION_ACCEPTED,
+            "conversationId": self.conversation_id,
+            "mediaFormat": self.media_format or "raw/lpcm16",
+            "participant": self.current_participant,
+        }
+        await self.send_platform_json(SessionAcceptedResponse(**kwargs).model_dump())
 
     async def send_user_stream_started(self):
         """Send AudioCodes-specific user stream started response."""
-        await self.send_platform_json(
-            UserStreamStartedResponse(
-                type=TelephonyEventType.USER_STREAM_STARTED,
-                conversationId=self.conversation_id,
-            ).model_dump()
-        )
+        kwargs = {
+            "type": TelephonyEventType.USER_STREAM_STARTED,
+            "conversationId": self.conversation_id,
+            "participant": self.current_participant,
+        }
+        await self.send_platform_json(UserStreamStartedResponse(**kwargs).model_dump())
 
     async def send_user_stream_stopped(self):
         """Send AudioCodes-specific user stream stopped response."""
+        kwargs = {
+            "type": TelephonyEventType.USER_STREAM_STOPPED,
+            "conversationId": self.conversation_id,
+            "participant": self.current_participant,
+        }
+        await self.send_platform_json(UserStreamStoppedResponse(**kwargs).model_dump())
+
+    async def send_speech_started(self):
+        """Send AudioCodes-specific speech started response."""
+        kwargs = {
+            "type": TelephonyEventType.USER_STREAM_SPEECH_STARTED,
+            "conversationId": self.conversation_id,
+        }
+        if self.current_participant != "caller":
+            kwargs["participantId"] = self.current_participant
         await self.send_platform_json(
-            UserStreamStoppedResponse(
-                type=TelephonyEventType.USER_STREAM_STOPPED,
-                conversationId=self.conversation_id,
-            ).model_dump()
+            UserStreamSpeechStartedResponse(**kwargs).model_dump()
+        )
+
+    async def send_speech_stopped(self):
+        """Send AudioCodes-specific speech stopped response."""
+        kwargs = {
+            "type": TelephonyEventType.USER_STREAM_SPEECH_STOPPED,
+            "conversationId": self.conversation_id,
+        }
+        if self.current_participant != "caller":
+            kwargs["participantId"] = self.current_participant
+        await self.send_platform_json(
+            UserStreamSpeechStoppedResponse(**kwargs).model_dump()
+        )
+
+    async def send_speech_committed(self):
+        """Send AudioCodes-specific speech committed response."""
+        kwargs = {
+            "type": TelephonyEventType.USER_STREAM_SPEECH_COMMITTED,
+            "conversationId": self.conversation_id,
+        }
+        if self.current_participant != "caller":
+            kwargs["participantId"] = self.current_participant
+        await self.send_platform_json(
+            UserStreamSpeechCommittedResponse(**kwargs).model_dump()
         )
 
     async def send_session_end(self, reason: str):
         """Send AudioCodes-specific session end message.
-        
+
         Args:
             reason: The reason for ending the session
         """
         logger.info(f"Sending session end to AudioCodes: {reason}")
-        
+
         session_end_message = {
             "type": "session.end",
             "conversationId": self.conversation_id,
             "reasonCode": "normal",
-            "reason": reason
+            "reason": reason,
         }
-        
+
         try:
             await self.send_platform_json(session_end_message)
             logger.info("✅ Session end message sent to AudioCodes")
