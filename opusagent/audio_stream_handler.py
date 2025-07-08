@@ -88,15 +88,15 @@ class AudioStreamHandler:
         # Quality monitoring
         self.enable_quality_monitoring = enable_quality_monitoring
         self.quality_monitor: Optional[AudioQualityMonitor] = None
-        
+
         if self.enable_quality_monitoring:
             self.quality_monitor = AudioQualityMonitor(
                 sample_rate=16000,
                 chunk_size=1024,
                 thresholds=quality_thresholds or QualityThresholds(),
-                history_size=100
+                history_size=100,
             )
-            
+
             # Set up quality alert callback
             self.quality_monitor.on_quality_alert = self._on_quality_alert
             logger.info("Audio quality monitoring enabled")
@@ -167,7 +167,9 @@ class AudioStreamHandler:
             # Analyze audio quality if monitoring is enabled
             if self.enable_quality_monitoring and self.quality_monitor:
                 try:
-                    quality_metrics = self.quality_monitor.analyze_audio_chunk(audio_bytes)
+                    quality_metrics = self.quality_monitor.analyze_audio_chunk(
+                        audio_bytes
+                    )
                     logger.debug(
                         f"Audio quality - SNR: {quality_metrics.snr_db:.1f}dB, "
                         f"THD: {quality_metrics.thd_percent:.2f}%, "
@@ -230,6 +232,9 @@ class AudioStreamHandler:
                         conversationId=self.conversation_id,
                         streamId=self.active_stream_id,
                         mediaFormat=self.media_format or "raw/lpcm16",
+                        participant="caller",
+                        altText=None,
+                        activityParams=None,
                     )
                     await self.platform_websocket.send_json(stream_start.model_dump())
                     logger.info(f"Started play stream: {self.active_stream_id}")
@@ -250,6 +255,7 @@ class AudioStreamHandler:
                     conversationId=self.conversation_id,
                     streamId=self.active_stream_id,
                     audioChunk=audio_delta.delta,
+                    participant="caller",
                 )
                 await self.platform_websocket.send_json(stream_chunk.model_dump())
                 logger.debug(
@@ -314,6 +320,7 @@ class AudioStreamHandler:
                     type=TelephonyEventType.PLAY_STREAM_STOP,
                     conversationId=self.conversation_id,
                     streamId=self.active_stream_id,
+                    participant="caller",
                 )
                 await self.platform_websocket.send_json(stream_stop.model_dump())
                 logger.info(f"Stopped play stream: {self.active_stream_id}")
@@ -337,29 +344,29 @@ class AudioStreamHandler:
                 else 0
             ),
         }
-        
+
         # Add quality monitoring stats if enabled
         if self.enable_quality_monitoring and self.quality_monitor:
             quality_summary = self.quality_monitor.get_quality_summary()
             stats["quality_monitoring"] = quality_summary
-            
+
         return stats
 
     def _on_quality_alert(self, alert) -> None:
         """Handle quality alerts from the quality monitor.
-        
+
         Args:
             alert: QualityAlert object containing alert information
         """
         if not self.enable_quality_monitoring:
             return
-            
+
         # Log the alert with appropriate level
         if alert.severity == "error":
             logger.error(f"Audio Quality Error: {alert.message}")
         else:
             logger.warning(f"Audio Quality Warning: {alert.message}")
-            
+
         # Log detailed metrics for debugging
         logger.debug(
             f"Quality metrics - SNR: {alert.metrics.snr_db:.1f}dB, "
