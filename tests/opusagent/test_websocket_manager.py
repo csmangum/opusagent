@@ -12,7 +12,7 @@ import pytest
 from opusagent.websocket_manager import (
     RealtimeConnection,
     WebSocketManager,
-    websocket_manager,
+    get_websocket_manager,
 )
 
 

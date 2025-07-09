@@ -337,7 +337,7 @@ class WebSocketManager:
         Context manager for getting and automatically managing a connection.
 
         Usage:
-            async with websocket_manager.connection_context() as connection:
+            async with manager.connection_context() as connection:
                 # Use connection.websocket
                 await connection.websocket.send(data)
         """
@@ -404,11 +404,24 @@ class WebSocketManager:
 
 # Global WebSocket manager instance
 # Initialize with environment variable support for mock mode
-_use_mock = os.getenv("OPUSAGENT_USE_MOCK", "false").lower() == "true"
-_mock_server_url = os.getenv("OPUSAGENT_MOCK_SERVER_URL", "ws://localhost:8080")
-websocket_manager = WebSocketManager(
-    use_mock=_use_mock, mock_server_url=_mock_server_url
-)
+_websocket_manager_instance = None
+
+
+def _get_use_mock_from_env() -> bool:
+    """Get the use_mock setting from environment variables."""
+    return os.getenv("OPUSAGENT_USE_MOCK", "false").lower() == "true"
+
+
+def _get_mock_server_url_from_env() -> str:
+    """Get the mock server URL from environment variables."""
+    return os.getenv("OPUSAGENT_MOCK_SERVER_URL", "ws://localhost:8080")
+
+
+def _create_global_websocket_manager() -> WebSocketManager:
+    """Create the global WebSocket manager instance."""
+    use_mock = _get_use_mock_from_env()
+    mock_server_url = _get_mock_server_url_from_env()
+    return WebSocketManager(use_mock=use_mock, mock_server_url=mock_server_url)
 
 
 def create_websocket_manager(
@@ -446,4 +459,7 @@ def get_websocket_manager() -> WebSocketManager:
     Returns:
         The global websocket_manager instance
     """
-    return websocket_manager
+    global _websocket_manager_instance
+    if _websocket_manager_instance is None:
+        _websocket_manager_instance = _create_global_websocket_manager()
+    return _websocket_manager_instance

@@ -37,7 +37,7 @@ from opusagent.config.logging_config import configure_logging
 from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
 from opusagent.config.websocket_config import WebSocketConfig
-from opusagent.websocket_manager import websocket_manager, WebSocketManager
+from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
 from opusagent.callers import get_available_caller_types, get_caller_description
 
 load_dotenv()
@@ -88,7 +88,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         # Get a managed connection to OpenAI Realtime API
-        async with websocket_manager.connection_context() as connection:
+        async with get_websocket_manager().connection_context() as connection:
             logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
             # Create AudioCodes bridge instance
@@ -129,7 +129,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
         logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
 
         # Get a managed connection to OpenAI Realtime API
-        async with websocket_manager.connection_context() as connection:
+        async with get_websocket_manager().connection_context() as connection:
             logger.info(
                 f"OpenAI WebSocket connection established for Caller: {connection.connection_id}"
             )
@@ -173,7 +173,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
         logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
 
         # Get a managed connection to OpenAI Realtime API
-        async with websocket_manager.connection_context() as connection:
+        async with get_websocket_manager().connection_context() as connection:
             logger.info(
                 f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
             )
@@ -299,7 +299,7 @@ async def get_stats():
     Returns:
         dict: Current connection pool statistics
     """
-    return websocket_manager.get_stats()
+    return get_websocket_manager().get_stats()
 
 
 @app.get("/health")
@@ -309,7 +309,7 @@ async def health_check():
     Returns:
         dict: Health status information
     """
-    stats = websocket_manager.get_stats()
+    stats = get_websocket_manager().get_stats()
     is_healthy = stats["healthy_connections"] > 0
 
     return {
@@ -363,7 +363,7 @@ async def shutdown_event():
     """Clean up resources on application shutdown."""
     logger.info("Application shutting down, cleaning up WebSocket connections...")
     try:
-        await websocket_manager.shutdown()
+        await get_websocket_manager().shutdown()
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
         # Continue with shutdown even if there's an error
