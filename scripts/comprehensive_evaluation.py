@@ -24,16 +24,16 @@ MODEL = "gpt-4o-mini"
 
 def extract_comprehensive_data() -> Dict[str, Any]:
     """Extract comprehensive data from logs and analysis."""
-    
+
     log_file = Path("logs/opusagent.log")
     if not log_file.exists():
         raise FileNotFoundError("Log file not found: logs/opusagent.log")
-    
+
     with open(log_file, 'r') as f:
         content = f.read()
-    
+
     lines = content.split('\n')
-    
+
     # Comprehensive data extraction
     data = {
         'session_info': {},
@@ -48,7 +48,7 @@ def extract_comprehensive_data() -> Dict[str, Any]:
         'audio_quality': {},
         'system_health': {}
     }
-    
+
     # Parse detailed information
     for line in lines:
         # Session information
@@ -56,20 +56,20 @@ def extract_comprehensive_data() -> Dict[str, Any]:
             match = re.search(r'conversationId.*?([a-f0-9-]+)', line)
             if match:
                 data['session_info']['conversation_id'] = match.group(1)
-        
+
         # Audio streaming
         elif 'userStream.chunk' in line:
             data['audio_stats']['user_chunks'] += 1
             match = re.search(r'(\d+) bytes', line)
             if match:
                 data['audio_stats']['user_bytes'] += int(match.group(1))
-        
+
         elif 'response.audio.delta' in line:
             data['audio_stats']['bot_chunks'] += 1
             match = re.search(r'(\d+) bytes', line)
             if match:
                 data['audio_stats']['bot_bytes'] += int(match.group(1))
-        
+
         # Function calls
         elif 'Function.*not implemented' in line:
             timestamp_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})', line)
@@ -81,7 +81,7 @@ def extract_comprehensive_data() -> Dict[str, Any]:
                     'function': 'human_handoff',
                     'status': 'not_implemented'
                 })
-        
+
         # Errors
         elif 'ERROR' in line:
             timestamp_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})', line)
@@ -90,24 +90,24 @@ def extract_comprehensive_data() -> Dict[str, Any]:
                     'timestamp': timestamp_match.group(1),
                     'message': line.strip()
                 })
-        
+
         # Transcripts
         elif 'Full AI transcript' in line:
             match = re.search(r'Full AI transcript.*?: (.+)', line)
             if match:
                 data['transcripts'].append(match.group(1))
-        
+
         elif 'Full user transcript' in line:
             match = re.search(r'Full user transcript.*?: (.+)', line)
             if match:
                 data['transcripts'].append(f"User: {match.group(1)}")
-        
+
         # Token usage
         elif 'total_tokens' in line:
             match = re.search(r'"total_tokens": (\d+)', line)
             if match:
                 data['token_usage'].append(int(match.group(1)))
-        
+
         # Audio quality metrics
         elif 'Audio resampling' in line:
             match = re.search(r'(\d+)Hz -> (\d+)Hz', line)
@@ -116,25 +116,25 @@ def extract_comprehensive_data() -> Dict[str, Any]:
                     'from': int(match.group(1)),
                     'to': int(match.group(2))
                 }
-    
+
     # Calculate performance metrics
     if data['audio_stats']['user_chunks'] > 0:
         data['performance_metrics']['avg_user_chunk_size'] = data['audio_stats']['user_bytes'] / data['audio_stats']['user_chunks']
     if data['audio_stats']['bot_chunks'] > 0:
         data['performance_metrics']['avg_bot_chunk_size'] = data['audio_stats']['bot_bytes'] / data['audio_stats']['bot_chunks']
-    
+
     # Calculate system health metrics
     data['system_health'] = {
         'error_rate': len(data['errors']) / max(len(lines), 1) * 100,
         'function_success_rate': 0 if data['function_calls'] else 100,
         'audio_continuity': data['audio_stats']['bot_chunks'] > 0 and data['audio_stats']['user_chunks'] > 0
     }
-    
+
     return data
 
 def create_multi_dimensional_prompt(log_data: Dict[str, Any]) -> str:
     """Create a comprehensive multi-dimensional evaluation prompt."""
-    
+
     prompt = f"""
 # FastAgent Telephony System - Multi-Dimensional Validation Evaluation
 
@@ -263,17 +263,17 @@ Please provide a comprehensive evaluation across these dimensions:
 
 Please provide a thorough, professional analysis suitable for executive review and technical implementation planning.
 """
-    
+
     return prompt
 
 def evaluate_with_openai(prompt: str) -> str:
     """Send evaluation prompt to OpenAI and get response."""
-    
+
     if not OPENAI_API_KEY:
         raise ValueError("OPENAI_API_KEY environment variable not set")
-    
+
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
-    
+
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -290,22 +290,22 @@ def evaluate_with_openai(prompt: str) -> str:
             temperature=0.2,
             max_tokens=6000
         )
-        
+
         content = response.choices[0].message.content
         if content is None:
             return "No response content received from OpenAI API"
         return content
-        
+
     except Exception as e:
         return f"Error calling OpenAI API: {str(e)}"
 
 def create_executive_summary(evaluation: str) -> str:
     """Extract and format executive summary from evaluation."""
-    
+
     lines = evaluation.split('\n')
     summary_lines = []
     in_summary = False
-    
+
     for line in lines:
         if 'Executive Summary' in line:
             in_summary = True
@@ -313,7 +313,7 @@ def create_executive_summary(evaluation: str) -> str:
             break
         elif in_summary and line.strip():
             summary_lines.append(line)
-    
+
     if summary_lines:
         return '\n'.join(summary_lines)
     else:
@@ -321,12 +321,12 @@ def create_executive_summary(evaluation: str) -> str:
 
 def save_comprehensive_report(evaluation: str, log_data: Dict[str, Any]) -> str:
     """Save the comprehensive evaluation report."""
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     report_file = f"comprehensive_evaluation_report_{timestamp}.md"
-    
+
     executive_summary = create_executive_summary(evaluation)
-    
+
     report_content = f"""# FastAgent Comprehensive Validation Evaluation Report
 
 **Generated:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -394,58 +394,58 @@ def save_comprehensive_report(evaluation: str, log_data: Dict[str, Any]) -> str:
 ---
 *This comprehensive evaluation was automatically generated by the FastAgent validation system using OpenAI GPT-4o analysis.*
 """
-    
+
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write(report_content)
-    
+
     return report_file
 
 def main():
     """Main comprehensive evaluation function."""
-    
+
     print("🔍 FastAgent Comprehensive Validation Evaluation")
     print("=" * 60)
-    
+
     try:
         # Extract comprehensive data
         print("📊 Extracting comprehensive test data...")
         log_data = extract_comprehensive_data()
         print(f"✅ Extracted data for conversation: {log_data['session_info'].get('conversation_id', 'N/A')}")
-        
+
         # Create multi-dimensional evaluation prompt
         print("🤖 Creating multi-dimensional evaluation prompt...")
         prompt = create_multi_dimensional_prompt(log_data)
-        
+
         # Get OpenAI evaluation
         print("🧠 Requesting comprehensive AI evaluation...")
         evaluation = evaluate_with_openai(prompt)
-        
+
         # Save comprehensive report
         print("💾 Saving comprehensive evaluation report...")
         report_file = save_comprehensive_report(evaluation, log_data)
-        
+
         print(f"\n✅ Comprehensive evaluation complete!")
         print(f"📄 Report saved to: {report_file}")
         print("\n" + "=" * 60)
         print("📋 EXECUTIVE SUMMARY")
         print("=" * 60)
-        
+
         # Print executive summary
         summary = create_executive_summary(evaluation)
         print(summary)
-        
+
         print(f"\n📖 Full comprehensive report available in: {report_file}")
         print("\n🎯 Next Steps:")
         print("1. Review the comprehensive evaluation report")
         print("2. Prioritize critical issues and recommendations")
         print("3. Create action plan based on AI insights")
         print("4. Schedule follow-up validation tests")
-        
+
     except Exception as e:
         print(f"❌ Error during comprehensive evaluation: {str(e)}")
         return 1
-    
+
     return 0
 
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main())

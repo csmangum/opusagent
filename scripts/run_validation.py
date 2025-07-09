@@ -7,10 +7,10 @@ It ensures the server is running and mock mode is enabled before running validat
 
 Usage:
     python scripts/run_validation.py
-    
+
     # Run with specific options
     python scripts/run_validation.py --server-url ws://localhost:8000/ws/telephony --verbose
-    
+
     # Run specific tests
     python scripts/run_validation.py --test session-flow
 """
@@ -26,7 +26,7 @@ def check_server_running(server_url: str) -> bool:
     try:
         import websockets
         import asyncio
-        
+
         async def test_connection():
             try:
                 # Convert WebSocket URL to HTTP URL for health check
@@ -36,7 +36,7 @@ def check_server_running(server_url: str) -> bool:
                     http_url = server_url.replace("wss://", "https://")
                 else:
                     return False
-                
+
                 # Try to connect to the health endpoint
                 import aiohttp
                 timeout = aiohttp.ClientTimeout(total=5)
@@ -45,7 +45,7 @@ def check_server_running(server_url: str) -> bool:
                         return response.status == 200
             except Exception:
                 return False
-        
+
         return asyncio.run(test_connection())
     except ImportError:
         # If aiohttp is not available, just assume server is running
@@ -54,14 +54,14 @@ def check_server_running(server_url: str) -> bool:
 def setup_environment():
     """Set up environment variables for mock mode."""
     print("🔧 Setting up environment for mock mode...")
-    
+
     # Set mock mode environment variables
     os.environ["OPUSAGENT_USE_MOCK"] = "true"
     os.environ["OPUSAGENT_MOCK_SERVER_URL"] = "ws://localhost:8080"
-    
+
     # Set other useful environment variables
     os.environ["LOG_LEVEL"] = "INFO"
-    
+
     print("✓ Environment variables set:")
     print(f"   OPUSAGENT_USE_MOCK: {os.environ.get('OPUSAGENT_USE_MOCK')}")
     print(f"   OPUSAGENT_MOCK_SERVER_URL: {os.environ.get('OPUSAGENT_MOCK_SERVER_URL')}")
@@ -70,13 +70,13 @@ def setup_environment():
 def start_server_if_needed(server_url: str):
     """Start the server if it's not already running."""
     print(f"🔍 Checking if server is running at {server_url}...")
-    
+
     if check_server_running(server_url):
         print("✓ Server is already running")
         return True
-    
+
     print("⚠️  Server is not running. Starting server...")
-    
+
     try:
         # Start the server in the background
         server_process = subprocess.Popen(
@@ -85,10 +85,10 @@ def start_server_if_needed(server_url: str):
             stderr=subprocess.PIPE,
             env=os.environ.copy()
         )
-        
+
         # Wait a moment for server to start
         time.sleep(3)
-        
+
         # Check if server started successfully
         if server_process.poll() is None:
             print("✓ Server started successfully")
@@ -99,7 +99,7 @@ def start_server_if_needed(server_url: str):
             print(f"Server output: {stdout.decode()}")
             print(f"Server errors: {stderr.decode()}")
             return False
-            
+
     except Exception as e:
         print(f"❌ Error starting server: {e}")
         return False
@@ -107,7 +107,7 @@ def start_server_if_needed(server_url: str):
 def main():
     """Main function to run validation."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Run telephony validation with proper setup")
     parser.add_argument(
         "--server-url",
@@ -134,21 +134,21 @@ def main():
         action="store_true",
         help="Skip server availability check"
     )
-    
+
     args = parser.parse_args()
-    
+
     print("🚀 Telephony Validation Runner")
     print("=" * 50)
-    
+
     # Set up environment
     setup_environment()
-    
+
     # Check/start server if needed
     if not args.no_server_check:
         if not start_server_if_needed(args.server_url):
             print("❌ Cannot proceed without server running")
             sys.exit(1)
-    
+
     # Build validation command
     cmd = [
         sys.executable,
@@ -156,16 +156,16 @@ def main():
         "--server-url", args.server_url,
         "--test", args.test
     ]
-    
+
     if args.verbose:
         cmd.append("--verbose")
-    
+
     if args.output:
         cmd.extend(["--output", args.output])
-    
+
     print(f"\n🎯 Running validation: {' '.join(cmd)}")
     print("=" * 50)
-    
+
     # Run validation
     try:
         result = subprocess.run(cmd, check=True)
@@ -182,4 +182,4 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())
