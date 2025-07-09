@@ -140,10 +140,16 @@ class TestMockWebSocketManager:
             'OPUSAGENT_MOCK_SERVER_URL': 'ws://env-test:8080'
         }):
             # Import the module to trigger environment variable reading
-            from opusagent.websocket_manager import _use_mock, _mock_server_url
+            from opusagent.websocket_manager import get_websocket_manager, _websocket_manager_instance
             
-            assert _use_mock is True
-            assert _mock_server_url == 'ws://env-test:8080'
+            # Reset the cached instance to ensure environment variables are picked up
+            import opusagent.websocket_manager
+            opusagent.websocket_manager._websocket_manager_instance = None
+            
+            manager = get_websocket_manager()
+            
+            assert manager.use_mock is True
+            assert manager.mock_server_url == 'ws://env-test:8080'
 
     @pytest.mark.asyncio
     async def test_mock_connection_logging(self):

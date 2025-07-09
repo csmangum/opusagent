@@ -301,9 +301,19 @@ class AudioManager:
                     level = np.sqrt(np.mean(audio_array.astype(np.float32) ** 2)) / 32768.0
                     self.current_output_level = max(level, self.current_output_level * self._level_decay)
                 
+                # Debug: Log when audio is actually being played
+                logger.debug(f"Playing audio chunk: {len(audio_bytes)} bytes, level: {self.current_output_level:.3f}, copy_frames: {copy_frames}")
+                
+                # Check if audio data is non-zero (not silence)
+                if np.any(audio_array != 0):
+                    logger.info(f"🎵 Non-zero audio data detected: max={np.max(np.abs(audio_array))}, mean={np.mean(np.abs(audio_array)):.1f}")
+                else:
+                    logger.warning("🔇 Audio data is all zeros (silence)")
+                
             except queue.Empty:
                 # No data available, output silence
                 self.current_output_level *= self._level_decay
+                logger.debug("No audio data in queue, outputting silence")
                 
         except Exception as e:
             logger.error(f"Error in playback callback: {e}")

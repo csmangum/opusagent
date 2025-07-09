@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from opusagent.websocket_manager import websocket_manager
+from opusagent.websocket_manager import get_websocket_manager
 
 
 class TestWebSocketManagerIntegration:
@@ -18,7 +18,8 @@ class TestWebSocketManagerIntegration:
     @pytest.fixture
     def mock_websocket_manager(self):
         """Mock the global websocket_manager."""
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             mock_manager.get_stats.return_value = {
                 "total_connections": 3,
                 "healthy_connections": 2,
@@ -29,6 +30,7 @@ class TestWebSocketManagerIntegration:
             mock_manager.connection_context.return_value.__aenter__ = AsyncMock()
             mock_manager.connection_context.return_value.__aexit__ = AsyncMock()
             mock_manager.shutdown = AsyncMock()
+            mock_get_manager.return_value = mock_manager
             yield mock_manager
 
     @pytest.fixture
@@ -180,12 +182,14 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             # Set up context manager mock
             context_manager = AsyncMock()
             context_manager.__aenter__.return_value = mock_connection
             context_manager.__aexit__.return_value = None
             mock_manager.connection_context.return_value = context_manager
+            mock_get_manager.return_value = mock_manager
             
             # Mock asyncio.gather to avoid actual execution
             with patch('asyncio.gather', new_callable=AsyncMock) as mock_gather:
@@ -194,6 +198,7 @@ class TestWebSocketManagerWebSocketEndpoints:
                 await websocket_endpoint(mock_websocket)
                 
                 # Verify websocket manager was used
+                mock_get_manager.assert_called_once()
                 mock_manager.connection_context.assert_called_once()
                 
                 # Verify bridge was created with managed connection and session_config
@@ -214,12 +219,14 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket.accept = AsyncMock()
         mock_websocket.client = "test_client"
         
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             # Set up context manager mock
             context_manager = AsyncMock()
             context_manager.__aenter__.return_value = mock_connection
             context_manager.__aexit__.return_value = None
             mock_manager.connection_context.return_value = context_manager
+            mock_get_manager.return_value = mock_manager
             
             # Mock asyncio.gather to avoid actual execution
             with patch('asyncio.gather', new_callable=AsyncMock) as mock_gather:
@@ -228,6 +235,7 @@ class TestWebSocketManagerWebSocketEndpoints:
                 await handle_twilio_call(mock_websocket)
                 
                 # Verify websocket manager was used
+                mock_get_manager.assert_called_once()
                 mock_manager.connection_context.assert_called_once()
                 
                 # Verify bridge was created with managed connection and session_config
@@ -247,16 +255,19 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             # Set up context manager to raise exception
             context_manager = AsyncMock()
             context_manager.__aenter__.side_effect = Exception("Connection failed")
             mock_manager.connection_context.return_value = context_manager
+            mock_get_manager.return_value = mock_manager
             
             # Should not raise exception - should be handled gracefully
             await websocket_endpoint(mock_websocket)
             
             # Verify context manager was attempted
+            mock_get_manager.assert_called_once()
             mock_manager.connection_context.assert_called_once()
 
     @pytest.mark.asyncio
@@ -268,17 +279,20 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             context_manager = AsyncMock()
             context_manager.__aenter__.return_value = mock_connection
             context_manager.__aexit__.return_value = None
             mock_manager.connection_context.return_value = context_manager
+            mock_get_manager.return_value = mock_manager
             
             # Mock asyncio.gather to raise WebSocketDisconnect
             with patch('asyncio.gather', side_effect=WebSocketDisconnect()):
                 await websocket_endpoint(mock_websocket)
                 
                 # Should handle disconnect gracefully
+                mock_get_manager.assert_called_once()
                 mock_manager.connection_context.assert_called_once()
 
 
@@ -290,11 +304,14 @@ class TestWebSocketManagerAppLifecycle:
         """Test app shutdown event calls websocket manager shutdown."""
         from opusagent.main import shutdown_event
         
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             mock_manager.shutdown = AsyncMock()
+            mock_get_manager.return_value = mock_manager
             
             await shutdown_event()
             
+            mock_get_manager.assert_called_once()
             mock_manager.shutdown.assert_called_once()
 
     @pytest.mark.asyncio
@@ -302,12 +319,15 @@ class TestWebSocketManagerAppLifecycle:
         """Test app shutdown handles websocket manager exceptions."""
         from opusagent.main import shutdown_event
         
-        with patch('opusagent.main.websocket_manager') as mock_manager:
+        with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
+            mock_manager = Mock()
             mock_manager.shutdown = AsyncMock(side_effect=Exception("Shutdown failed"))
+            mock_get_manager.return_value = mock_manager
             
             # Should not raise exception
             await shutdown_event()
             
+            mock_get_manager.assert_called_once()
             mock_manager.shutdown.assert_called_once()
 
 
@@ -324,13 +344,13 @@ class TestWebSocketManagerConfiguration:
         importlib.reload(ws_manager_module)
         
         # The global instance should exist
-        assert ws_manager_module.websocket_manager is not None
+        assert ws_manager_module.get_websocket_manager() is not None
 
     @pytest.mark.asyncio
     async def test_websocket_manager_stats_integration(self):
         """Test WebSocket manager statistics are properly integrated."""
         # Test that the global manager can provide stats
-        stats = websocket_manager.get_stats()
+        stats = get_websocket_manager().get_stats()
         
         assert isinstance(stats, dict)
         required_keys = [

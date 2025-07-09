@@ -24,6 +24,26 @@ from opusagent.mock.mock_realtime_client import MockRealtimeClient
 class TestMockRealtimeClient(unittest.TestCase):
     """Test cases for MockRealtimeClient."""
 
+    def assert_sent_event(self, mock_ws, event_type):
+        """Helper function to find and assert a specific event was sent.
+        
+        Args:
+            mock_ws: The mock WebSocket object
+            event_type: The event type to look for
+            
+        Returns:
+            The found event data
+            
+        Raises:
+            AssertionError: If the event is not found
+        """
+        for call_args in mock_ws.send.call_args_list:
+            event = json.loads(call_args[0][0])
+            if event["type"] == event_type:
+                return event
+        
+        self.fail(f"{event_type} event not found in sent messages")
+
     def setUp(self):
         """Set up test fixtures."""
         self.logger = logging.getLogger("test")
@@ -155,12 +175,9 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.created event was sent
-        call_args = self.mock_ws.send.call_args_list[-1][0][0]
-        event = json.loads(call_args)
-        
-        self.assertEqual(event["type"], ServerEventType.RESPONSE_CREATED)
-        self.assertIn("response", event)
-        self.assertIn("id", event["response"])
+        response_created_event = self.assert_sent_event(self.mock_ws, ServerEventType.RESPONSE_CREATED)
+        self.assertIn("response", response_created_event)  # type: ignore
+        self.assertIn("id", response_created_event["response"])  # type: ignore
 
     def test_response_create_audio(self):
         """Test audio response creation."""
@@ -181,12 +198,9 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.created event was sent
-        call_args = self.mock_ws.send.call_args_list[-1][0][0]
-        event = json.loads(call_args)
-        
-        self.assertEqual(event["type"], ServerEventType.RESPONSE_CREATED)
-        self.assertIn("response", event)
-        self.assertIn("id", event["response"])
+        response_created_event = self.assert_sent_event(self.mock_ws, ServerEventType.RESPONSE_CREATED)
+        self.assertIn("response", response_created_event)  # type: ignore
+        self.assertIn("id", response_created_event["response"])  # type: ignore
 
     def test_response_cancel(self):
         """Test response cancellation."""
@@ -204,11 +218,8 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.cancelled event was sent
-        call_args = self.mock_ws.send.call_args_list[-1][0][0]
-        event = json.loads(call_args)
-        
-        self.assertEqual(event["type"], ServerEventType.RESPONSE_CANCELLED)
-        self.assertEqual(event["response_id"], "test_response_id")
+        response_cancelled_event = self.assert_sent_event(self.mock_ws, ServerEventType.RESPONSE_CANCELLED)
+        self.assertEqual(response_cancelled_event["response_id"], "test_response_id")  # type: ignore
         
         # Verify active response was cleared
         self.assertIsNone(self.client._active_response_id)
