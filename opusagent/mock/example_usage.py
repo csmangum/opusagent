@@ -10,7 +10,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
 from opusagent.models.openai_api import SessionConfig
 
 # Configure logging
@@ -135,29 +135,15 @@ async def simulate_interactions(mock_client: MockRealtimeClient):
     """Simulate some interactions with the mock client."""
     logger.info("Simulating interactions...")
     
-    # Simulate audio input
-    audio_data = b'\x00\x00\x00\x00' * 1000  # Mock audio input
-    await mock_client._handle_audio_append({
-        "type": "input_audio_buffer.append",
-        "audio": audio_data.hex()  # Convert to hex for demo
-    })
+    # Note: The internal methods are now in the handlers module
+    # For real usage, you would connect to a WebSocket server and send events
+    # This is just a demonstration of the mock client setup
     
-    # Simulate audio commit
-    await mock_client._handle_audio_commit({
-        "type": "input_audio_buffer.commit"
-    })
+    logger.info("Mock client configured and ready for use")
+    logger.info("To test with WebSocket, use create_mock_websocket_manager()")
     
-    # Simulate response creation
-    await mock_client._handle_response_create({
-        "type": "response.create",
-        "response": {
-            "modalities": ["text", "audio"],
-            "voice": "alloy"
-        }
-    })
-    
-    # Wait for response to complete
-    await asyncio.sleep(5)
+    # Wait a moment to show the setup is complete
+    await asyncio.sleep(1)
     logger.info("Simulation complete")
 
 

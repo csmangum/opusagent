@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
 from opusagent.models.openai_api import SessionConfig
 
 

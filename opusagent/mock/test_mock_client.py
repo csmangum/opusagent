@@ -18,7 +18,7 @@ from opusagent.mock.mock_factory import (
     create_audio_testing_mock,
     create_test_audio_files
 )
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
 
 
 async def test_customer_service_mock():

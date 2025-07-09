@@ -155,12 +155,17 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.created event was sent
-        call_args = self.mock_ws.send.call_args_list[-1][0][0]
-        event = json.loads(call_args)
+        # Look for the response.created event in the call history
+        response_created_event = None
+        for call_args in self.mock_ws.send.call_args_list:
+            event = json.loads(call_args[0][0])
+            if event["type"] == ServerEventType.RESPONSE_CREATED:
+                response_created_event = event
+                break
         
-        self.assertEqual(event["type"], ServerEventType.RESPONSE_CREATED)
-        self.assertIn("response", event)
-        self.assertIn("id", event["response"])
+        self.assertIsNotNone(response_created_event, "response.created event not found")
+        self.assertIn("response", response_created_event)  # type: ignore
+        self.assertIn("id", response_created_event["response"])  # type: ignore
 
     def test_response_create_audio(self):
         """Test audio response creation."""
@@ -181,12 +186,17 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.created event was sent
-        call_args = self.mock_ws.send.call_args_list[-1][0][0]
-        event = json.loads(call_args)
+        # Look for the response.created event in the call history
+        response_created_event = None
+        for call_args in self.mock_ws.send.call_args_list:
+            event = json.loads(call_args[0][0])
+            if event["type"] == ServerEventType.RESPONSE_CREATED:
+                response_created_event = event
+                break
         
-        self.assertEqual(event["type"], ServerEventType.RESPONSE_CREATED)
-        self.assertIn("response", event)
-        self.assertIn("id", event["response"])
+        self.assertIsNotNone(response_created_event, "response.created event not found")
+        self.assertIn("response", response_created_event)  # type: ignore
+        self.assertIn("id", response_created_event["response"])  # type: ignore
 
     def test_response_cancel(self):
         """Test response cancellation."""
@@ -204,11 +214,16 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.cancelled event was sent
-        call_args = self.mock_ws.send.call_args_list[-1][0][0]
-        event = json.loads(call_args)
+        # Look for the response.cancelled event in the call history
+        response_cancelled_event = None
+        for call_args in self.mock_ws.send.call_args_list:
+            event = json.loads(call_args[0][0])
+            if event["type"] == ServerEventType.RESPONSE_CANCELLED:
+                response_cancelled_event = event
+                break
         
-        self.assertEqual(event["type"], ServerEventType.RESPONSE_CANCELLED)
-        self.assertEqual(event["response_id"], "test_response_id")
+        self.assertIsNotNone(response_cancelled_event, "response.cancelled event not found")
+        self.assertEqual(response_cancelled_event["response_id"], "test_response_id")  # type: ignore
         
         # Verify active response was cleared
         self.assertIsNone(self.client._active_response_id)
