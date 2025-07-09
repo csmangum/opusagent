@@ -97,7 +97,7 @@ class ChangelogAgent:
         """Extract GitHub owner and repo name from git remote."""
         try:
             # Check if origin remote exists
-            if 'origin' not in self.repo.remotes:
+            if not any(r.name == 'origin' for r in self.repo.remotes):
                 raise ValueError("No origin remote found")
             
             origin = self.repo.remotes.origin
