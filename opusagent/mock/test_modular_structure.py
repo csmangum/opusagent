@@ -18,7 +18,7 @@ except ImportError as e:
     print(f"✗ Failed to import from opusagent.mock.mock_realtime: {e}")
 
 try:
-    from opusagent.mock.mock_realtime_client import MockRealtimeClient as MockRealtimeClientOld, MockResponseConfig as MockResponseConfigOld
+    from opusagent.mock.realtime import MockRealtimeClient as MockRealtimeClientOld, MockResponseConfig as MockResponseConfigOld
     print("✓ Successfully imported from opusagent.mock.mock_realtime_client (backward compatibility)")
 except ImportError as e:
     print(f"✗ Failed to import from opusagent.mock.mock_realtime_client: {e}")
@@ -127,7 +127,7 @@ async def test_backward_compatibility():
     
     # Test that both import paths work
     from opusagent.mock.realtime import MockRealtimeClient as NewClient, MockResponseConfig as NewConfig
-    from opusagent.mock.mock_realtime_client import MockRealtimeClient as OldClient, MockResponseConfig as OldConfig
+    from opusagent.mock.realtime import MockRealtimeClient as OldClient, MockResponseConfig as OldConfig
     
     # Test that they're the same classes
     assert NewClient == OldClient, "MockRealtimeClient classes should be identical"

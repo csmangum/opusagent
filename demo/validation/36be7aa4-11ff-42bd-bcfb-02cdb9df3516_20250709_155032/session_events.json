@@ -1,0 +1,49 @@
+{
+  "conversation_id": "36be7aa4-11ff-42bd-bcfb-02cdb9df3516",
+  "session_id": "36be7aa4-11ff-42bd-bcfb-02cdb9df3516",
+  "events": [
+    {
+      "timestamp": "2025-07-09T22:50:32.949303+00:00",
+      "event_type": "recording_started",
+      "data": {
+        "conversation_id": "36be7aa4-11ff-42bd-bcfb-02cdb9df3516",
+        "recording_dir": "call_recordings\\36be7aa4-11ff-42bd-bcfb-02cdb9df3516_20250709_155032",
+        "caller_sample_rate": 16000,
+        "bot_sample_rate": 24000,
+        "target_sample_rate": 16000
+      }
+    },
+    {
+      "timestamp": "2025-07-09T22:50:35.552742+00:00",
+      "event_type": "function_call",
+      "data": {
+        "timestamp": "2025-07-09T22:50:35.552742+00:00",
+        "function_name": "human_handoff",
+        "arguments": {
+          "reason": "Customer requested to speak with a human",
+          "priority": "normal"
+        },
+        "result": {
+          "error": "Function 'human_handoff' not implemented."
+        },
+        "call_id": "call_4XbUvCY3Sb6kRquu"
+      }
+    },
+    {
+      "timestamp": "2025-07-09T22:50:38.750289+00:00",
+      "event_type": "function_call",
+      "data": {
+        "timestamp": "2025-07-09T22:50:38.750289+00:00",
+        "function_name": "human_handoff",
+        "arguments": {
+          "reason": "Customer requested to speak with a human",
+          "priority": "normal"
+        },
+        "result": {
+          "error": "Function 'human_handoff' not implemented."
+        },
+        "call_id": "call_v6lhFkVaINooSPxK"
+      }
+    }
+  ]
+}

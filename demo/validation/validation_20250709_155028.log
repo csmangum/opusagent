@@ -1,0 +1,112 @@
+2025-07-09 15:50:28,205 - telephony_validator - INFO - Validation logs will be saved to: logs\validation_20250709_155028.log
+2025-07-09 15:50:28,205 - telephony_validator - INFO - Connecting to telephony endpoint: ws://localhost:8000/ws/telephony
+2025-07-09 15:50:30,312 - telephony_validator - INFO - Connected to telephony endpoint
+2025-07-09 15:50:30,312 - telephony_validator - INFO - === Running Full Conversation Test ===
+2025-07-09 15:50:30,312 - telephony_validator - INFO - === Testing Session Initiation ===
+2025-07-09 15:50:30,312 - telephony_validator - DEBUG - Sent: TelephonyEventType.SESSION_INITIATE
+2025-07-09 15:50:31,315 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:32,323 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:32,949 - telephony_validator - DEBUG - Received: session.accepted
+2025-07-09 15:50:32,949 - telephony_validator - INFO - ✓ Session initiation successful
+2025-07-09 15:50:32,949 - telephony_validator - INFO - === Testing User Stream Flow ===
+2025-07-09 15:50:32,949 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_START
+2025-07-09 15:50:32,949 - telephony_validator - DEBUG - Received: userStream.started
+2025-07-09 15:50:32,949 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_STOP
+2025-07-09 15:50:32,958 - telephony_validator - DEBUG - Received: userStream.stopped
+2025-07-09 15:50:32,958 - telephony_validator - INFO - ✓ User stream flow successful
+2025-07-09 15:50:32,958 - telephony_validator - INFO - === Testing Audio Streaming ===
+2025-07-09 15:50:32,959 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_START
+2025-07-09 15:50:32,960 - telephony_validator - DEBUG - Received: userStream.started
+2025-07-09 15:50:32,961 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:32,961 - telephony_validator - DEBUG - Sent audio chunk 1/10
+2025-07-09 15:50:33,064 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,065 - telephony_validator - DEBUG - Sent audio chunk 2/10
+2025-07-09 15:50:33,171 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,171 - telephony_validator - DEBUG - Sent audio chunk 3/10
+2025-07-09 15:50:33,282 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,282 - telephony_validator - DEBUG - Sent audio chunk 4/10
+2025-07-09 15:50:33,397 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,397 - telephony_validator - DEBUG - Sent audio chunk 5/10
+2025-07-09 15:50:33,516 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,516 - telephony_validator - DEBUG - Sent audio chunk 6/10
+2025-07-09 15:50:33,625 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,625 - telephony_validator - DEBUG - Sent audio chunk 7/10
+2025-07-09 15:50:33,731 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,731 - telephony_validator - DEBUG - Sent audio chunk 8/10
+2025-07-09 15:50:33,837 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,837 - telephony_validator - DEBUG - Sent audio chunk 9/10
+2025-07-09 15:50:33,946 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:33,946 - telephony_validator - DEBUG - Sent audio chunk 10/10
+2025-07-09 15:50:34,049 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_STOP
+2025-07-09 15:50:34,050 - telephony_validator - DEBUG - Received: userStream.stopped
+2025-07-09 15:50:34,170 - telephony_validator - DEBUG - Received: playStream.start
+2025-07-09 15:50:34,171 - telephony_validator - INFO - ✓ Received playStream.start (AI response)
+2025-07-09 15:50:34,171 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,265 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,385 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,421 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,438 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,526 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,576 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,676 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:34,676 - telephony_validator - DEBUG - Received: playStream.stop
+2025-07-09 15:50:34,676 - telephony_validator - INFO - ✓ Received playStream.stop after 8 chunks
+2025-07-09 15:50:34,682 - telephony_validator - INFO - ✓ Audio streaming successful: 8 chunks received
+2025-07-09 15:50:34,682 - telephony_validator - INFO - ✓ Audio streaming test completed
+2025-07-09 15:50:34,683 - telephony_validator - INFO - === Testing Speech Events ===
+2025-07-09 15:50:34,683 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_START
+2025-07-09 15:50:34,684 - telephony_validator - DEBUG - Received: userStream.started
+2025-07-09 15:50:34,684 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 15:50:35,685 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:36,133 - telephony_validator - DEBUG - Received: playStream.start
+2025-07-09 15:50:36,134 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,165 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,207 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,301 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,332 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,443 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,524 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,816 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,870 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,925 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:36,925 - telephony_validator - DEBUG - Received: playStream.stop
+2025-07-09 15:50:37,926 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:37,926 - telephony_validator - INFO - ℹ️  No speech.started event received (VAD may not be implemented)
+2025-07-09 15:50:37,926 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_STOP
+2025-07-09 15:50:37,929 - telephony_validator - DEBUG - Received: userStream.stopped
+2025-07-09 15:50:38,936 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:39,341 - telephony_validator - DEBUG - Received: playStream.start
+2025-07-09 15:50:39,341 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,419 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,465 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,534 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,574 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,624 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,706 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:39,885 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:40,102 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:40,248 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:40,360 - telephony_validator - DEBUG - Received: playStream.chunk
+2025-07-09 15:50:40,368 - telephony_validator - DEBUG - Received: playStream.stop
+2025-07-09 15:50:41,383 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:41,383 - telephony_validator - INFO - ℹ️  No speech.stopped event received (VAD may not be implemented)
+2025-07-09 15:50:42,397 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:43,408 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:44,415 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:44,415 - telephony_validator - INFO - ℹ️  No speech.committed event received (VAD may not be implemented)
+2025-07-09 15:50:45,424 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:46,428 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:47,440 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:48,443 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:49,448 - telephony_validator - WARNING - Timeout waiting for message after 1.0s
+2025-07-09 15:50:49,448 - telephony_validator - WARNING - No userStream.stopped received (may be due to AI processing)
+2025-07-09 15:50:49,448 - telephony_validator - INFO - ✓ Speech events test completed
+2025-07-09 15:50:49,448 - telephony_validator - INFO - === Testing Error Handling ===
+2025-07-09 15:50:49,448 - telephony_validator - DEBUG - Sent: invalid.message.type
+2025-07-09 15:50:50,446 - telephony_validator - DEBUG - Sent: TelephonyEventType.USER_STREAM_START
+2025-07-09 15:50:51,459 - telephony_validator - INFO - ✓ Error handling test completed
+2025-07-09 15:50:51,459 - telephony_validator - INFO - === Testing Session Termination ===
+2025-07-09 15:50:51,459 - telephony_validator - DEBUG - Sent: TelephonyEventType.SESSION_END
+2025-07-09 15:50:52,457 - telephony_validator - INFO - ✓ Session termination successful
+2025-07-09 15:50:52,457 - telephony_validator - INFO - ✓ Full conversation test completed successfully
+2025-07-09 15:50:52,468 - telephony_validator - INFO - Disconnected from telephony endpoint
