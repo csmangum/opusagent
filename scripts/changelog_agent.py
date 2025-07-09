@@ -33,6 +33,18 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "GitPython"])
     import git
 
+# Import configuration
+try:
+    from changelog_config import OPENAI_SETTINGS
+except ImportError:
+    print("Warning: changelog_config.py not found. Using default OpenAI settings.")
+    OPENAI_SETTINGS = {
+        "model": "gpt-4",
+        "max_tokens": 2000,
+        "temperature": 0.3,
+        "system_prompt": "You are a technical writer specializing in changelog generation."
+    }
+
 
 @dataclass
 class ChangelogEntry:
@@ -68,7 +80,7 @@ class PRInfo:
 class ChangelogAgent:
     """Main agent class for changelog generation."""
     
-    def __init__(self, repo_path: str = ".", github_token: str = None, openai_key: str = None):
+    def __init__(self, repo_path: str = ".", github_token: str = "", openai_key: str = ""):
         self.repo_path = repo_path
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
         self.openai_key = openai_key or os.getenv("OPENAI_API_KEY")
@@ -316,17 +328,17 @@ Only include sections that have actual changes. If a commit or PR is purely inte
 """
 
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
+            response = openai.chat.completions.create(
+                model=OPENAI_SETTINGS["model"],
                 messages=[
-                    {"role": "system", "content": "You are a technical writer specializing in changelog generation."},
+                    {"role": "system", "content": OPENAI_SETTINGS["system_prompt"]},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=2000,
-                temperature=0.3
+                max_tokens=OPENAI_SETTINGS["max_tokens"],
+                temperature=OPENAI_SETTINGS["temperature"]
             )
             
-            return response.choices[0].message.content.strip()
+            return response.choices[0].message.content.strip() if response.choices[0].message.content else ""
         
         except Exception as e:
             print(f"Error generating changelog entries: {e}")
@@ -420,7 +432,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             
             # Push branch
             origin = self.repo.remotes.origin
-            origin.push(new_branch)
+            origin.push(new_branch.name)
             
             # Create PR via GitHub API
             url = f"https://api.github.com/repos/{self.github_owner}/{self.github_repo}/pulls"
