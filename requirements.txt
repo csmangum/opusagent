@@ -32,5 +32,8 @@ pytest-asyncio==0.23.5
 # Additional utilities for audio format support
 soundfile>=0.12.1  # For advanced audio file format support
 
+# Git operations for changelog agent
+GitPython>=3.1.40
+
 # Function calling and AI integration
 anthropic>=0.35.0  # For Claude integration if needed 
