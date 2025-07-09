@@ -12,7 +12,7 @@ import uuid
 from typing import Optional, Dict, Any
 
 from opusagent.config.logging_config import configure_logging
-from opusagent.websocket_manager import websocket_manager, RealtimeConnection
+from opusagent.websocket_manager import get_websocket_manager, RealtimeConnection
 from opusagent.customer_service_agent import session_config as cs_session_config
 from opusagent.call_recorder import CallRecorder, AudioChannel, TranscriptType
 from opusagent.callers import get_caller_config, register_caller_functions, CallerType
@@ -77,13 +77,14 @@ class DualAgentBridge:
         try:
             # Get separate OpenAI connections for both agents
             # Force creation of separate connections by getting them sequentially
-            caller_conn = await websocket_manager.get_connection()
-            cs_conn = await websocket_manager.get_connection()
+            websocket_mgr = get_websocket_manager()
+            caller_conn = await websocket_mgr.get_connection()
+            cs_conn = await websocket_mgr.get_connection()
             
             # Ensure we have different connections
             if caller_conn.connection_id == cs_conn.connection_id:
                 # Force creation of a new connection for CS agent
-                cs_conn = await websocket_manager._create_connection()
+                cs_conn = await websocket_mgr._create_connection()
                 cs_conn.mark_used()
             
             self.caller_connection = caller_conn

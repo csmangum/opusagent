@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from opusagent.websocket_manager import websocket_manager
+from opusagent.websocket_manager import get_websocket_manager
 
 
 class TestWebSocketManagerIntegration:
@@ -324,13 +324,13 @@ class TestWebSocketManagerConfiguration:
         importlib.reload(ws_manager_module)
         
         # The global instance should exist
-        assert ws_manager_module.websocket_manager is not None
+        assert ws_manager_module.get_websocket_manager() is not None
 
     @pytest.mark.asyncio
     async def test_websocket_manager_stats_integration(self):
         """Test WebSocket manager statistics are properly integrated."""
         # Test that the global manager can provide stats
-        stats = websocket_manager.get_stats()
+        stats = get_websocket_manager().get_stats()
         
         assert isinstance(stats, dict)
         required_keys = [
