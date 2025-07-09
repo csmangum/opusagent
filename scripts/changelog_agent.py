@@ -16,6 +16,13 @@ import requests
 from dataclasses import dataclass
 from pathlib import Path
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not found. Install with: pip install python-dotenv")
+
 # Add the parent directory to path so we can import from the main package
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -233,7 +240,7 @@ class ChangelogAgent:
             
             for pr_data in response.json():
                 if (pr_data["merged_at"] and 
-                    datetime.fromisoformat(pr_data["merged_at"].replace("Z", "+00:00")) >= since_dt):
+                    datetime.fromisoformat(pr_data["merged_at"].replace("Z", "+00:00")).replace(tzinfo=None) >= since_dt.replace(tzinfo=None)):
                     
                     # Get PR commits
                     commits_url = f"https://api.github.com/repos/{self.github_owner}/{self.github_repo}/pulls/{pr_data['number']}/commits"
