@@ -35,14 +35,25 @@ except ImportError:
 
 # Import configuration
 try:
-    from changelog_config import OPENAI_SETTINGS
+    from changelog_config import OPENAI_SETTINGS, CHANGELOG_FORMAT
 except ImportError:
-    print("Warning: changelog_config.py not found. Using default OpenAI settings.")
+    print("Warning: changelog_config.py not found. Using default settings.")
     OPENAI_SETTINGS = {
         "model": "gpt-4",
         "max_tokens": 2000,
         "temperature": 0.3,
         "system_prompt": "You are a technical writer specializing in changelog generation."
+    }
+    CHANGELOG_FORMAT = {
+        "title": "# Changelog",
+        "description": """
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+""",
+        "section_order": ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"],
+        "unreleased_header": "## [Unreleased]"
     }
 
 
@@ -346,7 +357,7 @@ Only include sections that have actual changes. If a commit or PR is purely inte
     
     def _generate_basic_changelog_entries(self, commits: List[CommitInfo], prs: List[PRInfo]) -> str:
         """Generate basic changelog entries without LLM."""
-        entries = ["## [Unreleased]", ""]
+        entries = [CHANGELOG_FORMAT["unreleased_header"], ""]
         
         if prs:
             entries.append("### Changed")
@@ -369,15 +380,8 @@ Only include sections that have actual changes. If a commit or PR is purely inte
         existing_content = self.read_existing_changelog()
         
         if not existing_content:
-            # Create new changelog
-            header = """# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-"""
+            # Create new changelog using configuration
+            header = CHANGELOG_FORMAT["title"] + "\n" + CHANGELOG_FORMAT["description"] + "\n"
             full_content = header + new_entries
         else:
             # Insert new entries after header
