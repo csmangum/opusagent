@@ -512,10 +512,11 @@ class FunctionHandler:
 
         # Check if the result context indicates call completion
         context = result.get("context", {})
-        stage = context.get("stage", "")
-        if stage in ["call_complete", "human_transfer"]:
-            logger.info(f"Function {function_name} reached completion stage: {stage}")
-            return True
+        if isinstance(context, dict):
+            stage = context.get("stage", "")
+            if stage in ["call_complete", "human_transfer"]:
+                logger.info(f"Function {function_name} reached completion stage: {stage}")
+                return True
 
         return False
 
@@ -557,7 +558,12 @@ class FunctionHandler:
         """
         function_name = result.get("function_name", "unknown")
         context = result.get("context", {})
-        stage = context.get("stage", "")
+        
+        # Handle case where context might be a string
+        if isinstance(context, dict):
+            stage = context.get("stage", "")
+        else:
+            stage = ""
 
         if function_name == "wrap_up" or stage == "call_complete":
             return "Call completed successfully - all tasks finished"
