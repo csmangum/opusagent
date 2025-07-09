@@ -178,6 +178,22 @@ AUDIO_SCENARIOS = {
             "I understand your concern. Let me address it.",
             "I apologize for the error. Let me resolve it quickly.",
         ]
+    },
+    "default": {
+        "description": "Default and placeholder responses for unsupported requests",
+        "voice_instructions": "You are a helpful AI assistant. Be apologetic but professional when you cannot help with a request.",
+        "phrases": [
+            "I'm sorry, I don't have the capability to help you with that yet.",
+            "I apologize, but I'm not able to assist with that request at the moment.",
+            "I'm sorry, that's not something I can help you with right now.",
+            "I apologize, but I don't have the functionality to handle that request.",
+            "I'm sorry, I'm not equipped to help you with that particular issue.",
+            "I apologize, but that's outside of my current capabilities.",
+            "I'm sorry, I don't have access to that information or functionality.",
+            "I apologize, but I'm not able to process that type of request.",
+            "I'm sorry, that's not within my scope of assistance at this time.",
+            "I apologize, but I don't have the tools needed to help with that.",
+        ]
     }
 }
 
@@ -366,7 +382,7 @@ def main():
 Examples:
   python scripts/generate_mock_audio.py
   python scripts/generate_mock_audio.py --scenario customer_service
-  python scripts/generate_mock_audio.py --voice alloy --output-dir demo/audio/mock
+  python scripts/generate_mock_audio.py --voice alloy --output-dir opusagent/mock/audio
   python scripts/generate_mock_audio.py --list-scenarios
         """
     )
@@ -386,8 +402,8 @@ Examples:
     
     parser.add_argument(
         "--output-dir",
-        default="demo/audio/mock",
-        help="Output directory for audio files (default: demo/audio/mock)"
+        default="opusagent/mock/audio",
+        help="Output directory for audio files (default: opusagent/mock/audio)"
     )
     
     parser.add_argument(

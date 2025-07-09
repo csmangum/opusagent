@@ -203,10 +203,35 @@ scenarios:
       - phrase: "I apologize for the error. Let me resolve it quickly."
         file: "errors_10.wav"
 
+  default:
+    description: "Default and placeholder responses for unsupported requests"
+    voice_instructions: "You are a helpful AI assistant. Be apologetic but professional when you cannot help with a request."
+    phrases:
+      - phrase: "I'm sorry, I don't have the capability to help you with that yet."
+        file: "default_01.wav"
+      - phrase: "I apologize, but I'm not able to assist with that request at the moment."
+        file: "default_02.wav"
+      - phrase: "I'm sorry, that's not something I can help you with right now."
+        file: "default_03.wav"
+      - phrase: "I apologize, but I don't have the functionality to handle that request."
+        file: "default_04.wav"
+      - phrase: "I'm sorry, I'm not equipped to help you with that particular issue."
+        file: "default_05.wav"
+      - phrase: "I apologize, but that's outside of my current capabilities."
+        file: "default_06.wav"
+      - phrase: "I'm sorry, I don't have access to that information or functionality."
+        file: "default_07.wav"
+      - phrase: "I apologize, but I'm not able to process that type of request."
+        file: "default_08.wav"
+      - phrase: "I'm sorry, that's not within my scope of assistance at this time."
+        file: "default_09.wav"
+      - phrase: "I apologize, but I don't have the tools needed to help with that."
+        file: "default_10.wav"
+
 # Metadata
 metadata:
-  total_scenarios: 8
-  total_phrases: 80
+  total_scenarios: 9
+  total_phrases: 90
   generated_by: "generate_mock_audio.py"
   file_structure:
     - "Each scenario has its own subdirectory"
