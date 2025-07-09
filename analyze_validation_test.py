@@ -258,10 +258,11 @@ def main():
     
     # Audio flow
     audio_stats = analysis.get('audio_stats', {})
-    user_chunks = audio_stats.get('user_chunks', 0)
-    bot_chunks = audio_stats.get('bot_chunks', 0)
-    if user_chunks > 0 and bot_chunks > 0:
-        print("   ✅ Audio streaming: Bidirectional flow working")
+    if isinstance(audio_stats, dict):
+        user_chunks = audio_stats.get('user_chunks', 0)
+        bot_chunks = audio_stats.get('bot_chunks', 0)
+        if user_chunks > 0 and bot_chunks > 0:
+            print("   ✅ Audio streaming: Bidirectional flow working")
     
     # Response times
     response_times = analysis.get('response_times', [])
