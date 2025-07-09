@@ -24,6 +24,26 @@ from opusagent.mock.mock_realtime_client import MockRealtimeClient
 class TestMockRealtimeClient(unittest.TestCase):
     """Test cases for MockRealtimeClient."""
 
+    def assert_sent_event(self, mock_ws, event_type):
+        """Helper function to find and assert a specific event was sent.
+        
+        Args:
+            mock_ws: The mock WebSocket object
+            event_type: The event type to look for
+            
+        Returns:
+            The found event data
+            
+        Raises:
+            AssertionError: If the event is not found
+        """
+        for call_args in mock_ws.send.call_args_list:
+            event = json.loads(call_args[0][0])
+            if event["type"] == event_type:
+                return event
+        
+        self.fail(f"{event_type} event not found in sent messages")
+
     def setUp(self):
         """Set up test fixtures."""
         self.logger = logging.getLogger("test")
@@ -155,15 +175,7 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.created event was sent
-        # Look for the response.created event in the call history
-        response_created_event = None
-        for call_args in self.mock_ws.send.call_args_list:
-            event = json.loads(call_args[0][0])
-            if event["type"] == ServerEventType.RESPONSE_CREATED:
-                response_created_event = event
-                break
-        
-        self.assertIsNotNone(response_created_event, "response.created event not found")
+        response_created_event = self.assert_sent_event(self.mock_ws, ServerEventType.RESPONSE_CREATED)
         self.assertIn("response", response_created_event)  # type: ignore
         self.assertIn("id", response_created_event["response"])  # type: ignore
 
@@ -186,15 +198,7 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.created event was sent
-        # Look for the response.created event in the call history
-        response_created_event = None
-        for call_args in self.mock_ws.send.call_args_list:
-            event = json.loads(call_args[0][0])
-            if event["type"] == ServerEventType.RESPONSE_CREATED:
-                response_created_event = event
-                break
-        
-        self.assertIsNotNone(response_created_event, "response.created event not found")
+        response_created_event = self.assert_sent_event(self.mock_ws, ServerEventType.RESPONSE_CREATED)
         self.assertIn("response", response_created_event)  # type: ignore
         self.assertIn("id", response_created_event["response"])  # type: ignore
 
@@ -214,15 +218,7 @@ class TestMockRealtimeClient(unittest.TestCase):
         )
         
         # Verify response.cancelled event was sent
-        # Look for the response.cancelled event in the call history
-        response_cancelled_event = None
-        for call_args in self.mock_ws.send.call_args_list:
-            event = json.loads(call_args[0][0])
-            if event["type"] == ServerEventType.RESPONSE_CANCELLED:
-                response_cancelled_event = event
-                break
-        
-        self.assertIsNotNone(response_cancelled_event, "response.cancelled event not found")
+        response_cancelled_event = self.assert_sent_event(self.mock_ws, ServerEventType.RESPONSE_CANCELLED)
         self.assertEqual(response_cancelled_event["response_id"], "test_response_id")  # type: ignore
         
         # Verify active response was cleared
