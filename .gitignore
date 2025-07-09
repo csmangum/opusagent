@@ -184,3 +184,4 @@ recordings/
 !demo/**
 
 call_recordings/
+monokit/node_modules/*
