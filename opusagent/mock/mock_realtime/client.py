@@ -567,6 +567,12 @@ class MockRealtimeClient:
             self._event_handler._session_state["active_response_id"] = response_id
         
         await self._event_handler._handle_response_cancel(data)
+        
+        # Ensure the response generator's active response ID is also cleared
+        # since the test checks self.client._active_response_id which returns
+        # self._response_generator._active_response_id
+        if self._event_handler._session_state.get("active_response_id") is None:
+            self._response_generator._active_response_id = None
     
     async def send_rate_limits(self, limits: List[Dict[str, Any]]) -> None:
         """Send rate limits update."""
