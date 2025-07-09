@@ -105,7 +105,6 @@ outgoing_media = OutgoingMediaMessage(
 ```
 """
 
-from opusagent.models.conversation import ConversationManager
 from opusagent.models.audiocodes_api import (
     ActivitiesMessage,
     ActivityEvent,

@@ -13,12 +13,15 @@ from typing import Any, Dict, Optional
 
 import websockets
 from fastapi import WebSocket
+from websockets.asyncio.client import ClientConnection
 
+from opusagent.audio_quality_monitor import QualityThresholds
 from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.call_recorder import CallRecorder
 from opusagent.config.logging_config import configure_logging
 from opusagent.event_router import EventRouter
 from opusagent.function_handler import FunctionHandler
+from opusagent.models.openai_api import SessionConfig
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
@@ -35,7 +38,7 @@ class BaseRealtimeBridge(ABC):
 
     Attributes:
         platform_websocket: Platform-specific WebSocket connection (e.g. FastAPI WebSocket)
-        realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+        realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
         speech_detected (bool): Whether speech is currently being detected
@@ -50,25 +53,29 @@ class BaseRealtimeBridge(ABC):
         event_router (EventRouter): Router for handling platform and realtime events
         transcript_manager (TranscriptManager): Manager for handling transcripts
         realtime_handler (RealtimeHandler): Handler for OpenAI Realtime API communication
+        session_config (SessionConfig): Predefined session configuration for the OpenAI Realtime API
     """
 
     def __init__(
         self,
         platform_websocket,
-        realtime_websocket: websockets.WebSocketClientProtocol,
+        realtime_websocket: ClientConnection,
+        session_config: SessionConfig,
     ):
-        """Initialize the bridge with WebSocket connections.
+        """Initialize the base realtime bridge.
 
         Args:
-            platform_websocket: Platform-specific WebSocket connection
-            realtime_websocket (websockets.WebSocketClientProtocol): WebSocket connection to OpenAI Realtime API
+            platform_websocket: WebSocket connection to the platform (Twilio, AudioCodes, etc.)
+            realtime_websocket: WebSocket connection to OpenAI Realtime API
+            session_config: Predefined session configuration for the OpenAI Realtime API
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
+        self.session_config = session_config
+        self._closed = False
         self.conversation_id: Optional[str] = None
         self.media_format: Optional[str] = None
         self.speech_detected = False
-        self._closed = False
 
         # Audio buffer tracking for debugging
         self.audio_chunks_sent = 0
@@ -78,24 +85,44 @@ class BaseRealtimeBridge(ABC):
         self.input_transcript_buffer = []  # User → AI
         self.output_transcript_buffer = []  # AI → User
 
-        # Initialize function handler
-        self.function_handler = FunctionHandler(realtime_websocket)
-
-        # Initialize call recorder (will be set up when conversation starts)
+        # Initialize call recorder
         self.call_recorder: Optional[CallRecorder] = None
+
+        # Initialize function handler
+        self.function_handler = FunctionHandler(
+            realtime_websocket=realtime_websocket,
+            call_recorder=self.call_recorder,
+            voice=session_config.voice or "verse",
+            hang_up_callback=self.hang_up,
+        )
+
+        # Register customer service functions
+        from opusagent.customer_service_agent import register_customer_service_functions
+
+        register_customer_service_functions(self.function_handler)
 
         # Initialize transcript manager
         self.transcript_manager = TranscriptManager()
 
-        # Initialize audio handler
+        # Configure quality monitoring thresholds
+        quality_thresholds = QualityThresholds(
+            min_snr_db=20.0,           # Minimum signal-to-noise ratio
+            max_thd_percent=1.0,       # Maximum total harmonic distortion  
+            max_clipping_percent=0.1,  # Maximum acceptable clipping
+            min_quality_score=60.0,    # Minimum overall quality score
+        )
+
+        # Initialize audio handler with quality monitoring enabled
         self.audio_handler = AudioStreamHandler(
             platform_websocket=platform_websocket,
             realtime_websocket=realtime_websocket,
             call_recorder=self.call_recorder,
+            enable_quality_monitoring=True,  # Enable monitoring
+            quality_thresholds=quality_thresholds,
         )
 
         # Initialize session manager
-        self.session_manager = SessionManager(realtime_websocket)
+        self.session_manager = SessionManager(realtime_websocket, session_config)
 
         # Initialize event router
         self.event_router = EventRouter()
@@ -223,6 +250,7 @@ class BaseRealtimeBridge(ABC):
         pass
 
     async def initialize_conversation(self, conversation_id: Optional[str] = None):
+        #! Agent should do this
         """Initialize a new conversation with OpenAI.
 
         Args:
@@ -255,7 +283,7 @@ class BaseRealtimeBridge(ABC):
             # Initialize audio stream
             await self.audio_handler.initialize_stream(
                 conversation_id=self.conversation_id,
-                media_format=self.media_format,
+                media_format=self.media_format or "pcm16",
             )
 
     async def handle_audio_commit(self):
@@ -317,3 +345,47 @@ class BaseRealtimeBridge(ABC):
             Exception: For any errors during processing
         """
         await self.realtime_handler.receive_from_realtime()
+
+    async def hang_up(self, reason: str = "Call completed"):
+        """
+        Hang up the call by ending the session.
+
+        This method is called when the AI determines the call should end,
+        either through completion of tasks or transfer to human.
+
+        Args:
+            reason: The reason for hanging up the call
+        """
+        if self._closed:
+            logger.info(f"Bridge already closed, ignoring hang-up request: {reason}")
+            return
+
+        logger.info(f"🔚 Hanging up call: {reason}")
+
+        try:
+            # Send session end to platform if supported
+            await self.send_session_end(reason)
+
+            # Close the bridge connections
+            await self.close()
+
+            logger.info("✅ Call hang-up completed successfully")
+
+        except Exception as e:
+            logger.error(f"❌ Error during hang-up: {e}")
+            # Still try to close connections
+            await self.close()
+
+    async def send_session_end(self, reason: str):
+        """
+        Send session end message to the platform.
+
+        This method should be implemented by subclasses to send platform-specific
+        session end messages. Base implementation does nothing.
+
+        Args:
+            reason: The reason for ending the session
+        """
+        logger.info(f"Base bridge send_session_end called with reason: {reason}")
+        # Subclasses should override this to send platform-specific session end messages
+        pass

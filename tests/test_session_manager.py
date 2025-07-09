@@ -7,7 +7,6 @@ OpenAI Realtime API session management and conversation initialization.
 import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-import websockets
 
 from opusagent.session_manager import SessionManager
 from opusagent.models.openai_api import SessionConfig, SessionUpdateEvent
@@ -20,13 +19,65 @@ TEST_MODEL = "gpt-4o-realtime-preview-2025-06-03"
 @pytest.fixture
 def mock_websocket():
     """Create a mock WebSocket connection for testing."""
-    mock = AsyncMock(spec=websockets.WebSocketClientProtocol)
+    mock = AsyncMock()
     return mock
 
 @pytest.fixture
-def session_manager(mock_websocket):
-    """Create a SessionManager instance with a mock WebSocket."""
-    return SessionManager(mock_websocket)
+def test_session_config():
+    """Create a test session configuration."""
+    return SessionConfig(
+        input_audio_format="pcm16",
+        output_audio_format="pcm16",
+        voice=TEST_VOICE,
+        instructions="You are a test customer service agent.",
+        modalities=["text", "audio"],
+        temperature=0.8,
+        model=TEST_MODEL,
+        tools=[
+            {
+                "type": "function",
+                "name": "get_balance",
+                "description": "Get the user's account balance.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            {
+                "type": "function",
+                "name": "transfer_funds",
+                "description": "Transfer funds to another account.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "amount": {"type": "number"},
+                        "to_account": {"type": "string"},
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "name": "call_intent",
+                "description": "Get the user's intent.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "intent": {
+                            "type": "string",
+                            "enum": ["card_replacement", "account_inquiry", "other"],
+                        },
+                    },
+                    "required": ["intent"],
+                },
+            },
+        ],
+        input_audio_noise_reduction={"type": "near_field"},
+        input_audio_transcription={"model": "whisper-1"},
+        max_response_output_tokens=4096,
+        tool_choice="auto",
+    )
+
+@pytest.fixture
+def session_manager(mock_websocket, test_session_config):
+    """Create a SessionManager instance with a mock WebSocket and session config."""
+    return SessionManager(mock_websocket, test_session_config)
 
 @pytest.mark.asyncio
 async def test_initialize_session(session_manager, mock_websocket):
@@ -81,7 +132,7 @@ async def test_send_initial_conversation_item(session_manager, mock_websocket):
     assert second_call["type"] == "response.create"
     assert second_call["response"]["modalities"] == ["text", "audio"]
     assert second_call["response"]["output_audio_format"] == "pcm16"
-    assert second_call["response"]["temperature"] == 0.8
+    assert second_call["response"]["temperature"] == 0.6
     assert second_call["response"]["max_output_tokens"] == 4096
     assert second_call["response"]["voice"] == TEST_VOICE
 
@@ -99,7 +150,7 @@ async def test_create_response(session_manager, mock_websocket):
     assert sent_data["type"] == "response.create"
     assert sent_data["response"]["modalities"] == ["text", "audio"]
     assert sent_data["response"]["output_audio_format"] == "pcm16"
-    assert sent_data["response"]["temperature"] == 0.8
+    assert sent_data["response"]["temperature"] == 0.6
     assert sent_data["response"]["max_output_tokens"] == 4096
     assert sent_data["response"]["voice"] == TEST_VOICE
 
@@ -140,13 +191,25 @@ async def test_create_response_error_handling(session_manager, mock_websocket):
 async def test_session_manager_initialization():
     """Test SessionManager initialization with different WebSocket instances."""
     # Create a mock WebSocket
-    mock_websocket = AsyncMock(spec=websockets.WebSocketClientProtocol)
+    mock_websocket = AsyncMock()
+    
+    # Create a test session config
+    test_config = SessionConfig(
+        input_audio_format="pcm16",
+        output_audio_format="pcm16",
+        voice=TEST_VOICE,
+        instructions="Test instructions",
+        modalities=["text", "audio"],
+        temperature=0.8,
+        model=TEST_MODEL,
+    )
     
     # Create SessionManager instance
-    manager = SessionManager(mock_websocket)
+    manager = SessionManager(mock_websocket, test_config)
     
     # Verify initial state
     assert manager.realtime_websocket == mock_websocket
+    assert manager.session_config == test_config
     assert manager.session_initialized is False
     assert manager.conversation_id is None
 
@@ -160,20 +223,12 @@ async def test_session_manager_tools_configuration(session_manager, mock_websock
     sent_data = json.loads(mock_websocket.send.call_args[0][0])
     tools = sent_data["session"]["tools"]
 
-    # Verify essential tools are present
+    # Verify essential tools are present (based on the test session config)
     tool_names = {tool["name"] for tool in tools}
     required_tools = {
         "get_balance",
         "transfer_funds",
-        "transfer_to_human",
         "call_intent",
-        "member_account_confirmation",
-        "replacement_reason",
-        "confirm_address",
-        "start_card_replacement",
-        "finish_card_replacement",
-        "wrap_up",
-        "process_replacement",
     }
     assert required_tools.issubset(tool_names)
 

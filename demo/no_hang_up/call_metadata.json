@@ -1,0 +1,31 @@
+{
+  "conversation_id": "22f9f4b5-31c9-4673-8a56-f15cbfed8e2d",
+  "session_id": "22f9f4b5-31c9-4673-8a56-f15cbfed8e2d",
+  "start_time": "2025-06-18T23:17:34.030848+00:00",
+  "end_time": "2025-06-18T23:18:02.771399+00:00",
+  "duration_seconds": 28.740551,
+  "caller_audio_chunks": 37,
+  "bot_audio_chunks": 87,
+  "caller_audio_bytes": 1059580,
+  "bot_audio_bytes": 1395110,
+  "caller_audio_duration_seconds": 33.111875,
+  "bot_audio_duration_seconds": 43.5971875,
+  "transcript_entries": 14,
+  "function_calls": [
+    {
+      "timestamp": "2025-06-18T23:17:43.595698+00:00",
+      "function_name": "process_replacement",
+      "arguments": {
+        "card": "Gold Card",
+        "reason": "Lost",
+        "address": "on file"
+      },
+      "result": {
+        "status": "success",
+        "function_name": "process_replacement",
+        "prompt_guidance": "Processing card replacement for Gold Card with reason Lost to address on file"
+      },
+      "call_id": "call_7QdIpvNQUPvN9QQB"
+    }
+  ]
+}

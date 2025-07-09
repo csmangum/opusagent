@@ -85,9 +85,9 @@ import logging
 import uuid
 from typing import Any, Callable, Dict, Optional
 
-from opusagent.config.constants import LOGGER_NAME
+from opusagent.config.logging_config import configure_logging
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = configure_logging("function_handler")
 
 
 class FunctionHandler:
@@ -99,67 +99,40 @@ class FunctionHandler:
     - Accumulation of streaming function call arguments
     - Execution of functions (sync/async)
     - Sending results back to the OpenAI Realtime API
+    - Detection of hang-up conditions and session termination
 
     Attributes:
         function_registry: Dictionary mapping function names to callable implementations
         active_function_calls: Dictionary tracking ongoing function calls by call_id
         realtime_websocket: WebSocket connection to OpenAI Realtime API for sending responses
+        hang_up_callback: Optional callback function to trigger hang-up from bridge
     """
 
-    def __init__(self, realtime_websocket, call_recorder=None, voice="verse"):
+    def __init__(
+        self,
+        realtime_websocket,
+        call_recorder=None,
+        voice="verse",
+        hang_up_callback=None,
+    ):
         """
         Initialize the function handler.
 
         Args:
             realtime_websocket: WebSocket connection to OpenAI Realtime API
             call_recorder: Optional CallRecorder instance for logging function calls
+            voice: Voice to use for responses
+            hang_up_callback: Optional callback to trigger hang-up from bridge
         """
         self.realtime_websocket = realtime_websocket
         self.call_recorder = call_recorder
+        self.hang_up_callback = hang_up_callback
         self.function_registry: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
         self.active_function_calls: Dict[str, Dict[str, Any]] = (
             {}
         )  # call_id -> {function_name, arguments_buffer, item_id, etc.}
         self.voice = voice
-        # Register default functions
-        self._register_default_functions()
-
-    def _register_default_functions(self):
-        """Register the default function implementations."""
-        self.register_function("get_balance", self._func_get_balance)
-        self.register_function("transfer_funds", self._func_transfer_funds)
-        self.register_function("call_intent", self._func_call_intent)
-        self.register_function("transfer_to_human", self._func_transfer_to_human)
-
-        # Card replacement flow functions
-        self.register_function(
-            "member_account_confirmation", self._func_member_account_confirmation
-        )
-        self.register_function("replacement_reason", self._func_replacement_reason)
-        self.register_function("confirm_address", self._func_confirm_address)
-        self.register_function(
-            "start_card_replacement", self._func_start_card_replacement
-        )
-        self.register_function(
-            "finish_card_replacement", self._func_finish_card_replacement
-        )
-        self.register_function("wrap_up", self._func_wrap_up)
-
-        # Loan application flow functions
-        self.register_function("loan_type_selection", self._func_loan_type_selection)
-        self.register_function(
-            "loan_amount_collection", self._func_loan_amount_collection
-        )
-        self.register_function("income_verification", self._func_income_verification)
-        self.register_function(
-            "employment_verification", self._func_employment_verification
-        )
-        self.register_function("credit_check_consent", self._func_credit_check_consent)
-        self.register_function(
-            "submit_loan_application", self._func_submit_loan_application
-        )
-        self.register_function("loan_pre_approval", self._func_loan_pre_approval)
-        self.register_function("process_replacement", self._func_process_replacement)
+        # Note: Functions should be registered by specific agents using register_function()
 
     def register_function(
         self, name: str, func: Callable[[Dict[str, Any]], Any]
@@ -386,10 +359,10 @@ class FunctionHandler:
         self,
         function_name: str,
         arguments: Dict[str, Any],
-        call_id: str,
-        item_id: str,
-        output_index: int,
-        response_id: str,
+        call_id: Optional[str] = None,
+        item_id: Optional[str] = None,
+        output_index: Optional[int] = 0,
+        response_id: Optional[str] = None,
     ) -> None:
         """
         Execute a function and send the result back to OpenAI.
@@ -482,27 +455,123 @@ class FunctionHandler:
             await self.realtime_websocket.send(json.dumps(function_result_event))
             logger.info(f"✅ Function result sent successfully to OpenAI")
 
-            # After sending function result, trigger response generation
-            # This ensures the AI continues the conversation
-            logger.info("🚀 Triggering response generation after function execution...")
-            response_create = {
-                "type": "response.create",
-                "response": {
-                    "modalities": ["text", "audio"],
-                    "output_audio_format": "pcm16",
-                    "temperature": 0.8,
-                    "max_output_tokens": 4096,
-                    "voice": self.voice,
-                },
-            }
-            await self.realtime_websocket.send(json.dumps(response_create))
-            logger.info("✅ Response generation triggered successfully")
+            # Check if this function indicates the call should end
+            should_hang_up = self._should_trigger_hang_up(function_name, result)
+
+            if should_hang_up:
+                logger.info(f"🔚 Function {function_name} indicates call should end")
+                # Schedule hang-up after a brief delay to allow final response
+                asyncio.create_task(self._schedule_hang_up(result))
+            else:
+                # After sending function result, trigger response generation
+                # This ensures the AI continues the conversation
+                logger.info(
+                    "🚀 Triggering response generation after function execution..."
+                )
+                response_create = {
+                    "type": "response.create",
+                    "response": {
+                        "modalities": ["text", "audio"],
+                        "output_audio_format": "pcm16",
+                        "temperature": 0.8,
+                        "max_output_tokens": 4096,
+                        "voice": self.voice,
+                    },
+                }
+                await self.realtime_websocket.send(json.dumps(response_create))
+                logger.info("✅ Response generation triggered successfully")
 
         except Exception as e:
-            logger.error(f"🚨 Failed to send function result or trigger response: {e}")
-            import traceback
+            logger.error(f"❌ Error sending function result: {e}")
+            raise
 
-            logger.error(f"🚨 Send result traceback: {traceback.format_exc()}")
+    def _should_trigger_hang_up(
+        self, function_name: str, result: Dict[str, Any]
+    ) -> bool:
+        """
+        Determine if a function result indicates the call should be ended.
+
+        Args:
+            function_name: Name of the function that was executed
+            result: The result returned by the function
+
+        Returns:
+            True if the call should be ended, False otherwise
+        """
+        # Check if the function explicitly indicates call should end
+        next_action = result.get("next_action", "")
+        if next_action == "end_call":
+            logger.info(f"Function {function_name} returned next_action: end_call")
+            return True
+
+        # Check for specific functions that typically end calls
+        end_call_functions = ["wrap_up", "transfer_to_human"]
+        if function_name in end_call_functions:
+            logger.info(f"Function {function_name} is a call-ending function")
+            return True
+
+        # Check if the result context indicates call completion
+        context = result.get("context", {})
+        if isinstance(context, dict):
+            stage = context.get("stage", "")
+            if stage in ["call_complete", "human_transfer"]:
+                logger.info(f"Function {function_name} reached completion stage: {stage}")
+                return True
+
+        return False
+
+    async def _schedule_hang_up(self, result: Dict[str, Any]):
+        """
+        Schedule a hang-up after allowing time for the final AI response.
+
+        Args:
+            result: The function result that triggered the hang-up
+        """
+        try:
+            # Give the AI time to generate and play its final response
+            hang_up_delay = 8.0  # 8 seconds should be enough for most responses
+            logger.info(f"⏰ Scheduling hang-up in {hang_up_delay} seconds...")
+
+            await asyncio.sleep(hang_up_delay)
+
+            # Determine hang-up reason from the function result
+            reason = self._get_hang_up_reason(result)
+
+            if self.hang_up_callback:
+                logger.info(f"🔚 Triggering hang-up: {reason}")
+                await self.hang_up_callback(reason)
+            else:
+                logger.warning("🚨 No hang-up callback available - cannot end call")
+
+        except Exception as e:
+            logger.error(f"❌ Error scheduling hang-up: {e}")
+
+    def _get_hang_up_reason(self, result: Dict[str, Any]) -> str:
+        """
+        Determine the appropriate hang-up reason from function result.
+
+        Args:
+            result: The function result that triggered the hang-up
+
+        Returns:
+            A descriptive reason for the hang-up
+        """
+        function_name = result.get("function_name", "unknown")
+        context = result.get("context", {})
+        
+        # Handle case where context might be a string
+        if isinstance(context, dict):
+            stage = context.get("stage", "")
+        else:
+            stage = ""
+
+        if function_name == "wrap_up" or stage == "call_complete":
+            return "Call completed successfully - all tasks finished"
+        elif function_name == "transfer_to_human" or stage == "human_transfer":
+            transfer_id = result.get("transfer_id", "")
+            return f"Transferred to human agent - Reference: {transfer_id}"
+        else:
+            return f"Call ended after {function_name} completion"
 
     def clear_active_function_calls(self) -> None:
         """Clear all active function call state."""
@@ -517,643 +586,3 @@ class FunctionHandler:
             Dictionary of active function calls
         """
         return self.active_function_calls.copy()
-
-    # Default function implementations
-    def _func_get_balance(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Simulate a balance lookup.
-
-        Args:
-            arguments: Function arguments (unused for this example)
-
-        Returns:
-            Simulated balance information
-        """
-        return {"balance": 1234.56, "currency": "USD"}
-
-    def _func_transfer_funds(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Simulate a fund transfer.
-
-        Args:
-            arguments: Function arguments containing amount and to_account
-
-        Returns:
-            Transfer status information
-        """
-        amount = arguments.get("amount", 0)
-        to_account = arguments.get("to_account", "unknown")
-        return {"status": "success", "amount": amount, "to_account": to_account}
-
-    def _func_call_intent(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process user intent identification.
-
-        Args:
-            arguments: Function arguments containing intent
-
-        Returns:
-            Intent processing results with guidance for next actions
-        """
-        intent = arguments.get("intent", "")
-        if intent == "card_replacement":
-            logger.info(
-                f"Function call intent received: {arguments}"
-            )
-            # Return data that guides the AI's next response
-            return {
-                "status": "success",
-                "intent": intent,
-                "next_action": "ask_card_type",
-                "available_cards": ["Gold card", "Silver card", "Basic card"],
-                "prompt_guidance": "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card.",
-            }
-        else:
-            return {
-                "status": "success",
-                "intent": intent,
-                "next_action": "continue_conversation",
-            }
-
-    # Card replacement flow function implementations
-    def _func_member_account_confirmation(
-        self, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Handle member account confirmation for card replacement.
-
-        Args:
-            arguments: Function arguments containing member accounts and context
-
-        Returns:
-            Formatted prompt and guidance for account confirmation
-        """
-        from opusagent.flows.card_replacement.prompts import BASE_PROMPT as base_prompt
-        from opusagent.flows.card_replacement.prompts import (
-            MEMBER_ACCOUNT_CONFIRMATION_PROMPT as member_account_confirmation_prompt,
-        )
-
-        member_accounts = arguments.get(
-            "member_accounts", ["Gold card", "Silver card", "Basic card"]
-        )
-        organization_name = arguments.get("organization_name", "Bank of Peril")
-
-        # Format the prompt with context
-        formatted_prompt = member_account_confirmation_prompt.format(
-            member_accounts=", ".join(member_accounts)
-        )
-
-        logger.info(
-            f"Member account confirmation function called with accounts: {member_accounts}"
-        )
-
-        return {
-            "status": "success",
-            "function_name": "member_account_confirmation",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "confirm_card_selection",
-            "available_cards": member_accounts,
-            "context": {
-                "stage": "account_confirmation",
-                "organization_name": organization_name,
-            },
-        }
-
-    def _func_replacement_reason(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle replacement reason collection.
-
-        Args:
-            arguments: Function arguments containing card context and selected reason
-
-        Returns:
-            Formatted prompt and guidance for reason collection
-        """
-        from opusagent.flows.card_replacement.prompts import (
-            REPLACEMENT_REASON_PROMPT as replacement_reason_prompt,
-        )
-
-        card_in_context = arguments.get("card_in_context", "your card")
-        reason = arguments.get("reason", "")
-
-        # Format the prompt with context
-        formatted_prompt = replacement_reason_prompt.format(
-            card_in_context=card_in_context
-        )
-
-        logger.info(
-            f"Replacement reason function called for {card_in_context}, reason: {reason}"
-        )
-
-        return {
-            "status": "success",
-            "function_name": "replacement_reason",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "collect_address" if reason else "ask_reason",
-            "valid_reasons": ["Lost", "Damaged", "Stolen", "Other"],
-            "selected_reason": reason,
-            "context": {
-                "stage": "reason_collection",
-                "card_in_context": card_in_context,
-                "reason": reason,
-            },
-        }
-
-    def _func_confirm_address(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle address confirmation for card replacement.
-
-        Args:
-            arguments: Function arguments containing card context and address
-
-        Returns:
-            Formatted prompt and guidance for address confirmation
-        """
-        from opusagent.flows.card_replacement.prompts import (
-            CONFIRM_ADDRESS_PROMPT as confirm_address_prompt,
-        )
-
-        card_in_context = arguments.get("card_in_context", "your card")
-        address_on_file = arguments.get(
-            "address_on_file", "123 Main St, Anytown, ST 12345"
-        )
-        confirmed_address = arguments.get("confirmed_address", "")
-
-        # Format the prompt with context
-        formatted_prompt = confirm_address_prompt.format(
-            card_in_context=card_in_context, address_on_file=address_on_file
-        )
-
-        logger.info(f"Address confirmation function called for {card_in_context}")
-
-        return {
-            "status": "success",
-            "function_name": "confirm_address",
-            "prompt_guidance": formatted_prompt,
-            "next_action": (
-                "start_replacement" if confirmed_address else "confirm_address"
-            ),
-            "address_on_file": address_on_file,
-            "confirmed_address": confirmed_address,
-            "context": {
-                "stage": "address_confirmation",
-                "card_in_context": card_in_context,
-                "address_on_file": address_on_file,
-                "confirmed_address": confirmed_address,
-            },
-        }
-
-    def _func_start_card_replacement(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle starting the card replacement process.
-
-        Args:
-            arguments: Function arguments containing card and address context
-
-        Returns:
-            Formatted prompt and guidance for starting replacement
-        """
-        from opusagent.flows.card_replacement.prompts import (
-            START_CARD_REPLACEMENT_PROMPT as start_card_replacement_prompt,
-        )
-
-        card_in_context = arguments.get("card_in_context", "your card")
-        address_in_context = arguments.get("address_in_context", "your address on file")
-
-        # Format the prompt with context
-        formatted_prompt = start_card_replacement_prompt.format(
-            card_in_context=card_in_context, address_in_context=address_in_context
-        )
-
-        logger.info(
-            f"Starting card replacement for {card_in_context} to {address_in_context}"
-        )
-
-        return {
-            "status": "success",
-            "function_name": "start_card_replacement",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "finish_replacement",
-            "context": {
-                "stage": "replacement_started",
-                "card_in_context": card_in_context,
-                "address_in_context": address_in_context,
-            },
-        }
-
-    def _func_finish_card_replacement(
-        self, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Handle finishing the card replacement process.
-
-        Args:
-            arguments: Function arguments containing card and address context
-
-        Returns:
-            Formatted prompt and guidance for finishing replacement
-        """
-        from opusagent.flows.card_replacement.prompts import (
-            FINISH_CARD_REPLACEMENT_PROMPT as finish_card_replacement_prompt,
-        )
-
-        card_in_context = arguments.get("card_in_context", "your card")
-        address_in_context = arguments.get("address_in_context", "your address")
-        delivery_time = arguments.get("delivery_time", "5-7 business days")
-
-        # Format the prompt with context
-        formatted_prompt = finish_card_replacement_prompt.format(
-            card_in_context=card_in_context, address_in_context=address_in_context
-        )
-
-        logger.info(f"Finishing card replacement for {card_in_context}")
-
-        return {
-            "status": "success",
-            "function_name": "finish_card_replacement",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "wrap_up",
-            "delivery_time": delivery_time,
-            "context": {
-                "stage": "replacement_complete",
-                "card_in_context": card_in_context,
-                "address_in_context": address_in_context,
-                "delivery_time": delivery_time,
-            },
-        }
-
-    def _func_wrap_up(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle wrapping up the call.
-
-        Args:
-            arguments: Function arguments containing organization context
-
-        Returns:
-            Formatted prompt and guidance for wrapping up
-        """
-        from opusagent.flows.card_replacement.prompts import (
-            WRAP_UP_PROMPT as wrap_up_prompt,
-        )
-
-        organization_name = arguments.get("organization_name", "Bank of Peril")
-
-        # Format the prompt with context
-        formatted_prompt = wrap_up_prompt.format(organization_name=organization_name)
-
-        logger.info(f"Wrapping up call for {organization_name}")
-
-        return {
-            "status": "success",
-            "function_name": "wrap_up",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "end_call",
-            "context": {
-                "stage": "call_complete",
-                "organization_name": organization_name,
-            },
-        }
-
-    # Loan application flow function implementations
-    def _func_loan_type_selection(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle loan type selection and provide information.
-
-        Args:
-            arguments: Function arguments containing loan type preference
-
-        Returns:
-            Formatted prompt and guidance for loan type selection
-        """
-        from demo.demo_loan_application_prompts import loan_intent_confirmation_prompt
-
-        selected_loan_type = arguments.get("loan_type", "")
-
-        logger.info(
-            f"Loan type selection function called with type: {selected_loan_type}"
-        )
-
-        return {
-            "status": "success",
-            "function_name": "loan_type_selection",
-            "prompt_guidance": loan_intent_confirmation_prompt,
-            "next_action": (
-                "collect_loan_amount" if selected_loan_type else "ask_loan_type"
-            ),
-            "available_loan_types": [
-                "Personal loan",
-                "Auto loan",
-                "Home mortgage",
-                "Business loan",
-            ],
-            "selected_loan_type": selected_loan_type,
-            "context": {
-                "stage": "loan_type_selection",
-                "selected_loan_type": selected_loan_type,
-            },
-        }
-
-    def _func_loan_amount_collection(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle loan amount collection with type-specific information.
-
-        Args:
-            arguments: Function arguments containing loan type and amount
-
-        Returns:
-            Formatted prompt and guidance for amount collection
-        """
-        from demo.demo_loan_application_prompts import loan_amount_prompt
-
-        loan_type = arguments.get("loan_type", "loan")
-        loan_amount = arguments.get("loan_amount", 0)
-
-        # Provide type-specific information
-        loan_type_info = {
-            "Personal loan": "Personal loans range from $1,000 to $50,000 with competitive rates.",
-            "Auto loan": "We finance both new and used vehicles up to $100,000.",
-            "Home mortgage": "We offer purchase and refinance mortgages with various term options.",
-            "Business loan": "Business loans range from $5,000 to $500,000 for qualified businesses.",
-        }.get(loan_type, "Please let me know the amount you're looking for.")
-
-        formatted_prompt = loan_amount_prompt.format(
-            loan_type=loan_type, loan_type_info=loan_type_info
-        )
-
-        logger.info(f"Loan amount collection for {loan_type}, amount: ${loan_amount}")
-
-        return {
-            "status": "success",
-            "function_name": "loan_amount_collection",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "verify_income" if loan_amount > 0 else "collect_amount",
-            "loan_type": loan_type,
-            "loan_amount": loan_amount,
-            "context": {
-                "stage": "amount_collection",
-                "loan_type": loan_type,
-                "loan_amount": loan_amount,
-            },
-        }
-
-    def _func_income_verification(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle income verification for loan application.
-
-        Args:
-            arguments: Function arguments containing loan context and income
-
-        Returns:
-            Formatted prompt and guidance for income verification
-        """
-        from demo.demo_loan_application_prompts import income_verification_prompt
-
-        loan_type = arguments.get("loan_type", "loan")
-        loan_amount = arguments.get("loan_amount", 0)
-        annual_income = arguments.get("annual_income", 0)
-
-        formatted_prompt = income_verification_prompt.format(
-            loan_type=loan_type, loan_amount=loan_amount
-        )
-
-        logger.info(f"Income verification for {loan_type}: ${annual_income}")
-
-        return {
-            "status": "success",
-            "function_name": "income_verification",
-            "prompt_guidance": formatted_prompt,
-            "next_action": (
-                "verify_employment" if annual_income > 0 else "collect_income"
-            ),
-            "context": {
-                "stage": "income_verification",
-                "loan_type": loan_type,
-                "loan_amount": loan_amount,
-                "annual_income": annual_income,
-            },
-        }
-
-    def _func_employment_verification(
-        self, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Handle employment verification for loan application.
-
-        Args:
-            arguments: Function arguments containing employment details
-
-        Returns:
-            Formatted prompt and guidance for employment verification
-        """
-        from demo.demo_loan_application_prompts import employment_verification_prompt
-
-        employer = arguments.get("employer", "")
-        employment_duration = arguments.get("employment_duration", "")
-        job_title = arguments.get("job_title", "")
-
-        logger.info(
-            f"Employment verification: {employer}, {employment_duration}, {job_title}"
-        )
-
-        return {
-            "status": "success",
-            "function_name": "employment_verification",
-            "prompt_guidance": employment_verification_prompt,
-            "next_action": (
-                "get_credit_consent"
-                if all([employer, employment_duration, job_title])
-                else "collect_employment"
-            ),
-            "context": {
-                "stage": "employment_verification",
-                "employer": employer,
-                "employment_duration": employment_duration,
-                "job_title": job_title,
-            },
-        }
-
-    def _func_credit_check_consent(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle credit check consent for loan application.
-
-        Args:
-            arguments: Function arguments containing loan context and consent
-
-        Returns:
-            Formatted prompt and guidance for credit check consent
-        """
-        from demo.demo_loan_application_prompts import credit_check_consent_prompt
-
-        loan_type = arguments.get("loan_type", "loan")
-        consent_given = arguments.get("consent_given", False)
-
-        formatted_prompt = credit_check_consent_prompt.format(loan_type=loan_type)
-
-        logger.info(f"Credit check consent for {loan_type}: {consent_given}")
-
-        return {
-            "status": "success",
-            "function_name": "credit_check_consent",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "submit_application" if consent_given else "request_consent",
-            "consent_given": consent_given,
-            "context": {
-                "stage": "credit_consent",
-                "loan_type": loan_type,
-                "consent_given": consent_given,
-            },
-        }
-
-    def _func_submit_loan_application(
-        self, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Handle loan application submission and summary.
-
-        Args:
-            arguments: Function arguments containing complete application data
-
-        Returns:
-            Formatted prompt and guidance for application submission
-        """
-        from demo.demo_loan_application_prompts import application_summary_prompt
-
-        loan_type = arguments.get("loan_type", "loan")
-        loan_amount = arguments.get("loan_amount", 0)
-        annual_income = arguments.get("annual_income", 0)
-        employer = arguments.get("employer", "")
-        employment_duration = arguments.get("employment_duration", "")
-
-        formatted_prompt = application_summary_prompt.format(
-            loan_type=loan_type,
-            loan_amount=loan_amount,
-            annual_income=annual_income,
-            employer=employer,
-            employment_duration=employment_duration,
-        )
-
-        logger.info(f"Submitting loan application: {loan_type} for ${loan_amount}")
-
-        return {
-            "status": "success",
-            "function_name": "submit_loan_application",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "check_pre_approval",
-            "application_submitted": True,
-            "context": {
-                "stage": "application_submitted",
-                "loan_type": loan_type,
-                "loan_amount": loan_amount,
-                "annual_income": annual_income,
-                "employer": employer,
-                "employment_duration": employment_duration,
-            },
-        }
-
-    def _func_loan_pre_approval(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle loan pre-approval notification.
-
-        Args:
-            arguments: Function arguments containing loan context
-
-        Returns:
-            Formatted prompt and guidance for pre-approval
-        """
-        from demo.demo_loan_application_prompts import loan_approval_prompt
-
-        loan_type = arguments.get("loan_type", "loan")
-        loan_amount = arguments.get("loan_amount", 0)
-        reference_number = arguments.get(
-            "reference_number", f"LA-{uuid.uuid4().hex[:8].upper()}"
-        )
-
-        formatted_prompt = loan_approval_prompt.format(
-            loan_type=loan_type,
-            loan_amount=loan_amount,
-            reference_number=reference_number,
-        )
-
-        logger.info(f"Loan pre-approval for {loan_type}: {reference_number}")
-
-        return {
-            "status": "success",
-            "function_name": "loan_pre_approval",
-            "prompt_guidance": formatted_prompt,
-            "next_action": "wrap_up",
-            "pre_approved": True,
-            "reference_number": reference_number,
-            "context": {
-                "stage": "pre_approved",
-                "loan_type": loan_type,
-                "loan_amount": loan_amount,
-                "reference_number": reference_number,
-            },
-        }
-
-    def _func_transfer_to_human(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle transfer to human agent.
-
-        Args:
-            arguments: Function arguments containing transfer context and reason
-
-        Returns:
-            Formatted prompt and guidance for human transfer
-        """
-        reason = arguments.get("reason", "general inquiry")
-        priority = arguments.get("priority", "normal")
-        context = arguments.get("context", {})
-
-        # Log the transfer request
-        logger.info(
-            f"Transfer to human requested. Reason: {reason}, Priority: {priority}"
-        )
-
-        # Generate a transfer reference number
-        transfer_id = f"TR-{uuid.uuid4().hex[:8].upper()}"
-
-        # Format the transfer message
-        transfer_message = (
-            f"I understand you'd like to speak with a human agent regarding {reason}. "
-            f"I'll transfer you now. Your reference number is {transfer_id}. "
-            f"Please hold while I connect you with a representative."
-        )
-
-        return {
-            "status": "success",
-            "function_name": "transfer_to_human",
-            "prompt_guidance": transfer_message,
-            "next_action": "end_call",
-            "transfer_id": transfer_id,
-            "priority": priority,
-            "context": {
-                "stage": "human_transfer",
-                "reason": reason,
-                "priority": priority,
-                "transfer_id": transfer_id,
-                **context,
-            },
-        }
-
-    def _func_process_replacement(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Handle card replacement processing.
-
-        Args:
-            arguments: Function arguments containing card replacement details
-
-        Returns:
-            Formatted prompt and guidance for card replacement
-        """
-        card = arguments.get("card", "")
-        reason = arguments.get("reason", "")
-        address = arguments.get("address", "")
-
-        logger.info(f"Processing card replacement for {card} with reason {reason} to address {address}")
-
-        return {
-            "status": "success",
-            "function_name": "process_replacement",
-            "prompt_guidance": f"Processing card replacement for {card} with reason {reason} to address {address}",
-        }

@@ -192,7 +192,7 @@ async def main():
             print(f"  Sample rate: {sample_rate}Hz")
             print(f"  Channels: {channels}")
             
-            if audio_data:
+            if audio_data and sample_rate is not None and channels is not None:
                 duration = AudioUtils.get_audio_duration(audio_data, sample_rate, channels)
                 print(f"  Duration: {duration:.2f} seconds")
         

@@ -132,7 +132,8 @@ class TestCallMetadata:
     def test_metadata_to_dict(self):
         """Test converting metadata to dictionary."""
         start_time = datetime.now(timezone.utc)
-        end_time = start_time.replace(second=start_time.second + 10)
+        from datetime import timedelta
+        end_time = start_time + timedelta(seconds=10)
         
         metadata = CallMetadata(
             conversation_id="conv_123",

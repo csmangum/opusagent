@@ -27,13 +27,18 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
+from websockets.exceptions import ConnectionClosed
 
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
+from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
+from opusagent.bridges.dual_agent_bridge import DualAgentBridge
 from opusagent.config.logging_config import configure_logging
+from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
-from opusagent.websocket_config import WebSocketConfig
-from opusagent.websocket_manager import websocket_manager
+from opusagent.config.websocket_config import WebSocketConfig
+from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
+from opusagent.callers import get_available_caller_types, get_caller_description
 
 load_dotenv()
 
@@ -83,11 +88,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         # Get a managed connection to OpenAI Realtime API
-        async with websocket_manager.connection_context() as connection:
+        async with get_websocket_manager().connection_context() as connection:
             logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
             # Create AudioCodes bridge instance
-            bridge = AudioCodesBridge(websocket, connection.websocket)
+            bridge = AudioCodesBridge(websocket, connection.websocket, session_config)
 
             # Start receiving from both WebSockets
             await asyncio.gather(
@@ -105,6 +110,57 @@ async def websocket_endpoint(websocket: WebSocket):
             await bridge.close()
 
 
+@app.websocket("/caller-agent")
+async def handle_caller_call(caller_websocket: WebSocket):
+    """Handle WebSocket connections from a *caller* agent (MockAudioCodesClient).
+
+    The caller-agent shares the same AudioCodes VAIC message schema as the
+    inbound /ws/telephony endpoint, but is used by our test harness / synthetic
+    caller agents defined in ``caller_agent.py``.  We keep it on a dedicated
+    route to avoid interfering with production traffic and so that we can apply
+    separate security rules in the future.
+    """
+
+    await caller_websocket.accept()
+    client_address = caller_websocket.client
+    logger.info(f"------ Caller connection accepted from {client_address} ------")
+
+    try:
+        logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
+
+        # Get a managed connection to OpenAI Realtime API
+        async with get_websocket_manager().connection_context() as connection:
+            logger.info(
+                f"OpenAI WebSocket connection established for Caller: {connection.connection_id}"
+            )
+
+            # Instantiate our caller side bridge
+            bridge = CallAgentBridge(caller_websocket, connection.websocket, session_config)
+            logger.info("Caller-Realtime bridge created")
+
+            # Start bidirectional tasks
+            try:
+                logger.info("Starting Caller bridge tasks...")
+                await asyncio.gather(
+                    bridge.receive_from_platform(), bridge.receive_from_realtime()
+                )
+            except Exception as e:
+                logger.error(f"Error in Caller connection loop: {e}")
+                raise
+            finally:
+                logger.info("Closing Caller bridge...")
+                await bridge.close()
+
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.error(f"OpenAI connection closed (Caller): {e}")
+        logger.error(f"Close code: {e.code}")
+        logger.error(f"Close reason: {e.reason}")
+        await caller_websocket.close()
+    except Exception as e:
+        logger.error(f"Error establishing OpenAI connection (Caller): {e}")
+        await caller_websocket.close()
+
+
 @app.websocket("/twilio-agent")
 async def handle_twilio_call(twilio_websocket: WebSocket):
     """Handle WebSocket connections between Twilio Media Streams and OpenAI."""
@@ -117,11 +173,11 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
         logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
 
         # Get a managed connection to OpenAI Realtime API
-        async with websocket_manager.connection_context() as connection:
+        async with get_websocket_manager().connection_context() as connection:
             logger.info(
                 f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
             )
-            bridge = TwilioBridge(twilio_websocket, connection.websocket)
+            bridge = TwilioBridge(twilio_websocket, connection.websocket, session_config)
             logger.info("Twilio-Realtime bridge created")
 
             # Start receiving from both WebSockets
@@ -137,10 +193,6 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
                 logger.info("Closing Twilio bridge...")
                 await bridge.close()
 
-    except websockets.exceptions.InvalidStatusCode as e:
-        logger.error(f"Invalid status code from OpenAI (Twilio): {e}")
-        logger.error(f"Response headers: {e.response_headers}")
-        await twilio_websocket.close()
     except websockets.exceptions.ConnectionClosed as e:
         logger.error(f"OpenAI connection closed (Twilio): {e}")
         logger.error(f"Close code: {e.code}")
@@ -149,6 +201,38 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
     except Exception as e:
         logger.error(f"Error establishing OpenAI connection (Twilio): {e}")
         await twilio_websocket.close()
+
+
+@app.websocket("/agent-conversation")
+async def agent_conversation_endpoint(websocket: WebSocket, caller_type: str = "typical"):
+    """WebSocket endpoint for caller agent to CS agent conversations.
+    
+    This endpoint enables direct conversations between a caller agent and
+    customer service agent without external telephony platforms.
+    
+    Args:
+        websocket: The WebSocket connection
+        caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
+    """
+    await websocket.accept()
+    client_address = websocket.client
+    logger.info(f"------ Agent conversation request from {client_address} with {caller_type} caller ------")
+    
+    try:
+        # Create and initialize dual agent bridge with specified caller type
+        bridge = DualAgentBridge(caller_type=caller_type)
+        logger.info(f"Created dual agent bridge: {bridge.conversation_id}")
+        
+        # Initialize both OpenAI connections and start conversation
+        await bridge.initialize_connections()
+        
+    except Exception as e:
+        logger.error(f"Error in agent conversation: {e}")
+        if 'bridge' in locals():
+            await bridge.close()
+    finally:
+        logger.info("Agent conversation ended")
+        await websocket.close()
 
 
 @app.post("/twilio/voice")
@@ -166,7 +250,7 @@ async def twilio_voice(request: Request):
     connect = response.connect()
     logger.info(f"------ Connecting call to WebSocket endpoint ------")
     logger.info(f"------ {SERVER_URL} ------")
-    connect.stream(url=SERVER_URL)
+    connect.stream(url=SERVER_URL) # type: ignore
     logger.info(f"------ Connected call to WebSocket endpoint ------")
 
     # Return XML response with proper Content-Type header
@@ -188,10 +272,23 @@ async def root():
             "/ws/telephony": "WebSocket endpoint for AudioCodes VoiceAI Connect",
             "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
             "/twilio/voice": "Webhook endpoint for incoming Twilio voice calls",
+            "/caller-agent": "WebSocket endpoint for Caller test agents",
+            "/agent-conversation": "WebSocket endpoint for caller agent to CS agent conversations (use ?caller_type=<type>)",
+            "/caller-types": "Get available caller types and their descriptions",
             "/stats": "Connection statistics and health information",
             "/health": "Health check endpoint for service monitoring",
             "/config": "Current WebSocket manager configuration",
         },
+        "caller_types": {
+            "typical": "Cooperative, patient caller",
+            "frustrated": "Impatient, demanding caller", 
+            "elderly": "Patient, polite caller needing guidance",
+            "hurried": "Caller in a rush wanting quick service"
+        },
+        "example_usage": {
+            "agent_conversation": "/agent-conversation?caller_type=frustrated",
+            "caller_types": "/caller-types"
+        }
     }
 
 
@@ -202,7 +299,7 @@ async def get_stats():
     Returns:
         dict: Current connection pool statistics
     """
-    return websocket_manager.get_stats()
+    return get_websocket_manager().get_stats()
 
 
 @app.get("/health")
@@ -212,7 +309,7 @@ async def health_check():
     Returns:
         dict: Health status information
     """
-    stats = websocket_manager.get_stats()
+    stats = get_websocket_manager().get_stats()
     is_healthy = stats["healthy_connections"] > 0
 
     return {
@@ -243,12 +340,30 @@ async def get_config():
     }
 
 
+@app.get("/caller-types")
+async def get_caller_types():
+    """Get available caller types and their descriptions.
+    
+    Returns:
+        dict: Available caller types with descriptions
+    """
+    caller_types = {}
+    for caller_type in get_available_caller_types():
+        caller_types[caller_type] = get_caller_description(caller_type)
+    
+    return {
+        "available_caller_types": caller_types,
+        "usage": "Use ?caller_type=<type> query parameter with /agent-conversation endpoint",
+        "example": "/agent-conversation?caller_type=frustrated"
+    }
+
+
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up resources on application shutdown."""
     logger.info("Application shutting down, cleaning up WebSocket connections...")
     try:
-        await websocket_manager.shutdown()
+        await get_websocket_manager().shutdown()
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
         # Continue with shutdown even if there's an error
@@ -263,11 +378,6 @@ if __name__ == "__main__":
         app,
         host=HOST,
         port=PORT,
-        # Optimized WebSocket settings for low latency audio streaming
-        websocket_ping_interval=10,  # Reduce ping frequency to avoid interference with audio
-        websocket_max_size=4194304,  # 4MB - optimal for audio chunks without excessive buffering
-        websocket_ping_timeout=30,  # Longer timeout for stability
-        # Use HTTP/1.1 for lower overhead than HTTP/2
         http="h11",
         # Additional performance optimizations
         loop="asyncio",

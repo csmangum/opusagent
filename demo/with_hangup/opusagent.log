@@ -1,0 +1,1929 @@
+2025-06-19 18:27:21,238 - run - INFO - Logging configured
+2025-06-19 18:27:21,238 - run - INFO - === Server Configuration ===
+2025-06-19 18:27:21,238 - run - INFO - Host: 0.0.0.0
+2025-06-19 18:27:21,238 - run - INFO - Port: 8000
+2025-06-19 18:27:21,238 - run - INFO - Log level: DEBUG
+2025-06-19 18:27:21,238 - run - INFO - Environment: production
+2025-06-19 18:27:21,238 - run - INFO - OpenAI API key configured: True
+2025-06-19 18:27:21,238 - run - INFO - OpenAI API key format: Valid
+2025-06-19 18:27:21,238 - run - INFO - =========================
+2025-06-19 18:27:21,238 - run - INFO - Starting server with uvicorn...
+2025-06-19 18:27:21,668 - call_recorder - INFO - Logging configured
+2025-06-19 18:27:21,727 - event_router - INFO - Logging configured
+2025-06-19 18:27:21,727 - transcript_manager - INFO - Logging configured
+2025-06-19 18:27:21,727 - realtime_handler - INFO - Logging configured
+2025-06-19 18:27:21,727 - base_bridge - INFO - Logging configured
+2025-06-19 18:27:21,727 - audiocodes_bridge - INFO - Logging configured
+2025-06-19 18:27:21,727 - call_agent_bridge - INFO - Logging configured
+2025-06-19 18:27:21,727 - twilio_bridge - INFO - Logging configured
+2025-06-19 18:27:21,739 - main - INFO - Logging configured
+2025-06-19 18:27:25,086 - caller_agent - INFO - Logging configured
+2025-06-19 18:27:25,442 - caller_agent - INFO - Initialized OpenAI session for normal caller
+2025-06-19 18:27:25,443 - caller_agent - INFO - CallerAgent PerfectPat connected successfully
+2025-06-19 18:27:25,445 - caller_agent - INFO - [MOCK] Connecting to bridge at ws://localhost:8000/ws/telephony...
+2025-06-19 18:27:27,454 - main - INFO - Telephony WebSocket connection accepted
+2025-06-19 18:27:27,465 - caller_agent - INFO - [MOCK] Connected to bridge server
+2025-06-19 18:27:27,466 - caller_agent - INFO - [MOCK] Sent session.initiate for conversation: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:28,057 - main - INFO - Using OpenAI connection: openai_2cb72d49
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.SESSION_UPDATED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.SESSION_CREATED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.CONVERSATION_ITEM_CREATED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_CREATED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_DELTA
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_DONE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_TEXT_DELTA
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_DONE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_CONTENT_PART_ADDED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_CONTENT_PART_DONE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_OUTPUT_ITEM_DONE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.SESSION_INITIATE
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.USER_STREAM_START
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.USER_STREAM_CHUNK
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.USER_STREAM_STOP
+2025-06-19 18:27:28,057 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.SESSION_END
+2025-06-19 18:27:28,057 - event_router - INFO - Received platform message: session.initiate
+2025-06-19 18:27:28,057 - audiocodes_bridge - INFO - Session initiate received: {'type': 'session.initiate', 'conversationId': '55640479-00a1-4d0f-95ba-00152f57b75f', 'expectAudioMessages': True, 'botName': 'PerfectPatAgent', 'caller': '+15551111111', 'supportedMediaFormats': ['raw/lpcm16']}
+2025-06-19 18:27:28,057 - base_bridge - INFO - Conversation started: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:28,071 - event_router - INFO - Received OpenAI message type: session.created
+2025-06-19 18:27:28,071 - realtime_handler - INFO - Session created successfully
+2025-06-19 18:27:28,241 - event_router - INFO - Received OpenAI message type: session.updated
+2025-06-19 18:27:28,241 - realtime_handler - INFO - Session updated successfully
+2025-06-19 18:27:28,248 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:28,248 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:30,075 - call_recorder - INFO - CallRecorder initialized for conversation 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:30,075 - call_recorder - INFO - Recording directory: call_recordings\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730
+2025-06-19 18:27:30,075 - call_recorder - INFO - Audio settings - Caller: 16000Hz, Bot: 24000Hz, Target: 16000Hz
+2025-06-19 18:27:30,075 - call_recorder - INFO - WAV files initialized for recording
+2025-06-19 18:27:30,075 - call_recorder - INFO - Recording started for conversation 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:30,075 - base_bridge - INFO - Call recording started for conversation: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:30,075 - caller_agent - INFO - [MOCK] Received from bridge: session.accepted
+2025-06-19 18:27:30,075 - caller_agent - INFO - [MOCK] Session accepted with format: raw/lpcm16
+2025-06-19 18:27:30,075 - caller_agent - INFO - [MOCK] Waiting for LLM greeting...
+2025-06-19 18:27:30,144 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:30,144 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpJcThY0tAh0S3TjH7H",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpJfKuppaMVi7bB11eB",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:30,145 - realtime_handler - INFO - Response generation started: resp_BkKpJfKuppaMVi7bB11eB
+2025-06-19 18:27:30,374 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:30,374 - event_router - INFO - Output item added: {
+  "id": "item_BkKpJhGPjNUmzYx1UIvIM",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-06-19 18:27:30,374 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpJhGPjNUmzYx1UIvIM', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-06-19 18:27:30,374 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:30,374 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:30,402 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-06-19 18:27:30,402 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-06-19 18:27:30,402 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-06-19 18:27:30,403 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,403 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:30,403 - transcript_manager - DEBUG - Received audio transcript delta: Hello
+2025-06-19 18:27:30,404 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,404 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:30,404 - transcript_manager - DEBUG - Received audio transcript delta: !
+2025-06-19 18:27:30,417 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,417 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:30,417 - transcript_manager - DEBUG - Received audio transcript delta:  How
+2025-06-19 18:27:30,427 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,427 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:30,427 - transcript_manager - DEBUG - Received audio transcript delta:  can
+2025-06-19 18:27:30,449 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,449 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-06-19 18:27:30,449 - transcript_manager - DEBUG - Received audio transcript delta:  I
+2025-06-19 18:27:30,509 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,509 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-06-19 18:27:30,509 - caller_agent - INFO - [MOCK] Received from bridge: playStream.start
+2025-06-19 18:27:30,509 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-19 18:27:30,509 - caller_agent - INFO - [MOCK] Play stream started: 56dce7c3-8e8e-4d61-ab2e-aa66a828d336
+2025-06-19 18:27:30,509 - call_recorder - INFO - Bot audio chunk #1: Original: 4800 bytes (100.0ms @ 24000Hz), Resampled: 3200 bytes (100.0ms @ 16000Hz)
+2025-06-19 18:27:30,509 - caller_agent - INFO - [MOCK] Collecting greeting audio...
+2025-06-19 18:27:30,509 - call_recorder - WARNING - Duration ratio mismatch: got 1.000, expected 0.667. This may indicate incorrect sample rate assumptions.
+2025-06-19 18:27:30,509 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,509 - caller_agent - DEBUG - [MOCK] Received audio chunk (6400 bytes base64)
+2025-06-19 18:27:30,549 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,549 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-06-19 18:27:30,549 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-19 18:27:30,549 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,553 - caller_agent - DEBUG - [MOCK] Received audio chunk (9600 bytes base64)
+2025-06-19 18:27:30,574 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,574 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:30,574 - transcript_manager - DEBUG - Received audio transcript delta:  help
+2025-06-19 18:27:30,588 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,589 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:30,589 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:30,590 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,590 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:30,591 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,591 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:30,591 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:30,591 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,591 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:30,591 - transcript_manager - DEBUG - Received audio transcript delta:  today
+2025-06-19 18:27:30,598 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:30,598 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:30,598 - transcript_manager - DEBUG - Received audio transcript delta: ?
+2025-06-19 18:27:30,675 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,675 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:30,676 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:30,677 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,677 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:30,708 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,708 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:30,715 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:30,717 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,717 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:30,794 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,804 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:30,805 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:30,806 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,806 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:30,881 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:30,881 - event_router - INFO - Audio event: response.audio.delta - delta size: 53464
+2025-06-19 18:27:30,882 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 20048 -> 13365 samples, 835.3ms -> 835.3ms
+2025-06-19 18:27:30,886 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:30,886 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-06-19 18:27:30,886 - caller_agent - DEBUG - [MOCK] Received audio chunk (53464 bytes base64)
+2025-06-19 18:27:30,886 - realtime_handler - INFO - Audio response completed
+2025-06-19 18:27:30,888 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-06-19 18:27:30,888 - caller_agent - INFO - [MOCK] Received from bridge: playStream.stop
+2025-06-19 18:27:30,888 - transcript_manager - INFO - Full AI transcript (output audio): Hello! How can I help you today?
+2025-06-19 18:27:30,888 - caller_agent - INFO - [MOCK] Greeting collected: 7 chunks
+2025-06-19 18:27:30,888 - call_recorder - INFO - Transcript added: [bot] Hello! How can I help you today?...
+2025-06-19 18:27:30,888 - caller_agent - INFO - [MOCK] Play stream stopped: 56dce7c3-8e8e-4d61-ab2e-aa66a828d336
+2025-06-19 18:27:30,888 - transcript_manager - INFO - Audio transcript completed
+2025-06-19 18:27:30,888 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-06-19 18:27:30,889 - realtime_handler - INFO - Content part completed
+2025-06-19 18:27:30,889 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:30,889 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:30,916 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:30,916 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpKuuIzwQ4LrjKnCaZh",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpJfKuppaMVi7bB11eB",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpJhGPjNUmzYx1UIvIM",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "Hello! How can I help you today?"
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 688,
+      "input_tokens": 631,
+      "output_tokens": 57,
+      "input_token_details": {
+        "text_tokens": 631,
+        "audio_tokens": 0,
+        "cached_tokens": 0,
+        "cached_tokens_details": {
+          "text_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 17,
+        "audio_tokens": 40
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:30,916 - realtime_handler - INFO - Response generation completed: resp_BkKpJfKuppaMVi7bB11eB
+2025-06-19 18:27:30,916 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:30,987 - caller_agent - INFO - [MOCK] Greeting received: 7 chunks
+2025-06-19 18:27:30,987 - caller_agent - INFO - Received greeting from agent: 7 chunks
+2025-06-19 18:27:30,987 - caller_agent - INFO - Agent said: Hello, thank you for calling. How can I help you today?
+2025-06-19 18:27:30,987 - caller_agent - INFO - Generating response to: Hello, thank you for calling. How can I help you today?
+2025-06-19 18:27:30,987 - caller_agent - DEBUG - Sent conversation item to OpenAI
+2025-06-19 18:27:30,987 - caller_agent - DEBUG - Sent response create to OpenAI
+2025-06-19 18:27:30,987 - caller_agent - DEBUG - Starting to collect audio response from OpenAI
+2025-06-19 18:27:30,987 - caller_agent - DEBUG - Received OpenAI message: session.created
+2025-06-19 18:27:30,987 - caller_agent - DEBUG - Received OpenAI message: session.updated
+2025-06-19 18:27:31,054 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:31,122 - caller_agent - DEBUG - Received OpenAI message: response.created
+2025-06-19 18:27:31,763 - caller_agent - DEBUG - Received OpenAI message: response.output_item.added
+2025-06-19 18:27:31,764 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:31,787 - caller_agent - DEBUG - Received OpenAI message: response.content_part.added
+2025-06-19 18:27:31,787 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:31,787 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:31,788 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:31,795 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:31,802 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:31,931 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:31,931 - caller_agent - DEBUG - Collected audio delta: 6400 chars
+2025-06-19 18:27:32,030 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,030 - caller_agent - DEBUG - Collected audio delta: 9600 chars
+2025-06-19 18:27:32,042 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,145 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,145 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:32,145 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,146 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,177 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,178 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:32,188 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,188 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:32,194 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,196 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,201 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,279 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,279 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:32,291 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,313 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,313 - caller_agent - DEBUG - Collected audio delta: 32000 chars
+2025-06-19 18:27:32,314 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,314 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,316 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,317 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,345 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,362 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,373 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,374 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,374 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:32,470 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,471 - caller_agent - DEBUG - Collected audio delta: 48000 chars
+2025-06-19 18:27:32,605 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:32,605 - caller_agent - DEBUG - Collected audio delta: 75864 chars
+2025-06-19 18:27:32,607 - caller_agent - DEBUG - Received OpenAI message: response.audio.done
+2025-06-19 18:27:32,608 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.done
+2025-06-19 18:27:32,608 - caller_agent - DEBUG - Received OpenAI message: response.content_part.done
+2025-06-19 18:27:32,609 - caller_agent - DEBUG - Received OpenAI message: response.output_item.done
+2025-06-19 18:27:32,612 - caller_agent - DEBUG - Received OpenAI message: response.done
+2025-06-19 18:27:32,612 - caller_agent - DEBUG - Response complete signal received
+2025-06-19 18:27:32,613 - caller_agent - INFO - Combined 9 audio chunks into 176896 bytes
+2025-06-19 18:27:32,614 - caller_agent - INFO - Generated audio response: 176896 bytes
+2025-06-19 18:27:32,614 - caller_agent - INFO - Sending audio response: 176896 bytes
+2025-06-19 18:27:32,615 - caller_agent - DEBUG - Resampled audio: 176896 bytes (24kHz) -> 117930 bytes (16kHz)
+2025-06-19 18:27:32,617 - caller_agent - DEBUG - Created temp audio file: C:\Users\peril\AppData\Local\Temp\tmp_d78kfk5.wav
+2025-06-19 18:27:32,617 - caller_agent - INFO - [MOCK] Loading audio: tmp_d78kfk5.wav
+2025-06-19 18:27:32,617 - caller_agent - INFO -    Format: 1ch, 16bit, 16000Hz
+2025-06-19 18:27:32,618 - caller_agent - INFO -    Split into 4 chunks (~3.69s total)
+2025-06-19 18:27:32,618 - caller_agent - INFO - [MOCK] Sending user audio: tmp_d78kfk5.wav (4 chunks)
+2025-06-19 18:27:32,619 - event_router - INFO - Received platform message: userStream.start
+2025-06-19 18:27:32,619 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '55640479-00a1-4d0f-95ba-00152f57b75f'}
+2025-06-19 18:27:32,620 - caller_agent - INFO - [MOCK] Received from bridge: userStream.started
+2025-06-19 18:27:32,620 - caller_agent - INFO - [MOCK] User stream started
+2025-06-19 18:27:32,733 - caller_agent - DEBUG - [MOCK] Sent chunk 1/4
+2025-06-19 18:27:32,735 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:32,767 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:32,797 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:32,826 - caller_agent - DEBUG - [MOCK] Sent chunk 4/4
+2025-06-19 18:27:32,827 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 29240 bytes
+2025-06-19 18:27:32,854 - caller_agent - INFO - [MOCK] User audio sent successfully
+2025-06-19 18:27:32,854 - event_router - INFO - Received platform message: userStream.stop
+2025-06-19 18:27:32,854 - caller_agent - INFO - Audio response sent successfully
+2025-06-19 18:27:32,855 - audiocodes_bridge - INFO - User stream stop received for conversation: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:32,856 - base_bridge - INFO - No active response - creating new response immediately
+p\tmp_d78kfk5.wav
+2025-06-19 18:27:32,856 - caller_agent - INFO - [MOCK] Waiting for LLM response...
+2025-06-19 18:27:32,856 - caller_agent - INFO - [MOCK] Received from bridge: userStream.stopped
+2025-06-19 18:27:32,856 - caller_agent - INFO - [MOCK] User stream stopped
+2025-06-19 18:27:33,033 - event_router - INFO - Received OpenAI message type: input_audio_buffer.committed
+2025-06-19 18:27:33,034 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:33,034 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:33,041 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:33,041 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpMIDLhLm7uJ5LVFvIH",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpMUET6ve3h0fvYtyic",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:33,042 - realtime_handler - INFO - Response generation started: resp_BkKpMUET6ve3h0fvYtyic
+2025-06-19 18:27:33,355 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:33,356 - event_router - INFO - Output item added: {
+  "id": "item_BkKpMsT9AvKCTKVpgUxrO",
+  "object": "realtime.item",
+  "type": "function_call",
+  "status": "in_progress",
+  "name": "call_intent",
+  "call_id": "call_H3Cr6WLpg50rXYYK",
+  "arguments": ""
+}
+2025-06-19 18:27:33,356 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpMsT9AvKCTKVpgUxrO', 'object': 'realtime.item', 'type': 'function_call', 'status': 'in_progress', 'name': 'call_intent', 'call_id': 'call_H3Cr6WLpg50rXYYK', 'arguments': ''}
+2025-06-19 18:27:33,356 - realtime_handler - INFO - Captured function call: call_intent with call_id: call_H3Cr6WLpg50rXYYK
+2025-06-19 18:27:33,357 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:33,357 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:33,357 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,358 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,359 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,359 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,367 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,367 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,373 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,374 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,384 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,384 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,389 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,390 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,398 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:33,398 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:33,417 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.done
+2025-06-19 18:27:33,417 - event_router - INFO - 🎯 Routing response.function_call_arguments.done to handler
+2025-06-19 18:27:33,417 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:33,417 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:33,418 - call_recorder - INFO - Function call logged: call_intent
+2025-06-19 18:27:33,429 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:33,429 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpN7eflPQFVBlxMb8At",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpMUET6ve3h0fvYtyic",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpMsT9AvKCTKVpgUxrO",
+        "object": "realtime.item",
+        "type": "function_call",
+        "status": "completed",
+        "name": "call_intent",
+        "call_id": "call_H3Cr6WLpg50rXYYK",
+        "arguments": "{\"intent\":\"card_replacement\"}"
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 740,
+      "input_tokens": 722,
+      "output_tokens": 18,
+      "input_token_details": {
+        "text_tokens": 658,
+        "audio_tokens": 64,
+        "cached_tokens": 640,
+        "cached_tokens_details": {
+          "text_tokens": 640,
+          "audio_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 18,
+        "audio_tokens": 0
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:33,430 - realtime_handler - INFO - Response generation completed: resp_BkKpMUET6ve3h0fvYtyic
+2025-06-19 18:27:33,439 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:33,487 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:33,487 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:33,499 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:33,499 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpNl6jOKnhHOoqacnFi",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpNwOnK9Qj9jyW6kUyG",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:33,500 - realtime_handler - INFO - Response generation started: resp_BkKpNwOnK9Qj9jyW6kUyG
+2025-06-19 18:27:33,726 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:33,726 - event_router - INFO - Output item added: {
+  "id": "item_BkKpNEbkxZ69ansy8My5l",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-06-19 18:27:33,726 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpNEbkxZ69ansy8My5l', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-06-19 18:27:33,726 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:33,727 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:33,727 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-06-19 18:27:33,727 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-06-19 18:27:33,728 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-06-19 18:27:33,728 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,728 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:33,728 - transcript_manager - DEBUG - Received audio transcript delta: I
+2025-06-19 18:27:33,728 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,728 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 11
+2025-06-19 18:27:33,728 - transcript_manager - DEBUG - Received audio transcript delta:  understand
+2025-06-19 18:27:33,757 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,758 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:33,758 - transcript_manager - DEBUG - Received audio transcript delta:  that
+2025-06-19 18:27:33,758 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,759 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:33,759 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:33,855 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:33,856 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-06-19 18:27:33,857 - caller_agent - INFO - [MOCK] Received from bridge: playStream.start
+2025-06-19 18:27:33,857 - caller_agent - INFO - [MOCK] Play stream started: a88c7f86-797a-485c-bb88-542e15291e94
+2025-06-19 18:27:33,857 - caller_agent - INFO - [MOCK] Collecting response audio...
+2025-06-19 18:27:33,857 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-19 18:27:33,859 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:33,860 - caller_agent - DEBUG - [MOCK] Received audio chunk (6400 bytes base64)
+2025-06-19 18:27:33,864 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:33,864 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-06-19 18:27:33,865 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-19 18:27:33,866 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:33,866 - caller_agent - DEBUG - [MOCK] Received audio chunk (9600 bytes base64)
+2025-06-19 18:27:33,890 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,890 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:33,890 - transcript_manager - DEBUG - Received audio transcript delta:  need
+2025-06-19 18:27:33,891 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,891 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:33,891 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:33,896 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:33,897 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:33,898 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:33,900 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:33,900 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:33,900 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:33,900 - transcript_manager - DEBUG - Received audio transcript delta:  replace
+
+2025-06-19 18:27:33,971 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:33,971 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:33,972 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:33,974 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:33,974 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:34,011 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,011 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:34,011 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:34,013 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,013 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:34,037 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,037 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,038 - transcript_manager - DEBUG - Received audio transcript delta:  your
+2025-06-19 18:27:34,047 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,047 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,047 - transcript_manager - DEBUG - Received audio transcript delta:  Gold
+2025-06-19 18:27:34,058 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,058 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,058 - transcript_manager - DEBUG - Received audio transcript delta:  card
+2025-06-19 18:27:34,060 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,060 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:34,060 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-06-19 18:27:34,135 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,135 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:34,135 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:34,137 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,137 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:34,202 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,203 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:34,203 - transcript_manager - DEBUG - Received audio transcript delta:  Can
+2025-06-19 18:27:34,211 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,212 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-06-19 18:27:34,214 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-19 18:27:34,216 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,216 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:34,217 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:34,217 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,217 - caller_agent - DEBUG - [MOCK] Received audio chunk (32000 bytes base64)
+2025-06-19 18:27:34,217 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,217 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-06-19 18:27:34,218 - transcript_manager - DEBUG - Received audio transcript delta:  please
+2025-06-19 18:27:34,222 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,222 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:34,222 - transcript_manager - DEBUG - Received audio transcript delta:  confirm
+2025-06-19 18:27:34,376 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,377 - event_router - INFO - Audio event: response.audio.delta - delta size: 48000
+2025-06-19 18:27:34,378 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-19 18:27:34,381 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,381 - caller_agent - DEBUG - [MOCK] Received audio chunk (48000 bytes base64)
+2025-06-19 18:27:34,482 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,482 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:34,482 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:34,490 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,490 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:34,490 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:34,505 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,505 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:34,506 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:34,506 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,506 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:34,506 - transcript_manager - DEBUG - Received audio transcript delta:  would
+2025-06-19 18:27:34,510 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,510 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,510 - transcript_manager - DEBUG - Received audio transcript delta:  like
+2025-06-19 18:27:34,518 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,518 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:34,518 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:34,532 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,532 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 12
+2025-06-19 18:27:34,532 - transcript_manager - DEBUG - Received audio transcript delta:  replacement
+2025-06-19 18:27:34,534 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,534 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,534 - transcript_manager - DEBUG - Received audio transcript delta:  card
+2025-06-19 18:27:34,620 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,620 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:34,621 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:34,626 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,626 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:34,770 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,770 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:34,772 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:34,776 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,777 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:34,781 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.delta
+2025-06-19 18:27:34,781 - transcript_manager - DEBUG - Received input audio transcription delta: Hi, I need to replace my lost gold card. Can you send it to the...
+
+2025-06-19 18:27:34,781 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.completed
+2025-06-19 18:27:34,781 - transcript_manager - INFO - Full user transcript (input audio): Hi, I need to replace my lost gold card. Can you send it to the...
+
+2025-06-19 18:27:34,782 - call_recorder - INFO - Transcript added: [caller] Hi, I need to replace my lost gold card. Can you s...
+2025-06-19 18:27:34,782 - transcript_manager - INFO - Input audio transcription completed
+2025-06-19 18:27:34,908 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,909 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,909 - transcript_manager - DEBUG - Received audio transcript delta:  sent
+2025-06-19 18:27:34,926 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:34,926 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:34,927 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:34,931 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,931 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:34,931 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:34,931 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,931 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:34,931 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:34,931 - transcript_manager - DEBUG - Received audio transcript delta: ?
+2025-06-19 18:27:34,931 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:34,933 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,933 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:34,933 - transcript_manager - DEBUG - Received audio transcript delta:  Would
+2025-06-19 18:27:34,939 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,940 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:34,940 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:34,948 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,948 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,948 - transcript_manager - DEBUG - Received audio transcript delta:  like
+2025-06-19 18:27:34,956 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,956 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:34,956 - transcript_manager - DEBUG - Received audio transcript delta:  it
+2025-06-19 18:27:34,964 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,964 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:34,965 - transcript_manager - DEBUG - Received audio transcript delta:  sent
+2025-06-19 18:27:34,969 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:34,969 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:34,970 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:35,170 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:35,171 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:35,172 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:35,176 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:35,176 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:35,322 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:35,323 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:35,325 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:35,330 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:35,330 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:35,348 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,348 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:35,348 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:35,355 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,355 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:35,355 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:35,358 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,359 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:35,359 - transcript_manager - DEBUG - Received audio transcript delta:  on
+2025-06-19 18:27:35,367 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,367 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:35,367 - transcript_manager - DEBUG - Received audio transcript delta:  file
+2025-06-19 18:27:35,371 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,371 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:35,371 - transcript_manager - DEBUG - Received audio transcript delta:  or
+2025-06-19 18:27:35,382 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,382 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-06-19 18:27:35,382 - transcript_manager - DEBUG - Received audio transcript delta:  a
+2025-06-19 18:27:35,391 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,392 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:35,392 - transcript_manager - DEBUG - Received audio transcript delta:  new
+2025-06-19 18:27:35,398 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,398 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:35,398 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:35,408 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:35,408 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:35,408 - transcript_manager - DEBUG - Received audio transcript delta: ?
+2025-06-19 18:27:35,560 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:35,560 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:35,560 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:35,576 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:35,576 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:35,717 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:35,717 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:35,718 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:35,723 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:35,724 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:35,881 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:35,881 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:35,883 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:35,888 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:35,888 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:36,024 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:36,025 - event_router - INFO - Audio event: response.audio.delta - delta size: 85464
+2025-06-19 18:27:36,026 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 32048 -> 21365 samples, 1335.3ms -> 1335.3ms
+2025-06-19 18:27:36,031 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-06-19 18:27:36,031 - realtime_handler - INFO - Audio response completed
+2025-06-19 18:27:36,031 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:36,032 - caller_agent - DEBUG - [MOCK] Received audio chunk (85464 bytes base64)
+2025-06-19 18:27:36,032 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-06-19 18:27:36,032 - caller_agent - INFO - [MOCK] Received from bridge: playStream.stop
+2025-06-19 18:27:36,032 - transcript_manager - INFO - Full AI transcript (output audio): I understand that you need to replace your Gold card. Can you please confirm the address you would like the replacement card sent to? Would you like it sent to the address on file or a new address?
+2025-06-19 18:27:36,032 - call_recorder - INFO - Transcript added: [bot] I understand that you need to replace your Gold ca...
+2025-06-19 18:27:36,033 - transcript_manager - INFO - Audio transcript completed
+2025-06-19 18:27:36,032 - caller_agent - INFO - [MOCK] Response collected: 17 chunks
+2025-06-19 18:27:36,033 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-06-19 18:27:36,033 - caller_agent - INFO - [MOCK] Play stream stopped: a88c7f86-797a-485c-bb88-542e15291e94
+2025-06-19 18:27:36,033 - realtime_handler - INFO - Content part completed
+2025-06-19 18:27:36,033 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:36,033 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:36,034 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:36,034 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpPKoxmvdKkWDt6PfAs",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpNwOnK9Qj9jyW6kUyG",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpNEbkxZ69ansy8My5l",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "I understand that you need to replace your Gold card. Can you please confirm the address you would like the replacement card sent to? Would you like it sent to the address on file or a new address?"
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 1110,
+      "input_tokens": 816,
+      "output_tokens": 294,
+      "input_token_details": {
+        "text_tokens": 752,
+        "audio_tokens": 64,
+        "cached_tokens": 640,
+        "cached_tokens_details": {
+          "text_tokens": 640,
+          "audio_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 59,
+        "audio_tokens": 235
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:36,034 - realtime_handler - INFO - Response generation completed: resp_BkKpNwOnK9Qj9jyW6kUyG
+2025-06-19 18:27:36,034 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:36,098 - caller_agent - INFO - [MOCK] Response received: 17 chunks
+2025-06-19 18:27:36,098 - caller_agent - INFO - Agent: [Agent response 1]
+2025-06-19 18:27:36,099 - caller_agent - INFO - Generating response to: [Agent response 1]
+2025-06-19 18:27:36,099 - caller_agent - DEBUG - Sent conversation item to OpenAI
+2025-06-19 18:27:36,100 - caller_agent - DEBUG - Sent response create to OpenAI
+2025-06-19 18:27:36,100 - caller_agent - DEBUG - Starting to collect audio response from OpenAI
+2025-06-19 18:27:36,100 - caller_agent - DEBUG - Received OpenAI message: rate_limits.updated
+2025-06-19 18:27:36,168 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:36,190 - caller_agent - DEBUG - Received OpenAI message: response.created
+2025-06-19 18:27:36,537 - caller_agent - DEBUG - Received OpenAI message: response.output_item.added
+2025-06-19 18:27:36,538 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:36,582 - caller_agent - DEBUG - Received OpenAI message: response.content_part.added
+2025-06-19 18:27:36,583 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,597 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,598 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,598 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,722 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:36,722 - caller_agent - DEBUG - Collected audio delta: 6400 chars
+2025-06-19 18:27:36,802 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:36,803 - caller_agent - DEBUG - Collected audio delta: 9600 chars
+2025-06-19 18:27:36,805 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,931 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:36,932 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:36,932 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,933 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,933 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,933 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:36,968 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:36,968 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:36,968 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:36,968 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:37,062 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:37,062 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:37,085 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:37,085 - caller_agent - DEBUG - Collected audio delta: 53464 chars
+2025-06-19 18:27:37,092 - caller_agent - DEBUG - Received OpenAI message: response.audio.done
+2025-06-19 18:27:37,092 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.done
+2025-06-19 18:27:37,092 - caller_agent - DEBUG - Received OpenAI message: response.content_part.done
+2025-06-19 18:27:37,092 - caller_agent - DEBUG - Received OpenAI message: response.output_item.done
+2025-06-19 18:27:37,095 - caller_agent - DEBUG - Received OpenAI message: response.done
+2025-06-19 18:27:37,095 - caller_agent - DEBUG - Response complete signal received
+2025-06-19 18:27:37,096 - caller_agent - INFO - Combined 7 audio chunks into 100096 bytes
+2025-06-19 18:27:37,096 - caller_agent - INFO - Generated audio response: 100096 bytes
+2025-06-19 18:27:37,096 - caller_agent - INFO - Sending audio response: 100096 bytes
+2025-06-19 18:27:37,097 - caller_agent - DEBUG - Resampled audio: 100096 bytes (24kHz) -> 66730 bytes (16kHz)
+2025-06-19 18:27:37,098 - caller_agent - DEBUG - Created temp audio file: C:\Users\peril\AppData\Local\Temp\tmpubmqm9ul.wav
+2025-06-19 18:27:37,098 - caller_agent - INFO - [MOCK] Loading audio: tmpubmqm9ul.wav
+2025-06-19 18:27:37,098 - caller_agent - INFO -    Format: 1ch, 16bit, 16000Hz
+2025-06-19 18:27:37,099 - caller_agent - INFO -    Split into 3 chunks (~2.09s total)
+2025-06-19 18:27:37,099 - caller_agent - INFO - [MOCK] Sending user audio: tmpubmqm9ul.wav (3 chunks)
+2025-06-19 18:27:37,100 - event_router - INFO - Received platform message: userStream.start
+2025-06-19 18:27:37,100 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '55640479-00a1-4d0f-95ba-00152f57b75f'}
+2025-06-19 18:27:37,100 - caller_agent - INFO - [MOCK] Received from bridge: userStream.started
+2025-06-19 18:27:37,100 - caller_agent - INFO - [MOCK] User stream started
+2025-06-19 18:27:37,208 - caller_agent - DEBUG - [MOCK] Sent chunk 1/3
+2025-06-19 18:27:37,209 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:37,241 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:37,268 - caller_agent - DEBUG - [MOCK] Sent chunk 3/3
+2025-06-19 18:27:37,268 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-06-19 18:27:37,299 - caller_agent - INFO - [MOCK] User audio sent successfully
+2025-06-19 18:27:37,299 - event_router - INFO - Received platform message: userStream.stop
+2025-06-19 18:27:37,299 - caller_agent - INFO - Audio response sent successfully
+2025-06-19 18:27:37,299 - audiocodes_bridge - INFO - User stream stop received for conversation: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:37,300 - base_bridge - INFO - No active response - creating new response immediately
+2025-06-19 18:27:37,300 - caller_agent - DEBUG - Cleaned up temp file: C:\Users\peril\AppData\Local\Temp\tmpubmqm9ul.wav
+2025-06-19 18:27:37,300 - caller_agent - INFO - [MOCK] Received from bridge: userStream.stopped
+2025-06-19 18:27:37,300 - caller_agent - INFO - [MOCK] User stream stopped
+2025-06-19 18:27:37,418 - event_router - INFO - Received OpenAI message type: input_audio_buffer.committed
+2025-06-19 18:27:37,418 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:37,419 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:37,421 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:37,421 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpRgZPWxhf3G3e8eQQC",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpROyqyKdRQZBM1bOXN",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:37,422 - realtime_handler - INFO - Response generation started: resp_BkKpROyqyKdRQZBM1bOXN
+2025-06-19 18:27:37,765 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:37,765 - event_router - INFO - Output item added: {
+  "id": "item_BkKpRQueRkRnxsPol2hqy",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-06-19 18:27:37,765 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpRQueRkRnxsPol2hqy', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-06-19 18:27:37,765 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:37,767 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:37,767 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-06-19 18:27:37,767 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-06-19 18:27:37,767 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-06-19 18:27:37,775 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:37,775 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:37,775 - transcript_manager - DEBUG - Received audio transcript delta: Could
+2025-06-19 18:27:37,781 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:37,781 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:37,781 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:37,788 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:37,788 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-06-19 18:27:37,788 - transcript_manager - DEBUG - Received audio transcript delta:  please
+2025-06-19 18:27:37,826 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.delta
+2025-06-19 18:27:37,826 - transcript_manager - DEBUG - Received input audio transcription delta: Thank you. I'll wait for the confirmation.
+
+2025-06-19 18:27:37,826 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.completed
+2025-06-19 18:27:37,826 - transcript_manager - INFO - Full user transcript (input audio): Thank you. I'll wait for the confirmation.
+
+2025-06-19 18:27:37,826 - call_recorder - INFO - Transcript added: [caller] Thank you. I'll wait for the confirmation.
+...
+2025-06-19 18:27:37,826 - transcript_manager - INFO - Input audio transcription completed
+2025-06-19 18:27:37,872 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:37,873 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-06-19 18:27:37,874 - caller_agent - INFO - [MOCK] Received from bridge: playStream.start
+2025-06-19 18:27:37,874 - caller_agent - INFO - [MOCK] Play stream started: 554c9bd5-9c06-4cd5-a60e-7592f2dde559
+2025-06-19 18:27:37,874 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-19 18:27:37,875 - caller_agent - INFO - [MOCK] Collecting response audio...
+2025-06-19 18:27:37,876 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:37,877 - caller_agent - DEBUG - [MOCK] Received audio chunk (6400 bytes base64)
+2025-06-19 18:27:37,903 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:37,903 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-06-19 18:27:37,904 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-19 18:27:37,906 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:37,906 - caller_agent - DEBUG - [MOCK] Received audio chunk (9600 bytes base64)
+2025-06-19 18:27:37,933 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:37,933 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:37,934 - transcript_manager - DEBUG - Received audio transcript delta:  confirm
+2025-06-19 18:27:37,939 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:37,939 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:37,940 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:37,941 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:37,941 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:37,942 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:37,942 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:37,942 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:37,945 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:37,945 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:37,945 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:38,015 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,015 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:38,015 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:38,015 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,015 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:38,062 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,062 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:38,063 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:38,064 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,065 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:38,090 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,090 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:38,090 - transcript_manager - DEBUG - Received audio transcript delta:  where
+2025-06-19 18:27:38,100 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,100 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:38,101 - transcript_manager - DEBUG - Received audio transcript delta:  you'd
+2025-06-19 18:27:38,164 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,164 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:38,164 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:38,164 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,164 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:38,239 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,240 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:38,240 - transcript_manager - DEBUG - Received audio transcript delta:  like
+2025-06-19 18:27:38,249 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,249 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-06-19 18:27:38,250 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-19 18:27:38,252 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,253 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,253 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:38,253 - caller_agent - DEBUG - [MOCK] Received audio chunk (32000 bytes base64)
+2025-06-19 18:27:38,253 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:38,253 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,253 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 12
+2025-06-19 18:27:38,253 - transcript_manager - DEBUG - Received audio transcript delta:  replacement
+2025-06-19 18:27:38,262 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,262 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:38,262 - transcript_manager - DEBUG - Received audio transcript delta:  Gold
+2025-06-19 18:27:38,269 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,269 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:38,269 - transcript_manager - DEBUG - Received audio transcript delta:  card
+2025-06-19 18:27:38,276 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,276 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:38,276 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:38,284 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,284 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:38,284 - transcript_manager - DEBUG - Received audio transcript delta:  be
+2025-06-19 18:27:38,293 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,293 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:38,293 - transcript_manager - DEBUG - Received audio transcript delta:  sent
+2025-06-19 18:27:38,299 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,299 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:38,299 - transcript_manager - DEBUG - Received audio transcript delta: ?
+2025-06-19 18:27:38,302 - caller_agent - INFO - [MOCK] Waiting for LLM response...
+2025-06-19 18:27:38,443 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,443 - event_router - INFO - Audio event: response.audio.delta - delta size: 48000
+2025-06-19 18:27:38,443 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-19 18:27:38,458 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,458 - caller_agent - DEBUG - [MOCK] Received audio chunk (48000 bytes base64)
+2025-06-19 18:27:38,554 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,554 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:38,554 - transcript_manager - DEBUG - Received audio transcript delta:  Would
+2025-06-19 18:27:38,570 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,572 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:38,572 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:38,575 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,575 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:38,575 - transcript_manager - DEBUG - Received audio transcript delta:  like
+2025-06-19 18:27:38,582 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,582 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:38,582 - transcript_manager - DEBUG - Received audio transcript delta:  it
+2025-06-19 18:27:38,591 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,592 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:38,592 - transcript_manager - DEBUG - Received audio transcript delta:  sent
+2025-06-19 18:27:38,597 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,598 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:38,598 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:38,609 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,609 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:38,610 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:38,613 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,613 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:38,613 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:38,695 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,696 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:38,697 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:38,701 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,702 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:38,856 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:38,856 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:38,857 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:38,863 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:38,863 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:38,988 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:38,988 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:38,988 - transcript_manager - DEBUG - Received audio transcript delta:  we
+2025-06-19 18:27:39,005 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:39,006 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:39,006 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:39,012 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,012 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:39,013 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:39,013 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:39,013 - transcript_manager - DEBUG - Received audio transcript delta:  have
+2025-06-19 18:27:39,014 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,014 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:39,014 - transcript_manager - DEBUG - Received audio transcript delta:  on
+2025-06-19 18:27:39,015 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,015 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:39,015 - transcript_manager - DEBUG - Received audio transcript delta:  file
+2025-06-19 18:27:39,023 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,023 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:39,023 - transcript_manager - DEBUG - Received audio transcript delta: ,
+2025-06-19 18:27:39,038 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,038 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:39,038 - transcript_manager - DEBUG - Received audio transcript delta:  or
+2025-06-19 18:27:39,039 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,039 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:39,039 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:39,043 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,044 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-06-19 18:27:39,044 - transcript_manager - DEBUG - Received audio transcript delta:  a
+2025-06-19 18:27:39,050 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,050 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:39,050 - transcript_manager - DEBUG - Received audio transcript delta:  new
+2025-06-19 18:27:39,059 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,060 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:39,061 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:39,062 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:39,069 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:39,069 - transcript_manager - DEBUG - Received audio transcript delta: ?
+2025-06-19 18:27:39,268 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:39,268 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:39,268 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:39,275 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:39,275 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:39,412 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:39,412 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:39,412 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:39,427 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:39,427 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:39,601 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:39,601 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:39,601 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:39,610 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:39,611 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:39,750 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:39,750 - event_router - INFO - Audio event: response.audio.delta - delta size: 88664
+2025-06-19 18:27:39,750 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 33248 -> 22165 samples, 1385.3ms -> 1385.3ms
+2025-06-19 18:27:39,750 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:39,750 - caller_agent - DEBUG - [MOCK] Received audio chunk (88664 bytes base64)
+2025-06-19 18:27:39,763 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-06-19 18:27:39,763 - realtime_handler - INFO - Audio response completed
+2025-06-19 18:27:39,764 - caller_agent - INFO - [MOCK] Received from bridge: playStream.stop
+2025-06-19 18:27:39,764 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-06-19 18:27:39,764 - transcript_manager - INFO - Full AI transcript (output audio): Could you please confirm the address where you'd like the replacement Gold card to be sent? Would you like it sent to the address we have on file, or to a new address?
+2025-06-19 18:27:39,764 - caller_agent - INFO - [MOCK] Response collected: 8 chunks
+2025-06-19 18:27:39,764 - call_recorder - INFO - Transcript added: [bot] Could you please confirm the address where you'd l...
+2025-06-19 18:27:39,764 - transcript_manager - INFO - Audio transcript completed
+2025-06-19 18:27:39,764 - caller_agent - INFO - [MOCK] Play stream stopped: 554c9bd5-9c06-4cd5-a60e-7592f2dde559
+2025-06-19 18:27:39,764 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-06-19 18:27:39,765 - realtime_handler - INFO - Content part completed
+2025-06-19 18:27:39,765 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:39,765 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:39,767 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:39,767 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpTsh4gi0oOaRN6dzsq",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpROyqyKdRQZBM1bOXN",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpRQueRkRnxsPol2hqy",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "Could you please confirm the address where you'd like the replacement Gold card to be sent? Would you like it sent to the address we have on file, or to a new address?"
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 1384,
+      "input_tokens": 1134,
+      "output_tokens": 250,
+      "input_token_details": {
+        "text_tokens": 821,
+        "audio_tokens": 313,
+        "cached_tokens": 0,
+        "cached_tokens_details": {
+          "text_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 54,
+        "audio_tokens": 196
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:39,767 - realtime_handler - INFO - Response generation completed: resp_BkKpROyqyKdRQZBM1bOXN
+2025-06-19 18:27:39,767 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:39,804 - caller_agent - INFO - [MOCK] Response received: 8 chunks
+2025-06-19 18:27:39,804 - caller_agent - INFO - Agent: [Agent response 2]
+2025-06-19 18:27:39,805 - caller_agent - INFO - Generating response to: [Agent response 2]
+2025-06-19 18:27:39,806 - caller_agent - DEBUG - Sent conversation item to OpenAI
+2025-06-19 18:27:39,806 - caller_agent - DEBUG - Sent response create to OpenAI
+2025-06-19 18:27:39,806 - caller_agent - DEBUG - Starting to collect audio response from OpenAI
+2025-06-19 18:27:39,806 - caller_agent - DEBUG - Received OpenAI message: rate_limits.updated
+2025-06-19 18:27:39,871 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:39,938 - caller_agent - DEBUG - Received OpenAI message: response.created
+2025-06-19 18:27:40,258 - caller_agent - DEBUG - Received OpenAI message: response.output_item.added
+2025-06-19 18:27:40,258 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:40,277 - caller_agent - DEBUG - Received OpenAI message: response.content_part.added
+2025-06-19 18:27:40,277 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,283 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,288 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,424 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,424 - caller_agent - DEBUG - Collected audio delta: 6400 chars
+2025-06-19 18:27:40,520 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,520 - caller_agent - DEBUG - Collected audio delta: 9600 chars
+2025-06-19 18:27:40,651 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,651 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:40,651 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,652 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,652 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,652 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,672 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,672 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,672 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:40,694 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,694 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:40,694 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,702 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,703 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,705 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,706 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,783 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,783 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:40,783 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,799 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,799 - caller_agent - DEBUG - Collected audio delta: 32000 chars
+2025-06-19 18:27:40,799 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,800 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,800 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:40,947 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:40,949 - caller_agent - DEBUG - Collected audio delta: 48000 chars
+2025-06-19 18:27:41,079 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:41,079 - caller_agent - DEBUG - Collected audio delta: 75864 chars
+2025-06-19 18:27:41,079 - caller_agent - DEBUG - Received OpenAI message: rate_limits.updated
+2025-06-19 18:27:41,093 - caller_agent - DEBUG - Received OpenAI message: response.audio.done
+2025-06-19 18:27:41,093 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.done
+2025-06-19 18:27:41,093 - caller_agent - DEBUG - Received OpenAI message: response.content_part.done
+2025-06-19 18:27:41,093 - caller_agent - DEBUG - Received OpenAI message: response.output_item.done
+2025-06-19 18:27:41,095 - caller_agent - DEBUG - Received OpenAI message: response.done
+2025-06-19 18:27:41,095 - caller_agent - DEBUG - Response complete signal received
+2025-06-19 18:27:41,095 - caller_agent - INFO - Combined 9 audio chunks into 176896 bytes
+2025-06-19 18:27:41,096 - caller_agent - INFO - Generated audio response: 176896 bytes
+2025-06-19 18:27:41,096 - caller_agent - INFO - Sending audio response: 176896 bytes
+2025-06-19 18:27:41,096 - caller_agent - DEBUG - Resampled audio: 176896 bytes (24kHz) -> 117930 bytes (16kHz)
+2025-06-19 18:27:41,096 - caller_agent - DEBUG - Created temp audio file: C:\Users\peril\AppData\Local\Temp\tmp25uwbgmk.wav
+2025-06-19 18:27:41,096 - caller_agent - INFO - [MOCK] Loading audio: tmp25uwbgmk.wav
+2025-06-19 18:27:41,096 - caller_agent - INFO -    Format: 1ch, 16bit, 16000Hz
+2025-06-19 18:27:41,099 - caller_agent - INFO -    Split into 4 chunks (~3.69s total)
+2025-06-19 18:27:41,099 - caller_agent - INFO - [MOCK] Sending user audio: tmp25uwbgmk.wav (4 chunks)
+2025-06-19 18:27:41,100 - event_router - INFO - Received platform message: userStream.start
+2025-06-19 18:27:41,100 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '55640479-00a1-4d0f-95ba-00152f57b75f'}
+2025-06-19 18:27:41,100 - caller_agent - INFO - [MOCK] Received from bridge: userStream.started
+2025-06-19 18:27:41,100 - caller_agent - INFO - [MOCK] User stream started
+2025-06-19 18:27:41,224 - caller_agent - DEBUG - [MOCK] Sent chunk 1/4
+2025-06-19 18:27:41,224 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:41,250 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:41,280 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:41,307 - caller_agent - DEBUG - [MOCK] Sent chunk 4/4
+2025-06-19 18:27:41,308 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 29240 bytes
+2025-06-19 18:27:41,327 - caller_agent - INFO - [MOCK] User audio sent successfully
+2025-06-19 18:27:41,328 - caller_agent - INFO - Audio response sent successfully
+2025-06-19 18:27:41,328 - event_router - INFO - Received platform message: userStream.stop
+2025-06-19 18:27:41,328 - caller_agent - DEBUG - Cleaned up temp file: C:\Users\peril\AppData\Local\Temp\tmp25uwbgmk.wav
+2025-06-19 18:27:41,328 - audiocodes_bridge - INFO - User stream stop received for conversation: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:41,329 - caller_agent - INFO - [MOCK] Received from bridge: userStream.stopped
+2025-06-19 18:27:41,329 - caller_agent - INFO - [MOCK] User stream stopped
+2025-06-19 18:27:41,329 - base_bridge - INFO - No active response - creating new response immediately
+2025-06-19 18:27:41,457 - event_router - INFO - Received OpenAI message type: input_audio_buffer.committed
+2025-06-19 18:27:41,457 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:41,457 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:41,457 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:41,457 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpVftiFxD9dkNauFevE",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpV12wCnYNtUcl1zPYg",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:41,457 - realtime_handler - INFO - Response generation started: resp_BkKpV12wCnYNtUcl1zPYg
+2025-06-19 18:27:41,831 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:41,831 - event_router - INFO - Output item added: {
+  "id": "item_BkKpVLKeogd72wfw6PcfU",
+  "object": "realtime.item",
+  "type": "function_call",
+  "status": "in_progress",
+  "name": "process_replacement",
+  "call_id": "call_1GPMWyjUYyOeeOpY",
+  "arguments": ""
+}
+2025-06-19 18:27:41,831 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpVLKeogd72wfw6PcfU', 'object': 'realtime.item', 'type': 'function_call', 'status': 'in_progress', 'name': 'process_replacement', 'call_id': 'call_1GPMWyjUYyOeeOpY', 'arguments': ''}
+2025-06-19 18:27:41,831 - realtime_handler - INFO - Captured function call: process_replacement with call_id: call_1GPMWyjUYyOeeOpY
+2025-06-19 18:27:41,831 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:41,831 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:41,831 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,831 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,831 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,831 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,846 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,846 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,854 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,854 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,863 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,863 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,868 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,868 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,876 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,876 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,885 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,885 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,892 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,892 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,899 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,899 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,908 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,909 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,915 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,915 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,927 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,928 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,932 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,932 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,938 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,938 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,946 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:41,946 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:41,965 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.done
+2025-06-19 18:27:41,966 - event_router - INFO - 🎯 Routing response.function_call_arguments.done to handler
+2025-06-19 18:27:41,966 - call_recorder - INFO - Function call logged: process_replacement
+2025-06-19 18:27:41,968 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:41,968 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:41,969 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:41,969 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpVkStEKtum41UxrUKk",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpV12wCnYNtUcl1zPYg",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpVLKeogd72wfw6PcfU",
+        "object": "realtime.item",
+        "type": "function_call",
+        "status": "completed",
+        "name": "process_replacement",
+        "call_id": "call_1GPMWyjUYyOeeOpY",
+        "arguments": "{\"card\":\"Gold card\",\"reason\":\"Lost\",\"address\":\"address on file\"}"
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 1445,
+      "input_tokens": 1418,
+      "output_tokens": 27,
+      "input_token_details": {
+        "text_tokens": 885,
+        "audio_tokens": 533,
+        "cached_tokens": 1280,
+        "cached_tokens_details": {
+          "text_tokens": 832,
+          "audio_tokens": 448
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 27,
+        "audio_tokens": 0
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:41,970 - realtime_handler - INFO - Response generation completed: resp_BkKpV12wCnYNtUcl1zPYg
+2025-06-19 18:27:41,986 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:42,044 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:42,044 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:42,044 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:42,044 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpV1kJ7eTTRx2FJ6kGt",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpVcYSEf9u617LPhMwu",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:42,044 - realtime_handler - INFO - Response generation started: resp_BkKpVcYSEf9u617LPhMwu
+2025-06-19 18:27:42,221 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:42,221 - event_router - INFO - Output item added: {
+  "id": "item_BkKpVmxyP1K3Bh7c4othV",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-06-19 18:27:42,222 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpVmxyP1K3Bh7c4othV', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-06-19 18:27:42,222 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:42,222 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:42,226 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-06-19 18:27:42,226 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-06-19 18:27:42,226 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-06-19 18:27:42,239 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,239 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:42,239 - transcript_manager - DEBUG - Received audio transcript delta: Your
+2025-06-19 18:27:42,246 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,246 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:42,247 - transcript_manager - DEBUG - Received audio transcript delta:  request
+2025-06-19 18:27:42,254 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,254 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:42,254 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:42,261 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,261 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:42,261 - transcript_manager - DEBUG - Received audio transcript delta:  replace
+2025-06-19 18:27:42,315 - caller_agent - INFO - [MOCK] Waiting for LLM response...
+2025-06-19 18:27:42,341 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,344 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-06-19 18:27:42,344 - caller_agent - INFO - [MOCK] Received from bridge: playStream.start
+2025-06-19 18:27:42,344 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-06-19 18:27:42,344 - caller_agent - INFO - [MOCK] Play stream started: 5a076cf8-ddf7-499f-9d54-223248f158d5
+2025-06-19 18:27:42,344 - caller_agent - INFO - [MOCK] Collecting response audio...
+2025-06-19 18:27:42,344 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,344 - caller_agent - DEBUG - [MOCK] Received audio chunk (6400 bytes base64)
+2025-06-19 18:27:42,377 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,377 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-06-19 18:27:42,377 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-06-19 18:27:42,377 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,377 - caller_agent - DEBUG - [MOCK] Received audio chunk (9600 bytes base64)
+2025-06-19 18:27:42,406 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,406 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:42,407 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:42,408 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,408 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,408 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:42,408 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:42,409 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:42,411 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,411 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:42,411 - transcript_manager - DEBUG - Received audio transcript delta:  lost
+2025-06-19 18:27:42,477 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,477 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:42,478 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:42,480 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,480 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:42,512 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,512 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:42,512 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:42,516 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,516 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:42,551 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,551 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:42,551 - transcript_manager - DEBUG - Received audio transcript delta:  Gold
+2025-06-19 18:27:42,551 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,551 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:42,551 - transcript_manager - DEBUG - Received audio transcript delta:  card
+2025-06-19 18:27:42,576 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.delta
+2025-06-19 18:27:42,576 - transcript_manager - DEBUG - Received input audio transcription delta: Great, I'll keep an eye out for it. Thank you for your help.
+
+2025-06-19 18:27:42,577 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.completed
+2025-06-19 18:27:42,577 - transcript_manager - INFO - Full user transcript (input audio): Great, I'll keep an eye out for it. Thank you for your help.
+
+2025-06-19 18:27:42,577 - call_recorder - INFO - Transcript added: [caller] Great, I'll keep an eye out for it. Thank you for ...
+2025-06-19 18:27:42,577 - transcript_manager - INFO - Input audio transcription completed
+2025-06-19 18:27:42,620 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,620 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-06-19 18:27:42,620 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-06-19 18:27:42,620 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,620 - caller_agent - DEBUG - [MOCK] Received audio chunk (16000 bytes base64)
+2025-06-19 18:27:42,705 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:42,705 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-06-19 18:27:42,706 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-06-19 18:27:42,708 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,708 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:42,708 - caller_agent - DEBUG - [MOCK] Received audio chunk (32000 bytes base64)
+a size: 4
+2025-06-19 18:27:42,708 - transcript_manager - DEBUG - Received audio transcript delta:  has
+2025-06-19 18:27:42,710 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,710 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:42,710 - transcript_manager - DEBUG - Received audio transcript delta:  been
+2025-06-19 18:27:42,714 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,715 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 10
+2025-06-19 18:27:42,715 - transcript_manager - DEBUG - Received audio transcript delta:  processed
+2025-06-19 18:27:42,727 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,727 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:42,727 - transcript_manager - DEBUG - Received audio transcript delta: ,
+2025-06-19 18:27:42,731 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,731 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:42,732 - transcript_manager - DEBUG - Received audio transcript delta:  and
+2025-06-19 18:27:42,739 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,739 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:42,739 - transcript_manager - DEBUG - Received audio transcript delta:  it
+2025-06-19 18:27:42,748 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,748 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:42,748 - transcript_manager - DEBUG - Received audio transcript delta:  will
+2025-06-19 18:27:42,763 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,763 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:42,763 - transcript_manager - DEBUG - Received audio transcript delta:  be
+2025-06-19 18:27:42,763 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:42,764 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:42,764 - transcript_manager - DEBUG - Received audio transcript delta:  sent
+2025-06-19 18:27:43,096 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:43,098 - event_router - INFO - Audio event: response.audio.delta - delta size: 48000
+2025-06-19 18:27:43,099 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-06-19 18:27:43,099 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:43,099 - caller_agent - DEBUG - [MOCK] Received audio chunk (48000 bytes base64)
+2025-06-19 18:27:43,175 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,175 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:43,175 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:43,177 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,177 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:43,177 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-06-19 18:27:43,188 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,188 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:43,188 - transcript_manager - DEBUG - Received audio transcript delta:  address
+2025-06-19 18:27:43,207 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,208 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:43,208 - transcript_manager - DEBUG - Received audio transcript delta:  we
+2025-06-19 18:27:43,208 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,208 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:43,208 - transcript_manager - DEBUG - Received audio transcript delta:  have
+2025-06-19 18:27:43,227 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,227 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:43,228 - transcript_manager - DEBUG - Received audio transcript delta:  on
+2025-06-19 18:27:43,228 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,228 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:43,228 - transcript_manager - DEBUG - Received audio transcript delta:  file
+2025-06-19 18:27:43,229 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,230 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:43,230 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-06-19 18:27:43,291 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:43,291 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:43,303 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:43,303 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:43,303 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:43,447 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:43,447 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:43,447 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:43,463 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:43,463 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:43,609 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,609 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:43,609 - transcript_manager - DEBUG - Received audio transcript delta:  Thank
+2025-06-19 18:27:43,618 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:43,620 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:43,621 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:43,628 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,628 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:43,628 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:43,628 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:43,629 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,629 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:43,629 - transcript_manager - DEBUG - Received audio transcript delta:  for
+2025-06-19 18:27:43,630 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,630 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:43,630 - transcript_manager - DEBUG - Received audio transcript delta:  your
+2025-06-19 18:27:43,638 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,638 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 9
+2025-06-19 18:27:43,638 - transcript_manager - DEBUG - Received audio transcript delta:  patience
+2025-06-19 18:27:43,645 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,645 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:43,645 - transcript_manager - DEBUG - Received audio transcript delta: ,
+2025-06-19 18:27:43,652 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,652 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:43,652 - transcript_manager - DEBUG - Received audio transcript delta:  and
+2025-06-19 18:27:43,661 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:43,661 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:43,661 - transcript_manager - DEBUG - Received audio transcript delta:  if
+2025-06-19 18:27:43,866 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:43,866 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:43,866 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:43,871 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:43,871 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:44,008 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:44,008 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:44,008 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:44,008 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:44,008 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:44,040 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,040 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:44,041 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-06-19 18:27:44,051 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,052 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:44,052 - transcript_manager - DEBUG - Received audio transcript delta:  need
+2025-06-19 18:27:44,055 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,055 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-06-19 18:27:44,055 - transcript_manager - DEBUG - Received audio transcript delta:  further
+2025-06-19 18:27:44,062 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,062 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 11
+2025-06-19 18:27:44,062 - transcript_manager - DEBUG - Received audio transcript delta:  assistance
+2025-06-19 18:27:44,076 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,076 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:44,076 - transcript_manager - DEBUG - Received audio transcript delta: ,
+2025-06-19 18:27:44,079 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,079 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:44,079 - transcript_manager - DEBUG - Received audio transcript delta:  feel
+2025-06-19 18:27:44,087 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,088 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:44,088 - transcript_manager - DEBUG - Received audio transcript delta:  free
+2025-06-19 18:27:44,240 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:44,240 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:44,242 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:44,248 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:44,248 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:44,400 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:44,400 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:44,400 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:44,406 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:44,406 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:44,460 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,460 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-06-19 18:27:44,460 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-06-19 18:27:44,474 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,474 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:44,474 - transcript_manager - DEBUG - Received audio transcript delta:  ask
+2025-06-19 18:27:44,493 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,493 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:44,493 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-06-19 18:27:44,493 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,493 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-06-19 18:27:44,502 - transcript_manager - DEBUG - Received audio transcript delta:  Have
+2025-06-19 18:27:44,502 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,503 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-06-19 18:27:44,503 - transcript_manager - DEBUG - Received audio transcript delta:  a
+2025-06-19 18:27:44,504 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,504 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-06-19 18:27:44,504 - transcript_manager - DEBUG - Received audio transcript delta:  great
+2025-06-19 18:27:44,512 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,512 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-06-19 18:27:44,512 - transcript_manager - DEBUG - Received audio transcript delta:  day
+2025-06-19 18:27:44,524 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-06-19 18:27:44,524 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-06-19 18:27:44,525 - transcript_manager - DEBUG - Received audio transcript delta: !
+2025-06-19 18:27:44,622 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:44,622 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:44,622 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:44,638 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:44,638 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:44,794 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:44,794 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:44,794 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:44,794 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:44,794 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:44,949 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:44,949 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-06-19 18:27:44,949 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-06-19 18:27:44,958 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:44,958 - caller_agent - DEBUG - [MOCK] Received audio chunk (64000 bytes base64)
+2025-06-19 18:27:45,149 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-06-19 18:27:45,149 - event_router - INFO - Audio event: response.audio.delta - delta size: 95064
+2025-06-19 18:27:45,149 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 35648 -> 23765 samples, 1485.3ms -> 1485.3ms
+2025-06-19 18:27:45,149 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-06-19 18:27:45,149 - realtime_handler - INFO - Audio response completed
+2025-06-19 18:27:45,149 - caller_agent - INFO - [MOCK] Received from bridge: playStream.chunk
+2025-06-19 18:27:45,149 - caller_agent - DEBUG - [MOCK] Received audio chunk (95064 bytes base64)
+2025-06-19 18:27:45,149 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-06-19 18:27:45,149 - transcript_manager - INFO - Full AI transcript (output audio): Your request to replace the lost Gold card has been processed, and it will be sent to the address we have on file. Thank you for your patience, and if you need further assistance, feel free to ask. Have a great day!
+2025-06-19 18:27:45,160 - call_recorder - INFO - Transcript added: [bot] Your request to replace the lost Gold card has bee...
+2025-06-19 18:27:45,160 - transcript_manager - INFO - Audio transcript completed
+2025-06-19 18:27:45,161 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-06-19 18:27:45,161 - realtime_handler - INFO - Content part completed
+2025-06-19 18:27:45,161 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:45,161 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:45,162 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:45,162 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpYjvFqZPHzXDoz8VPT",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpVcYSEf9u617LPhMwu",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpVmxyP1K3Bh7c4othV",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "Your request to replace the lost Gold card has been processed, and it will be sent to the address we have on file. Thank you for your patience, and if you need further assistance, feel free to ask. Have a great day!"
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 1835,
+      "input_tokens": 1489,
+      "output_tokens": 346,
+      "input_token_details": {
+        "text_tokens": 956,
+        "audio_tokens": 533,
+        "cached_tokens": 1408,
+        "cached_tokens_details": {
+          "text_tokens": 896,
+          "audio_tokens": 512
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 68,
+        "audio_tokens": 278
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:45,162 - realtime_handler - INFO - Response generation completed: resp_BkKpVcYSEf9u617LPhMwu
+2025-06-19 18:27:45,162 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:45,162 - caller_agent - INFO - [MOCK] Received from bridge: playStream.stop
+2025-06-19 18:27:45,163 - caller_agent - INFO - [MOCK] Response collected: 19 chunks
+2025-06-19 18:27:45,163 - caller_agent - INFO - [MOCK] Play stream stopped: 5a076cf8-ddf7-499f-9d54-223248f158d5
+2025-06-19 18:27:45,231 - caller_agent - INFO - [MOCK] Response received: 19 chunks
+2025-06-19 18:27:45,231 - caller_agent - INFO - Agent: [Agent response 3]
+2025-06-19 18:27:45,231 - caller_agent - INFO - Generating response to: [Agent response 3]
+2025-06-19 18:27:45,232 - caller_agent - DEBUG - Sent conversation item to OpenAI
+2025-06-19 18:27:45,232 - caller_agent - DEBUG - Sent response create to OpenAI
+2025-06-19 18:27:45,232 - caller_agent - DEBUG - Starting to collect audio response from OpenAI
+2025-06-19 18:27:45,293 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:45,327 - caller_agent - DEBUG - Received OpenAI message: response.created
+2025-06-19 18:27:45,652 - caller_agent - DEBUG - Received OpenAI message: response.output_item.added
+2025-06-19 18:27:45,652 - caller_agent - DEBUG - Received OpenAI message: conversation.item.created
+2025-06-19 18:27:45,670 - caller_agent - DEBUG - Received OpenAI message: response.content_part.added
+2025-06-19 18:27:45,670 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:45,675 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:45,683 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:45,690 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:45,819 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:45,819 - caller_agent - DEBUG - Collected audio delta: 6400 chars
+2025-06-19 18:27:45,915 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:45,915 - caller_agent - DEBUG - Collected audio delta: 9600 chars
+2025-06-19 18:27:45,915 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:46,042 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:46,042 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:46,042 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:46,049 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:46,049 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.delta
+2025-06-19 18:27:46,077 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:46,078 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:46,094 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:46,094 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:46,160 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:46,160 - caller_agent - DEBUG - Collected audio delta: 16000 chars
+2025-06-19 18:27:46,194 - caller_agent - DEBUG - Received OpenAI message: response.audio.delta
+2025-06-19 18:27:46,194 - caller_agent - DEBUG - Collected audio delta: 47064 chars
+2025-06-19 18:27:46,194 - caller_agent - DEBUG - Received OpenAI message: rate_limits.updated
+2025-06-19 18:27:46,204 - caller_agent - DEBUG - Received OpenAI message: response.audio.done
+2025-06-19 18:27:46,208 - caller_agent - DEBUG - Received OpenAI message: response.audio_transcript.done
+2025-06-19 18:27:46,209 - caller_agent - DEBUG - Received OpenAI message: response.content_part.done
+2025-06-19 18:27:46,209 - caller_agent - DEBUG - Received OpenAI message: response.output_item.done
+2025-06-19 18:27:46,211 - caller_agent - DEBUG - Received OpenAI message: response.done
+2025-06-19 18:27:46,211 - caller_agent - DEBUG - Response complete signal received
+2025-06-19 18:27:46,213 - caller_agent - INFO - Combined 7 audio chunks into 95296 bytes
+2025-06-19 18:27:46,213 - caller_agent - INFO - Generated audio response: 95296 bytes
+2025-06-19 18:27:46,213 - caller_agent - INFO - Sending audio response: 95296 bytes
+2025-06-19 18:27:46,213 - caller_agent - DEBUG - Resampled audio: 95296 bytes (24kHz) -> 63530 bytes (16kHz)
+2025-06-19 18:27:46,215 - caller_agent - DEBUG - Created temp audio file: C:\Users\peril\AppData\Local\Temp\tmp_f3716ye.wav
+2025-06-19 18:27:46,215 - caller_agent - INFO - [MOCK] Loading audio: tmp_f3716ye.wav
+2025-06-19 18:27:46,215 - caller_agent - INFO -    Format: 1ch, 16bit, 16000Hz
+2025-06-19 18:27:46,216 - caller_agent - INFO -    Split into 2 chunks (~1.99s total)
+2025-06-19 18:27:46,216 - caller_agent - INFO - [MOCK] Sending user audio: tmp_f3716ye.wav (2 chunks)
+2025-06-19 18:27:46,217 - event_router - INFO - Received platform message: userStream.start
+2025-06-19 18:27:46,217 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '55640479-00a1-4d0f-95ba-00152f57b75f'}
+2025-06-19 18:27:46,218 - caller_agent - INFO - [MOCK] Received from bridge: userStream.started
+2025-06-19 18:27:46,218 - caller_agent - INFO - [MOCK] User stream started
+2025-06-19 18:27:46,309 - caller_agent - DEBUG - [MOCK] Sent chunk 1/2
+2025-06-19 18:27:46,309 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42668 bytes
+2025-06-19 18:27:46,341 - caller_agent - DEBUG - [MOCK] Sent chunk 2/2
+2025-06-19 18:27:46,341 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 42040 bytes
+2025-06-19 18:27:46,372 - caller_agent - INFO - [MOCK] User audio sent successfully
+2025-06-19 18:27:46,373 - event_router - INFO - Received platform message: userStream.stop
+2025-06-19 18:27:46,373 - audiocodes_bridge - INFO - User stream stop received for conversation: 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:46,373 - caller_agent - DEBUG - Cleaned up temp file: C:\Users\peril\AppData\Local\Temp\tmp_f3716ye.wav
+2025-06-19 18:27:46,374 - caller_agent - INFO - [MOCK] Received from bridge: userStream.stopped
+2025-06-19 18:27:46,374 - base_bridge - INFO - No active response - creating new response immediately
+2025-06-19 18:27:46,374 - caller_agent - INFO - [MOCK] User stream stopped
+2025-06-19 18:27:46,501 - event_router - INFO - Received OpenAI message type: input_audio_buffer.committed
+2025-06-19 18:27:46,501 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:46,504 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:46,504 - event_router - INFO - Received OpenAI message type: response.created
+2025-06-19 18:27:46,504 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BkKpajKWYlsEXbqZqLprp",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpaVtxCqu8Z6jHEJveL",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-06-19 18:27:46,504 - realtime_handler - INFO - Response generation started: resp_BkKpaVtxCqu8Z6jHEJveL
+2025-06-19 18:27:46,892 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-06-19 18:27:46,893 - event_router - INFO - Output item added: {
+  "id": "item_BkKpaor9zx9lgiMy1x8ux",
+  "object": "realtime.item",
+  "type": "function_call",
+  "status": "in_progress",
+  "name": "wrap_up",
+  "call_id": "call_y1nNHfipPWRAgBBb",
+  "arguments": ""
+}
+2025-06-19 18:27:46,893 - realtime_handler - INFO - Output item added: {'id': 'item_BkKpaor9zx9lgiMy1x8ux', 'object': 'realtime.item', 'type': 'function_call', 'status': 'in_progress', 'name': 'wrap_up', 'call_id': 'call_y1nNHfipPWRAgBBb', 'arguments': ''}
+2025-06-19 18:27:46,894 - realtime_handler - INFO - Captured function call: wrap_up with call_id: call_y1nNHfipPWRAgBBb
+2025-06-19 18:27:46,895 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:46,895 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:46,896 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:46,897 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:46,899 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:46,899 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:46,906 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:46,906 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:46,916 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:46,916 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:46,932 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:46,932 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:46,932 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-06-19 18:27:46,932 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-06-19 18:27:46,954 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.done
+2025-06-19 18:27:46,955 - event_router - INFO - 🎯 Routing response.function_call_arguments.done to handler
+2025-06-19 18:27:46,956 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-06-19 18:27:46,956 - realtime_handler - INFO - Output item completed
+2025-06-19 18:27:46,962 - call_recorder - INFO - Function call logged: wrap_up
+2025-06-19 18:27:46,966 - event_router - INFO - Received OpenAI message type: response.done
+2025-06-19 18:27:46,966 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BkKpaZAS1mu8OftabBPHe",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BkKpaVtxCqu8Z6jHEJveL",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BkKpaor9zx9lgiMy1x8ux",
+        "object": "realtime.item",
+        "type": "function_call",
+        "status": "completed",
+        "name": "wrap_up",
+        "call_id": "call_y1nNHfipPWRAgBBb",
+        "arguments": "{\"organization_name\":\"Bank\"}"
+      }
+    ],
+    "conversation_id": "conv_BkKpH8sy8dMiiriZqP4Db",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 1874,
+      "input_tokens": 1858,
+      "output_tokens": 16,
+      "input_token_details": {
+        "text_tokens": 1034,
+        "audio_tokens": 824,
+        "cached_tokens": 1792,
+        "cached_tokens_details": {
+          "text_tokens": 1024,
+          "audio_tokens": 768
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 16,
+        "audio_tokens": 0
+      }
+    },
+    "metadata": null
+  }
+}
+2025-06-19 18:27:46,967 - realtime_handler - INFO - Response generation completed: resp_BkKpaVtxCqu8Z6jHEJveL
+2025-06-19 18:27:46,967 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-06-19 18:27:47,036 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-06-19 18:27:47,036 - realtime_handler - INFO - Conversation item created
+2025-06-19 18:27:47,375 - caller_agent - INFO - [MOCK] Waiting for LLM response...
+2025-06-19 18:27:48,160 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.delta
+2025-06-19 18:27:48,160 - transcript_manager - DEBUG - Received input audio transcription delta: You're welcome. Have a nice day.
+
+2025-06-19 18:27:48,160 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.completed
+2025-06-19 18:27:48,160 - transcript_manager - INFO - Full user transcript (input audio): You're welcome. Have a nice day.
+
+2025-06-19 18:27:48,160 - call_recorder - INFO - Transcript added: [caller] You're welcome. Have a nice day.
+...
+2025-06-19 18:27:48,160 - transcript_manager - INFO - Input audio transcription completed
+2025-06-19 18:27:54,954 - base_bridge - INFO - 🔚 Hanging up call: Call completed successfully - all tasks finished
+2025-06-19 18:27:54,954 - audiocodes_bridge - INFO - Sending session end to AudioCodes: Call completed successfully - all tasks finished
+2025-06-19 18:27:54,956 - audiocodes_bridge - INFO - ✅ Session end message sent to AudioCodes
+2025-06-19 18:27:54,956 - caller_agent - INFO - [MOCK] Received from bridge: session.end
+2025-06-19 18:27:54,956 - call_recorder - INFO - Transcript saved: call_recordings\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\transcript.json
+2025-06-19 18:27:54,960 - call_recorder - INFO - Metadata saved: call_recordings\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\call_metadata.json
+2025-06-19 18:27:54,962 - call_recorder - INFO - Session events saved: call_recordings\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\session_events.json
+2025-06-19 18:27:54,967 - call_recorder - INFO - Final stereo recording created: call_recordings\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\final_stereo_recording.wav (37.79s)
+2025-06-19 18:27:54,967 - call_recorder - INFO - Audio resampling applied - Bot audio resampled from 24000Hz to 16000Hz
+2025-06-19 18:27:54,967 - call_recorder - INFO - Recording stopped and finalized for conversation 55640479-00a1-4d0f-95ba-00152f57b75f
+2025-06-19 18:27:54,968 - base_bridge - INFO - Call recording finalized: {'conversation_id': '55640479-00a1-4d0f-95ba-00152f57b75f', 'session_id': '55640479-00a1-4d0f-95ba-00152f57b75f', 'recording_dir': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730', 'recording_active': False, 'finalized': True, 'files': {'caller_audio': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\\caller_audio.wav', 'bot_audio': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\\bot_audio.wav', 'stereo_audio': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\\stereo_recording.wav', 'transcript': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\\transcript.json', 'metadata': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\\call_metadata.json', 'session_events': 'call_recordings\\55640479-00a1-4d0f-95ba-00152f57b75f_20250619_182730\\session_events.json'}, 'stats': {'conversation_id': '55640479-00a1-4d0f-95ba-00152f57b75f', 'session_id': '55640479-00a1-4d0f-95ba-00152f57b75f', 'start_time': '2025-06-20T01:27:30.075125+00:00', 'end_time': '2025-06-20T01:27:54.956878+00:00', 'duration_seconds': 24.881753, 'caller_audio_chunks': 13, 'bot_audio_chunks': 58, 'caller_audio_bytes': 366590, 'bot_audio_bytes': 1209320, 'caller_audio_duration_seconds': 11.4559375, 'bot_audio_duration_seconds': 37.79125, 'transcript_entries': 8, 'function_calls': [{'timestamp': '2025-06-20T01:27:33.417979+00:00', 'function_name': 'call_intent', 'arguments': {'intent': 'card_replacement'}, 'result': {'status': 'success', 'intent': 'card_replacement', 'next_action': 'ask_card_type', 'available_cards': ['Gold card', 'Silver card', 'Basic card'], 'prompt_guidance': 'Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card.'}, 'call_id': 'call_H3Cr6WLpg50rXYYK'}, {'timestamp': '2025-06-20T01:27:41.966911+00:00', 'function_name': 'process_replacement', 'arguments': {'card': 'Gold card', 'reason': 'Lost', 'address': 'address on file'}, 'result': {'status': 'success', 'function_name': 'process_replacement', 'prompt_guidance': 'Processing card replacement for Gold card with reason Lost to address address on file'}, 'call_id': 'call_1GPMWyjUYyOeeOpY'}, {'timestamp': '2025-06-20T01:27:46.962699+00:00', 'function_name': 'wrap_up', 'arguments': {'organization_name': 'Bank'}, 'result': {'status': 'success', 'function_name': 'wrap_up', 'prompt_guidance': '\nSay goodbye to the customer.\n"Thank you for calling Bank. Have a great day!"\n', 'next_action': 'end_call', 'context': {'stage': 'call_complete', 'organization_name': 'Bank'}}, 'call_id': 'call_y1nNHfipPWRAgBBb'}]}}
+2025-06-19 18:27:54,970 - base_bridge - INFO - ✅ Call hang-up completed successfully

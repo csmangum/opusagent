@@ -183,5 +183,10 @@ recordings/
 # Allow all files in demo folder
 !demo/**
 
+# Allow mock audio files for testing
+!opusagent/mock/audio/**/*.wav
+
 call_recordings/
 monokit/node_modules/*
+
+monokit/node_modules/

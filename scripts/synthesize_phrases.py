@@ -19,7 +19,9 @@ phrases = [
     "Yes, send it to the address on file.",
     "Thanks, that's all I need.",
     "I lost my gold card and need a new one",
-    "I'm not supposed to be here"
+    "I'm not supposed to be here",
+    "Hello, welcome to American Express",
+    "I am still being developed. Be sure to come back soon.",
 ]
 
 VOICE = "nova"

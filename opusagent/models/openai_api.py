@@ -75,7 +75,7 @@ class SessionConfig(BaseModel):
     tools: Optional[List[Dict[str, Any]]] = None
     tool_choice: Optional[Literal["auto", "none"]] = None
     temperature: Optional[float] = None
-    max_response_output_tokens: Optional[Union[int, str]] = None
+    max_response_output_tokens: Optional[Union[int, str]] = None  # 1-4096 or "inf"
     input_audio_transcription: Optional[Dict[str, Any]] = None
     input_audio_noise_reduction: Optional[Dict[str, Any]] = None
 
@@ -156,7 +156,6 @@ class ClientEventType(str, Enum):
     RESPONSE_CREATE = "response.create"
     RESPONSE_CANCEL = "response.cancel"
     TRANSCRIPTION_SESSION_UPDATE = "transcription_session.update"
-    CONVERSATION_ITEM_CREATED = "conversation.item.created"
 
 
 class ServerEventType(str, Enum):
@@ -218,6 +217,8 @@ class ServerEvent(BaseModel):
 
 
 # Legacy OpenAI message models
+# Note: These models are kept for backward compatibility but the modern event-based
+# models above should be used for new implementations.
 
 
 class RealtimeBaseMessage(BaseModel):
@@ -329,6 +330,16 @@ class SessionUpdateEvent(ClientEvent):
     session: SessionConfig
 
 
+class GetSessionConfigEvent(ClientEvent):
+    """Event to get the current session configuration.
+
+    Used to retrieve the current session configuration from the server.
+    The server will respond with a session.config event.
+    """
+
+    type: str = "session.get_config"
+
+
 class InputAudioBufferAppendEvent(ClientEvent):
     """Event to append audio to the input buffer.
 
@@ -423,21 +434,28 @@ class ConversationItemDeleteEvent(ClientEvent):
 
 
 class ResponseCreateOptions(BaseModel):
-    """Options for creating a response
+    """Options for creating a response.
 
     Configures various aspects of model inference, including modalities,
     voice settings, tools, and generation parameters.
+
+    Note: This model has more restrictive audio format options than SessionConfig.
+    Only pcm16 is supported for output_audio_format in response creation.
     """
 
     modalities: List[Literal["audio", "text"]] = Field(default_factory=lambda: ["text"])
     voice: Optional[str] = None
     instructions: Optional[str] = None
-    output_audio_format: Optional[Literal["pcm16"]] = None
+    output_audio_format: Optional[Literal["pcm16"]] = (
+        None  # Only pcm16 supported for responses
+    )
     tools: Optional[List[Dict[str, Any]]] = None
     tool_choice: Optional[Literal["auto", "none"]] = "auto"
     temperature: Optional[float] = None
-    max_output_tokens: Optional[int] = None
-    metadata: Optional[Dict[str, Any]] = None
+    max_output_tokens: Optional[int] = (
+        None  # 1-4096, equivalent to SessionConfig.max_response_output_tokens
+    )
+    metadata: Optional[Dict[str, Any]] = None  # Additional metadata for the response
 
 
 class ResponseCreateEvent(ClientEvent):
@@ -486,6 +504,9 @@ class ErrorEvent(ServerEvent):
 
     Returned when an error occurs, which could be client or server related.
     Most errors are recoverable and the session will stay open.
+
+    The 'error' field contains additional error information that may be present
+    in some error responses, while 'details' contains structured error details.
     """
 
     type: str = "error"
@@ -513,6 +534,16 @@ class SessionUpdatedEvent(ServerEvent):
     """
 
     type: str = "session.updated"
+    session: Dict[str, Any]
+
+
+class SessionConfigEvent(ServerEvent):
+    """Event containing the current session configuration.
+
+    Returned in response to a session.get_config event.
+    """
+
+    type: str = "session.config"
     session: Dict[str, Any]
 
 
@@ -644,7 +675,11 @@ class ResponseCancelledEvent(ServerEvent):
 
 
 class ResponseTextDeltaEvent(ServerEvent):
-    """Event containing a text delta from the model."""
+    """Event containing a text delta from the model.
+
+    Sent during text generation to provide streaming text content.
+    Multiple deltas are sent to build up the complete text response.
+    """
 
     type: str = "response.text.delta"
     response_id: str
@@ -669,7 +704,11 @@ class ResponseTextDoneEvent(ServerEvent):
 
 
 class ResponseAudioDeltaEvent(ServerEvent):
-    """Event containing an audio delta from the model."""
+    """Event containing an audio delta from the model.
+
+    Sent during audio generation to provide streaming audio content.
+    Multiple deltas are sent to build up the complete audio response.
+    """
 
     type: str = "response.audio.delta"
     response_id: str
@@ -693,7 +732,11 @@ class ResponseAudioDoneEvent(ServerEvent):
 
 
 class ResponseAudioTranscriptDeltaEvent(ServerEvent):
-    """Event containing a transcript delta for generated audio."""
+    """Event containing a transcript delta for generated audio.
+
+    Sent during audio generation to provide streaming transcript content
+    for the audio being generated. Multiple deltas build up the complete transcript.
+    """
 
     type: str = "response.audio_transcript.delta"
     response_id: str
@@ -715,7 +758,11 @@ class ResponseAudioTranscriptDoneEvent(ServerEvent):
 
 
 class ResponseFunctionCallArgumentsDeltaEvent(ServerEvent):
-    """Event containing a function call arguments delta."""
+    """Event containing a function call arguments delta.
+
+    Sent during function call generation to provide streaming argument content.
+    Multiple deltas build up the complete function call arguments.
+    """
 
     type: str = "response.function_call_arguments.delta"
     response_id: str
@@ -773,9 +820,12 @@ class ResponseOutputItemDoneEvent(ServerEvent):
 
 
 class ResponseContentPartDoneEvent(ServerEvent):
-    """Event sent when a response content part is completed
+    """Event sent when a response content part is completed.
 
     Returned when a content part is done streaming.
+
+    The part_id and status fields provide additional information about the
+    completed content part, if available.
     """
 
     type: str = "response.content_part.done"
@@ -783,13 +833,13 @@ class ResponseContentPartDoneEvent(ServerEvent):
     item_id: str
     output_index: int
     content_index: int
-    part_id: Optional[str] = None
-    status: Optional[str] = None
+    part_id: Optional[str] = None  # Identifier for the content part
+    status: Optional[str] = None  # Status of the completed part
     part: Dict[str, Any]  # The completed content part
 
 
 class ResponseContentPartAddedEvent(ServerEvent):
-    """Event sent when a new content part is added to a response
+    """Event sent when a new content part is added to a response.
 
     Returned when a new content part is added to an assistant message item.
     """
@@ -817,7 +867,11 @@ class ConversationItemInputAudioTranscriptionCompletedEvent(ServerEvent):
 
 
 class ConversationItemInputAudioTranscriptionDeltaEvent(ServerEvent):
-    """Event containing a delta update for input audio transcription."""
+    """Event containing a delta update for input audio transcription.
+
+    Sent during input audio transcription to provide streaming transcript content.
+    Multiple deltas build up the complete transcript for user audio.
+    """
 
     type: str = "conversation.item.input_audio_transcription.delta"
     item_id: str
@@ -845,6 +899,7 @@ class TranscriptionSessionUpdatedEvent(ServerEvent):
 # Union type for all possible incoming messages (client-to-server)
 IncomingMessage = Union[
     SessionUpdateEvent,
+    GetSessionConfigEvent,
     InputAudioBufferAppendEvent,
     InputAudioBufferCommitEvent,
     InputAudioBufferClearEvent,
@@ -862,6 +917,7 @@ OutgoingMessage = Union[
     ErrorEvent,
     SessionCreatedEvent,
     SessionUpdatedEvent,
+    SessionConfigEvent,
     ConversationCreatedEvent,
     ConversationItemCreatedEvent,
     ConversationItemRetrievedEvent,

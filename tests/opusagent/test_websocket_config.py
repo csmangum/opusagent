@@ -6,7 +6,7 @@ import os
 import pytest
 from unittest.mock import patch
 
-from opusagent.websocket_config import WebSocketConfig
+from opusagent.config.websocket_config import WebSocketConfig
 
 
 class TestWebSocketConfig:
@@ -70,9 +70,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         assert WebSocketConfig.MAX_CONNECTIONS == 5
         assert WebSocketConfig.MAX_CONNECTION_AGE == 1800
@@ -91,9 +91,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         assert WebSocketConfig.OPENAI_MODEL == "gpt-4o-realtime-custom"
         assert WebSocketConfig.OPENAI_API_BASE_URL == "wss://custom.openai.com"
@@ -105,9 +105,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         # Should use default value when conversion fails
         assert WebSocketConfig.MAX_CONNECTIONS == 10
@@ -240,9 +240,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         # Check types
         assert isinstance(WebSocketConfig.MAX_CONNECTIONS, int)
@@ -261,9 +261,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         # Should accept zero and negative values (validation is separate)
         assert WebSocketConfig.MAX_CONNECTIONS == 0
@@ -275,9 +275,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         assert WebSocketConfig.MAX_CONNECTION_AGE == 999999999
 
@@ -288,9 +288,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         # Should preserve whitespace (trimming is application-specific)
         assert WebSocketConfig.OPENAI_MODEL == "  gpt-4o-realtime-preview-2024-12-17  "
@@ -302,9 +302,9 @@ class TestWebSocketConfig:
         
         # Reload the module to pick up environment variables
         import importlib
-        import opusagent.websocket_config
-        importlib.reload(opusagent.websocket_config)
-        from opusagent.websocket_config import WebSocketConfig
+        import opusagent.config.websocket_config
+        importlib.reload(opusagent.config.websocket_config)
+        from opusagent.config.websocket_config import WebSocketConfig
         
         # Should be treated as string, not boolean
         assert WebSocketConfig.OPENAI_MODEL == "true"
