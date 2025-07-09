@@ -1,0 +1,40 @@
+{
+  "conversation_id": "36be7aa4-11ff-42bd-bcfb-02cdb9df3516",
+  "session_id": "36be7aa4-11ff-42bd-bcfb-02cdb9df3516",
+  "start_time": "2025-07-09T22:50:32.949303+00:00",
+  "end_time": "2025-07-09T22:50:51.459744+00:00",
+  "duration_seconds": 18.510441,
+  "caller_audio_chunks": 11,
+  "bot_audio_chunks": 29,
+  "caller_audio_bytes": 35200,
+  "bot_audio_bytes": 403390,
+  "caller_audio_duration_seconds": 1.1,
+  "bot_audio_duration_seconds": 12.6059375,
+  "transcript_entries": 4,
+  "function_calls": [
+    {
+      "timestamp": "2025-07-09T22:50:35.552742+00:00",
+      "function_name": "human_handoff",
+      "arguments": {
+        "reason": "Customer requested to speak with a human",
+        "priority": "normal"
+      },
+      "result": {
+        "error": "Function 'human_handoff' not implemented."
+      },
+      "call_id": "call_4XbUvCY3Sb6kRquu"
+    },
+    {
+      "timestamp": "2025-07-09T22:50:38.750289+00:00",
+      "function_name": "human_handoff",
+      "arguments": {
+        "reason": "Customer requested to speak with a human",
+        "priority": "normal"
+      },
+      "result": {
+        "error": "Function 'human_handoff' not implemented."
+      },
+      "call_id": "call_v6lhFkVaINooSPxK"
+    }
+  ]
+}
