@@ -1,0 +1,1247 @@
+2025-07-09 12:46:23,221 - run - INFO - Logging configured
+2025-07-09 12:46:23,222 - run - INFO - === Server Configuration ===
+2025-07-09 12:46:23,222 - run - INFO - Host: 0.0.0.0
+2025-07-09 12:46:23,222 - run - INFO - Port: 8000
+2025-07-09 12:46:23,223 - run - INFO - Log level: DEBUG
+2025-07-09 12:46:23,223 - run - INFO - Environment: production
+2025-07-09 12:46:23,223 - run - INFO - Mode: REAL API
+2025-07-09 12:46:23,223 - run - INFO - OpenAI API key configured: True
+2025-07-09 12:46:23,223 - run - INFO - OpenAI API key format: Valid
+2025-07-09 12:46:23,224 - run - INFO - =========================
+2025-07-09 12:46:23,225 - run - INFO - Starting server with uvicorn...
+2025-07-09 12:46:23,667 - call_recorder - INFO - Logging configured
+2025-07-09 12:46:23,723 - event_router - INFO - Logging configured
+2025-07-09 12:46:23,723 - function_handler - INFO - Logging configured
+2025-07-09 12:46:23,733 - session_manager - INFO - Logging configured
+2025-07-09 12:46:23,734 - transcript_manager - INFO - Logging configured
+2025-07-09 12:46:23,734 - realtime_handler - INFO - Logging configured
+2025-07-09 12:46:23,734 - base_bridge - INFO - Logging configured
+2025-07-09 12:46:23,734 - audiocodes_bridge - INFO - Logging configured
+2025-07-09 12:46:23,734 - call_agent_bridge - INFO - Logging configured
+2025-07-09 12:46:23,750 - twilio_bridge - INFO - Logging configured
+2025-07-09 12:46:23,759 - customer_service_agent - INFO - Logging configured
+2025-07-09 12:46:23,763 - caller_agent - INFO - Logging configured
+2025-07-09 12:46:23,769 - dual_agent_bridge - INFO - Logging configured
+2025-07-09 12:46:23,771 - main - INFO - Logging configured
+2025-07-09 12:46:43,769 - main - INFO - Telephony WebSocket connection accepted
+2025-07-09 12:46:44,249 - main - INFO - Using OpenAI connection: openai_b0e68d0d
+2025-07-09 12:46:44,250 - customer_service_agent - INFO - Registering customer service functions with function handler
+2025-07-09 12:46:44,250 - function_handler - INFO - Registered function: get_balance
+2025-07-09 12:46:44,250 - function_handler - INFO - Registered function: transfer_funds
+2025-07-09 12:46:44,250 - function_handler - INFO - Registered function: process_replacement
+2025-07-09 12:46:44,250 - function_handler - INFO - Registered function: transfer_to_human
+2025-07-09 12:46:44,250 - customer_service_agent - INFO - Customer service functions registered successfully
+2025-07-09 12:46:44,250 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.SESSION_UPDATED
+2025-07-09 12:46:44,251 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.SESSION_CREATED
+2025-07-09 12:46:44,251 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.CONVERSATION_ITEM_CREATED
+2025-07-09 12:46:44,251 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED
+2025-07-09 12:46:44,251 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_CREATED
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_DELTA
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_DONE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_TEXT_DELTA
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DELTA
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_AUDIO_TRANSCRIPT_DONE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_DONE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_OUTPUT_ITEM_ADDED
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_CONTENT_PART_ADDED
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_CONTENT_PART_DONE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_OUTPUT_ITEM_DONE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DELTA
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered realtime handler for event type: ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.SESSION_INITIATE
+2025-07-09 12:46:44,252 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.USER_STREAM_START
+2025-07-09 12:46:44,255 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.USER_STREAM_CHUNK
+2025-07-09 12:46:44,255 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.USER_STREAM_STOP
+2025-07-09 12:46:44,255 - event_router - DEBUG - Registered telephony handler for event type: TelephonyEventType.SESSION_END
+2025-07-09 12:46:44,255 - event_router - DEBUG - Registered realtime handler for event type: input_audio_buffer.speech_started
+2025-07-09 12:46:44,256 - event_router - DEBUG - Registered realtime handler for event type: input_audio_buffer.speech_stopped
+2025-07-09 12:46:44,256 - event_router - DEBUG - Registered realtime handler for event type: input_audio_buffer.committed
+2025-07-09 12:46:44,256 - event_router - INFO - Received platform message: session.initiate
+2025-07-09 12:46:44,257 - audiocodes_bridge - INFO - Session initiate received: {'type': 'session.initiate', 'conversationId': '4accffe6-42c8-4932-ae4e-68deb074a657', 'expectAudioMessages': True, 'botName': 'TestBot', 'caller': '+15551234567', 'supportedMediaFormats': ['raw/lpcm16']}
+2025-07-09 12:46:44,257 - base_bridge - INFO - Conversation started: 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:44,257 - session_manager - INFO - Sending session update: {"type":"session.update","event_id":null,"session":{"modalities":["text","audio"],"model":"gpt-4o-realtime-preview-2025-06-03","instructions":"\nYou are a customer service agent handling a call from a customer.\n\nYou must determine the intent of the call and call the appropriate function based on the intent.\n\nThe intent of the call can be one of the following:\n* Card Replacement --> call the `process_replacement` function\n* Account Inquiry --> call the `get_balance` function\n* Account Management --> call the `transfer_funds` function\n* Transaction Dispute --> call the `human_handoff` function\n* Other --> call the `human_handoff` function\n\nIf the call is for another reason or the caller ever asks to speak to a human, call the `human_handoff` function.\n\nStart by greeting the customer: \"Thank you for calling, how can I help you today?\"\n","voice":"verse","input_audio_format":"pcm16","output_audio_format":"pcm16","turn_detection":null,"tools":[{"type":"function","name":"process_replacement","description":"Process a card replacement request for the customer.","parameters":{"type":"object","properties":{"card_type":{"type":"string","description":"Type of card that needs replacement"},"reason":{"type":"string","description":"Reason for card replacement","enum":["Lost","Damaged","Stolen","Other"]},"delivery_address":{"type":"string","description":"Address for card delivery"}}}},{"type":"function","name":"get_balance","description":"Get the current balance for a customer's account.","parameters":{"type":"object","properties":{"account_number":{"type":"string","description":"Customer's account number"},"include_pending":{"type":"boolean","description":"Whether to include pending transactions","default":true}}}},{"type":"function","name":"transfer_funds","description":"Transfer funds between customer accounts.","parameters":{"type":"object","properties":{"from_account":{"type":"string","description":"Source account number"},"to_account":{"type":"string","description":"Destination account number"},"amount":{"type":"number","description":"Amount to transfer"},"transfer_type":{"type":"string","description":"Type of transfer","enum":["internal","external","wire"]}}}},{"type":"function","name":"human_handoff","description":"Transfer the conversation to a human agent.","parameters":{"type":"object","properties":{"reason":{"type":"string","description":"The reason for transferring to a human agent"},"priority":{"type":"string","description":"The priority level of the transfer","enum":["low","normal","high"]},"context":{"type":"object","description":"Additional context for the human agent"}}}}],"tool_choice":"auto","temperature":0.6,"max_response_output_tokens":4096,"input_audio_transcription":{"model":"whisper-1"},"input_audio_noise_reduction":{"type":"near_field"}}}
+2025-07-09 12:46:44,258 - session_manager - INFO - Sending initial conversation item: {"type": "conversation.item.create", "item": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "You are a customer service agent. You are given a task to help the customer with their banking needs. Start by saying 'Hello! How can I help you today?' You will infer the customer's intent from their response and call the call_intent function."}]}}
+2025-07-09 12:46:44,264 - event_router - INFO - Received OpenAI message type: session.created
+2025-07-09 12:46:44,264 - realtime_handler - INFO - Session created successfully
+2025-07-09 12:46:44,566 - event_router - INFO - Received OpenAI message type: session.updated
+2025-07-09 12:46:44,566 - realtime_handler - INFO - Session updated successfully
+2025-07-09 12:46:44,566 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:44,566 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:46,266 - session_manager - INFO - Sending response create: {"type": "response.create", "response": {"modalities": ["text", "audio"], "output_audio_format": "pcm16", "temperature": 0.6, "max_output_tokens": 4096, "voice": "verse"}}
+2025-07-09 12:46:46,266 - session_manager - INFO - Initial conversation flow initiated successfully
+2025-07-09 12:46:46,267 - call_recorder - INFO - CallRecorder initialized for conversation 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:46,268 - call_recorder - INFO - Recording directory: call_recordings\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646
+2025-07-09 12:46:46,268 - call_recorder - INFO - Audio settings - Caller: 16000Hz, Bot: 24000Hz, Target: 16000Hz
+2025-07-09 12:46:46,268 - call_recorder - INFO - WAV files initialized for recording
+2025-07-09 12:46:46,269 - call_recorder - INFO - Recording started for conversation 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:46,269 - base_bridge - INFO - Call recording started for conversation: 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:46,270 - event_router - INFO - Received platform message: userStream.start
+2025-07-09 12:46:46,270 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '4accffe6-42c8-4932-ae4e-68deb074a657'}
+2025-07-09 12:46:46,271 - event_router - INFO - Received platform message: userStream.stop
+2025-07-09 12:46:46,271 - audiocodes_bridge - INFO - User stream stop received for conversation: 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:46,272 - base_bridge - INFO - No active response - creating new response immediately
+2025-07-09 12:46:46,272 - session_manager - INFO - Response creation triggered
+2025-07-09 12:46:46,273 - event_router - INFO - Received platform message: userStream.start
+2025-07-09 12:46:46,273 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '4accffe6-42c8-4932-ae4e-68deb074a657'}
+2025-07-09 12:46:46,275 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,355 - event_router - INFO - Received OpenAI message type: response.created
+2025-07-09 12:46:46,355 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BrV2cSUDYkyXbqEnivt8i",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2ca9I03QGndgdypC4k",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.6,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-07-09 12:46:46,355 - realtime_handler - INFO - Response generation started: resp_BrV2ca9I03QGndgdypC4k
+2025-07-09 12:46:46,382 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,398 - event_router - INFO - Received OpenAI message type: error
+2025-07-09 12:46:46,398 - event_router - ERROR - ERROR DETAILS: code=unknown, message='No message provided'
+2025-07-09 12:46:46,398 - event_router - ERROR - FULL ERROR RESPONSE: {"type": "error", "event_id": "event_BrV2cbob5l0xFhCQ1ZGH7", "error": {"type": "invalid_request_error", "code": "conversation_already_has_active_response", "message": "Conversation already has an active response", "param": null, "event_id": null}}
+2025-07-09 12:46:46,489 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,595 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,711 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,815 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,862 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-07-09 12:46:46,862 - event_router - INFO - Output item added: {
+  "id": "item_BrV2cJnmZfbY7mTgpzkin",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-07-09 12:46:46,862 - realtime_handler - INFO - Output item added: {'id': 'item_BrV2cJnmZfbY7mTgpzkin', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-07-09 12:46:46,864 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:46,864 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:46,883 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-07-09 12:46:46,884 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-07-09 12:46:46,884 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-07-09 12:46:46,884 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:46,884 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:46,884 - transcript_manager - DEBUG - Received audio transcript delta: Thank
+2025-07-09 12:46:46,886 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:46,887 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:46,887 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-07-09 12:46:46,910 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:46,910 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:46,910 - transcript_manager - DEBUG - Received audio transcript delta:  for
+2025-07-09 12:46:46,911 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:46,911 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-07-09 12:46:46,911 - transcript_manager - DEBUG - Received audio transcript delta:  calling
+2025-07-09 12:46:46,911 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:46,911 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:46,911 - transcript_manager - DEBUG - Received audio transcript delta: ,
+2025-07-09 12:46:46,922 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:46,991 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:46,991 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-07-09 12:46:46,991 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-07-09 12:46:46,991 - call_recorder - INFO - Bot audio chunk #1: Original: 4800 bytes (100.0ms @ 24000Hz), Resampled: 3200 bytes (100.0ms @ 16000Hz)
+2025-07-09 12:46:46,991 - call_recorder - WARNING - Duration ratio mismatch: got 1.000, expected 0.667. This may indicate incorrect sample rate assumptions.
+2025-07-09 12:46:47,024 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,024 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-07-09 12:46:47,025 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-07-09 12:46:47,028 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:47,070 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,070 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:47,070 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:47,070 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,070 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:47,070 - transcript_manager - DEBUG - Received audio transcript delta:  how
+2025-07-09 12:46:47,070 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,070 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:47,070 - transcript_manager - DEBUG - Received audio transcript delta:  can
+2025-07-09 12:46:47,128 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:47,134 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,134 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:47,134 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:47,163 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,166 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:47,166 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:47,190 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,190 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-07-09 12:46:47,190 - transcript_manager - DEBUG - Received audio transcript delta:  I
+2025-07-09 12:46:47,203 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,203 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:47,203 - transcript_manager - DEBUG - Received audio transcript delta:  help
+2025-07-09 12:46:47,212 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,212 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:47,212 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-07-09 12:46:47,220 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,220 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:47,220 - transcript_manager - DEBUG - Received audio transcript delta:  today
+2025-07-09 12:46:47,223 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:47,223 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:47,223 - transcript_manager - DEBUG - Received audio transcript delta: ?
+2025-07-09 12:46:47,246 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:47,300 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,300 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:47,300 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:47,345 - event_router - INFO - Received platform message: userStream.stop
+2025-07-09 12:46:47,345 - audiocodes_bridge - INFO - User stream stop received for conversation: 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:47,345 - base_bridge - INFO - User input queued - response already active (response_id: resp_BrV2ca9I03QGndgdypC4k)
+2025-07-09 12:46:47,394 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,399 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-07-09 12:46:47,399 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-07-09 12:46:47,448 - event_router - INFO - Received OpenAI message type: input_audio_buffer.committed
+2025-07-09 12:46:47,448 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:47,448 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:47,492 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:47,492 - event_router - INFO - Audio event: response.audio.delta - delta size: 56664
+2025-07-09 12:46:47,493 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 21248 -> 14165 samples, 885.3ms -> 885.3ms
+2025-07-09 12:46:47,534 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-07-09 12:46:47,534 - realtime_handler - INFO - Audio response completed
+2025-07-09 12:46:47,534 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-07-09 12:46:47,534 - transcript_manager - INFO - Full AI transcript (output audio): Thank you for calling, how can I help you today?
+2025-07-09 12:46:47,534 - call_recorder - INFO - Transcript added: [bot] Thank you for calling, how can I help you today?...
+2025-07-09 12:46:47,534 - transcript_manager - INFO - Audio transcript completed
+2025-07-09 12:46:47,534 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-07-09 12:46:47,534 - realtime_handler - INFO - Content part completed
+2025-07-09 12:46:47,534 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-07-09 12:46:47,534 - realtime_handler - INFO - Output item completed
+2025-07-09 12:46:47,544 - event_router - INFO - Received OpenAI message type: response.done
+2025-07-09 12:46:47,544 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BrV2dwuEi8fNYUEd9ovjY",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2ca9I03QGndgdypC4k",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BrV2cJnmZfbY7mTgpzkin",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "Thank you for calling, how can I help you today?"
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.6,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 526,
+      "input_tokens": 451,
+      "output_tokens": 75,
+      "input_token_details": {
+        "text_tokens": 451,
+        "audio_tokens": 0,
+        "cached_tokens": 0,
+        "cached_tokens_details": {
+          "text_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 24,
+        "audio_tokens": 51
+      }
+    },
+    "metadata": null
+  }
+}
+2025-07-09 12:46:47,544 - realtime_handler - INFO - Response generation completed: resp_BrV2ca9I03QGndgdypC4k
+2025-07-09 12:46:47,544 - realtime_handler - INFO - Processing queued user input after response completion
+2025-07-09 12:46:47,544 - session_manager - INFO - Response creation triggered
+2025-07-09 12:46:47,544 - realtime_handler - INFO - Successfully processed queued user input
+2025-07-09 12:46:47,558 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-07-09 12:46:47,669 - event_router - INFO - Received OpenAI message type: response.created
+2025-07-09 12:46:47,669 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BrV2dpIVsvLO4WyQ2f92t",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2dnuaSdaRYzGxGzRsy",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.6,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-07-09 12:46:47,669 - realtime_handler - INFO - Response generation started: resp_BrV2dnuaSdaRYzGxGzRsy
+2025-07-09 12:46:48,128 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-07-09 12:46:48,129 - event_router - INFO - Output item added: {
+  "id": "item_BrV2doj1mjY70avgzEg8u",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-07-09 12:46:48,129 - realtime_handler - INFO - Output item added: {'id': 'item_BrV2doj1mjY70avgzEg8u', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-07-09 12:46:48,129 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:48,129 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:48,130 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-07-09 12:46:48,130 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-07-09 12:46:48,130 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-07-09 12:46:48,130 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,130 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:48,130 - transcript_manager - DEBUG - Received audio transcript delta: I'll
+2025-07-09 12:46:48,130 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,130 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 9
+2025-07-09 12:46:48,130 - transcript_manager - DEBUG - Received audio transcript delta:  transfer
+2025-07-09 12:46:48,130 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,133 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:48,133 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-07-09 12:46:48,133 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,133 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-07-09 12:46:48,134 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-07-09 12:46:48,163 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,163 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-07-09 12:46:48,164 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-07-09 12:46:48,191 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,191 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:48,191 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:48,194 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,194 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:48,194 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-07-09 12:46:48,194 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,195 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-07-09 12:46:48,195 - transcript_manager - DEBUG - Received audio transcript delta:  a
+2025-07-09 12:46:48,195 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,195 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:48,195 - transcript_manager - DEBUG - Received audio transcript delta:  human
+2025-07-09 12:46:48,195 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,195 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:48,196 - transcript_manager - DEBUG - Received audio transcript delta:  agent
+2025-07-09 12:46:48,228 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,228 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:48,229 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:48,256 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,256 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:48,256 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:48,292 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,292 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:48,292 - transcript_manager - DEBUG - Received audio transcript delta:  right
+2025-07-09 12:46:48,311 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,311 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:48,311 - transcript_manager - DEBUG - Received audio transcript delta:  away
+2025-07-09 12:46:48,330 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,331 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:48,331 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:48,380 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,380 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:48,380 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:48,472 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,472 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-07-09 12:46:48,473 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-07-09 12:46:48,475 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,475 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-07-09 12:46:48,475 - transcript_manager - DEBUG - Received audio transcript delta:  Please
+2025-07-09 12:46:48,475 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,476 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:48,476 - transcript_manager - DEBUG - Received audio transcript delta:  hold
+2025-07-09 12:46:48,476 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,476 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:48,476 - transcript_manager - DEBUG - Received audio transcript delta:  on
+2025-07-09 12:46:48,478 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,478 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:48,478 - transcript_manager - DEBUG - Received audio transcript delta:  for
+2025-07-09 12:46:48,483 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,483 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-07-09 12:46:48,484 - transcript_manager - DEBUG - Received audio transcript delta:  a
+2025-07-09 12:46:48,493 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,493 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-07-09 12:46:48,493 - transcript_manager - DEBUG - Received audio transcript delta:  moment
+2025-07-09 12:46:48,496 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:48,496 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:48,496 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:48,774 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:48,774 - event_router - INFO - Audio event: response.audio.delta - delta size: 48000
+2025-07-09 12:46:48,774 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-07-09 12:46:48,777 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.delta
+2025-07-09 12:46:48,778 - transcript_manager - DEBUG - Received input audio transcription delta: you
+2025-07-09 12:46:48,778 - event_router - INFO - Received OpenAI message type: conversation.item.input_audio_transcription.completed
+2025-07-09 12:46:48,778 - transcript_manager - INFO - Full user transcript (input audio): you
+2025-07-09 12:46:48,778 - call_recorder - INFO - Transcript added: [caller] you...
+2025-07-09 12:46:48,778 - transcript_manager - INFO - Input audio transcription completed
+2025-07-09 12:46:49,082 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:49,082 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:49,083 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:49,120 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:49,121 - event_router - INFO - Audio event: response.audio.delta - delta size: 72664
+2025-07-09 12:46:49,122 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 27248 -> 18165 samples, 1135.3ms -> 1135.3ms
+2025-07-09 12:46:49,212 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-07-09 12:46:49,212 - realtime_handler - INFO - Audio response completed
+2025-07-09 12:46:49,213 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-07-09 12:46:49,213 - transcript_manager - INFO - Full AI transcript (output audio): I'll transfer you to a human agent right away. Please hold on for a moment.
+2025-07-09 12:46:49,213 - call_recorder - INFO - Transcript added: [bot] I'll transfer you to a human agent right away. Ple...
+2025-07-09 12:46:49,213 - transcript_manager - INFO - Audio transcript completed
+2025-07-09 12:46:49,214 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-07-09 12:46:49,214 - realtime_handler - INFO - Content part completed
+2025-07-09 12:46:49,215 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-07-09 12:46:49,215 - realtime_handler - INFO - Output item completed
+2025-07-09 12:46:49,215 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-07-09 12:46:49,215 - event_router - INFO - Received platform message: userStream.start
+2025-07-09 12:46:49,215 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start', 'conversationId': '4accffe6-42c8-4932-ae4e-68deb074a657'}
+2025-07-09 12:46:49,216 - event_router - INFO - Received platform message: userStream.chunk with audio chunk size: 4268 bytes
+2025-07-09 12:46:49,519 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-07-09 12:46:49,520 - event_router - INFO - Output item added: {
+  "id": "item_BrV2fxbeFzHuLnJnFkugj",
+  "object": "realtime.item",
+  "type": "function_call",
+  "status": "in_progress",
+  "name": "human_handoff",
+  "call_id": "call_6z8Vlta6Mzhndm6K",
+  "arguments": ""
+}
+2025-07-09 12:46:49,520 - realtime_handler - INFO - Output item added: {'id': 'item_BrV2fxbeFzHuLnJnFkugj', 'object': 'realtime.item', 'type': 'function_call', 'status': 'in_progress', 'name': 'human_handoff', 'call_id': 'call_6z8Vlta6Mzhndm6K', 'arguments': ''}
+2025-07-09 12:46:49,520 - realtime_handler - INFO - Captured function call: human_handoff with call_id: call_6z8Vlta6Mzhndm6K
+2025-07-09 12:46:49,520 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:49,520 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:49,525 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,525 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,525 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: '{"' (total: 2 chars)
+2025-07-09 12:46:49,533 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,533 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,534 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: 'reason' (total: 8 chars)
+2025-07-09 12:46:49,538 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,538 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,539 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: '":"' (total: 11 chars)
+2025-07-09 12:46:49,548 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,549 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,549 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: 'Caller' (total: 17 chars)
+2025-07-09 12:46:49,553 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,554 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,554 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: ' requested' (total: 27 chars)
+2025-07-09 12:46:49,556 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,557 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,557 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: ' to' (total: 30 chars)
+2025-07-09 12:46:49,562 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,563 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,563 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: ' speak' (total: 36 chars)
+2025-07-09 12:46:49,571 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,572 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,572 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: ' to' (total: 39 chars)
+2025-07-09 12:46:49,573 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,574 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,574 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: ' a' (total: 41 chars)
+2025-07-09 12:46:49,586 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,587 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,587 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: ' human' (total: 47 chars)
+2025-07-09 12:46:49,591 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,591 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,592 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: '.","' (total: 51 chars)
+2025-07-09 12:46:49,600 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,600 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,601 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: 'priority' (total: 59 chars)
+2025-07-09 12:46:49,618 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,618 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,618 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: '":"' (total: 62 chars)
+2025-07-09 12:46:49,631 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,632 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,632 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: 'normal' (total: 68 chars)
+2025-07-09 12:46:49,643 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:49,644 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:49,644 - function_handler - DEBUG - Function call arguments delta for call_6z8Vlta6Mzhndm6K: '"}' (total: 70 chars)
+2025-07-09 12:46:49,691 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.done
+2025-07-09 12:46:49,691 - event_router - INFO - 🎯 Routing response.function_call_arguments.done to handler
+2025-07-09 12:46:49,691 - function_handler - INFO - 🔧 FUNCTION CALL ARGUMENTS DONE HANDLER CALLED
+2025-07-09 12:46:49,692 - function_handler - INFO - 🔧 Full response_dict: {'type': 'response.function_call_arguments.done', 'event_id': 'event_BrV2fXbfJmuYjt22y7zzX', 'response_id': 'resp_BrV2dnuaSdaRYzGxGzRsy', 'item_id': 'item_BrV2fxbeFzHuLnJnFkugj', 'output_index': 1, 'call_id': 'call_6z8Vlta6Mzhndm6K', 'name': 'human_handoff', 'arguments': '{"reason":"Caller requested to speak to a human.","priority":"normal"}'}
+2025-07-09 12:46:49,692 - function_handler - INFO - 🔧 Extracted values:
+2025-07-09 12:46:49,692 - function_handler - INFO -    call_id: call_6z8Vlta6Mzhndm6K
+2025-07-09 12:46:49,692 - function_handler - INFO -    final_arguments: {"reason":"Caller requested to speak to a human.","priority":"normal"}
+2025-07-09 12:46:49,693 - function_handler - INFO -    item_id: item_BrV2fxbeFzHuLnJnFkugj
+2025-07-09 12:46:49,693 - function_handler - INFO -    output_index: 1
+2025-07-09 12:46:49,693 - function_handler - INFO -    response_id: resp_BrV2dnuaSdaRYzGxGzRsy
+2025-07-09 12:46:49,693 - function_handler - INFO - 🔧 Active function calls: ['call_6z8Vlta6Mzhndm6K']
+2025-07-09 12:46:49,693 - function_handler - INFO - 🔧 Using final_arguments from done event: {"reason":"Caller requested to speak to a human.","priority":"normal"}
+2025-07-09 12:46:49,693 - function_handler - INFO - 🔧 Function call arguments complete for call_6z8Vlta6Mzhndm6K: {"reason":"Caller requested to speak to a human.","priority":"normal"}
+2025-07-09 12:46:49,694 - function_handler - INFO - 🔧 Parsed arguments: {'reason': 'Caller requested to speak to a human.', 'priority': 'normal'}
+2025-07-09 12:46:49,694 - function_handler - INFO - 🔧 Found function_name in active calls: human_handoff
+2025-07-09 12:46:49,694 - function_handler - INFO - 🚀 Executing function: human_handoff with args: {'reason': 'Caller requested to speak to a human.', 'priority': 'normal'}
+2025-07-09 12:46:49,694 - function_handler - INFO - 🚀 Function execution task created for human_handoff
+2025-07-09 12:46:49,694 - function_handler - INFO - 🔧 Cleaning up active function call for call_6z8Vlta6Mzhndm6K
+2025-07-09 12:46:49,694 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-07-09 12:46:49,694 - realtime_handler - INFO - Output item completed
+2025-07-09 12:46:49,694 - function_handler - INFO - 🔥 _execute_and_respond_to_function called:
+2025-07-09 12:46:49,695 - function_handler - INFO -    function_name: human_handoff
+2025-07-09 12:46:49,695 - function_handler - INFO -    arguments: {'reason': 'Caller requested to speak to a human.', 'priority': 'normal'}
+2025-07-09 12:46:49,695 - function_handler - INFO -    call_id: call_6z8Vlta6Mzhndm6K
+2025-07-09 12:46:49,695 - function_handler - INFO -    item_id: item_BrV2fxbeFzHuLnJnFkugj
+2025-07-09 12:46:49,695 - function_handler - INFO -    output_index: 1
+2025-07-09 12:46:49,695 - function_handler - INFO -    response_id: resp_BrV2dnuaSdaRYzGxGzRsy
+2025-07-09 12:46:49,695 - function_handler - INFO - 🔥 Looking up function 'human_handoff' in registry...
+2025-07-09 12:46:49,696 - function_handler - INFO - 🔥 Available functions: ['get_balance', 'transfer_funds', 'process_replacement', 'transfer_to_human']
+2025-07-09 12:46:49,696 - function_handler - ERROR - 🚨 Function 'human_handoff' not implemented.
+2025-07-09 12:46:49,696 - function_handler - ERROR - 🚨 Function execution failed: Function 'human_handoff' not implemented.
+2025-07-09 12:46:49,697 - function_handler - ERROR - 🚨 Function execution traceback: Traceback (most recent call last):
+  File "c:\Users\peril\Dropbox\Development\fastagent\opusagent\function_handler.py", line 396, in _execute_and_respond_to_function
+    raise NotImplementedError(
+NotImplementedError: Function 'human_handoff' not implemented.
+
+2025-07-09 12:46:49,697 - call_recorder - INFO - Function call logged: human_handoff
+2025-07-09 12:46:49,697 - function_handler - INFO - 📤 Sending function result for human_handoff: {'error': "Function 'human_handoff' not implemented."}
+2025-07-09 12:46:49,697 - function_handler - INFO - 📤 Function result event: {
+  "type": "conversation.item.create",
+  "item": {
+    "type": "function_call_output",
+    "call_id": "call_6z8Vlta6Mzhndm6K",
+    "output": "{\"error\": \"Function 'human_handoff' not implemented.\"}"
+  }
+}
+2025-07-09 12:46:49,698 - function_handler - INFO - ✅ Function result sent successfully to OpenAI
+2025-07-09 12:46:49,698 - function_handler - INFO - 🚀 Triggering response generation after function execution...
+2025-07-09 12:46:49,698 - function_handler - INFO - ✅ Response generation triggered successfully
+2025-07-09 12:46:49,699 - event_router - INFO - Received OpenAI message type: response.done
+2025-07-09 12:46:49,699 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BrV2fpMQmmDJuqLLcDcvN",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2dnuaSdaRYzGxGzRsy",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BrV2doj1mjY70avgzEg8u",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "I'll transfer you to a human agent right away. Please hold on for a moment."
+          }
+        ]
+      },
+      {
+        "id": "item_BrV2fxbeFzHuLnJnFkugj",
+        "object": "realtime.item",
+        "type": "function_call",
+        "status": "completed",
+        "name": "human_handoff",
+        "call_id": "call_6z8Vlta6Mzhndm6K",
+        "arguments": "{\"reason\":\"Caller requested to speak to a human.\",\"priority\":\"normal\"}"
+      }
+    ],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.6,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 687,
+      "input_tokens": 542,
+      "output_tokens": 145,
+      "input_token_details": {
+        "text_tokens": 485,
+        "audio_tokens": 57,
+        "cached_tokens": 384,
+        "cached_tokens_details": {
+          "text_tokens": 384,
+          "audio_tokens": 0
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 54,
+        "audio_tokens": 91
+      }
+    },
+    "metadata": null
+  }
+}
+2025-07-09 12:46:49,700 - realtime_handler - INFO - Response generation completed: resp_BrV2dnuaSdaRYzGxGzRsy
+2025-07-09 12:46:49,700 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-07-09 12:46:49,762 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:49,762 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:49,831 - event_router - INFO - Received OpenAI message type: response.created
+2025-07-09 12:46:49,831 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BrV2fySVl4xA0NNf29UG9",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2fHoG3TKC7AzLNyyNj",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-07-09 12:46:49,832 - realtime_handler - INFO - Response generation started: resp_BrV2fHoG3TKC7AzLNyyNj
+2025-07-09 12:46:50,103 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-07-09 12:46:50,104 - event_router - INFO - Output item added: {
+  "id": "item_BrV2fzp2mmzbPrIUJB4HB",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-07-09 12:46:50,104 - realtime_handler - INFO - Output item added: {'id': 'item_BrV2fzp2mmzbPrIUJB4HB', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-07-09 12:46:50,105 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:50,105 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:50,105 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-07-09 12:46:50,105 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-07-09 12:46:50,105 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-07-09 12:46:50,106 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,106 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-07-09 12:46:50,106 - transcript_manager - DEBUG - Received audio transcript delta: It
+2025-07-09 12:46:50,106 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,106 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:50,106 - transcript_manager - DEBUG - Received audio transcript delta:  seems
+2025-07-09 12:46:50,106 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,106 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-07-09 12:46:50,107 - transcript_manager - DEBUG - Received audio transcript delta:  there's
+2025-07-09 12:46:50,178 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,179 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-07-09 12:46:50,180 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-07-09 12:46:50,217 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,218 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-07-09 12:46:50,218 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-07-09 12:46:50,226 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,226 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:50,226 - transcript_manager - DEBUG - Received audio transcript delta:  an
+2025-07-09 12:46:50,227 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,227 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:50,227 - transcript_manager - DEBUG - Received audio transcript delta:  issue
+2025-07-09 12:46:50,243 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,243 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 13
+2025-07-09 12:46:50,243 - transcript_manager - DEBUG - Received audio transcript delta:  transferring
+2025-07-09 12:46:50,280 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,282 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:50,282 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:50,322 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,323 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:50,323 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:50,374 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,374 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:50,374 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:50,395 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,396 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:50,396 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-07-09 12:46:50,396 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,396 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:50,396 - transcript_manager - DEBUG - Received audio transcript delta:  call
+2025-07-09 12:46:50,461 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,461 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:50,462 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:50,536 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,536 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:50,537 - transcript_manager - DEBUG - Received audio transcript delta:  right
+2025-07-09 12:46:50,537 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,537 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:50,537 - transcript_manager - DEBUG - Received audio transcript delta:  now
+2025-07-09 12:46:50,545 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,545 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:50,545 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:50,555 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,555 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-07-09 12:46:50,555 - transcript_manager - DEBUG - Received audio transcript delta:  Please
+2025-07-09 12:46:50,562 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,563 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:50,563 - transcript_manager - DEBUG - Received audio transcript delta:  stay
+2025-07-09 12:46:50,568 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,569 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:50,569 - transcript_manager - DEBUG - Received audio transcript delta:  on
+2025-07-09 12:46:50,574 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,575 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:50,575 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-07-09 12:46:50,586 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,586 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:50,587 - transcript_manager - DEBUG - Received audio transcript delta:  line
+2025-07-09 12:46:50,595 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,595 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:50,596 - transcript_manager - DEBUG - Received audio transcript delta: ,
+2025-07-09 12:46:50,634 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,635 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-07-09 12:46:50,635 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-07-09 12:46:50,800 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:50,800 - event_router - INFO - Audio event: response.audio.delta - delta size: 48000
+2025-07-09 12:46:50,801 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-07-09 12:46:50,855 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,855 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:50,855 - transcript_manager - DEBUG - Received audio transcript delta:  and
+2025-07-09 12:46:50,855 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,855 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:50,855 - transcript_manager - DEBUG - Received audio transcript delta:  I'll
+2025-07-09 12:46:50,855 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,866 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:50,866 - transcript_manager - DEBUG - Received audio transcript delta:  get
+2025-07-09 12:46:50,872 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,872 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:50,872 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-07-09 12:46:50,874 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,874 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:50,874 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-07-09 12:46:50,889 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,889 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-07-09 12:46:50,889 - transcript_manager - DEBUG - Received audio transcript delta:  a
+2025-07-09 12:46:50,889 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,889 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:50,889 - transcript_manager - DEBUG - Received audio transcript delta:  human
+2025-07-09 12:46:50,903 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,903 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 6
+2025-07-09 12:46:50,904 - transcript_manager - DEBUG - Received audio transcript delta:  agent
+2025-07-09 12:46:50,911 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,911 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:50,911 - transcript_manager - DEBUG - Received audio transcript delta:  as
+2025-07-09 12:46:50,920 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:50,920 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:50,920 - transcript_manager - DEBUG - Received audio transcript delta:  soon
+2025-07-09 12:46:51,044 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:51,044 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:51,044 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:51,328 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:51,333 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:51,333 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:51,334 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:51,334 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:51,334 - transcript_manager - DEBUG - Received audio transcript delta:  as
+2025-07-09 12:46:51,334 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:51,334 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 9
+2025-07-09 12:46:51,334 - transcript_manager - DEBUG - Received audio transcript delta:  possible
+2025-07-09 12:46:51,334 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:51,334 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:51,340 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:51,400 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:51,400 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:51,400 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:51,567 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:51,567 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:51,567 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:51,644 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:51,644 - event_router - INFO - Audio event: response.audio.delta - delta size: 59864
+2025-07-09 12:46:51,644 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 22448 -> 14965 samples, 935.3ms -> 935.3ms
+2025-07-09 12:46:51,712 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-07-09 12:46:51,712 - realtime_handler - INFO - Audio response completed
+2025-07-09 12:46:51,712 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-07-09 12:46:51,712 - transcript_manager - INFO - Full AI transcript (output audio): It seems there's an issue transferring the call right now. Please stay on the line, and I'll get you to a human agent as soon as possible.
+2025-07-09 12:46:51,712 - call_recorder - INFO - Transcript added: [bot] It seems there's an issue transferring the call ri...
+2025-07-09 12:46:51,712 - transcript_manager - INFO - Audio transcript completed
+2025-07-09 12:46:51,712 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-07-09 12:46:51,712 - realtime_handler - INFO - Content part completed
+2025-07-09 12:46:51,712 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-07-09 12:46:51,712 - realtime_handler - INFO - Output item completed
+2025-07-09 12:46:51,722 - event_router - INFO - Received OpenAI message type: response.done
+2025-07-09 12:46:51,722 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BrV2h7cN0ZcS91iHa35LV",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2fHoG3TKC7AzLNyyNj",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BrV2fzp2mmzbPrIUJB4HB",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "It seems there's an issue transferring the call right now. Please stay on the line, and I'll get you to a human agent as soon as possible."
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 906,
+      "input_tokens": 713,
+      "output_tokens": 193,
+      "input_token_details": {
+        "text_tokens": 565,
+        "audio_tokens": 148,
+        "cached_tokens": 640,
+        "cached_tokens_details": {
+          "text_tokens": 512,
+          "audio_tokens": 128
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 46,
+        "audio_tokens": 147
+      }
+    },
+    "metadata": null
+  }
+}
+2025-07-09 12:46:51,722 - realtime_handler - INFO - Response generation completed: resp_BrV2fHoG3TKC7AzLNyyNj
+2025-07-09 12:46:51,722 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-07-09 12:46:52,724 - event_router - INFO - Received platform message: userStream.stop
+2025-07-09 12:46:52,724 - audiocodes_bridge - INFO - User stream stop received for conversation: 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:46:52,726 - base_bridge - INFO - No active response - creating new response immediately
+2025-07-09 12:46:52,726 - session_manager - INFO - Response creation triggered
+2025-07-09 12:46:52,789 - event_router - INFO - Received OpenAI message type: error
+2025-07-09 12:46:52,789 - event_router - ERROR - ERROR DETAILS: code=unknown, message='No message provided'
+2025-07-09 12:46:52,789 - event_router - ERROR - FULL ERROR RESPONSE: {"type": "error", "event_id": "event_BrV2inbLS6kouxhTam17D", "error": {"type": "invalid_request_error", "code": "input_audio_buffer_commit_empty", "message": "Error committing input audio buffer: buffer too small. Expected at least 100ms of audio, but buffer only has 70.00ms of audio.", "param": null, "event_id": null}}
+2025-07-09 12:46:52,902 - event_router - INFO - Received OpenAI message type: response.created
+2025-07-09 12:46:52,903 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BrV2iCqlhnoCtA4vyaO8k",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2isxCXhJuKBtwvC3kL",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.6,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-07-09 12:46:52,903 - realtime_handler - INFO - Response generation started: resp_BrV2isxCXhJuKBtwvC3kL
+2025-07-09 12:46:53,266 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-07-09 12:46:53,266 - event_router - INFO - Output item added: {
+  "id": "item_BrV2iOSDJcuTHt2hFkXgO",
+  "object": "realtime.item",
+  "type": "function_call",
+  "status": "in_progress",
+  "name": "human_handoff",
+  "call_id": "call_SrHN0mvXUU4wbl1e",
+  "arguments": ""
+}
+2025-07-09 12:46:53,277 - realtime_handler - INFO - Output item added: {'id': 'item_BrV2iOSDJcuTHt2hFkXgO', 'object': 'realtime.item', 'type': 'function_call', 'status': 'in_progress', 'name': 'human_handoff', 'call_id': 'call_SrHN0mvXUU4wbl1e', 'arguments': ''}
+2025-07-09 12:46:53,277 - realtime_handler - INFO - Captured function call: human_handoff with call_id: call_SrHN0mvXUU4wbl1e
+2025-07-09 12:46:53,277 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:53,277 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:53,277 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,277 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,277 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: '{"' (total: 2 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: 'reason' (total: 8 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: '":"' (total: 11 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: 'Caller' (total: 17 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: ' requested' (total: 27 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: ' to' (total: 30 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: ' speak' (total: 36 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: ' to' (total: 39 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: ' a' (total: 41 chars)
+2025-07-09 12:46:53,278 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,278 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,278 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: ' human' (total: 47 chars)
+2025-07-09 12:46:53,288 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,288 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,289 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: '.","' (total: 51 chars)
+2025-07-09 12:46:53,289 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,289 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,289 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: 'priority' (total: 59 chars)
+2025-07-09 12:46:53,302 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,302 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,302 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: '":"' (total: 62 chars)
+2025-07-09 12:46:53,311 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,311 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,311 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: 'high' (total: 66 chars)
+2025-07-09 12:46:53,311 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.delta
+2025-07-09 12:46:53,311 - event_router - INFO - 🎯 Routing response.function_call_arguments.delta to handler
+2025-07-09 12:46:53,311 - function_handler - DEBUG - Function call arguments delta for call_SrHN0mvXUU4wbl1e: '"}' (total: 68 chars)
+2025-07-09 12:46:53,378 - event_router - INFO - Received OpenAI message type: response.function_call_arguments.done
+2025-07-09 12:46:53,378 - event_router - INFO - 🎯 Routing response.function_call_arguments.done to handler
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 FUNCTION CALL ARGUMENTS DONE HANDLER CALLED
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Full response_dict: {'type': 'response.function_call_arguments.done', 'event_id': 'event_BrV2jYMSiRIoMFepaSM35', 'response_id': 'resp_BrV2isxCXhJuKBtwvC3kL', 'item_id': 'item_BrV2iOSDJcuTHt2hFkXgO', 'output_index': 0, 'call_id': 'call_SrHN0mvXUU4wbl1e', 'name': 'human_handoff', 'arguments': '{"reason":"Caller requested to speak to a human.","priority":"high"}'}
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Extracted values:
+2025-07-09 12:46:53,378 - function_handler - INFO -    call_id: call_SrHN0mvXUU4wbl1e
+2025-07-09 12:46:53,378 - function_handler - INFO -    final_arguments: {"reason":"Caller requested to speak to a human.","priority":"high"}
+2025-07-09 12:46:53,378 - function_handler - INFO -    item_id: item_BrV2iOSDJcuTHt2hFkXgO
+2025-07-09 12:46:53,378 - function_handler - INFO -    output_index: 0
+2025-07-09 12:46:53,378 - function_handler - INFO -    response_id: resp_BrV2isxCXhJuKBtwvC3kL
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Active function calls: ['call_SrHN0mvXUU4wbl1e']
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Using final_arguments from done event: {"reason":"Caller requested to speak to a human.","priority":"high"}
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Function call arguments complete for call_SrHN0mvXUU4wbl1e: {"reason":"Caller requested to speak to a human.","priority":"high"}
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Parsed arguments: {'reason': 'Caller requested to speak to a human.', 'priority': 'high'}
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Found function_name in active calls: human_handoff
+2025-07-09 12:46:53,378 - function_handler - INFO - 🚀 Executing function: human_handoff with args: {'reason': 'Caller requested to speak to a human.', 'priority': 'high'}
+2025-07-09 12:46:53,378 - function_handler - INFO - 🚀 Function execution task created for human_handoff
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔧 Cleaning up active function call for call_SrHN0mvXUU4wbl1e
+2025-07-09 12:46:53,378 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-07-09 12:46:53,378 - realtime_handler - INFO - Output item completed
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔥 _execute_and_respond_to_function called:
+2025-07-09 12:46:53,378 - function_handler - INFO -    function_name: human_handoff
+2025-07-09 12:46:53,378 - function_handler - INFO -    arguments: {'reason': 'Caller requested to speak to a human.', 'priority': 'high'}
+2025-07-09 12:46:53,378 - function_handler - INFO -    call_id: call_SrHN0mvXUU4wbl1e
+2025-07-09 12:46:53,378 - function_handler - INFO -    item_id: item_BrV2iOSDJcuTHt2hFkXgO
+2025-07-09 12:46:53,378 - function_handler - INFO -    output_index: 0
+2025-07-09 12:46:53,378 - function_handler - INFO -    response_id: resp_BrV2isxCXhJuKBtwvC3kL
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔥 Looking up function 'human_handoff' in registry...
+2025-07-09 12:46:53,378 - function_handler - INFO - 🔥 Available functions: ['get_balance', 'transfer_funds', 'process_replacement', 'transfer_to_human']
+2025-07-09 12:46:53,378 - function_handler - ERROR - 🚨 Function 'human_handoff' not implemented.
+2025-07-09 12:46:53,378 - function_handler - ERROR - 🚨 Function execution failed: Function 'human_handoff' not implemented.
+2025-07-09 12:46:53,378 - function_handler - ERROR - 🚨 Function execution traceback: Traceback (most recent call last):
+  File "c:\Users\peril\Dropbox\Development\fastagent\opusagent\function_handler.py", line 396, in _execute_and_respond_to_function
+    raise NotImplementedError(
+NotImplementedError: Function 'human_handoff' not implemented.
+
+2025-07-09 12:46:53,378 - call_recorder - INFO - Function call logged: human_handoff
+2025-07-09 12:46:53,378 - function_handler - INFO - 📤 Sending function result for human_handoff: {'error': "Function 'human_handoff' not implemented."}
+2025-07-09 12:46:53,378 - function_handler - INFO - 📤 Function result event: {
+  "type": "conversation.item.create",
+  "item": {
+    "type": "function_call_output",
+    "call_id": "call_SrHN0mvXUU4wbl1e",
+    "output": "{\"error\": \"Function 'human_handoff' not implemented.\"}"
+  }
+}
+2025-07-09 12:46:53,378 - function_handler - INFO - ✅ Function result sent successfully to OpenAI
+2025-07-09 12:46:53,378 - function_handler - INFO - 🚀 Triggering response generation after function execution...
+2025-07-09 12:46:53,378 - function_handler - INFO - ✅ Response generation triggered successfully
+2025-07-09 12:46:53,378 - event_router - INFO - Received OpenAI message type: response.done
+2025-07-09 12:46:53,378 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BrV2jVcPX1tfW686PYTQ8",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2isxCXhJuKBtwvC3kL",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BrV2iOSDJcuTHt2hFkXgO",
+        "object": "realtime.item",
+        "type": "function_call",
+        "status": "completed",
+        "name": "human_handoff",
+        "call_id": "call_SrHN0mvXUU4wbl1e",
+        "arguments": "{\"reason\":\"Caller requested to speak to a human.\",\"priority\":\"high\"}"
+      }
+    ],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.6,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 935,
+      "input_tokens": 908,
+      "output_tokens": 27,
+      "input_token_details": {
+        "text_tokens": 613,
+        "audio_tokens": 295,
+        "cached_tokens": 768,
+        "cached_tokens_details": {
+          "text_tokens": 576,
+          "audio_tokens": 192
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 27,
+        "audio_tokens": 0
+      }
+    },
+    "metadata": null
+  }
+}
+2025-07-09 12:46:53,378 - realtime_handler - INFO - Response generation completed: resp_BrV2isxCXhJuKBtwvC3kL
+2025-07-09 12:46:53,389 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-07-09 12:46:53,503 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:53,505 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:53,557 - event_router - INFO - Received OpenAI message type: response.created
+2025-07-09 12:46:53,557 - event_router - INFO - Response event details: {
+  "type": "response.created",
+  "event_id": "event_BrV2jVg2KXcQiv19otBAu",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2jurSsW33TDat7k93B",
+    "status": "in_progress",
+    "status_details": null,
+    "output": [],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": null,
+    "metadata": null
+  }
+}
+2025-07-09 12:46:53,557 - realtime_handler - INFO - Response generation started: resp_BrV2jurSsW33TDat7k93B
+2025-07-09 12:46:53,784 - event_router - INFO - Received OpenAI message type: response.output_item.added
+2025-07-09 12:46:53,784 - event_router - INFO - Output item added: {
+  "id": "item_BrV2j6tCywQujYKqL8Q1B",
+  "object": "realtime.item",
+  "type": "message",
+  "status": "in_progress",
+  "role": "assistant",
+  "content": []
+}
+2025-07-09 12:46:53,784 - realtime_handler - INFO - Output item added: {'id': 'item_BrV2j6tCywQujYKqL8Q1B', 'object': 'realtime.item', 'type': 'message', 'status': 'in_progress', 'role': 'assistant', 'content': []}
+2025-07-09 12:46:53,784 - event_router - INFO - Received OpenAI message type: conversation.item.created
+2025-07-09 12:46:53,788 - realtime_handler - INFO - Conversation item created
+2025-07-09 12:46:53,792 - event_router - INFO - Received OpenAI message type: response.content_part.added
+2025-07-09 12:46:53,792 - event_router - INFO - Content part added: {
+  "type": "audio",
+  "transcript": ""
+}
+2025-07-09 12:46:53,793 - realtime_handler - INFO - Content part added: {'type': 'audio', 'transcript': ''}
+2025-07-09 12:46:53,821 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:53,821 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:53,822 - transcript_manager - DEBUG - Received audio transcript delta: I
+2025-07-09 12:46:53,825 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:53,825 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 10
+2025-07-09 12:46:53,825 - transcript_manager - DEBUG - Received audio transcript delta:  apologize
+2025-07-09 12:46:53,888 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:53,888 - event_router - INFO - Audio event: response.audio.delta - delta size: 6400
+2025-07-09 12:46:53,888 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 2400 -> 1600 samples, 100.0ms -> 100.0ms
+2025-07-09 12:46:53,947 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:53,947 - event_router - INFO - Audio event: response.audio.delta - delta size: 9600
+2025-07-09 12:46:53,947 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 3600 -> 2400 samples, 150.0ms -> 150.0ms
+2025-07-09 12:46:53,983 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:53,983 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:53,984 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:53,988 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:53,988 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:53,990 - transcript_manager - DEBUG - Received audio transcript delta:  for
+2025-07-09 12:46:54,126 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:54,126 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:54,126 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:54,213 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:54,213 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:54,214 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:54,241 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,241 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:54,241 - transcript_manager - DEBUG - Received audio transcript delta:  the
+2025-07-09 12:46:54,249 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,249 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 14
+2025-07-09 12:46:54,249 - transcript_manager - DEBUG - Received audio transcript delta:  inconvenience
+2025-07-09 12:46:54,249 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,250 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:54,250 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:54,291 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:54,291 - event_router - INFO - Audio event: response.audio.delta - delta size: 16000
+2025-07-09 12:46:54,292 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 6000 -> 4000 samples, 250.0ms -> 250.0ms
+2025-07-09 12:46:54,410 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,410 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 2
+2025-07-09 12:46:54,410 - transcript_manager - DEBUG - Received audio transcript delta:  I
+2025-07-09 12:46:54,471 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:54,472 - event_router - INFO - Audio event: response.audio.delta - delta size: 32000
+2025-07-09 12:46:54,472 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 12000 -> 8000 samples, 500.0ms -> 500.0ms
+2025-07-09 12:46:54,472 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,472 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:54,472 - transcript_manager - DEBUG - Received audio transcript delta: ’ll
+2025-07-09 12:46:54,472 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,472 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:54,478 - transcript_manager - DEBUG - Received audio transcript delta:  get
+2025-07-09 12:46:54,478 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,478 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-07-09 12:46:54,478 - transcript_manager - DEBUG - Received audio transcript delta:  someone
+2025-07-09 12:46:54,478 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,478 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:54,478 - transcript_manager - DEBUG - Received audio transcript delta:  to
+2025-07-09 12:46:54,478 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,479 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-07-09 12:46:54,479 - transcript_manager - DEBUG - Received audio transcript delta:  assist
+2025-07-09 12:46:54,800 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:54,815 - event_router - INFO - Audio event: response.audio.delta - delta size: 48000
+2025-07-09 12:46:54,815 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 18000 -> 12000 samples, 750.0ms -> 750.0ms
+2025-07-09 12:46:54,863 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,863 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 4
+2025-07-09 12:46:54,863 - transcript_manager - DEBUG - Received audio transcript delta:  you
+2025-07-09 12:46:54,863 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,863 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 8
+2025-07-09 12:46:54,863 - transcript_manager - DEBUG - Received audio transcript delta:  shortly
+2025-07-09 12:46:54,882 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,882 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:54,882 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:54,885 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,885 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 7
+2025-07-09 12:46:54,885 - transcript_manager - DEBUG - Received audio transcript delta:  Please
+2025-07-09 12:46:54,895 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,895 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:54,895 - transcript_manager - DEBUG - Received audio transcript delta:  bear
+2025-07-09 12:46:54,916 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,916 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 5
+2025-07-09 12:46:54,917 - transcript_manager - DEBUG - Received audio transcript delta:  with
+2025-07-09 12:46:54,929 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,929 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 3
+2025-07-09 12:46:54,930 - transcript_manager - DEBUG - Received audio transcript delta:  me
+2025-07-09 12:46:54,936 - event_router - INFO - Received OpenAI message type: response.audio_transcript.delta
+2025-07-09 12:46:54,936 - event_router - INFO - Audio event: response.audio_transcript.delta - delta size: 1
+2025-07-09 12:46:54,936 - transcript_manager - DEBUG - Received audio transcript delta: .
+2025-07-09 12:46:55,120 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:55,120 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:55,120 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:55,218 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:55,219 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:55,220 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:55,365 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:55,365 - event_router - INFO - Audio event: response.audio.delta - delta size: 64000
+2025-07-09 12:46:55,365 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 24000 -> 16000 samples, 1000.0ms -> 1000.0ms
+2025-07-09 12:46:55,528 - event_router - INFO - Received OpenAI message type: response.audio.delta
+2025-07-09 12:46:55,528 - event_router - INFO - Audio event: response.audio.delta - delta size: 95064
+2025-07-09 12:46:55,528 - call_recorder - DEBUG - Audio resampling: 24000Hz -> 16000Hz, 35648 -> 23765 samples, 1485.3ms -> 1485.3ms
+2025-07-09 12:46:55,633 - event_router - INFO - Received OpenAI message type: response.audio.done
+2025-07-09 12:46:55,633 - realtime_handler - INFO - Audio response completed
+2025-07-09 12:46:55,633 - event_router - INFO - Received OpenAI message type: response.audio_transcript.done
+2025-07-09 12:46:55,633 - transcript_manager - INFO - Full AI transcript (output audio): I apologize for the inconvenience. I’ll get someone to assist you shortly. Please bear with me.
+2025-07-09 12:46:55,633 - call_recorder - INFO - Transcript added: [bot] I apologize for the inconvenience. I’ll get someon...
+2025-07-09 12:46:55,633 - transcript_manager - INFO - Audio transcript completed
+2025-07-09 12:46:55,633 - event_router - INFO - Received OpenAI message type: response.content_part.done
+2025-07-09 12:46:55,633 - realtime_handler - INFO - Content part completed
+2025-07-09 12:46:55,655 - event_router - INFO - Received OpenAI message type: response.output_item.done
+2025-07-09 12:46:55,655 - realtime_handler - INFO - Output item completed
+2025-07-09 12:46:55,678 - event_router - INFO - Received OpenAI message type: response.done
+2025-07-09 12:46:55,678 - event_router - INFO - Response event details: {
+  "type": "response.done",
+  "event_id": "event_BrV2ldDKMmxd8cMs8a8E7",
+  "response": {
+    "object": "realtime.response",
+    "id": "resp_BrV2jurSsW33TDat7k93B",
+    "status": "completed",
+    "status_details": null,
+    "output": [
+      {
+        "id": "item_BrV2j6tCywQujYKqL8Q1B",
+        "object": "realtime.item",
+        "type": "message",
+        "status": "completed",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "audio",
+            "transcript": "I apologize for the inconvenience. I\u2019ll get someone to assist you shortly. Please bear with me."
+          }
+        ]
+      }
+    ],
+    "conversation_id": "conv_BrV2aQv2VOKYqWhpQPVIs",
+    "modalities": [
+      "text",
+      "audio"
+    ],
+    "voice": "verse",
+    "output_audio_format": "pcm16",
+    "temperature": 0.8,
+    "max_output_tokens": 4096,
+    "usage": {
+      "total_tokens": 1129,
+      "input_tokens": 957,
+      "output_tokens": 172,
+      "input_token_details": {
+        "text_tokens": 662,
+        "audio_tokens": 295,
+        "cached_tokens": 896,
+        "cached_tokens_details": {
+          "text_tokens": 640,
+          "audio_tokens": 256
+        }
+      },
+      "output_token_details": {
+        "text_tokens": 34,
+        "audio_tokens": 138
+      }
+    },
+    "metadata": null
+  }
+}
+2025-07-09 12:46:55,678 - realtime_handler - INFO - Response generation completed: resp_BrV2jurSsW33TDat7k93B
+2025-07-09 12:46:55,688 - event_router - INFO - Received OpenAI message type: rate_limits.updated
+2025-07-09 12:47:04,735 - event_router - WARNING - Unknown platform message type: invalid.message.type
+2025-07-09 12:47:05,751 - event_router - INFO - Received platform message: userStream.start
+2025-07-09 12:47:05,751 - audiocodes_bridge - INFO - User stream start received: {'type': 'userStream.start'}
+2025-07-09 12:47:06,753 - event_router - INFO - Received platform message: session.end
+2025-07-09 12:47:06,753 - audiocodes_bridge - INFO - Session end received: Validation test completed
+2025-07-09 12:47:06,753 - call_recorder - INFO - Transcript saved: call_recordings\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\transcript.json
+2025-07-09 12:47:06,753 - call_recorder - INFO - Metadata saved: call_recordings\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\call_metadata.json
+2025-07-09 12:47:06,753 - call_recorder - INFO - Session events saved: call_recordings\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\session_events.json
+2025-07-09 12:47:06,753 - call_recorder - INFO - Final stereo recording created: call_recordings\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\final_stereo_recording.wav (21.69s)
+2025-07-09 12:47:06,753 - call_recorder - INFO - Audio resampling applied - Bot audio resampled from 24000Hz to 16000Hz
+2025-07-09 12:47:06,753 - call_recorder - INFO - Recording stopped and finalized for conversation 4accffe6-42c8-4932-ae4e-68deb074a657
+2025-07-09 12:47:06,753 - base_bridge - INFO - Call recording finalized: {'conversation_id': '4accffe6-42c8-4932-ae4e-68deb074a657', 'session_id': '4accffe6-42c8-4932-ae4e-68deb074a657', 'recording_dir': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646', 'recording_active': False, 'finalized': True, 'files': {'caller_audio': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\\caller_audio.wav', 'bot_audio': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\\bot_audio.wav', 'stereo_audio': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\\stereo_recording.wav', 'transcript': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\\transcript.json', 'metadata': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\\call_metadata.json', 'session_events': 'call_recordings\\4accffe6-42c8-4932-ae4e-68deb074a657_20250709_124646\\session_events.json'}, 'stats': {'conversation_id': '4accffe6-42c8-4932-ae4e-68deb074a657', 'session_id': '4accffe6-42c8-4932-ae4e-68deb074a657', 'start_time': '2025-07-09T19:46:46.267614+00:00', 'end_time': '2025-07-09T19:47:06.753228+00:00', 'duration_seconds': 20.485614, 'caller_audio_chunks': 11, 'bot_audio_chunks': 43, 'caller_audio_bytes': 35200, 'bot_audio_bytes': 694120, 'caller_audio_duration_seconds': 1.1, 'bot_audio_duration_seconds': 21.69125, 'transcript_entries': 5, 'function_calls': [{'timestamp': '2025-07-09T19:46:49.697271+00:00', 'function_name': 'human_handoff', 'arguments': {'reason': 'Caller requested to speak to a human.', 'priority': 'normal'}, 'result': {'error': "Function 'human_handoff' not implemented."}, 'call_id': 'call_6z8Vlta6Mzhndm6K'}, {'timestamp': '2025-07-09T19:46:53.378101+00:00', 'function_name': 'human_handoff', 'arguments': {'reason': 'Caller requested to speak to a human.', 'priority': 'high'}, 'result': {'error': "Function 'human_handoff' not implemented."}, 'call_id': 'call_SrHN0mvXUU4wbl1e'}]}}
+2025-07-09 12:47:06,763 - audiocodes_bridge - INFO - AudioCodes-Realtime bridge closed
+2025-07-09 12:47:06,763 - base_bridge - ERROR - Error in receive_from_platform: WebSocket is not connected. Need to call "accept" first.

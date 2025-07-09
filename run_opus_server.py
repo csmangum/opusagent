@@ -52,7 +52,7 @@ logger = configure_logging("run")
 def validate_mock_setup():
     """Validate mock mode setup and provide helpful information."""
     try:
-        from opusagent.mock.mock_realtime_client import MockRealtimeClient
+        from opusagent.mock.realtime import MockRealtimeClient
         from opusagent.websocket_manager import create_mock_websocket_manager
         
         # Test creating a mock client

@@ -267,7 +267,7 @@ class WebSocketManager:
         """Create a mock WebSocket connection for testing."""
         try:
             # Try to import the mock client
-            from opusagent.mock.mock_realtime_client import MockRealtimeClient
+            from opusagent.mock.realtime import MockRealtimeClient
 
             # Create mock client
             mock_client = MockRealtimeClient()
