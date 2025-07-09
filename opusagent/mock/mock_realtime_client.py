@@ -12,7 +12,7 @@ This file is maintained for backward compatibility.
 """
 
 # Import from the new modular structure
-from .mock_realtime import MockRealtimeClient, MockResponseConfig
+from .realtime import MockRealtimeClient, MockResponseConfig
 
 # Re-export for backward compatibility
 __all__ = ["MockRealtimeClient", "MockResponseConfig"] 

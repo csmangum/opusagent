@@ -10,7 +10,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.realtime import MockRealtimeClient, MockResponseConfig
 from opusagent.models.openai_api import SessionConfig
 
 # Configure logging

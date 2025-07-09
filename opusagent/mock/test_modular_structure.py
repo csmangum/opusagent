@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Test both import paths for backward compatibility
 try:
-    from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
+    from opusagent.mock.realtime import MockRealtimeClient, MockResponseConfig
     print("✓ Successfully imported from opusagent.mock.mock_realtime")
 except ImportError as e:
     print(f"✗ Failed to import from opusagent.mock.mock_realtime: {e}")
@@ -25,12 +25,12 @@ except ImportError as e:
 
 # Test individual modules
 try:
-    from opusagent.mock.mock_realtime.models import MockResponseConfig
-    from opusagent.mock.mock_realtime.audio import AudioManager
-    from opusagent.mock.mock_realtime.handlers import EventHandlerManager
-    from opusagent.mock.mock_realtime.generators import ResponseGenerator
-    from opusagent.mock.mock_realtime.client import MockRealtimeClient
-    from opusagent.mock.mock_realtime.utils import create_simple_wav_data
+    from opusagent.mock.realtime.models import MockResponseConfig
+    from opusagent.mock.realtime.audio import AudioManager
+    from opusagent.mock.realtime.handlers import EventHandlerManager
+    from opusagent.mock.realtime.generators import ResponseGenerator
+    from opusagent.mock.realtime.client import MockRealtimeClient
+    from opusagent.mock.realtime.utils import create_simple_wav_data
     print("✓ Successfully imported all individual modules")
 except ImportError as e:
     print(f"✗ Failed to import individual modules: {e}")
@@ -108,7 +108,7 @@ async def test_audio_utilities():
     """Test audio utility functions."""
     print("\n=== Testing Audio Utilities ===")
     
-    from opusagent.mock.mock_realtime.utils import create_simple_wav_data, chunk_audio_data
+    from opusagent.mock.realtime.utils import create_simple_wav_data, chunk_audio_data
     
     # Test WAV data creation
     wav_data = create_simple_wav_data(duration=1.0)
@@ -126,7 +126,7 @@ async def test_backward_compatibility():
     print("\n=== Testing Backward Compatibility ===")
     
     # Test that both import paths work
-    from opusagent.mock.mock_realtime import MockRealtimeClient as NewClient, MockResponseConfig as NewConfig
+    from opusagent.mock.realtime import MockRealtimeClient as NewClient, MockResponseConfig as NewConfig
     from opusagent.mock.mock_realtime_client import MockRealtimeClient as OldClient, MockResponseConfig as OldConfig
     
     # Test that they're the same classes
