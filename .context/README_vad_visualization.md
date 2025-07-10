@@ -181,9 +181,9 @@ Maximum VAD confidence: 0.892
 ==================================================
 ```
 
-## Integration with FastAgent
+## Integration with OpusAgent
 
-This visualization tool uses the same VAD system as the main FastAgent application, so the results you see here will be similar to what happens during actual calls. This makes it useful for:
+This visualization tool uses the same VAD system as the main OpusAgent application, so the results you see here will be similar to what happens during actual calls. This makes it useful for:
 
 - **Testing VAD sensitivity** before deployment
 - **Debugging speech detection issues**

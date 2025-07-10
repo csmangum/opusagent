@@ -171,4 +171,4 @@ The Silero VAD test script can be integrated into your existing audio processing
 
 ## License
 
-This script is part of the FastAgent project and follows the same license terms. Silero VAD is licensed under MIT. 
+This script is part of the OpusAgent project and follows the same license terms. Silero VAD is licensed under MIT. 

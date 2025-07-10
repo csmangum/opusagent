@@ -356,7 +356,7 @@ agent = TextAudioAgent(audio_directory="demo/audio/")
 
 ## 📄 License
 
-This project is part of the FastAgent framework. See LICENSE file for details.
+This project is part of the OpusAgent framework. See LICENSE file for details.
 
 ## 🤝 Contributing
 
