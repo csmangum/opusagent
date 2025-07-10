@@ -56,6 +56,9 @@ logger = configure_logging("main")
 PORT = int(os.getenv("PORT", "8000"))
 HOST = os.getenv("HOST", "0.0.0.0")
 
+# VAD configuration - enable by default, can be disabled via environment variable
+VAD_ENABLED = os.getenv("VAD_ENABLED", "true").lower() in ("true", "1", "yes", "on")
+
 # Create FastAPI application
 app = FastAPI(
     title="Real-Time Voice Agent",
@@ -92,7 +95,7 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
             # Create AudioCodes bridge instance
-            bridge = AudioCodesBridge(websocket, connection.websocket, session_config)
+            bridge = AudioCodesBridge(websocket, connection.websocket, session_config, vad_enabled=VAD_ENABLED)
 
             # Start receiving from both WebSockets
             await asyncio.gather(
@@ -135,7 +138,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
             )
 
             # Instantiate our caller side bridge
-            bridge = CallAgentBridge(caller_websocket, connection.websocket, session_config)
+            bridge = CallAgentBridge(caller_websocket, connection.websocket, session_config, vad_enabled=VAD_ENABLED)
             logger.info("Caller-Realtime bridge created")
 
             # Start bidirectional tasks

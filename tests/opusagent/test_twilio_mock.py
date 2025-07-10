@@ -10,6 +10,9 @@ import pytest
 
 from opusagent.mock.mock_twilio_client import MockTwilioClient
 
+# Bridge server URL (adjust based on your setup)
+BRIDGE_URL = "ws://localhost:8000/twilio-agent"
+
 
 @pytest.mark.asyncio
 async def test_single_turn():
@@ -21,16 +24,13 @@ async def test_single_turn():
     )
     logger = logging.getLogger(__name__)
 
-    # Bridge server URL (adjust based on your setup)
-    bridge_url = "ws://localhost:6060/twilio-ws"
-    
     # Test audio file (create or use existing)
     test_audio = "demo/user_audio/hello.wav"
     
     logger.info("Starting single turn Twilio mock test...")
     
     try:
-        async with MockTwilioClient(bridge_url, logger=logger) as client:
+        async with MockTwilioClient(BRIDGE_URL, logger=logger) as client:
             # Initiate the call flow
             success = await client.initiate_call_flow()
             if not success:
@@ -79,9 +79,6 @@ async def test_multi_turn():
     )
     logger = logging.getLogger(__name__)
 
-    # Bridge server URL
-    bridge_url = "ws://localhost:6060/twilio-ws"
-    
     # Test audio files for multiple turns
     audio_files = [
         "demo/user_audio/hello.wav",
@@ -98,7 +95,7 @@ async def test_multi_turn():
     logger.info(f"Starting multi-turn Twilio mock test with {len(existing_files)} files...")
     
     try:
-        async with MockTwilioClient(bridge_url, logger=logger) as client:
+        async with MockTwilioClient(BRIDGE_URL, logger=logger) as client:
             # Run multi-turn conversation
             success = await client.simple_conversation_test(
                 existing_files, 
@@ -126,12 +123,10 @@ async def test_dtmf_and_marks():
     )
     logger = logging.getLogger(__name__)
 
-    bridge_url = "ws://localhost:6060/twilio-ws"
-    
     logger.info("Starting DTMF and marks test...")
     
     try:
-        async with MockTwilioClient(bridge_url, logger=logger) as client:
+        async with MockTwilioClient(BRIDGE_URL, logger=logger) as client:
             # Initiate call
             await client.initiate_call_flow()
             
@@ -170,12 +165,10 @@ async def test_protocol_compliance():
     )
     logger = logging.getLogger(__name__)
 
-    bridge_url = "ws://localhost:6060/twilio-ws"
-    
     logger.info("Starting protocol compliance test...")
     
     try:
-        async with MockTwilioClient(bridge_url, logger=logger) as client:
+        async with MockTwilioClient(BRIDGE_URL, logger=logger) as client:
             logger.info(f"Stream SID: {client.stream_sid}")
             logger.info(f"Account SID: {client.account_sid}")
             logger.info(f"Call SID: {client.call_sid}")

@@ -38,11 +38,15 @@ class TUIConfig:
     session_timeout: int = 300  # 5 minutes
     auto_reconnect: bool = True
     
+    # VAD settings
+    vad_enabled: bool = True  # Enable Voice Activity Detection by default
+    show_vad_events: bool = True  # Show VAD events in the TUI
+    
     # Audio settings
     audio_chunk_size: int = 32000  # 2 seconds of 16kHz 16-bit audio
     sample_rate: int = 16000  # 16kHz
     audio_format: str = "raw/lpcm16"
-    supported_formats: List[str] = None
+    supported_formats: Optional[List[str]] = None
     
     # Recording settings
     enable_audio_recording: bool = True
@@ -87,6 +91,10 @@ class TUIConfig:
         self.bot_name = os.getenv("TUI_BOT_NAME", self.bot_name)
         self.caller_id = os.getenv("TUI_CALLER_ID", self.caller_id)
         self.session_timeout = int(os.getenv("TUI_SESSION_TIMEOUT", str(self.session_timeout)))
+        
+        # VAD settings
+        self.vad_enabled = os.getenv("TUI_VAD_ENABLED", "true").lower() == "true"
+        self.show_vad_events = os.getenv("TUI_SHOW_VAD_EVENTS", "true").lower() == "true"
         
         # Audio settings
         self.sample_rate = int(os.getenv("TUI_SAMPLE_RATE", str(self.sample_rate)))
@@ -177,6 +185,8 @@ class TUIConfig:
             "max_events": self.max_events,
             "log_level": self.log_level,
             "auto_reconnect": self.auto_reconnect,
+            "vad_enabled": self.vad_enabled,
+            "show_vad_events": self.show_vad_events,
         }
 
 

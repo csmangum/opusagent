@@ -51,16 +51,20 @@ class AudioCodesBridge(BaseRealtimeBridge):
             TelephonyEventType.SESSION_END, self.handle_session_end
         )
 
-        # Register handlers for the new VAD speech events from OpenAI Realtime API
-        self.event_router.register_realtime_handler(
-            "input_audio_buffer.speech_started", self.handle_speech_started
-        )
-        self.event_router.register_realtime_handler(
-            "input_audio_buffer.speech_stopped", self.handle_speech_stopped
-        )
-        self.event_router.register_realtime_handler(
-            "input_audio_buffer.committed", self.handle_speech_committed
-        )
+        # Register handlers for VAD speech events from OpenAI Realtime API only if VAD is enabled
+        if self.vad_enabled:
+            logger.info("Registering VAD event handlers for OpenAI Realtime API")
+            self.event_router.register_realtime_handler(
+                "input_audio_buffer.speech_started", self.handle_speech_started
+            )
+            self.event_router.register_realtime_handler(
+                "input_audio_buffer.speech_stopped", self.handle_speech_stopped
+            )
+            self.event_router.register_realtime_handler(
+                "input_audio_buffer.committed", self.handle_speech_committed
+            )
+        else:
+            logger.info("VAD disabled - skipping VAD event handler registration")
 
     async def send_platform_json(self, payload: dict):
         """Send JSON payload to the AudioCodes WebSocket.
@@ -144,6 +148,10 @@ class AudioCodesBridge(BaseRealtimeBridge):
         Args:
             data (dict): Speech started event data
         """
+        if not self.vad_enabled:
+            logger.warning("VAD disabled - ignoring speech started event")
+            return
+            
         logger.info("Speech started detected - sending to AudioCodes")
         await self.send_speech_started()
 
@@ -153,6 +161,10 @@ class AudioCodesBridge(BaseRealtimeBridge):
         Args:
             data (dict): Speech stopped event data
         """
+        if not self.vad_enabled:
+            logger.warning("VAD disabled - ignoring speech stopped event")
+            return
+            
         logger.info("Speech stopped detected - sending to AudioCodes")
         await self.send_speech_stopped()
 
@@ -162,6 +174,10 @@ class AudioCodesBridge(BaseRealtimeBridge):
         Args:
             data (dict): Speech committed event data
         """
+        if not self.vad_enabled:
+            logger.warning("VAD disabled - ignoring speech committed event")
+            return
+            
         logger.info("Speech committed detected - sending to AudioCodes")
         await self.send_speech_committed()
 

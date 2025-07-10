@@ -32,7 +32,7 @@ class CallAgentBridge(AudioCodesBridge):
     AudioCodes / Twilio bridges.
     """
 
-    def __init__(self, platform_websocket, realtime_websocket, session_config):
+    def __init__(self, platform_websocket, realtime_websocket, session_config, vad_enabled: bool = True):
         """Initialize the caller-side bridge.
 
         Besides the standard AudioCodes behaviour we also need to make sure the
@@ -42,10 +42,16 @@ class CallAgentBridge(AudioCodesBridge):
         automatically registers the **customer-service** functions which are
         useful for the agent that answers the phone, but for the synthetic
         caller we want its own tools instead.
+
+        Args:
+            platform_websocket: WebSocket connection to the platform
+            realtime_websocket: WebSocket connection to OpenAI Realtime API
+            session_config: Session configuration
+            vad_enabled: Whether to enable Voice Activity Detection handling
         """
 
         # Call parent constructor first (this wires up audio / event routing)
-        super().__init__(platform_websocket, realtime_websocket, session_config)
+        super().__init__(platform_websocket, realtime_websocket, session_config, vad_enabled=vad_enabled)
 
         # Register the caller-side functions (e.g. ``hang_up``)
         #! Make function registration be outside of the class
