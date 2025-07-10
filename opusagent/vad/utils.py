@@ -1,0 +1,1 @@
+# Utility functions for VAD module will go here. 

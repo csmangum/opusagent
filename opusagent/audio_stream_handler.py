@@ -23,12 +23,17 @@ from opusagent.models.audiocodes_api import (
     TelephonyEventType,
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
+    UserStreamSpeechStartedResponse,
+    UserStreamSpeechStoppedResponse,
 )
 from opusagent.models.openai_api import (
     InputAudioBufferAppendEvent,
     InputAudioBufferCommitEvent,
     ResponseAudioDeltaEvent,
 )
+from opusagent.vad.vad_config import load_vad_config
+from opusagent.vad.vad_factory import VADFactory
+from opusagent.vad.audio_processor import to_float32_mono
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -101,6 +106,12 @@ class AudioStreamHandler:
             self.quality_monitor.on_quality_alert = self._on_quality_alert
             logger.info("Audio quality monitoring enabled")
 
+        # VAD integration
+        vad_config = load_vad_config()
+        self.vad = VADFactory.create_vad(vad_config)
+        self.vad_enabled = vad_config.get('backend', 'silero') is not None
+        self._speech_active = False  # Track speech state for VAD events
+
     async def initialize_stream(self, conversation_id: str, media_format: str) -> None:
         """Initialize a new audio stream.
 
@@ -152,6 +163,45 @@ class AudioStreamHandler:
 
                 # Re-encode to base64
                 audio_chunk_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+            # VAD processing (local)
+            if self.vad_enabled and self.vad:
+                # Convert to float32 mono for VAD
+                try:
+                    audio_arr = to_float32_mono(audio_bytes, sample_width=2, channels=1)
+                    logger.debug(f"[VAD] Processing audio chunk: {len(audio_arr)} samples")
+                    vad_result = self.vad.process_audio(audio_arr)
+                    is_speech = vad_result.get('is_speech', False)
+                    speech_prob = vad_result.get('speech_prob', 0.0)
+                    logger.debug(f"[VAD] Result: speech={is_speech}, prob={speech_prob:.3f}")
+                    
+                    # Emit VAD events on state transitions
+                    if is_speech and not self._speech_active:
+                        # Speech started
+                        vad_event = UserStreamSpeechStartedResponse(
+                            type=TelephonyEventType.USER_STREAM_SPEECH_STARTED,
+                            conversationId=self.conversation_id,
+                            participant="caller",
+                            participantId="caller",
+                        )
+                        await self.platform_websocket.send_json(vad_event.model_dump())
+                        self._speech_active = True
+                        logger.info(f"[VAD] Speech started event sent (prob: {speech_prob:.3f})")
+                    elif not is_speech and self._speech_active:
+                        # Speech stopped
+                        vad_event = UserStreamSpeechStoppedResponse(
+                            type=TelephonyEventType.USER_STREAM_SPEECH_STOPPED,
+                            conversationId=self.conversation_id,
+                            participant="caller",
+                            participantId="caller",
+                        )
+                        await self.platform_websocket.send_json(vad_event.model_dump())
+                        self._speech_active = False
+                        logger.info(f"[VAD] Speech stopped event sent (prob: {speech_prob:.3f})")
+                except Exception as e:
+                    logger.warning(f"VAD processing error: {e}")
+                    import traceback
+                    logger.debug(f"VAD error traceback: {traceback.format_exc()}")
 
             # Update tracking counters
             self.audio_chunks_sent += 1

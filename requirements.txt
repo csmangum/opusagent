@@ -21,6 +21,7 @@ numpy>=1.24.0
 # TUI and visualization
 textual>=0.41.0
 rich>=13.0.0
+matplotlib>=3.7.0
 
 # Optional audio backends
 pyaudio==0.2.13
