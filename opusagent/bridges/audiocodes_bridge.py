@@ -28,7 +28,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
 
     def __init__(self, *args, **kwargs):
         """Initialize AudioCodes bridge with participant tracking."""
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, bridge_type='audiocodes', **kwargs)
         self.current_participant: str = (
             "caller"  # Default participant for single-party calls
         )
