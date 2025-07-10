@@ -61,6 +61,7 @@ class BaseRealtimeBridge(ABC):
         platform_websocket,
         realtime_websocket: ClientConnection,
         session_config: SessionConfig,
+        vad_enabled: bool = True,  # Enable VAD by default
     ):
         """Initialize the base realtime bridge.
 
@@ -68,10 +69,12 @@ class BaseRealtimeBridge(ABC):
             platform_websocket: WebSocket connection to the platform (Twilio, AudioCodes, etc.)
             realtime_websocket: WebSocket connection to OpenAI Realtime API
             session_config: Predefined session configuration for the OpenAI Realtime API
+            vad_enabled: Whether to enable Voice Activity Detection handling
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
         self.session_config = session_config
+        self.vad_enabled = vad_enabled  # Store VAD configuration
         self._closed = False
         self.conversation_id: Optional[str] = None
         self.media_format: Optional[str] = None
@@ -139,6 +142,9 @@ class BaseRealtimeBridge(ABC):
 
         # Register platform-specific event handlers
         self.register_platform_event_handlers()
+
+        # Log VAD configuration
+        logger.info(f"VAD handling {'enabled' if self.vad_enabled else 'disabled'}")
 
     @abstractmethod
     def register_platform_event_handlers(self):

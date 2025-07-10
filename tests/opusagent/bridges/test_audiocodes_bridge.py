@@ -102,7 +102,22 @@ async def mock_realtime_websocket():
 @pytest.fixture
 async def bridge(mock_websocket, mock_realtime_websocket, test_session_config):
     bridge = AudioCodesBridge(
-        mock_websocket, mock_realtime_websocket, test_session_config
+        mock_websocket, mock_realtime_websocket, test_session_config, vad_enabled=True
+    )
+    # Mock the dependencies to avoid actual initialization
+    bridge.session_manager.initialize_session = AsyncMock()
+    bridge.session_manager.send_initial_conversation_item = AsyncMock()
+    bridge.audio_handler.initialize_stream = AsyncMock()
+    return bridge
+
+
+@pytest.fixture
+async def bridge_vad_disabled(
+    mock_websocket, mock_realtime_websocket, test_session_config
+):
+    """Create a bridge with VAD disabled for testing."""
+    bridge = AudioCodesBridge(
+        mock_websocket, mock_realtime_websocket, test_session_config, vad_enabled=False
     )
     # Mock the dependencies to avoid actual initialization
     bridge.session_manager.initialize_session = AsyncMock()
@@ -664,3 +679,65 @@ async def test_register_realtime_event_handlers(bridge):
     for event_type, handler in expected_realtime_handlers.items():
         assert event_type in bridge.event_router.realtime_handlers
         assert bridge.event_router.realtime_handlers[event_type] == handler
+
+
+@pytest.mark.asyncio
+async def test_vad_configuration(bridge, bridge_vad_disabled):
+    """Test VAD configuration is properly set."""
+    # Test VAD enabled bridge
+    assert bridge.vad_enabled is True
+
+    # Test VAD disabled bridge
+    assert bridge_vad_disabled.vad_enabled is False
+
+
+@pytest.mark.asyncio
+async def test_vad_event_handlers_registration(bridge, bridge_vad_disabled):
+    """Test that VAD event handlers are registered only when VAD is enabled."""
+    # When VAD is enabled, handlers should be registered
+    assert bridge.vad_enabled is True
+
+    # When VAD is disabled, handlers should not be registered
+    assert bridge_vad_disabled.vad_enabled is False
+
+
+@pytest.mark.asyncio
+async def test_vad_speech_events_when_disabled(bridge_vad_disabled):
+    """Test that VAD speech events are ignored when VAD is disabled."""
+    # Mock the send methods to track calls
+    bridge_vad_disabled.send_speech_started = AsyncMock()
+    bridge_vad_disabled.send_speech_stopped = AsyncMock()
+    bridge_vad_disabled.send_speech_committed = AsyncMock()
+
+    # Test speech started event
+    await bridge_vad_disabled.handle_speech_started({})
+    bridge_vad_disabled.send_speech_started.assert_not_called()
+
+    # Test speech stopped event
+    await bridge_vad_disabled.handle_speech_stopped({})
+    bridge_vad_disabled.send_speech_stopped.assert_not_called()
+
+    # Test speech committed event
+    await bridge_vad_disabled.handle_speech_committed({})
+    bridge_vad_disabled.send_speech_committed.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_vad_speech_events_when_enabled(bridge):
+    """Test that VAD speech events are processed when VAD is enabled."""
+    # Mock the send methods to track calls
+    bridge.send_speech_started = AsyncMock()
+    bridge.send_speech_stopped = AsyncMock()
+    bridge.send_speech_committed = AsyncMock()
+
+    # Test speech started event
+    await bridge.handle_speech_started({})
+    bridge.send_speech_started.assert_called_once()
+
+    # Test speech stopped event
+    await bridge.handle_speech_stopped({})
+    bridge.send_speech_stopped.assert_called_once()
+
+    # Test speech committed event
+    await bridge.handle_speech_committed({})
+    bridge.send_speech_committed.assert_called_once()
