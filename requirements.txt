@@ -34,3 +34,6 @@ soundfile>=0.12.1  # For advanced audio file format support
 
 # Function calling and AI integration
 anthropic>=0.35.0  # For Claude integration if needed 
+
+# PocketSphinx
+pocketsphinx==0.1.18
