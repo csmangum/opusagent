@@ -192,25 +192,29 @@ class SimpleVADVisualizer:
     
     def _process_audio(self):
         """Process audio data in a separate thread."""
-        while self.recording:
-            try:
-                # Get audio data from queue
-                data = self.audio_queue.get(timeout=0.1)
-                audio_data = data['audio']
-                rms_level = data['rms']
-                timestamp = data['timestamp']
-                
-                # Convert to int16 for VAD processing
-                audio_int16 = (audio_data * 32767).astype(np.int16)
-                audio_bytes = audio_int16.tobytes()
-                
-                # Process through VAD
-                asyncio.run(self._process_vad(audio_bytes, rms_level, timestamp))
-                
-            except queue.Empty:
-                continue
-            except Exception as e:
-                print(f"Error processing audio: {e}")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self.async_audio_queue = asyncio.Queue()
+        
+        async def process_audio_chunks():
+            while self.recording:
+                try:
+                    # Get audio data from async queue
+                    data = await self.async_audio_queue.get()
+                    audio_data = data['audio']
+                    rms_level = data['rms']
+                    timestamp = data['timestamp']
+                    
+                    # Convert to int16 for VAD processing
+                    audio_int16 = (audio_data * 32767).astype(np.int16)
+                    audio_bytes = audio_int16.tobytes()
+                    
+                    # Schedule VAD processing
+                    asyncio.create_task(self._process_vad(audio_bytes, rms_level, timestamp))
+                except Exception as e:
+                    print(f"Error processing audio: {e}")
+        
+        loop.run_until_complete(process_audio_chunks())
     
     async def _process_vad(self, audio_bytes, rms_level, timestamp):
         """Process audio through VAD and update visualization."""
