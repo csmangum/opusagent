@@ -22,7 +22,7 @@ async def test_single_turn():
     logger = logging.getLogger(__name__)
 
     # Bridge server URL (adjust based on your setup)
-    bridge_url = "ws://localhost:6060/twilio-ws"
+    bridge_url = "ws://localhost:8000/twilio-agent"
     
     # Test audio file (create or use existing)
     test_audio = "demo/user_audio/hello.wav"
@@ -80,7 +80,7 @@ async def test_multi_turn():
     logger = logging.getLogger(__name__)
 
     # Bridge server URL
-    bridge_url = "ws://localhost:6060/twilio-ws"
+    bridge_url = "ws://localhost:8000/twilio-agent"
     
     # Test audio files for multiple turns
     audio_files = [
@@ -126,7 +126,7 @@ async def test_dtmf_and_marks():
     )
     logger = logging.getLogger(__name__)
 
-    bridge_url = "ws://localhost:6060/twilio-ws"
+    bridge_url = "ws://localhost:8000/twilio-agent"
     
     logger.info("Starting DTMF and marks test...")
     
@@ -170,7 +170,7 @@ async def test_protocol_compliance():
     )
     logger = logging.getLogger(__name__)
 
-    bridge_url = "ws://localhost:6060/twilio-ws"
+    bridge_url = "ws://localhost:8000/twilio-agent"
     
     logger.info("Starting protocol compliance test...")
     
