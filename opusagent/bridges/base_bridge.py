@@ -62,6 +62,7 @@ class BaseRealtimeBridge(ABC):
         realtime_websocket: ClientConnection,
         session_config: SessionConfig,
         vad_enabled: bool = True,  # Enable VAD by default
+        bridge_type: str = 'unknown',
     ):
         """Initialize the base realtime bridge.
 
@@ -122,6 +123,7 @@ class BaseRealtimeBridge(ABC):
             call_recorder=self.call_recorder,
             enable_quality_monitoring=True,  # Enable monitoring
             quality_thresholds=quality_thresholds,
+            bridge_type=bridge_type,
         )
 
         # Initialize session manager
