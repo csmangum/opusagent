@@ -1,15 +1,23 @@
 import asyncio
 import base64
 import logging
+from pathlib import Path
+import sys
 import unittest
 from typing import Dict, Any
 from unittest.mock import AsyncMock, MagicMock
 import numpy as np
+import json
+
+# Add the project root to the path for imports BEFORE importing project modules
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+# Now import project modules after path is set up
 from opusagent.audio_stream_handler import AudioStreamHandler
 from tui.utils.audio_utils import AudioUtils
 from opusagent.config.logging_config import configure_logging
 from opusagent.call_recorder import CallRecorder
-import json
 
 logger = configure_logging("validate_audio_resampling")
 
