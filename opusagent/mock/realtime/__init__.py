@@ -13,30 +13,52 @@ The module is organized into separate concerns:
 - generators: Response generation logic
 - utils: Utility functions and constants
 
+Key Features:
+- Smart response selection based on conversation context
+- Intent detection and keyword matching
+- Configurable response criteria and priorities
+- Audio file caching and management
+- Complete WebSocket event handling
+- Clean public API without backward compatibility
+
 Example Usage:
     ```python
-    from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig
+    from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig, ResponseSelectionCriteria
     
-    # Create a mock client with saved audio phrases
+    # Create a mock client with smart response selection
     mock_client = LocalRealtimeClient()
     
-    # Add response configuration
+    # Add context-aware response configuration
     mock_client.add_response_config(
         "greeting",
         LocalResponseConfig(
             text="Hello! How can I help you?",
-            audio_file="demo/audio/greeting.wav"
+            audio_file="demo/audio/greeting.wav",
+            selection_criteria=ResponseSelectionCriteria(
+                required_keywords=["hello", "hi"],
+                max_turn_count=1,
+                priority=10
+            )
         )
     )
+    
+    # Set up conversation context
+    mock_client.update_conversation_context("Hello there!")
+    
+    # Access session state
+    session_state = mock_client.get_session_state()
+    audio_buffer = mock_client.get_audio_buffer()
     ```
 """
 
-from .models import LocalResponseConfig
+from .models import LocalResponseConfig, ResponseSelectionCriteria, ConversationContext
 from .client import LocalRealtimeClient
 
 __all__ = [
     "LocalRealtimeClient",
     "LocalResponseConfig",
+    "ResponseSelectionCriteria",
+    "ConversationContext",
 ]
 
-__version__ = "2.0.0" 
+__version__ = "3.0.0" 
