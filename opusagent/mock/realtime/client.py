@@ -332,8 +332,7 @@ class LocalRealtimeClient:
                 
         except Exception as e:
             self.logger.error(f"[MOCK REALTIME] Failed to initialize VAD: {e}")
-            if enable_vad is True:
-                raise RuntimeError(f"VAD initialization failed: {e}") from e
+            # Always fall back gracefully to disabled VAD on initialization failure
             self._vad = None
             self._vad_enabled = False
 
