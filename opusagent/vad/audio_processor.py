@@ -41,9 +41,8 @@ def to_float32_mono(audio_data, sample_width, channels):
         # If it's int32 data, this will likely result in NaN values or very small values
         arr = np.frombuffer(audio_data, dtype=np.float32)
         
-        # If the data contains NaN values or very small values that are clearly not normal audio,
-        # it's likely int32 data and we should raise an error
-        if np.any(np.isnan(arr)) or np.any(np.abs(arr) < 1e-30):
+        # If the data contains NaN values, it's likely int32 data and we should raise an error
+        if np.any(np.isnan(arr)):
             # This looks like int32 data, not float32 audio data
             raise NotImplementedError('Audio conversion for this format is not implemented.')
         

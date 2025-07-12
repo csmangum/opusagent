@@ -225,9 +225,9 @@ class TestVADIntegration:
 
     def test_error_handling_integration(self):
         """Test error handling across the VAD pipeline."""
-        # Test invalid audio format
+        # Test unsupported audio format (sample_width=5 is not supported)
         with pytest.raises(NotImplementedError):
-            to_float32_mono(b'invalid', sample_width=3, channels=1)
+            to_float32_mono(b'invalid', sample_width=5, channels=1)
         
         # Test VAD without initialization
         vad = SileroVAD()
