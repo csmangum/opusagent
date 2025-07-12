@@ -644,12 +644,21 @@ class LocalRealtimeClient:
             ):
                 score += 12.0
 
-        # Bonus for exact text matches
-        if (
-            context.last_user_input
-            and config.text.lower() in context.last_user_input.lower()
-        ):
-            score += 3.0
+        # Bonus for text matches (bidirectional containment or word overlap)
+        if context.last_user_input and config.text:
+            user_input_lower = context.last_user_input.lower()
+            config_text_lower = config.text.lower()
+            
+            # Check if either string contains the other
+            if (config_text_lower in user_input_lower or 
+                user_input_lower in config_text_lower):
+                score += 3.0
+            # Check for word overlap (at least one common word)
+            else:
+                user_words = set(user_input_lower.split())
+                config_words = set(config_text_lower.split())
+                if user_words & config_words:  # Intersection of word sets
+                    score += 3.0
 
         return score
 

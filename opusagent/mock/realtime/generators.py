@@ -359,9 +359,10 @@ class ResponseGenerator:
         event = {
             "type": ServerEventType.ERROR,
             "code": code,
-            "message": message,
-            "details": details
+            "message": message
         }
+        if details is not None:
+            event["details"] = details
         await self._send_event(event)
     
     async def send_transcript_delta(self, text: str, final: bool = False) -> None:

@@ -35,7 +35,7 @@ Usage:
 """
 
 from typing import Any, Dict, List, Optional, Set, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ConversationContext(BaseModel):
@@ -85,6 +85,20 @@ class ConversationContext(BaseModel):
         default=None,
         description="Context for function calls"
     )
+
+    @field_validator("session_id")
+    def validate_session_id(cls, v):
+        """Validate that session_id is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Session ID cannot be empty")
+        return v
+
+    @field_validator("conversation_id")
+    def validate_conversation_id(cls, v):
+        """Validate that conversation_id is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Conversation ID cannot be empty")
+        return v
 
     class Config:
         # Allow field assignment for mutable updates
