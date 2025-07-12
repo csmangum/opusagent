@@ -443,4 +443,82 @@ class ResponseGenerator:
             "content_index": 0,
             "error": error
         }
-        await self._send_event(event) 
+        await self._send_event(event)
+    
+    async def generate_input_transcript_delta(
+        self, item_id: str, text: str, confidence: float = 0.0
+    ) -> None:
+        """
+        Generate an input audio transcription delta event.
+        
+        This method sends real-time transcription delta events for incoming
+        audio from the caller. It's used by the transcription system to
+        emit transcription results as they become available.
+        
+        Args:
+            item_id (str): ID of the conversation item being transcribed.
+            text (str): Transcription delta text.
+            confidence (float): Confidence score for the transcription.
+        """
+        event = {
+            "type": ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA,
+            "item_id": item_id,
+            "content_index": 0,
+            "delta": text
+        }
+        await self._send_event(event)
+        
+        self.logger.debug(f"[MOCK REALTIME] Input transcript delta: '{text}' (confidence: {confidence:.2f})")
+    
+    async def generate_input_transcript_completed(
+        self, item_id: str, text: str, confidence: float = 0.0
+    ) -> None:
+        """
+        Generate an input audio transcription completed event.
+        
+        This method sends the final transcription result for a completed
+        audio segment from the caller.
+        
+        Args:
+            item_id (str): ID of the conversation item being transcribed.
+            text (str): Complete transcription text.
+            confidence (float): Overall confidence score for the transcription.
+        """
+        event = {
+            "type": ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED,
+            "item_id": item_id,
+            "content_index": 0,
+            "transcript": text
+        }
+        await self._send_event(event)
+        
+        self.logger.info(f"[MOCK REALTIME] Input transcript completed: '{text}' (confidence: {confidence:.2f})")
+    
+    async def generate_input_transcript_failed(
+        self, item_id: str, error_message: str, error_code: str = "transcription_failed"
+    ) -> None:
+        """
+        Generate an input audio transcription failed event.
+        
+        This method sends a transcription failure event when the transcription
+        system encounters an error processing the audio.
+        
+        Args:
+            item_id (str): ID of the conversation item that failed transcription.
+            error_message (str): Human-readable error message.
+            error_code (str): Error code for the failure.
+        """
+        error_details = {
+            "code": error_code,
+            "message": error_message
+        }
+        
+        event = {
+            "type": ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_FAILED,
+            "item_id": item_id,
+            "content_index": 0,
+            "error": error_details
+        }
+        await self._send_event(event)
+        
+        self.logger.error(f"[MOCK REALTIME] Input transcript failed for {item_id}: {error_message}")

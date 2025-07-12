@@ -19,3 +19,10 @@ DEFAULT_BITS_PER_SAMPLE = 16  # 16-bit PCM
 DEFAULT_AUDIO_CHUNK_SIZE = 3200  # 200ms at 16kHz 16-bit
 DEFAULT_AUDIO_CHUNK_SIZE_LARGE = 32000  # 2 seconds at 16kHz 16-bit (used in TUI)
 DEFAULT_VAD_CHUNK_SIZE = 512  # VAD processing chunk size
+
+# Transcription constants
+DEFAULT_TRANSCRIPTION_BACKEND = "pocketsphinx"  # Default transcription backend
+DEFAULT_TRANSCRIPTION_LANGUAGE = "en"  # Default language
+DEFAULT_WHISPER_MODEL_SIZE = "base"  # Default Whisper model size
+DEFAULT_TRANSCRIPTION_CONFIDENCE_THRESHOLD = 0.5  # Default confidence threshold
+DEFAULT_TRANSCRIPTION_CHUNK_DURATION = 1.0  # Default chunk duration in seconds

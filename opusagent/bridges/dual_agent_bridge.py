@@ -147,6 +147,8 @@ class DualAgentBridge:
             self.call_recorder = None
             self.caller_transcript_manager = None
             self.cs_transcript_manager = None
+        
+        return True
     
     async def _initialize_caller_session(self):
         """Initialize the caller agent OpenAI session."""
