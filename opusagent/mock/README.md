@@ -1,10 +1,10 @@
-# Enhanced MockRealtimeClient
+# Enhanced LocalRealtimeClient
 
-This directory contains an enhanced version of the MockRealtimeClient that supports **saved audio phrases** and **configurable responses**, making it perfect for testing scenarios without requiring an actual OpenAI API connection.
+This directory contains an enhanced version of the LocalRealtimeClient that supports **saved audio phrases** and **configurable responses**, making it perfect for testing scenarios without requiring an actual OpenAI API connection.
 
 ## What's New
 
-The enhanced MockRealtimeClient now supports:
+The enhanced LocalRealtimeClient now supports:
 
 ✅ **Saved Audio Phrases** - Load and play actual audio files instead of silence  
 ✅ **Configurable Responses** - Different responses for different scenarios  
@@ -15,11 +15,11 @@ The enhanced MockRealtimeClient now supports:
 
 ## Key Components
 
-### 1. MockResponseConfig
+### 1. LocalResponseConfig
 A configuration class that defines how a response should be generated:
 
 ```python
-class MockResponseConfig(BaseModel):
+class LocalResponseConfig(BaseModel):
     text: str = "Default response text"
     audio_file: Optional[str] = None  # Path to audio file
     audio_data: Optional[bytes] = None  # Raw audio data
@@ -28,17 +28,17 @@ class MockResponseConfig(BaseModel):
     function_call: Optional[Dict[str, Any]] = None  # Function call to simulate
 ```
 
-### 2. Enhanced MockRealtimeClient
+### 2. Enhanced LocalRealtimeClient
 The main mock client with support for multiple response configurations:
 
 ```python
-mock_client = MockRealtimeClient(
+mock_client = LocalRealtimeClient(
     response_configs={
-        "greeting": MockResponseConfig(
+        "greeting": LocalResponseConfig(
             text="Hello! How can I help you?",
             audio_file="demo/audio/greeting.wav"
         ),
-        "help": MockResponseConfig(
+        "help": LocalResponseConfig(
             text="I'd be happy to help you with that.",
             audio_file="demo/audio/help.wav"
         )
@@ -72,15 +72,15 @@ mock_client = create_customer_service_mock(audio_dir="demo/audio")
 ### Custom Responses
 
 ```python
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 
 # Create a custom mock client
-mock_client = MockRealtimeClient()
+mock_client = LocalRealtimeClient()
 
 # Add response configurations
 mock_client.add_response_config(
     "greeting",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="Welcome to our service!",
         audio_file="audio/greeting.wav",
         delay_seconds=0.03
@@ -89,7 +89,7 @@ mock_client.add_response_config(
 
 mock_client.add_response_config(
     "help",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="I'm here to help you.",
         audio_file="audio/help.wav",
         delay_seconds=0.04
@@ -228,4 +228,4 @@ opusagent/mock/
 3. **Add More Scenarios** - Create additional factory functions for your specific use cases
 4. **Integration Testing** - Use the mock client in your integration tests
 
-The enhanced MockRealtimeClient now provides a complete solution for testing your realtime audio applications with saved audio phrases and configurable responses! 
+The enhanced LocalRealtimeClient now provides a complete solution for testing your realtime audio applications with saved audio phrases and configurable responses! 

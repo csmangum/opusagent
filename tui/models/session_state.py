@@ -1,17 +1,18 @@
 """
-Session state management for the Interactive TUI Validator.
+Session state management for the TUI application.
 
-This module provides the SessionState class which tracks active sessions,
-conversation state, and call flow transitions during TelephonyRealtimeBridge
-interactions.
+This module provides classes for managing session state, audio streams,
+and conversation data during real-time communication sessions.
 """
 
-import uuid
 import logging
+import uuid
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
+
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class AudioStreamState:
     """Audio stream state information."""
     status: StreamStatus = StreamStatus.IDLE
     media_format: str = "raw/lpcm16"
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
     channels: int = 1
     chunk_count: int = 0
     total_bytes: int = 0
@@ -103,10 +104,10 @@ class SessionState:
         self.max_history_size: int = 100
         
         # Event callbacks
-        self._status_change_callbacks: List[callable] = []
-        self._metrics_update_callbacks: List[callable] = []
+        self._status_change_callbacks: List[Callable[..., Any]] = []
+        self._metrics_update_callbacks: List[Callable[..., Any]] = []
     
-    def initiate_session(self, bot_name: str = None, caller: str = None) -> str:
+    def initiate_session(self, bot_name: Optional[str] = None, caller: Optional[str] = None) -> str:
         """
         Initiate a new session.
         
@@ -119,7 +120,7 @@ class SessionState:
         """
         if self.status != SessionStatus.IDLE:
             logger.warning(f"Cannot initiate session in status: {self.status}")
-            return self.conversation_id
+            return self.conversation_id or ""
         
         # Generate new conversation ID
         self.conversation_id = str(uuid.uuid4())
@@ -146,7 +147,7 @@ class SessionState:
         logger.info(f"Session initiated: {self.conversation_id}")
         return self.conversation_id
     
-    def accept_session(self, session_id: str = None) -> None:
+    def accept_session(self, session_id: Optional[str] = None) -> None:
         """
         Mark session as accepted.
         
@@ -185,7 +186,7 @@ class SessionState:
         
         logger.info(f"Session ended: {self.conversation_id}")
     
-    def start_user_stream(self, media_format: str = None) -> None:
+    def start_user_stream(self, media_format: Optional[str] = None) -> None:
         """Start user audio stream."""
         if not self.is_active:
             logger.warning("Cannot start user stream: Session not active")
@@ -227,7 +228,7 @@ class SessionState:
             self.user_stream.total_bytes += len(chunk_data) * 3 // 4
             self.metrics.audio_chunks_sent += 1
     
-    def handle_bot_audio_start(self, media_format: str = None) -> None:
+    def handle_bot_audio_start(self, media_format: Optional[str] = None) -> None:
         """Handle bot audio stream start."""
         if media_format:
             self.bot_stream.media_format = media_format
@@ -334,11 +335,11 @@ class SessionState:
         
         logger.info("Session state reset")
     
-    def add_status_change_callback(self, callback: callable) -> None:
+    def add_status_change_callback(self, callback: Callable) -> None:
         """Add a callback for status changes."""
         self._status_change_callbacks.append(callback)
     
-    def add_metrics_update_callback(self, callback: callable) -> None:
+    def add_metrics_update_callback(self, callback: Callable) -> None:
         """Add a callback for metrics updates."""
         self._metrics_update_callbacks.append(callback)
     

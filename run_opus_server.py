@@ -52,12 +52,12 @@ logger = configure_logging("run")
 def validate_mock_setup():
     """Validate mock mode setup and provide helpful information."""
     try:
-        from opusagent.mock.realtime import MockRealtimeClient
+        from opusagent.mock.realtime import LocalRealtimeClient
         from opusagent.websocket_manager import create_mock_websocket_manager
         
         # Test creating a mock client
-        mock_client = MockRealtimeClient()
-        logger.info("✓ MockRealtimeClient imported successfully")
+        mock_client = LocalRealtimeClient()
+        logger.info("✓ LocalRealtimeClient imported successfully")
         
         # Test creating a mock WebSocket manager
         mock_manager = create_mock_websocket_manager()
@@ -243,7 +243,7 @@ def main():
             print(f"   Mock server URL: {args.mock_server_url}")
             print(f"   Server URL: http://{args.host}:{args.port}")
             print(f"   Log level: {args.log_level}")
-            print(f"\n   The server is using the MockRealtimeClient for testing.")
+            print(f"\n   The server is using the LocalRealtimeClient for testing.")
             print(f"   No OpenAI API calls will be made.")
         else:
             print(f"\n🚀 Starting OpusAgent server in REAL mode")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for MockRealtimeClient.
+Unit tests for LocalRealtimeClient.
 """
 
 import asyncio
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import websockets
 
-from opusagent.mock.realtime.client import MockRealtimeClient
+from opusagent.mock.realtime.client import LocalRealtimeClient
 from opusagent.models.openai_api import (
     ClientEventType,
     ResponseCreateOptions,
@@ -21,8 +21,8 @@ from opusagent.models.openai_api import (
 )
 
 
-class TestMockRealtimeClient(unittest.TestCase):
-    """Test cases for MockRealtimeClient."""
+class TestLocalRealtimeClient(unittest.TestCase):
+    """Test cases for LocalRealtimeClient."""
 
     def assert_sent_event(self, mock_ws, event_type):
         """Helper function to find and assert a specific event was sent.
@@ -58,7 +58,7 @@ class TestMockRealtimeClient(unittest.TestCase):
 
         # Create client with mock WebSocket
         with patch("websockets.connect", self.mock_connect):
-            self.client = MockRealtimeClient(logger=self.logger)
+            self.client = LocalRealtimeClient(logger=self.logger)
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
             self.loop.run_until_complete(self.client.connect())
@@ -70,8 +70,9 @@ class TestMockRealtimeClient(unittest.TestCase):
 
     def test_initialization(self):
         """Test client initialization."""
-        self.assertIsNotNone(self.client.session_id)
-        self.assertIsNotNone(self.client.conversation_id)
+        session_state = self.client.get_session_state()
+        self.assertIsNotNone(session_state["session_id"])
+        self.assertIsNotNone(session_state["conversation_id"])
         self.assertTrue(self.client.connected)
         self.assertIsNotNone(self.client._ws)
 
@@ -83,7 +84,8 @@ class TestMockRealtimeClient(unittest.TestCase):
 
         self.assertEqual(event["type"], ServerEventType.SESSION_CREATED)
         self.assertIn("session", event)
-        self.assertEqual(event["session"]["id"], self.client.session_id)
+        session_state = self.client.get_session_state()
+        self.assertEqual(event["session"]["id"], session_state["session_id"])
 
     def test_session_update(self):
         """Test session update handling."""
@@ -95,10 +97,10 @@ class TestMockRealtimeClient(unittest.TestCase):
         # Send session update
         update_event = {
             "type": ClientEventType.SESSION_UPDATE,
-            "session": config.dict(),
+            "session": config.model_dump(),
         }
 
-        self.loop.run_until_complete(self.client._handle_session_update(update_event))
+        self.loop.run_until_complete(self.client.handle_session_update(update_event))
 
         # Verify session.updated event was sent
         call_args = self.mock_ws.send.call_args_list[-1][0][0]
@@ -120,21 +122,22 @@ class TestMockRealtimeClient(unittest.TestCase):
             "audio": audio_b64,
         }
 
-        self.loop.run_until_complete(self.client._handle_audio_append(append_event))
+        self.loop.run_until_complete(self.client.handle_audio_append(append_event))
 
         # Verify audio was added to buffer
-        self.assertEqual(len(self.client._audio_buffer), 1)
-        self.assertEqual(self.client._audio_buffer[0], audio_data)
+        audio_buffer = self.client.get_audio_buffer()
+        self.assertEqual(len(audio_buffer), 1)
+        self.assertEqual(audio_buffer[0], audio_data)
 
     def test_audio_buffer_commit(self):
         """Test audio buffer commit handling."""
         # Add some audio to buffer
-        self.client._audio_buffer = [b"\x00" * 1000]
+        self.client.set_audio_buffer([b"\x00" * 1000])
 
         # Send commit event
         commit_event = {"type": ClientEventType.INPUT_AUDIO_BUFFER_COMMIT}
 
-        self.loop.run_until_complete(self.client._handle_audio_commit(commit_event))
+        self.loop.run_until_complete(self.client.handle_audio_commit(commit_event))
 
         # Verify committed event was sent
         call_args = self.mock_ws.send.call_args_list[-1][0][0]
@@ -144,7 +147,8 @@ class TestMockRealtimeClient(unittest.TestCase):
         self.assertIn("item_id", event)
 
         # Verify buffer was cleared
-        self.assertEqual(len(self.client._audio_buffer), 0)
+        audio_buffer = self.client.get_audio_buffer()
+        self.assertEqual(len(audio_buffer), 0)
 
     def test_response_create_text(self):
         """Test text response creation."""
@@ -154,7 +158,7 @@ class TestMockRealtimeClient(unittest.TestCase):
         # Send response create event
         create_event = {
             "type": ClientEventType.RESPONSE_CREATE,
-            "response": options.dict(),
+            "response": options.model_dump(),
         }
 
         self.loop.run_until_complete(self.client._handle_response_create(create_event))
@@ -174,7 +178,7 @@ class TestMockRealtimeClient(unittest.TestCase):
         # Send response create event
         create_event = {
             "type": ClientEventType.RESPONSE_CREATE,
-            "response": options.dict(),
+            "response": options.model_dump(),
         }
 
         self.loop.run_until_complete(self.client._handle_response_create(create_event))
@@ -189,7 +193,7 @@ class TestMockRealtimeClient(unittest.TestCase):
     def test_response_cancel(self):
         """Test response cancellation."""
         # Set up active response
-        self.client._active_response_id = "test_response_id"
+        self.client.set_active_response_id("test_response_id")
 
         # Send cancel event
         cancel_event = {
@@ -197,7 +201,7 @@ class TestMockRealtimeClient(unittest.TestCase):
             "response_id": "test_response_id",
         }
 
-        self.loop.run_until_complete(self.client._handle_response_cancel(cancel_event))
+        self.loop.run_until_complete(self.client.handle_response_cancel(cancel_event))
 
         # Verify response.cancelled event was sent
         response_cancelled_event = self.assert_sent_event(
@@ -206,7 +210,7 @@ class TestMockRealtimeClient(unittest.TestCase):
         self.assertEqual(response_cancelled_event["response_id"], "test_response_id")  # type: ignore
 
         # Verify active response was cleared
-        self.assertIsNone(self.client._active_response_id)
+        self.assertIsNone(self.client.get_active_response_id())
 
     def test_error_sending(self):
         """Test error event sending."""
@@ -246,7 +250,7 @@ class TestMockRealtimeClient(unittest.TestCase):
     def test_transcript_delta(self):
         """Test transcript delta sending."""
         # Set up active response
-        self.client._active_response_id = "test_response_id"
+        self.client.set_active_response_id("test_response_id")
 
         # Send transcript delta
         self.loop.run_until_complete(
@@ -282,7 +286,7 @@ class TestMockRealtimeClient(unittest.TestCase):
     def test_content_part_handling(self):
         """Test content part handling."""
         # Set up active response
-        self.client._active_response_id = "test_response_id"
+        self.client.set_active_response_id("test_response_id")
 
         # Create test part
         part = {"type": "text", "text": "Test content"}

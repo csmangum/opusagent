@@ -1,10 +1,10 @@
-# Audio Generation Scripts for MockRealtimeClient
+# Audio Generation Scripts for LocalRealtimeClient
 
-This directory contains scripts for generating audio files to use with the `MockRealtimeClient` for testing and development.
+This directory contains scripts for generating audio files to use with the `LocalRealtimeClient` for testing and development.
 
 ## Overview
 
-The MockRealtimeClient supports using real audio files instead of silence, making tests more realistic and comprehensive. These scripts help you generate audio files for various scenarios.
+The LocalRealtimeClient supports using real audio files instead of silence, making tests more realistic and comprehensive. These scripts help you generate audio files for various scenarios.
 
 ## Scripts
 
@@ -57,7 +57,7 @@ python scripts/generate_mock_audio.py --list-scenarios
 
 ### 2. `example_mock_audio_usage.py`
 
-Example script demonstrating how to use generated audio files with the MockRealtimeClient.
+Example script demonstrating how to use generated audio files with the LocalRealtimeClient.
 
 **Features:**
 - Basic usage examples
@@ -103,20 +103,20 @@ demo/audio/mock/
 └── errors/
 ```
 
-## Integration with MockRealtimeClient
+## Integration with LocalRealtimeClient
 
 ### Basic Usage
 
 ```python
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 
 # Create mock client
-mock_client = MockRealtimeClient()
+mock_client = LocalRealtimeClient()
 
 # Add response configuration with audio file
 mock_client.add_response_config(
     "greeting",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="Hello! Welcome to our service.",
         audio_file="demo/audio/mock/greetings/greetings_01.wav",
         delay_seconds=0.03,
@@ -184,7 +184,7 @@ AUDIO_SCENARIOS["custom_scenario"] = {
 
 ### Caching
 
-The MockRealtimeClient automatically caches loaded audio files in memory for improved performance. Files are loaded once and reused.
+The LocalRealtimeClient automatically caches loaded audio files in memory for improved performance. Files are loaded once and reused.
 
 ### File Sizes
 
@@ -247,7 +247,7 @@ logging.basicConfig(level=logging.DEBUG)
 ## Examples
 
 See `example_mock_audio_usage.py` for comprehensive examples of:
-- Basic MockRealtimeClient usage
+- Basic LocalRealtimeClient usage
 - Factory function usage
 - Audio file loading and caching
 - Function call simulation
@@ -261,4 +261,4 @@ See `example_mock_audio_usage.py` for comprehensive examples of:
 4. Customize scenarios as needed
 5. Use with your WebSocket manager
 
-For more information about the MockRealtimeClient, see the main documentation in `opusagent/mock/CHANGELOG.md`. 
+For more information about the LocalRealtimeClient, see the main documentation in `opusagent/mock/CHANGELOG.md`. 

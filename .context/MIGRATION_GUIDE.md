@@ -1,8 +1,8 @@
-# MockRealtimeClient Refactoring Migration Guide
+# LocalRealtimeClient Refactoring Migration Guide
 
 ## Overview
 
-The `MockRealtimeClient` has been refactored from a single large file (`mock_realtime_client.py`) into a modular structure under the `mock_realtime/` directory. This refactoring improves maintainability, testability, and separation of concerns.
+The `LocalRealtimeClient` has been refactored from a single large file (`mock_realtime_client.py`) into a modular structure under the `mock_realtime/` directory. This refactoring improves maintainability, testability, and separation of concerns.
 
 ## What Changed
 
@@ -21,11 +21,11 @@ opusagent/mock/
 opusagent/mock/
 ├── mock_realtime/             # New modular structure
 │   ├── __init__.py           # Main exports
-│   ├── models.py             # Data models (MockResponseConfig, etc.)
+│   ├── models.py             # Data models (LocalResponseConfig, etc.)
 │   ├── audio.py              # Audio management and caching
 │   ├── handlers.py           # WebSocket event handlers
 │   ├── generators.py         # Response generation logic
-│   ├── client.py             # Main MockRealtimeClient
+│   ├── client.py             # Main LocalRealtimeClient
 │   └── utils.py              # Utility functions and constants
 ├── mock_realtime_client.py   # Backward compatibility wrapper
 ├── mock_factory.py
@@ -40,12 +40,12 @@ opusagent/mock/
 
 **Old way:**
 ```python
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 ```
 
 **New way:**
 ```python
-from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime import LocalRealtimeClient, LocalResponseConfig
 ```
 
 ### 2. Backward Compatibility
@@ -53,7 +53,7 @@ from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
 The old import path still works for backward compatibility:
 ```python
 # This still works
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 ```
 
 However, it's recommended to update to the new import path for better maintainability.
@@ -62,7 +62,7 @@ However, it's recommended to update to the new import path for better maintainab
 
 ### `models.py`
 - **Purpose**: Data models and configuration classes
-- **Contains**: `MockResponseConfig`, `MockSessionState`
+- **Contains**: `LocalResponseConfig`, `MockSessionState`
 - **Benefits**: Clear data structure definitions, validation
 
 ### `audio.py`
@@ -82,7 +82,7 @@ However, it's recommended to update to the new import path for better maintainab
 
 ### `client.py`
 - **Purpose**: Main client orchestration
-- **Contains**: `MockRealtimeClient` class
+- **Contains**: `LocalRealtimeClient` class
 - **Benefits**: Clean main interface, delegates to specialized components
 
 ### `utils.py`
@@ -118,15 +118,15 @@ Your existing code will continue to work without any changes:
 
 ```python
 # This still works exactly the same
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 
 # Create mock client
-mock_client = MockRealtimeClient()
+mock_client = LocalRealtimeClient()
 
 # Add response configuration
 mock_client.add_response_config(
     "greeting",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="Hello! How can I help you?",
         audio_file="audio/greeting.wav"
     )
@@ -142,7 +142,7 @@ websocket_manager = create_mock_websocket_manager()
 If you want to use the new modular structure directly:
 
 ```python
-from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime import LocalRealtimeClient, LocalResponseConfig
 from opusagent.mock.mock_realtime.audio import AudioManager
 from opusagent.mock.mock_realtime.handlers import EventHandlerManager
 from opusagent.mock.mock_realtime.generators import ResponseGenerator
@@ -153,7 +153,7 @@ event_handler = EventHandlerManager()
 response_generator = ResponseGenerator(audio_manager=audio_manager)
 
 # Create mock client with custom components
-mock_client = MockRealtimeClient(
+mock_client = LocalRealtimeClient(
     logger=logger,
     session_config=session_config,
     response_configs=response_configs

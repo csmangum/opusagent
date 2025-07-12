@@ -7,6 +7,7 @@ including thresholds, alert levels, and monitoring parameters.
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 from opusagent.audio_quality_monitor import QualityThresholds
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE
 
 
 @dataclass
@@ -20,7 +21,7 @@ class QualityMonitoringConfig:
     thresholds: Optional[QualityThresholds] = None
     
     # Monitoring parameters
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
     chunk_size: int = 1024
     history_size: int = 100
     

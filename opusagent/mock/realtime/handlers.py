@@ -1,9 +1,32 @@
 """
-Event handlers for the MockRealtime module.
+Event handlers for the LocalRealtime module.
 
-This module contains event handlers for processing WebSocket messages
-in the MockRealtimeClient. It handles session management, audio buffer
-operations, and response creation/cancellation.
+This module provides a comprehensive event handling system for the LocalRealtimeClient,
+which simulates the OpenAI Realtime API for testing and development purposes. It includes:
+
+Key Components:
+- EventHandlerManager: Centralized event handler registration and management
+- Session Management: Handle session creation, updates, and state tracking
+- Audio Buffer Operations: Process incoming audio data, speech detection, and buffer management
+- Response Management: Handle response creation, cancellation, and lifecycle events
+
+Supported Events:
+- session.update: Update session configuration and parameters
+- input_audio_buffer.append: Add audio data to the input buffer
+- input_audio_buffer.commit: Commit buffered audio to conversation
+- input_audio_buffer.clear: Clear the current audio buffer
+- response.create: Initiate response generation
+- response.cancel: Cancel active response generation
+
+The module implements the complete event flow expected by OpenAI Realtime API clients,
+including proper event sequencing, state management, and error handling. It's designed
+to be extensible, allowing custom event handlers to be registered for specialized testing
+scenarios.
+
+Usage:
+    handler_manager = EventHandlerManager(logger, session_config)
+    handler_manager.register_event_handler("custom.event", custom_handler)
+    await handler_manager.handle_message(json_message)
 """
 
 import asyncio
@@ -27,7 +50,7 @@ from opusagent.models.openai_api import (
 
 class EventHandlerManager:
     """
-    Manages event handlers for WebSocket messages in the MockRealtimeClient.
+    Manages event handlers for WebSocket messages in the LocalRealtimeClient.
     
     This class provides a centralized way to register and handle different
     types of WebSocket events, making the mock client extensible and
@@ -162,13 +185,11 @@ class EventHandlerManager:
         Raises:
             Exception: If sending fails (e.g., connection closed)
         """
-        if self._ws:
-            try:
-                await self._ws.send(json.dumps(event))
-                self.logger.debug(f"[MOCK REALTIME] Sent event: {event.get('type', 'unknown')}")
-            except Exception as e:
-                self.logger.error(f"[MOCK REALTIME] Error sending event: {e}")
-                raise
+        from opusagent.utils.websocket_utils import WebSocketUtils
+        
+        success = await WebSocketUtils.safe_send_event(self._ws, event, self.logger)
+        if not success:
+            raise Exception("Failed to send event to WebSocket")
     
     def _register_default_handlers(self) -> None:
         """

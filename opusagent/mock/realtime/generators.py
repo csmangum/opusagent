@@ -1,9 +1,40 @@
 """
-Response generators for the MockRealtime module.
+Response generators for the LocalRealtime module.
 
-This module contains the logic for generating different types of responses
-in the MockRealtimeClient, including text streaming, audio streaming,
-and function call simulation.
+This module provides a comprehensive response generation system for the LocalRealtimeClient,
+which simulates the OpenAI Realtime API. It handles the creation and streaming of various
+response types with realistic timing and behavior patterns.
+
+Key Features:
+- Text Response Streaming: Character-by-character text streaming with configurable delays
+- Audio Response Streaming: Chunked audio streaming with support for files and raw data
+- Function Call Simulation: Realistic function call generation with argument streaming
+- Transcript Generation: Audio transcription events for both input and output audio
+- Error Handling: Comprehensive error event generation for testing edge cases
+- Response Lifecycle: Complete response creation, streaming, and completion flow
+
+Core Components:
+- ResponseGenerator: Main class handling all response generation types
+- Streaming Simulation: Realistic timing and chunking for natural conversation flow
+- Audio Integration: Seamless integration with AudioManager for file-based responses
+- Event Sequencing: Proper event ordering and timing for API compliance
+
+Supported Response Types:
+- Text Responses: Streaming text with character delays and completion events
+- Audio Responses: Chunked audio streaming with configurable chunk sizes and delays
+- Function Calls: Argument streaming with proper call structure and completion
+- Transcripts: Real-time transcription events for audio content
+- Error Events: Structured error reporting with codes and details
+
+The module is designed to provide realistic, configurable responses that closely
+mimic the behavior of the actual OpenAI Realtime API, enabling comprehensive
+testing and development of client applications.
+
+Usage:
+    generator = ResponseGenerator(logger, audio_manager, websocket_connection)
+    await generator.generate_text_response(options, config)
+    await generator.generate_audio_response(options, config)
+    await generator.generate_function_call(options, config)
 """
 
 import asyncio
@@ -16,12 +47,12 @@ from typing import Any, Dict, Optional
 
 from opusagent.models.openai_api import ResponseCreateOptions, ServerEventType
 
-from .models import MockResponseConfig
+from .models import LocalResponseConfig
 
 
 class ResponseGenerator:
     """
-    Generates different types of responses for the MockRealtimeClient.
+    Generates different types of responses for the LocalRealtimeClient.
     
     This class handles the generation of text, audio, and function call
     responses with configurable timing and streaming behavior.
@@ -80,13 +111,11 @@ class ResponseGenerator:
         Raises:
             Exception: If sending fails.
         """
-        if self._ws:
-            try:
-                await self._ws.send(json.dumps(event))
-                self.logger.debug(f"[MOCK REALTIME] Sent event: {event.get('type', 'unknown')}")
-            except Exception as e:
-                self.logger.error(f"[MOCK REALTIME] Error sending event: {e}")
-                raise
+        from opusagent.utils.websocket_utils import WebSocketUtils
+        
+        success = await WebSocketUtils.safe_send_event(self._ws, event, self.logger)
+        if not success:
+            raise Exception("Failed to send event to WebSocket")
     
     def _determine_response_key(self, options: ResponseCreateOptions) -> Optional[str]:
         """
@@ -119,7 +148,7 @@ class ResponseGenerator:
     async def generate_text_response(
         self,
         options: ResponseCreateOptions,
-        config: MockResponseConfig
+        config: LocalResponseConfig
     ) -> None:
         """
         Generate a text response with streaming simulation.
@@ -130,7 +159,7 @@ class ResponseGenerator:
         
         Args:
             options (ResponseCreateOptions): Response creation options.
-            config (MockResponseConfig): Configuration for this response.
+            config (LocalResponseConfig): Configuration for this response.
         
         The streaming process:
         1. Sends text.delta events for each character
@@ -167,7 +196,7 @@ class ResponseGenerator:
     async def generate_audio_response(
         self,
         options: ResponseCreateOptions,
-        config: MockResponseConfig
+        config: LocalResponseConfig
     ) -> None:
         """
         Generate an audio response with streaming simulation.
@@ -178,7 +207,7 @@ class ResponseGenerator:
         
         Args:
             options (ResponseCreateOptions): Response creation options.
-            config (MockResponseConfig): Configuration for this response.
+            config (LocalResponseConfig): Configuration for this response.
         
         Audio sources (in order of precedence):
         1. config.audio_data (raw bytes)
@@ -242,7 +271,7 @@ class ResponseGenerator:
     async def generate_function_call(
         self,
         options: ResponseCreateOptions,
-        config: MockResponseConfig
+        config: LocalResponseConfig
     ) -> None:
         """
         Generate a function call response.
@@ -253,7 +282,7 @@ class ResponseGenerator:
         
         Args:
             options (ResponseCreateOptions): Response creation options.
-            config (MockResponseConfig): Configuration for this response.
+            config (LocalResponseConfig): Configuration for this response.
         
         The function call process:
         1. Determines function call to simulate
@@ -330,9 +359,10 @@ class ResponseGenerator:
         event = {
             "type": ServerEventType.ERROR,
             "code": code,
-            "message": message,
-            "details": details
+            "message": message
         }
+        if details is not None:
+            event["details"] = details
         await self._send_event(event)
     
     async def send_transcript_delta(self, text: str, final: bool = False) -> None:

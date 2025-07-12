@@ -1,8 +1,8 @@
 """
-Audio Manager for the Interactive TUI Validator.
+Audio management for the TUI application.
 
 This module provides real-time audio playback, recording, and streaming
-capabilities for testing TelephonyRealtimeBridge interactions.
+capabilities for testing TelephonyRealtimeBridge functionality.
 """
 
 import asyncio
@@ -10,7 +10,7 @@ import base64
 import logging
 import threading
 import time
-from typing import AsyncGenerator, Callable, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import queue
@@ -18,6 +18,8 @@ import queue
 import sounddevice as sd
 import numpy as np
 from scipy import signal
+
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ class AudioFormat(Enum):
 @dataclass
 class AudioConfig:
     """Audio configuration settings."""
-    sample_rate: int = 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE
     channels: int = 1
     chunk_size: int = 1024  # frames per chunk
     format: AudioFormat = AudioFormat.PCM16
@@ -45,7 +47,7 @@ class AudioManager:
     with support for multiple audio formats and real-time visualization.
     """
     
-    def __init__(self, config: AudioConfig = None):
+    def __init__(self, config: Optional[AudioConfig] = None):
         self.config = config or AudioConfig()
         
         # Playback state
@@ -385,15 +387,17 @@ class AudioManager:
             output_devices = []
             
             for i, device in enumerate(devices):
+                # Cast device to Dict[str, Any] for type safety
+                device_dict: Dict[str, Any] = device  # type: ignore
                 device_info = {
                     "index": i,
-                    "name": device["name"],
-                    "channels": device["max_input_channels"] if device["max_input_channels"] > 0 else device["max_output_channels"]
+                    "name": str(device_dict.get("name", f"Device {i}")),
+                    "channels": int(device_dict.get("max_input_channels", 0) if device_dict.get("max_input_channels", 0) > 0 else device_dict.get("max_output_channels", 0))
                 }
                 
-                if device["max_input_channels"] > 0:
+                if int(device_dict.get("max_input_channels", 0)) > 0:
                     input_devices.append(device_info)
-                if device["max_output_channels"] > 0:
+                if int(device_dict.get("max_output_channels", 0)) > 0:
                     output_devices.append(device_info)
             
             return {

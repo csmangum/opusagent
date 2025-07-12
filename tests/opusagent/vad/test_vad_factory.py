@@ -194,10 +194,10 @@ class TestVADFactory:
         """Test that all config values are passed through to the VAD."""
         config = {
             'backend': 'silero',
-            'sample_rate': 44100,
+            'sample_rate': 16000,  # Valid sample rate for SileroVAD
             'threshold': 0.123,
-            'device': 'gpu:1',
-            'chunk_size': 1024,
+            'device': 'cuda',  # Valid device for SileroVAD
+            'chunk_size': 512,  # Valid chunk size for 16kHz
             'extra_param': 'extra_value'  # Extra parameter should be passed through
         }
         
@@ -205,10 +205,10 @@ class TestVADFactory:
         
         assert isinstance(vad, SileroVAD)
         # Verify all config values are set
-        assert vad.sample_rate == 44100
+        assert vad.sample_rate == 16000
         assert vad.threshold == 0.123
-        assert vad.device == 'gpu:1'
-        assert vad.chunk_size == 1024
+        assert vad.device == 'cuda'
+        assert vad.chunk_size == 512
 
     def test_create_vad_static_method(self):
         """Test that create_vad is a static method."""

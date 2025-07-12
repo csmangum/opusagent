@@ -2,7 +2,7 @@
 """
 Test Mock Environment Variable Integration
 
-This script tests that the MockRealtimeClient can be used via environment variables
+This script tests that the LocalRealtimeClient can be used via environment variables
 and that the WebSocket manager properly switches to mock mode when configured.
 
 Usage:
@@ -99,21 +99,22 @@ def test_websocket_manager_creation():
 
 
 def test_mock_client_import():
-    """Test that MockRealtimeClient can be imported."""
+    """Test that LocalRealtimeClient can be imported."""
     print("\n=== Mock Client Import Test ===")
     
     try:
-        from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
-        print("✓ MockRealtimeClient imported successfully")
+        from opusagent.mock.realtime.client import LocalRealtimeClient
+        from opusagent.mock.realtime.models import LocalResponseConfig
+        print("✓ LocalRealtimeClient imported successfully")
         
         # Test creating mock client
-        mock_client = MockRealtimeClient()
-        print("✓ MockRealtimeClient created successfully")
+        mock_client = LocalRealtimeClient()
+        print("✓ LocalRealtimeClient created successfully")
         
         # Test adding response config
         mock_client.add_response_config(
             "test",
-            MockResponseConfig(
+            LocalResponseConfig(
                 text="Test response",
                 audio_file="demo/audio/mock_test/greetings/greetings_01.wav"
             )

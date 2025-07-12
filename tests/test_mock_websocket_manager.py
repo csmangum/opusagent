@@ -2,7 +2,7 @@
 """
 Tests for the mock WebSocket manager functionality.
 
-This module tests the integration between the WebSocketManager and MockRealtimeClient
+This module tests the integration between the WebSocketManager and LocalRealtimeClient
 to ensure that mock mode works correctly for testing scenarios.
 """
 
@@ -76,15 +76,15 @@ class TestMockWebSocketManager:
                 assert connection.can_accept_session
                 
         except ImportError:
-            # MockRealtimeClient may not be available in test environment
-            pytest.skip("MockRealtimeClient not available")
+            # LocalRealtimeClient may not be available in test environment
+            pytest.skip("LocalRealtimeClient not available")
         finally:
             await manager.shutdown()
 
     @pytest.mark.asyncio
     async def test_mock_websocket_wrapper(self):
         """Test the MockWebSocketWrapper functionality."""
-        # Mock the MockRealtimeClient
+        # Mock the LocalRealtimeClient
         class MockClient:
             def __init__(self):
                 self._ws = None

@@ -1,10 +1,10 @@
-# Environment Variables for MockRealtimeClient
+# Environment Variables for LocalRealtimeClient
 
-This document explains how to use environment variables to configure the MockRealtimeClient for testing and development.
+This document explains how to use environment variables to configure the LocalRealtimeClient for testing and development.
 
 ## Overview
 
-The MockRealtimeClient can be configured via environment variables to enable mock mode globally across your application. This allows you to switch between real OpenAI API and mock mode without changing your code.
+The LocalRealtimeClient can be configured via environment variables to enable mock mode globally across your application. This allows you to switch between real OpenAI API and mock mode without changing your code.
 
 ## Environment Variables
 
@@ -259,7 +259,7 @@ def test_mock_mode(mock_websocket_manager):
 
 ## Related Documentation
 
-- [MockRealtimeClient Documentation](README.md)
+- [LocalRealtimeClient Documentation](README.md)
 - [Audio Generation Guide](../scripts/README_audio_generation.md)
 - [Factory Functions](mock_factory.py)
 - [Test Scripts](../scripts/test_mock_env.py) 

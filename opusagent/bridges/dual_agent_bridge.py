@@ -109,7 +109,8 @@ class DualAgentBridge:
             await asyncio.gather(
                 self._handle_caller_messages(),
                 self._handle_cs_messages(),
-                self._manage_conversation_flow()
+                self._manage_conversation_flow(),
+                return_exceptions=True
             )
                     
         except Exception as e:

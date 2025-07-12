@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Any
 from enum import Enum
 
 from opusagent.config.logging_config import configure_logging
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE
 
 logger = configure_logging("call_recorder")
 
@@ -144,9 +145,9 @@ class CallRecorder:
         self.recording_dir.mkdir(parents=True, exist_ok=True)
         
         # Audio recording setup - different sample rates for different sources
-        self.caller_sample_rate = 16000  # Telephony is typically 16kHz
+        self.caller_sample_rate = DEFAULT_SAMPLE_RATE  # Telephony is typically 16kHz
         self.bot_sample_rate = bot_sample_rate     # OpenAI Realtime API (configurable)
-        self.target_sample_rate = 16000  # Target rate for final recordings (for consistency)
+        self.target_sample_rate = DEFAULT_SAMPLE_RATE  # Target rate for final recordings (for consistency)
         self.channels = 1
         self.sample_width = 2  # 16-bit
         
