@@ -166,7 +166,10 @@ class VADIntegrationValidator:
         
         # Update summary
         self.results["summary"]["total_tests"] += 1
-        self.results["summary"][status.lower()] += 1
+        status_key = status.lower()
+        if status_key == "error":
+            status_key = "errors"
+        self.results["summary"][status_key] += 1
         
         # Log to console
         status_emoji = {
@@ -846,12 +849,18 @@ class VADIntegrationValidator:
             audio_16bit = (audio * 32767).astype(np.int16)
             return audio_16bit.tobytes()
         elif format == "pcm24":
-            # Convert to 24-bit PCM
-            audio_24bit = (audio * 8388607).astype(np.int32)
+            # Convert to 24-bit PCM with proper clamping
+            audio_24bit = np.clip(audio * 8388607, -8388608, 8388607).astype(np.int32)
             # Pack as 24-bit
             bytes_data = []
             for sample in audio_24bit:
-                bytes_data.extend(int(sample).to_bytes(3, byteorder='little', signed=True))
+                # Ensure the value fits in 24 bits
+                sample_int = int(sample)
+                if sample_int < -8388608:
+                    sample_int = -8388608
+                elif sample_int > 8388607:
+                    sample_int = 8388607
+                bytes_data.extend(sample_int.to_bytes(3, byteorder='little', signed=True))
             return bytes(bytes_data)
         else:
             return audio.tobytes()
