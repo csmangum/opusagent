@@ -1,8 +1,37 @@
 """
 Data models for the LocalRealtime module.
 
-This module contains Pydantic models and data structures used by the
-LocalRealtimeClient for configuration and response handling.
+This module provides comprehensive data models and structures for the LocalRealtimeClient,
+which simulates the OpenAI Realtime API. It defines the configuration, state management,
+and response selection logic using Pydantic for validation and type safety.
+
+Key Components:
+- ConversationContext: Tracks conversation state and provides context for intelligent response selection
+- ResponseSelectionCriteria: Defines conditions for selecting responses based on conversation context
+- LocalResponseConfig: Configuration for mock responses with text, audio, timing, and function calls
+- MockSessionState: Session state tracking including connection status and audio buffers
+
+Core Features:
+- Context-Aware Response Selection: Intelligent response selection based on conversation history
+- Flexible Response Configuration: Support for text, audio, function calls, and timing control
+- Session State Management: Comprehensive tracking of session and conversation state
+- Validation and Type Safety: Pydantic models ensure data integrity and provide clear interfaces
+
+Data Models:
+- ConversationContext: Tracks conversation history, intents, modalities, and function call context
+- ResponseSelectionCriteria: Keyword matching, intent detection, turn count conditions, and priority
+- LocalResponseConfig: Text content, audio files/data, timing delays, function calls, and selection criteria
+- MockSessionState: Session IDs, connection status, audio buffers, and conversation context
+
+The models are designed to support sophisticated mock conversations with realistic
+response selection, state management, and configuration options that closely mirror
+the behavior of the actual OpenAI Realtime API.
+
+Usage:
+    context = ConversationContext(session_id="123", conversation_id="456")
+    criteria = ResponseSelectionCriteria(required_keywords=["hello"], priority=10)
+    config = LocalResponseConfig(text="Hello!", audio_file="greeting.wav", delay_seconds=0.05)
+    state = MockSessionState(session_id="123", conversation_id="456", connected=True)
 """
 
 from typing import Any, Dict, List, Optional, Set, Union

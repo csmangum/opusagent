@@ -1,8 +1,40 @@
 """
 Utility functions and constants for the LocalRealtime module.
 
-This module contains helper functions, constants, and utilities used
-by the LocalRealtimeClient and its components. Mock-specific utilities only.
+This module provides a comprehensive set of utility functions, constants, and helper
+methods for the LocalRealtimeClient, which simulates the OpenAI Realtime API. It
+includes validation, event creation, configuration management, and re-exports of
+shared utilities for convenience.
+
+Key Features:
+- Configuration Validation: Validate response configurations and ensure data integrity
+- Event Creation: Helper functions for creating properly formatted WebSocket events
+- Default Configurations: Pre-built default configurations for common use cases
+- Constants Management: Centralized audio and system constants with re-exports
+- Utility Re-exports: Convenient access to shared utilities from other modules
+
+Core Utilities:
+- validate_response_config(): Validate response configuration dictionaries
+- create_default_response_config(): Generate default response configurations
+- create_error_event(): Create properly formatted error events
+- create_session_event(): Create session creation events with timestamps
+- create_response_event(): Create response events with proper structure
+
+Constants and Re-exports:
+- Audio Constants: Sample rates, chunk sizes, channels, and bit depths
+- Shared Utilities: Audio processing, WebSocket handling, and retry logic
+- Event Types: Server event type constants for proper event creation
+
+The module is designed to provide a clean, consistent interface for common
+operations while maintaining compatibility with the broader opusagent ecosystem.
+It reduces code duplication and ensures consistent behavior across the mock system.
+
+Usage:
+    if validate_response_config(config):
+        default_config = create_default_response_config()
+        error_event = create_error_event("INVALID_CONFIG", "Configuration error")
+        session_event = create_session_event("session_123", session_config)
+        response_event = create_response_event("resp_456", "text.delta", delta="Hello")
 """
 
 import time

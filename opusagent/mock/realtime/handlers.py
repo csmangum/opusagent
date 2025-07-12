@@ -1,9 +1,32 @@
 """
 Event handlers for the LocalRealtime module.
 
-This module contains event handlers for processing WebSocket messages
-in the LocalRealtimeClient. It handles session management, audio buffer
-operations, and response creation/cancellation.
+This module provides a comprehensive event handling system for the LocalRealtimeClient,
+which simulates the OpenAI Realtime API for testing and development purposes. It includes:
+
+Key Components:
+- EventHandlerManager: Centralized event handler registration and management
+- Session Management: Handle session creation, updates, and state tracking
+- Audio Buffer Operations: Process incoming audio data, speech detection, and buffer management
+- Response Management: Handle response creation, cancellation, and lifecycle events
+
+Supported Events:
+- session.update: Update session configuration and parameters
+- input_audio_buffer.append: Add audio data to the input buffer
+- input_audio_buffer.commit: Commit buffered audio to conversation
+- input_audio_buffer.clear: Clear the current audio buffer
+- response.create: Initiate response generation
+- response.cancel: Cancel active response generation
+
+The module implements the complete event flow expected by OpenAI Realtime API clients,
+including proper event sequencing, state management, and error handling. It's designed
+to be extensible, allowing custom event handlers to be registered for specialized testing
+scenarios.
+
+Usage:
+    handler_manager = EventHandlerManager(logger, session_config)
+    handler_manager.register_event_handler("custom.event", custom_handler)
+    await handler_manager.handle_message(json_message)
 """
 
 import asyncio

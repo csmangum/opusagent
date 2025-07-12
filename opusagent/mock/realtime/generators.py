@@ -1,9 +1,40 @@
 """
 Response generators for the LocalRealtime module.
 
-This module contains the logic for generating different types of responses
-in the LocalRealtimeClient, including text streaming, audio streaming,
-and function call simulation.
+This module provides a comprehensive response generation system for the LocalRealtimeClient,
+which simulates the OpenAI Realtime API. It handles the creation and streaming of various
+response types with realistic timing and behavior patterns.
+
+Key Features:
+- Text Response Streaming: Character-by-character text streaming with configurable delays
+- Audio Response Streaming: Chunked audio streaming with support for files and raw data
+- Function Call Simulation: Realistic function call generation with argument streaming
+- Transcript Generation: Audio transcription events for both input and output audio
+- Error Handling: Comprehensive error event generation for testing edge cases
+- Response Lifecycle: Complete response creation, streaming, and completion flow
+
+Core Components:
+- ResponseGenerator: Main class handling all response generation types
+- Streaming Simulation: Realistic timing and chunking for natural conversation flow
+- Audio Integration: Seamless integration with AudioManager for file-based responses
+- Event Sequencing: Proper event ordering and timing for API compliance
+
+Supported Response Types:
+- Text Responses: Streaming text with character delays and completion events
+- Audio Responses: Chunked audio streaming with configurable chunk sizes and delays
+- Function Calls: Argument streaming with proper call structure and completion
+- Transcripts: Real-time transcription events for audio content
+- Error Events: Structured error reporting with codes and details
+
+The module is designed to provide realistic, configurable responses that closely
+mimic the behavior of the actual OpenAI Realtime API, enabling comprehensive
+testing and development of client applications.
+
+Usage:
+    generator = ResponseGenerator(logger, audio_manager, websocket_connection)
+    await generator.generate_text_response(options, config)
+    await generator.generate_audio_response(options, config)
+    await generator.generate_function_call(options, config)
 """
 
 import asyncio

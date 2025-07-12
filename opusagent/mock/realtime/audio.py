@@ -1,9 +1,38 @@
 """
 Audio management for the LocalRealtime module.
 
-This module provides a caching wrapper around AudioUtils for the
-LocalRealtimeClient. It adds caching capabilities to the existing
-audio utilities for improved performance.
+This module provides a high-performance audio caching and management system for the
+LocalRealtimeClient, which simulates the OpenAI Realtime API. It wraps the existing
+AudioUtils with intelligent caching to improve response times and reduce I/O overhead.
+
+Key Features:
+- Audio File Caching: Intelligent caching of loaded audio files with metadata
+- Format Support: Leverages AudioUtils for multi-format audio processing
+- Fallback Handling: Graceful degradation with silence generation when files are unavailable
+- Performance Optimization: Reduces repeated file I/O operations through caching
+- Memory Management: Cache size monitoring and manual cache control
+
+Core Components:
+- AudioManager: Main class providing audio loading, caching, and management
+- Cache Management: Automatic and manual cache control with statistics
+- Error Handling: Robust error handling with fallback to silence generation
+- Metadata Tracking: Sample rate and channel information caching
+
+Supported Operations:
+- load_audio_file(): Load and cache audio files with resampling
+- clear_cache(): Remove all cached audio data
+- get_cache_info(): Retrieve cache statistics and memory usage
+- is_cached(): Check if a file is currently cached
+- remove_from_cache(): Remove specific files from cache
+
+The module is designed to work seamlessly with the LocalRealtimeClient, providing
+fast audio responses for mock conversations while maintaining compatibility with
+the existing AudioUtils infrastructure.
+
+Usage:
+    audio_manager = AudioManager(logger)
+    audio_data = await audio_manager.load_audio_file("audio/greeting.wav", 16000)
+    cache_info = audio_manager.get_cache_info()
 """
 
 import logging
