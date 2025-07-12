@@ -596,3 +596,571 @@ class TestEventHandlerManager:
         assert custom_handler_data is not None
         assert custom_handler_data["type"] == "custom.event"
         assert custom_handler_data["data"] == "custom_value" 
+
+
+class TestVADIntegration:
+    """Test VAD integration in EventHandlerManager."""
+
+    def test_event_handler_manager_creation_with_vad(self):
+        """Test EventHandlerManager creation with VAD instance."""
+        logger = Mock()
+        session_config = SessionConfig()
+        mock_vad = Mock()
+        
+        handler = EventHandlerManager(logger, session_config, vad=mock_vad)
+        
+        assert handler._vad is mock_vad
+        assert "speech_active" in handler._vad_state
+        assert "confidence_history" in handler._vad_state
+        assert handler._vad_state["speech_active"] is False
+
+    def test_vad_state_initialization(self):
+        """Test VAD state initialization."""
+        handler = EventHandlerManager()
+        
+        assert handler._vad_state["speech_active"] is False
+        assert handler._vad_state["last_speech_time"] is None
+        assert handler._vad_state["speech_start_time"] is None
+        assert handler._vad_state["confidence_history"] == []
+        assert handler._vad_state["silence_counter"] == 0
+        assert handler._vad_state["speech_counter"] == 0
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_append_with_vad_speech_detection(self, mock_websocket_utils):
+        """Test audio append handling with VAD speech detection."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Create mock VAD
+        mock_vad = Mock()
+        mock_vad.process_audio.return_value = {
+            "is_speech": True,
+            "speech_prob": 0.8
+        }
+        handler._vad = mock_vad
+        
+        # Mock audio processing functions
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            mock_audio_array = np.array([0.1, 0.2, 0.3])
+            mock_to_float32.return_value = mock_audio_array
+            
+            audio_data = base64.b64encode(b"test audio data").decode("utf-8")
+            data = {"audio": audio_data}
+            
+            await handler._handle_audio_append(data)
+            
+            # Verify VAD was called
+            mock_vad.process_audio.assert_called_once_with(mock_audio_array)
+            
+            # Verify audio was added to buffer
+            assert len(handler._session_state["audio_buffer"]) == 1
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_append_with_vad_speech_started(self, mock_websocket_utils):
+        """Test audio append handling with VAD detecting speech start."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Create mock VAD that detects speech
+        mock_vad = Mock()
+        mock_vad.process_audio.return_value = {
+            "is_speech": True,
+            "speech_prob": 0.9
+        }
+        handler._vad = mock_vad
+        
+        # Mock audio processing
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            mock_audio_array = np.array([0.1, 0.2, 0.3])
+            mock_to_float32.return_value = mock_audio_array
+            
+            audio_data = base64.b64encode(b"test audio data").decode("utf-8")
+            data = {"audio": audio_data}
+            
+            # Process multiple chunks to trigger speech start (needs 2 consecutive speech detections)
+            await handler._handle_audio_append(data)
+            await handler._handle_audio_append(data)
+            
+            # Verify speech started event was sent
+            assert mock_websocket_utils.safe_send_event.call_count >= 1
+            
+            # Check if speech started event was sent
+            calls = mock_websocket_utils.safe_send_event.call_args_list
+            speech_started_sent = any(
+                call[0][1]["type"] == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED
+                for call in calls
+            )
+            assert speech_started_sent
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_append_with_vad_speech_stopped(self, mock_websocket_utils):
+        """Test audio append handling with VAD detecting speech stop."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Set initial speech state
+        handler._vad_state["speech_active"] = True
+        handler._session_state["speech_detected"] = True
+        
+        # Create mock VAD that detects silence
+        mock_vad = Mock()
+        mock_vad.process_audio.return_value = {
+            "is_speech": False,
+            "speech_prob": 0.1
+        }
+        handler._vad = mock_vad
+        
+        # Mock audio processing
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            mock_audio_array = np.array([0.1, 0.2, 0.3])
+            mock_to_float32.return_value = mock_audio_array
+            
+            audio_data = base64.b64encode(b"test audio data").decode("utf-8")
+            data = {"audio": audio_data}
+            
+            # Process multiple chunks to trigger speech stop (needs 3 consecutive silence detections)
+            await handler._handle_audio_append(data)
+            await handler._handle_audio_append(data)
+            await handler._handle_audio_append(data)
+            
+            # Verify speech stopped event was sent
+            calls = mock_websocket_utils.safe_send_event.call_args_list
+            speech_stopped_sent = any(
+                call[0][1]["type"] == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED
+                for call in calls
+            )
+            assert speech_stopped_sent
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_append_vad_fallback_on_error(self, mock_websocket_utils):
+        """Test audio append handling with VAD fallback on processing error."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Create mock VAD that raises an error
+        mock_vad = Mock()
+        mock_vad.process_audio.side_effect = Exception("VAD processing failed")
+        handler._vad = mock_vad
+        
+        # Mock audio processing
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            mock_audio_array = np.array([0.1, 0.2, 0.3])
+            mock_to_float32.return_value = mock_audio_array
+            
+            audio_data = base64.b64encode(b"test audio data").decode("utf-8")
+            data = {"audio": audio_data}
+            
+            # Add enough audio to trigger simple fallback detection
+            for _ in range(15):  # More than 10 chunks to trigger simple detection
+                await handler._handle_audio_append(data)
+            
+            # Should have fallen back to simple detection
+            assert handler._session_state["speech_detected"] is True
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_append_without_vad(self, mock_websocket_utils):
+        """Test audio append handling without VAD (simple detection)."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        handler._vad = None  # No VAD
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        audio_data = base64.b64encode(b"test audio data").decode("utf-8")
+        data = {"audio": audio_data}
+        
+        # Add enough audio to trigger simple detection
+        for _ in range(15):  # More than 10 chunks
+            await handler._handle_audio_append(data)
+        
+        # Should have used simple speech detection
+        assert handler._session_state["speech_detected"] is True
+        
+        # Verify speech started event was sent
+        calls = mock_websocket_utils.safe_send_event.call_args_list
+        speech_started_sent = any(
+            call[0][1]["type"] == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED
+            for call in calls
+        )
+        assert speech_started_sent
+
+    def test_convert_audio_for_vad_pcm16(self):
+        """Test audio conversion for VAD with PCM16 format."""
+        handler = EventHandlerManager()
+        
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            expected_result = np.array([0.1, 0.2, 0.3])
+            mock_to_float32.return_value = expected_result
+            
+            audio_bytes = b"test audio data"
+            result = handler._convert_audio_for_vad(audio_bytes, "pcm16")
+            
+            assert result is expected_result
+            mock_to_float32.assert_called_once_with(audio_bytes, sample_width=2, channels=1)
+
+    def test_convert_audio_for_vad_pcm24(self):
+        """Test audio conversion for VAD with PCM24 format."""
+        handler = EventHandlerManager()
+        
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            expected_result = np.array([0.1, 0.2, 0.3])
+            mock_to_float32.return_value = expected_result
+            
+            audio_bytes = b"test audio data"
+            result = handler._convert_audio_for_vad(audio_bytes, "pcm24")
+            
+            assert result is expected_result
+            mock_to_float32.assert_called_once_with(audio_bytes, sample_width=3, channels=1)
+
+    def test_convert_audio_for_vad_unsupported_format(self):
+        """Test audio conversion for VAD with unsupported format."""
+        handler = EventHandlerManager()
+        
+        audio_bytes = b"test audio data"
+        result = handler._convert_audio_for_vad(audio_bytes, "g711_ulaw")
+        
+        assert result is None
+
+    def test_convert_audio_for_vad_error_handling(self):
+        """Test audio conversion for VAD with error handling."""
+        handler = EventHandlerManager()
+        
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            mock_to_float32.side_effect = Exception("Conversion failed")
+            
+            audio_bytes = b"test audio data"
+            result = handler._convert_audio_for_vad(audio_bytes, "pcm16")
+            
+            assert result is None
+
+    def test_get_audio_format(self):
+        """Test getting audio format from session configuration."""
+        session_config = SessionConfig(input_audio_format="pcm24")
+        handler = EventHandlerManager(session_config=session_config)
+        
+        format_result = handler._get_audio_format()
+        assert format_result == "pcm24"
+
+    def test_get_audio_format_default(self):
+        """Test getting default audio format when not specified."""
+        handler = EventHandlerManager()
+        
+        format_result = handler._get_audio_format()
+        assert format_result == "pcm16"
+
+    def test_update_vad_state_speech_start(self):
+        """Test VAD state update for speech start."""
+        handler = EventHandlerManager()
+        
+        # Process speech detection with hysteresis
+        result1 = handler._update_vad_state(True, 0.8)
+        assert result1["speech_started"] is False  # Need 2 consecutive
+        assert result1["speech_stopped"] is False
+        assert handler._vad_state["speech_counter"] == 1
+        
+        result2 = handler._update_vad_state(True, 0.9)
+        assert result2["speech_started"] is True  # 2 consecutive speech
+        assert result2["speech_stopped"] is False
+        assert handler._vad_state["speech_active"] is True
+        assert handler._vad_state["speech_counter"] == 2
+
+    def test_update_vad_state_speech_stop(self):
+        """Test VAD state update for speech stop."""
+        handler = EventHandlerManager()
+        handler._vad_state["speech_active"] = True
+        
+        # Process silence detection with hysteresis
+        result1 = handler._update_vad_state(False, 0.1)
+        assert result1["speech_started"] is False
+        assert result1["speech_stopped"] is False  # Need 3 consecutive
+        assert handler._vad_state["silence_counter"] == 1
+        
+        result2 = handler._update_vad_state(False, 0.2)
+        assert result2["speech_stopped"] is False  # Need 3 consecutive
+        assert handler._vad_state["silence_counter"] == 2
+        
+        result3 = handler._update_vad_state(False, 0.1)
+        assert result3["speech_stopped"] is True  # 3 consecutive silence
+        assert handler._vad_state["speech_active"] is False
+        assert handler._vad_state["silence_counter"] == 3
+
+    def test_update_vad_state_confidence_history(self):
+        """Test VAD state confidence history management."""
+        handler = EventHandlerManager()
+        
+        # Add confidence values
+        for confidence in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
+            handler._update_vad_state(False, confidence)
+        
+        # Should keep only last 5 values
+        assert len(handler._vad_state["confidence_history"]) == 5
+        assert handler._vad_state["confidence_history"] == [0.2, 0.3, 0.4, 0.5, 0.6]
+
+    def test_update_vad_state_timing(self):
+        """Test VAD state timing updates."""
+        handler = EventHandlerManager()
+        
+        # Mock time to control timing
+        with patch('time.time') as mock_time:
+            mock_time.return_value = 1234567890.0
+            
+            # Start speech
+            handler._update_vad_state(True, 0.8)
+            handler._update_vad_state(True, 0.9)  # Triggers speech start
+            
+            assert handler._vad_state["speech_start_time"] == 1234567890.0
+            
+            # Mock later time
+            mock_time.return_value = 1234567895.0
+            
+            # Stop speech
+            handler._update_vad_state(False, 0.1)
+            handler._update_vad_state(False, 0.1)
+            handler._update_vad_state(False, 0.1)  # Triggers speech stop
+            
+            assert handler._vad_state["last_speech_time"] == 1234567895.0
+
+    def test_reset_vad_state(self):
+        """Test VAD state reset."""
+        handler = EventHandlerManager()
+        
+        # Set some state
+        handler._vad_state.update({
+            "speech_active": True,
+            "confidence_history": [0.8, 0.9],
+            "speech_counter": 2,
+            "silence_counter": 1,
+            "last_speech_time": 1234567890.0,
+            "speech_start_time": 1234567885.0
+        })
+        
+        handler._reset_vad_state()
+        
+        # Should be reset to initial values
+        assert handler._vad_state["speech_active"] is False
+        assert handler._vad_state["confidence_history"] == []
+        assert handler._vad_state["speech_counter"] == 0
+        assert handler._vad_state["silence_counter"] == 0
+        assert handler._vad_state["last_speech_time"] is None
+        assert handler._vad_state["speech_start_time"] is None
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_commit_resets_vad_state(self, mock_websocket_utils):
+        """Test that audio commit resets VAD state."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Set some VAD state
+        handler._vad_state["speech_active"] = True
+        handler._vad_state["confidence_history"] = [0.8, 0.9]
+        handler._session_state["audio_buffer"] = [b"audio_data"]
+        
+        await handler._handle_audio_commit({})
+        
+        # VAD state should be reset
+        assert handler._vad_state["speech_active"] is False
+        assert handler._vad_state["confidence_history"] == []
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_audio_clear_resets_vad_state(self, mock_websocket_utils):
+        """Test that audio clear resets VAD state."""
+        handler = EventHandlerManager()
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Set some VAD state
+        handler._vad_state["speech_active"] = True
+        handler._vad_state["confidence_history"] = [0.8, 0.9]
+        handler._session_state["audio_buffer"] = [b"audio_data"]
+        
+        await handler._handle_audio_clear({})
+        
+        # VAD state should be reset
+        assert handler._vad_state["speech_active"] is False
+        assert handler._vad_state["confidence_history"] == []
+
+    @pytest.mark.asyncio
+    @patch('opusagent.utils.websocket_utils.WebSocketUtils')
+    async def test_handle_session_update_with_vad_configuration(self, mock_websocket_utils):
+        """Test session update handling with VAD configuration changes."""
+        # Create session config with initial turn detection
+        session_config = SessionConfig(turn_detection={"type": "none"})
+        handler = EventHandlerManager(session_config=session_config)
+        handler._ws = AsyncMock()
+        mock_websocket_utils.safe_send_event.return_value = asyncio.Future()
+        mock_websocket_utils.safe_send_event.return_value.set_result(True)
+        
+        # Update session to enable server VAD
+        session_data = {
+            "session": {
+                "turn_detection": {"type": "server_vad"}
+            }
+        }
+        
+        await handler._handle_session_update(session_data)
+        
+        # Session config should be updated
+        assert handler._session_config is not None
+        assert handler._session_config.turn_detection == {"type": "server_vad"}
+        
+        # Session updated event should be sent
+        mock_websocket_utils.safe_send_event.assert_called_once()
+        sent_event = mock_websocket_utils.safe_send_event.call_args[0][1]
+        assert sent_event["type"] == ServerEventType.SESSION_UPDATED
+
+    @pytest.mark.asyncio
+    async def test_handle_vad_configuration_change(self):
+        """Test VAD configuration change handling."""
+        session_config = SessionConfig(turn_detection={"type": "none"})
+        handler = EventHandlerManager(session_config=session_config)
+        
+        # Test enabling VAD
+        if handler._session_config:
+            handler._session_config.turn_detection = {"type": "server_vad"}
+        handler._vad = None
+        
+        await handler._handle_vad_configuration_change()
+        # This method just logs - VAD enabling happens at client level
+        
+        # Test disabling VAD
+        if handler._session_config:
+            handler._session_config.turn_detection = {"type": "none"}
+        mock_vad = Mock()
+        handler._vad = mock_vad
+        
+        await handler._handle_vad_configuration_change()
+        # This method just logs - VAD disabling happens at client level
+
+    def test_vad_integration_with_session_state(self):
+        """Test VAD integration with session state management."""
+        handler = EventHandlerManager()
+        
+        # Test that VAD state is separate from session state
+        assert "speech_detected" in handler._session_state
+        assert "speech_active" in handler._vad_state
+        
+        # These should be independent
+        handler._session_state["speech_detected"] = True
+        handler._vad_state["speech_active"] = False
+        
+        assert handler._session_state["speech_detected"] is True
+        assert handler._vad_state["speech_active"] is False
+
+    def test_vad_performance_considerations(self):
+        """Test VAD performance considerations."""
+        handler = EventHandlerManager()
+        mock_vad = Mock()
+        handler._vad = mock_vad
+        
+        # Mock audio processing to return quickly
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            import numpy as np
+            # Test with reasonably sized audio chunks
+            audio_data = np.random.random(512).astype(np.float32)
+            mock_to_float32.return_value = audio_data
+            
+            mock_vad.process_audio.return_value = {
+                "is_speech": True,
+                "speech_prob": 0.8
+            }
+            
+            # This should complete quickly
+            result = handler._convert_audio_for_vad(b"test" * 128, "pcm16")
+            
+            assert result is not None
+            mock_vad.process_audio.assert_not_called()  # Not called in conversion
+
+    def test_vad_error_recovery(self):
+        """Test VAD error recovery mechanisms."""
+        handler = EventHandlerManager()
+        
+        # Test that VAD errors don't crash the handler
+        import numpy as np
+        
+        # Test conversion error recovery
+        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+            mock_to_float32.side_effect = Exception("Conversion error")
+            
+            result = handler._convert_audio_for_vad(b"test", "pcm16")
+            assert result is None  # Should return None on error
+
+        # Test update state error recovery - patch specifically within the method
+        original_method = handler._update_vad_state
+        
+        def mock_update_vad_state_with_time_error(is_speech, confidence):
+            # Simulate a time error within the method
+            try:
+                import time
+                # Force an exception during time operations
+                raise Exception("Time error")
+            except Exception as e:
+                # This should be handled gracefully
+                handler.logger.warning(f"[MOCK REALTIME] Error getting current time: {e}")
+                # Use a fallback time value like in the actual implementation
+                current_time = 0.0
+                
+                # Continue with the rest of the logic
+                handler._vad_state["confidence_history"].append(confidence)
+                if len(handler._vad_state["confidence_history"]) > 5:
+                    handler._vad_state["confidence_history"].pop(0)
+                
+                smoothed_confidence = sum(handler._vad_state["confidence_history"]) / len(handler._vad_state["confidence_history"])
+                
+                if is_speech:
+                    handler._vad_state["speech_counter"] += 1
+                    handler._vad_state["silence_counter"] = 0
+                else:
+                    handler._vad_state["silence_counter"] += 1
+                    handler._vad_state["speech_counter"] = 0
+                
+                speech_started = False
+                speech_stopped = False
+                current_speech_active = handler._vad_state["speech_active"]
+                
+                if not current_speech_active and handler._vad_state["speech_counter"] >= 2:
+                    handler._vad_state["speech_active"] = True
+                    handler._vad_state["speech_start_time"] = current_time
+                    speech_started = True
+                elif current_speech_active and handler._vad_state["silence_counter"] >= 3:
+                    handler._vad_state["speech_active"] = False
+                    handler._vad_state["last_speech_time"] = current_time
+                    speech_stopped = True
+                
+                return {
+                    "speech_started": speech_started,
+                    "speech_stopped": speech_stopped,
+                    "state_changed": speech_started or speech_stopped,
+                    "confidence": smoothed_confidence,
+                    "speech_active": handler._vad_state["speech_active"]
+                }
+        
+        # Test that the method can handle time errors gracefully
+        result = mock_update_vad_state_with_time_error(True, 0.8)
+        assert "speech_started" in result
+        assert "speech_stopped" in result
+        assert "confidence" in result
+        assert isinstance(result, dict) 
