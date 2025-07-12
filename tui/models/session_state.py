@@ -104,10 +104,10 @@ class SessionState:
         self.max_history_size: int = 100
         
         # Event callbacks
-        self._status_change_callbacks: List[Callable] = []
-        self._metrics_update_callbacks: List[Callable] = []
+        self._status_change_callbacks: List[Callable[..., Any]] = []
+        self._metrics_update_callbacks: List[Callable[..., Any]] = []
     
-    def initiate_session(self, bot_name: str = None, caller: str = None) -> str:
+    def initiate_session(self, bot_name: Optional[str] = None, caller: Optional[str] = None) -> str:
         """
         Initiate a new session.
         
@@ -120,7 +120,7 @@ class SessionState:
         """
         if self.status != SessionStatus.IDLE:
             logger.warning(f"Cannot initiate session in status: {self.status}")
-            return self.conversation_id
+            return self.conversation_id or ""
         
         # Generate new conversation ID
         self.conversation_id = str(uuid.uuid4())
@@ -147,7 +147,7 @@ class SessionState:
         logger.info(f"Session initiated: {self.conversation_id}")
         return self.conversation_id
     
-    def accept_session(self, session_id: str = None) -> None:
+    def accept_session(self, session_id: Optional[str] = None) -> None:
         """
         Mark session as accepted.
         
@@ -186,7 +186,7 @@ class SessionState:
         
         logger.info(f"Session ended: {self.conversation_id}")
     
-    def start_user_stream(self, media_format: str = None) -> None:
+    def start_user_stream(self, media_format: Optional[str] = None) -> None:
         """Start user audio stream."""
         if not self.is_active:
             logger.warning("Cannot start user stream: Session not active")
@@ -228,7 +228,7 @@ class SessionState:
             self.user_stream.total_bytes += len(chunk_data) * 3 // 4
             self.metrics.audio_chunks_sent += 1
     
-    def handle_bot_audio_start(self, media_format: str = None) -> None:
+    def handle_bot_audio_start(self, media_format: Optional[str] = None) -> None:
         """Handle bot audio stream start."""
         if media_format:
             self.bot_stream.media_format = media_format

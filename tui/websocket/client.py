@@ -5,6 +5,7 @@ import time
 from typing import Optional, Callable, AsyncGenerator, Dict, Any
 import websockets
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK, ConnectionClosedError
+from opusagent.utils.websocket_utils import WebSocketUtils
 
 logger = logging.getLogger(__name__)
 
@@ -137,8 +138,6 @@ class WebSocketClient:
 
     async def send_message(self, message: Dict[str, Any]) -> bool:
         """Send a message to the WebSocket server."""
-        from opusagent.utils.websocket_utils import WebSocketUtils
-        
         return await WebSocketUtils.safe_send_message(self.websocket, message, logger)
 
     async def _receive_loop(self) -> None:

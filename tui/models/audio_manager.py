@@ -10,7 +10,7 @@ import base64
 import logging
 import threading
 import time
-from typing import AsyncGenerator, Callable, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import queue
@@ -387,15 +387,17 @@ class AudioManager:
             output_devices = []
             
             for i, device in enumerate(devices):
+                # Cast device to Dict[str, Any] for type safety
+                device_dict: Dict[str, Any] = device  # type: ignore
                 device_info = {
                     "index": i,
-                    "name": device["name"],  # type: ignore
-                    "channels": device["max_input_channels"] if device["max_input_channels"] > 0 else device["max_output_channels"]  # type: ignore
+                    "name": str(device_dict.get("name", f"Device {i}")),
+                    "channels": int(device_dict.get("max_input_channels", 0) if device_dict.get("max_input_channels", 0) > 0 else device_dict.get("max_output_channels", 0))
                 }
                 
-                if device["max_input_channels"] > 0:  # type: ignore
+                if int(device_dict.get("max_input_channels", 0)) > 0:
                     input_devices.append(device_info)
-                if device["max_output_channels"] > 0:  # type: ignore
+                if int(device_dict.get("max_output_channels", 0)) > 0:
                     output_devices.append(device_info)
             
             return {
