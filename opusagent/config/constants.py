@@ -11,3 +11,11 @@ LOGGER_NAME = "opusagent"
 
 # Default voice for CS agent (caller agent uses "alloy" for distinction)
 VOICE = "verse"
+
+# Audio constants used throughout the application
+DEFAULT_SAMPLE_RATE = 16000  # 16kHz
+DEFAULT_CHANNELS = 1  # Mono
+DEFAULT_BITS_PER_SAMPLE = 16  # 16-bit PCM
+DEFAULT_AUDIO_CHUNK_SIZE = 3200  # 200ms at 16kHz 16-bit
+DEFAULT_AUDIO_CHUNK_SIZE_LARGE = 32000  # 2 seconds at 16kHz 16-bit (used in TUI)
+DEFAULT_VAD_CHUNK_SIZE = 512  # VAD processing chunk size

@@ -15,6 +15,7 @@ import numpy as np
 import torch
 
 from .base_vad import BaseVAD
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE, DEFAULT_VAD_CHUNK_SIZE
 
 
 class SileroVAD(BaseVAD):
@@ -47,10 +48,10 @@ class SileroVAD(BaseVAD):
         The model is not loaded until initialize() is called with a config.
         """
         self.model: Optional[Any] = None
-        self.sample_rate: int = 16000
+        self.sample_rate: int = DEFAULT_SAMPLE_RATE
         self.threshold: float = 0.5
         self.device: str = "cpu"
-        self.chunk_size: int = 512  # Default chunk size for 16kHz
+        self.chunk_size: int = DEFAULT_VAD_CHUNK_SIZE  # Default chunk size for 16kHz
 
     def initialize(self, config: Dict[str, Any]) -> None:
         """
@@ -72,10 +73,10 @@ class SileroVAD(BaseVAD):
             - 8kHz: chunk_size = 256
             - 16kHz: chunk_size = 512
         """
-        self.sample_rate = config.get("sample_rate", 16000)
+        self.sample_rate = config.get("sample_rate", DEFAULT_SAMPLE_RATE)
         self.threshold = config.get("threshold", 0.5)
         self.device = config.get("device", "cpu")
-        self.chunk_size = config.get("chunk_size", 512)
+        self.chunk_size = config.get("chunk_size", DEFAULT_VAD_CHUNK_SIZE)
 
         # Validate configuration parameters
         if self.sample_rate not in [8000, 16000]:

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from dotenv import load_dotenv
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE, DEFAULT_AUDIO_CHUNK_SIZE_LARGE
 
 # Load environment variables
 load_dotenv()
@@ -43,8 +44,8 @@ class TUIConfig:
     show_vad_events: bool = True  # Show VAD events in the TUI
     
     # Audio settings
-    audio_chunk_size: int = 32000  # 2 seconds of 16kHz 16-bit audio
-    sample_rate: int = 16000  # 16kHz
+    audio_chunk_size: int = DEFAULT_AUDIO_CHUNK_SIZE_LARGE  # 2 seconds of 16kHz 16-bit audio
+    sample_rate: int = DEFAULT_SAMPLE_RATE  # 16kHz
     audio_format: str = "raw/lpcm16"
     supported_formats: Optional[List[str]] = None
     
