@@ -108,14 +108,14 @@ async def test_audio_utilities():
     """Test audio utility functions."""
     print("\n=== Testing Audio Utilities ===")
     
-    from opusagent.mock.realtime.utils import create_simple_wav_data, chunk_audio_data
+    from opusagent.utils.audio_utils import AudioUtils
     
     # Test WAV data creation
-    wav_data = create_simple_wav_data(duration=1.0)
+    wav_data = AudioUtils.create_simple_wav_data(duration=1.0)
     print(f"✓ Created WAV data: {len(wav_data)} bytes")
     
     # Test audio chunking
-    chunks = chunk_audio_data(wav_data, chunk_size=1600)
+    chunks = AudioUtils.chunk_audio_data(wav_data, chunk_size=1600)
     print(f"✓ Chunked audio into {len(chunks)} chunks")
     
     return True

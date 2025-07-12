@@ -75,7 +75,7 @@ class TestSileroVAD:
             with pytest.raises(RuntimeError) as exc_info:
                 vad.initialize(config)
             
-            assert "silero-vad not installed" in str(exc_info.value)
+            assert "silero-vad package not installed" in str(exc_info.value)
 
     def test_silero_vad_process_audio_not_initialized(self):
         """Test that processing audio without initialization raises error."""

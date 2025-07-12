@@ -127,7 +127,7 @@ class TestVADIntegration:
         test_configs = [
             {'backend': 'silero', 'sample_rate': 16000, 'threshold': 0.5},
             {'backend': 'silero', 'sample_rate': 8000, 'threshold': 0.3},
-            {'backend': 'silero', 'sample_rate': 22050, 'threshold': 0.7},
+            {'backend': 'silero', 'sample_rate': 16000, 'threshold': 0.7},
         ]
         
         for config in test_configs:

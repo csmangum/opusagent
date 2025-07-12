@@ -132,28 +132,9 @@ class AudioUtils:
         Returns:
             List of audio chunks
         """
-        if not audio_data:
-            return []
-
-        chunks = []
-        step_size = chunk_size - overlap
-
-        for i in range(0, len(audio_data), step_size):
-            chunk_end = min(i + chunk_size, len(audio_data))
-            chunk = audio_data[i:chunk_end]
-
-            # Pad last chunk if needed
-            if len(chunk) < chunk_size and i + step_size >= len(audio_data):
-                padding = chunk_size - len(chunk)
-                chunk += b"\x00" * padding
-
-            chunks.append(chunk)
-
-            # Break if we've reached the end
-            if chunk_end >= len(audio_data):
-                break
-
-        return chunks
+        # Use shared utility for basic chunking
+        from opusagent.utils.audio_utils import AudioUtils as SharedAudioUtils
+        return SharedAudioUtils.chunk_audio_data(audio_data, chunk_size, overlap)
 
     @staticmethod
     def chunk_audio_by_duration(
@@ -194,7 +175,9 @@ class AudioUtils:
         Returns:
             Base64 encoded string
         """
-        return base64.b64encode(audio_data).decode("utf-8")
+        # Use shared utility for base64 conversion
+        from opusagent.utils.audio_utils import AudioUtils as SharedAudioUtils
+        return SharedAudioUtils.convert_to_base64(audio_data)
 
     @staticmethod
     def convert_from_base64(base64_data: str) -> bytes:
@@ -207,11 +190,9 @@ class AudioUtils:
         Returns:
             Raw audio data
         """
-        try:
-            return base64.b64decode(base64_data)
-        except Exception as e:
-            logger.error(f"Error decoding base64 audio: {e}")
-            return b""
+        # Use shared utility for base64 conversion
+        from opusagent.utils.audio_utils import AudioUtils as SharedAudioUtils
+        return SharedAudioUtils.convert_from_base64(base64_data)
 
     @staticmethod
     def resample_audio(
@@ -407,11 +388,10 @@ class AudioUtils:
         Returns:
             Duration in seconds
         """
-        if not audio_data:
-            return 0.0
-
-        num_samples = len(audio_data) // (channels * sample_width)
-        return num_samples / sample_rate
+        # Use shared utility for duration calculation
+        from opusagent.utils.audio_utils import AudioUtils as SharedAudioUtils
+        bits_per_sample = sample_width * 8
+        return SharedAudioUtils.calculate_audio_duration(audio_data, sample_rate, channels, bits_per_sample)
 
     @staticmethod
     def validate_audio_format(filepath: str) -> bool:

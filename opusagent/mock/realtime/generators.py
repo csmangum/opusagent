@@ -80,13 +80,11 @@ class ResponseGenerator:
         Raises:
             Exception: If sending fails.
         """
-        if self._ws:
-            try:
-                await self._ws.send(json.dumps(event))
-                self.logger.debug(f"[MOCK REALTIME] Sent event: {event.get('type', 'unknown')}")
-            except Exception as e:
-                self.logger.error(f"[MOCK REALTIME] Error sending event: {e}")
-                raise
+        from opusagent.utils.websocket_utils import WebSocketUtils
+        
+        success = await WebSocketUtils.safe_send_event(self._ws, event, self.logger)
+        if not success:
+            raise Exception("Failed to send event to WebSocket")
     
     def _determine_response_key(self, options: ResponseCreateOptions) -> Optional[str]:
         """

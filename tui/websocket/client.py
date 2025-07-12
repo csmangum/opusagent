@@ -17,7 +17,7 @@ class WebSocketClient:
                  ping_interval: float = 20.0,
                  ping_timeout: float = 10.0,
                  connection_timeout: float = 15.0):
-        self.websocket: Optional[websockets.WebSocketClientProtocol] = None
+        self.websocket: Optional[Any] = None
         self.connected = False
         self.connecting = False
         self.url: Optional[str] = None
@@ -137,21 +137,9 @@ class WebSocketClient:
 
     async def send_message(self, message: Dict[str, Any]) -> bool:
         """Send a message to the WebSocket server."""
-        if not self.websocket or not self.connected:
-            logger.error("Cannot send message: Not connected")
-            return False
+        from opusagent.utils.websocket_utils import WebSocketUtils
         
-        try:
-            message_str = json.dumps(message)
-            await self.websocket.send(message_str)
-            logger.debug(f"Sent message: {message.get('type', 'unknown')}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error sending message: {e}")
-            if self.on_error:
-                await self._safe_call_handler(self.on_error, e)
-            return False
+        return await WebSocketUtils.safe_send_message(self.websocket, message, logger)
 
     async def _receive_loop(self) -> None:
         """Background task to receive and process messages."""
@@ -161,6 +149,8 @@ class WebSocketClient:
             while self.connected and not self._should_stop:
                 try:
                     # Receive message with timeout
+                    if not self.websocket:
+                        break
                     message_str = await asyncio.wait_for(
                         self.websocket.recv(), 
                         timeout=5.0
@@ -235,12 +225,19 @@ class WebSocketClient:
             logger.error(f"Max reconnection attempts ({self.max_reconnect_attempts}) reached")
             return
         
-        delay = self.reconnect_delay * (2 ** (self.reconnect_attempts - 1))  # Exponential backoff
+        from opusagent.utils.retry_utils import RetryUtils
+        
+        # Calculate delay using shared utility
+        delay = RetryUtils.calculate_backoff_delay(
+            self.reconnect_attempts - 1, 
+            self.reconnect_delay, 
+            max_delay=60.0
+        )
         logger.info(f"Attempting reconnection {self.reconnect_attempts}/{self.max_reconnect_attempts} in {delay}s")
         
         await asyncio.sleep(delay)
         
-        if not self._should_stop:
+        if not self._should_stop and self.url:
             success = await self.connect(self.url)
             if not success:
                 await self._attempt_reconnect()

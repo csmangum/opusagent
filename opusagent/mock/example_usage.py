@@ -172,34 +172,14 @@ def create_audio_files():
 
 def create_simple_wav(file_path: Path, duration: float = 2.0, sample_rate: int = 16000):
     """Create a simple WAV file with silence."""
-    import struct
+    from opusagent.utils.audio_utils import AudioUtils
     
-    # WAV file header
-    num_samples = int(sample_rate * duration)
-    data_size = num_samples * 2  # 16-bit samples
+    # Create WAV data using shared utility
+    wav_data = AudioUtils.create_simple_wav_data(duration, sample_rate)
     
+    # Write to file
     with open(file_path, 'wb') as f:
-        # RIFF header
-        f.write(b'RIFF')
-        f.write(struct.pack('<I', 36 + data_size))  # File size
-        f.write(b'WAVE')
-        
-        # fmt chunk
-        f.write(b'fmt ')
-        f.write(struct.pack('<I', 16))  # Chunk size
-        f.write(struct.pack('<H', 1))   # Audio format (PCM)
-        f.write(struct.pack('<H', 1))   # Number of channels
-        f.write(struct.pack('<I', sample_rate))  # Sample rate
-        f.write(struct.pack('<I', sample_rate * 2))  # Byte rate
-        f.write(struct.pack('<H', 2))   # Block align
-        f.write(struct.pack('<H', 16))  # Bits per sample
-        
-        # data chunk
-        f.write(b'data')
-        f.write(struct.pack('<I', data_size))
-        
-        # Audio data (silence)
-        f.write(b'\x00\x00' * num_samples)
+        f.write(wav_data)
 
 
 if __name__ == "__main__":
