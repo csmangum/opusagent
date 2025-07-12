@@ -1,5 +1,5 @@
 """
-Utility functions and constants for the MockRealtime module.
+Utility functions and constants for the LocalRealtime module.
 
 This module contains helper functions, constants, and utilities used
 by the LocalRealtimeClient and its components.

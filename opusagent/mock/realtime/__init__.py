@@ -1,5 +1,5 @@
 """
-MockRealtime Module - Enhanced OpenAI Realtime API Simulator
+LocalRealtime Module - Enhanced OpenAI Realtime API Simulator
 
 This module provides a comprehensive mock implementation of the OpenAI Realtime API
 WebSocket connection, designed for testing and development without requiring an

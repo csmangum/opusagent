@@ -1,5 +1,5 @@
 """
-Audio management for the MockRealtime module.
+Audio management for the LocalRealtime module.
 
 This module handles audio file loading, caching, and processing for the
 LocalRealtimeClient. It provides utilities for working with various audio

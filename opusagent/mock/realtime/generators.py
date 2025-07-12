@@ -1,5 +1,5 @@
 """
-Response generators for the MockRealtime module.
+Response generators for the LocalRealtime module.
 
 This module contains the logic for generating different types of responses
 in the LocalRealtimeClient, including text streaming, audio streaming,

@@ -1,5 +1,5 @@
 """
-Data models for the MockRealtime module.
+Data models for the LocalRealtime module.
 
 This module contains Pydantic models and data structures used by the
 LocalRealtimeClient for configuration and response handling.

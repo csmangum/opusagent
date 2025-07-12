@@ -1,5 +1,5 @@
 """
-Event handlers for the MockRealtime module.
+Event handlers for the LocalRealtime module.
 
 This module contains event handlers for processing WebSocket messages
 in the LocalRealtimeClient. It handles session management, audio buffer
