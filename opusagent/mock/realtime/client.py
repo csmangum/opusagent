@@ -1,7 +1,7 @@
 """
-Main MockRealtimeClient implementation.
+Main LocalRealtimeClient implementation.
 
-This module contains the main MockRealtimeClient class that orchestrates
+This module contains the main LocalRealtimeClient class that orchestrates
 all the components (audio management, event handling, response generation)
 to provide a complete mock implementation of the OpenAI Realtime API.
 """
@@ -23,7 +23,7 @@ from .generators import ResponseGenerator
 from .models import MockResponseConfig
 
 
-class MockRealtimeClient:
+class LocalRealtimeClient:
     """
     Enhanced mock client that simulates the OpenAI Realtime API.
     
@@ -32,7 +32,7 @@ class MockRealtimeClient:
     audio handling, and function calls. It's designed to be a drop-in
     replacement for the real API during testing and development.
     
-    The MockRealtimeClient supports:
+    The LocalRealtimeClient supports:
     - Multiple response configurations for different scenarios
     - Saved audio phrases from actual audio files
     - Configurable timing for realistic streaming simulation
@@ -65,7 +65,7 @@ class MockRealtimeClient:
     Example:
         ```python
         # Create a basic mock client
-        mock_client = MockRealtimeClient()
+        mock_client = LocalRealtimeClient()
         
         # Add custom response configurations
         mock_client.add_response_config(
@@ -89,7 +89,7 @@ class MockRealtimeClient:
         default_response_config: Optional[MockResponseConfig] = None,
     ):
         """
-        Initialize the MockRealtimeClient.
+        Initialize the LocalRealtimeClient.
         
         Args:
             logger (Optional[logging.Logger]): Logger instance for debugging.
@@ -106,14 +106,14 @@ class MockRealtimeClient:
         Example:
             ```python
             # Basic initialization
-            mock_client = MockRealtimeClient()
+            mock_client = LocalRealtimeClient()
             
             # With custom configurations
             configs = {
                 "greeting": MockResponseConfig(text="Hello!"),
                 "help": MockResponseConfig(text="How can I help?")
             }
-            mock_client = MockRealtimeClient(response_configs=configs)
+            mock_client = LocalRealtimeClient(response_configs=configs)
             ```
         """
         self.logger = logger or logging.getLogger(__name__)

@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class MockWebSocketWrapper:
-    """Wrapper to make MockRealtimeClient compatible with websockets interface."""
+    """Wrapper to make LocalRealtimeClient compatible with websockets interface."""
 
     def __init__(self, mock_client):
         self.mock_client = mock_client
@@ -267,10 +267,10 @@ class WebSocketManager:
         """Create a mock WebSocket connection for testing."""
         try:
             # Try to import the mock client
-            from opusagent.mock.realtime import MockRealtimeClient
+            from opusagent.mock.realtime import LocalRealtimeClient
 
             # Create mock client
-            mock_client = MockRealtimeClient()
+            mock_client = LocalRealtimeClient()
 
             try:
                 # Try to connect to mock server if it's running
@@ -286,7 +286,7 @@ class WebSocketManager:
 
         except ImportError:
             logger.error(
-                "MockRealtimeClient not available. Cannot create mock connection."
+                "LocalRealtimeClient not available. Cannot create mock connection."
             )
             raise
 

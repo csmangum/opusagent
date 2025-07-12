@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for the enhanced MockRealtimeClient.
+Test script for the enhanced LocalRealtimeClient.
 
 This script demonstrates how to use the mock client with saved audio phrases
 and different response configurations.
@@ -18,7 +18,7 @@ from opusagent.mock.mock_factory import (
     create_audio_testing_mock,
     create_test_audio_files
 )
-from opusagent.mock.realtime import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.realtime import LocalRealtimeClient, MockResponseConfig
 
 
 async def test_customer_service_mock():
@@ -130,7 +130,7 @@ async def test_custom_mock():
     print("\n=== Testing Custom Mock ===")
     
     # Create a custom mock client with specific configurations
-    mock_client = MockRealtimeClient()
+    mock_client = LocalRealtimeClient()
     
     # Add custom response configurations
     mock_client.add_response_config(
@@ -211,7 +211,7 @@ async def test_audio_loading():
 
 async def main():
     """Run all tests."""
-    print("Testing Enhanced MockRealtimeClient")
+    print("Testing Enhanced LocalRealtimeClient")
     print("=" * 50)
     
     # Create test audio files first

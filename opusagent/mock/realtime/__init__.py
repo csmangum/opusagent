@@ -7,7 +7,7 @@ actual OpenAI API connection.
 
 The module is organized into separate concerns:
 - models: Data models and configuration classes
-- client: Main MockRealtimeClient implementation
+- client: Main LocalRealtimeClient implementation
 - handlers: Event handlers for WebSocket messages
 - audio: Audio file management and processing
 - generators: Response generation logic
@@ -15,10 +15,10 @@ The module is organized into separate concerns:
 
 Example Usage:
     ```python
-    from opusagent.mock.mock_realtime import MockRealtimeClient, MockResponseConfig
+    from opusagent.mock.mock_realtime import LocalRealtimeClient, MockResponseConfig
     
     # Create a mock client with saved audio phrases
-    mock_client = MockRealtimeClient()
+    mock_client = LocalRealtimeClient()
     
     # Add response configuration
     mock_client.add_response_config(
@@ -32,10 +32,10 @@ Example Usage:
 """
 
 from .models import MockResponseConfig
-from .client import MockRealtimeClient
+from .client import LocalRealtimeClient
 
 __all__ = [
-    "MockRealtimeClient",
+    "LocalRealtimeClient",
     "MockResponseConfig",
 ]
 

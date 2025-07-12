@@ -2,7 +2,7 @@
 Event handlers for the MockRealtime module.
 
 This module contains event handlers for processing WebSocket messages
-in the MockRealtimeClient. It handles session management, audio buffer
+in the LocalRealtimeClient. It handles session management, audio buffer
 operations, and response creation/cancellation.
 """
 
@@ -27,7 +27,7 @@ from opusagent.models.openai_api import (
 
 class EventHandlerManager:
     """
-    Manages event handlers for WebSocket messages in the MockRealtimeClient.
+    Manages event handlers for WebSocket messages in the LocalRealtimeClient.
     
     This class provides a centralized way to register and handle different
     types of WebSocket events, making the mock client extensible and

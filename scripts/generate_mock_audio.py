@@ -2,7 +2,7 @@
 """
 Generate Mock Audio Files for Testing
 
-This script generates audio files for use with the MockRealtimeClient.
+This script generates audio files for use with the LocalRealtimeClient.
 It creates various scenarios including customer service, sales, technical support,
 and general conversation audio files.
 

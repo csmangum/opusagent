@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Demo: Using MockRealtimeClient with Environment Variables
+Demo: Using LocalRealtimeClient with Environment Variables
 
-This script demonstrates how to use the MockRealtimeClient via environment variables.
+This script demonstrates how to use the LocalRealtimeClient via environment variables.
 It shows both the default behavior and how to enable mock mode.
 
 Usage:
@@ -59,13 +59,14 @@ async def demo_websocket_manager():
 
 
 async def demo_mock_client():
-    """Demonstrate MockRealtimeClient functionality."""
-    print("=== MockRealtimeClient Demo ===")
+    """Demonstrate LocalRealtimeClient functionality."""
+    print("=== LocalRealtimeClient Demo ===")
     
-    from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+    from opusagent.mock.realtime.client import LocalRealtimeClient
+    from opusagent.mock.realtime.models import MockResponseConfig
     
     # Create mock client
-    mock_client = MockRealtimeClient()
+    mock_client = LocalRealtimeClient()
     
     # Add some response configurations
     mock_client.add_response_config(
@@ -157,7 +158,7 @@ def show_usage_examples():
 
 async def main():
     """Main demo function."""
-    print("MockRealtimeClient Environment Variable Demo")
+    print("LocalRealtimeClient Environment Variable Demo")
     print("=" * 50)
     
     # Show current configuration

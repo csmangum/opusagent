@@ -2,7 +2,7 @@
 Audio management for the MockRealtime module.
 
 This module handles audio file loading, caching, and processing for the
-MockRealtimeClient. It provides utilities for working with various audio
+LocalRealtimeClient. It provides utilities for working with various audio
 formats and generating fallback audio data.
 """
 

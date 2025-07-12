@@ -2,7 +2,7 @@
 Data models for the MockRealtime module.
 
 This module contains Pydantic models and data structures used by the
-MockRealtimeClient for configuration and response handling.
+LocalRealtimeClient for configuration and response handling.
 """
 
 from typing import Any, Dict, Optional
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 class MockResponseConfig(BaseModel):
     """
-    Configuration for a mock response in the MockRealtimeClient.
+    Configuration for a mock response in the LocalRealtimeClient.
     
     This class defines how a specific response should be generated, including
     text content, audio files, timing, and function calls. It allows for
@@ -80,7 +80,7 @@ class MockResponseConfig(BaseModel):
 
 class MockSessionState(BaseModel):
     """
-    Session state for the MockRealtimeClient.
+    Session state for the LocalRealtimeClient.
     
     This class tracks the current state of a mock session, including
     connection status, active responses, and audio buffers.

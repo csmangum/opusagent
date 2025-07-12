@@ -2,7 +2,7 @@
 Response generators for the MockRealtime module.
 
 This module contains the logic for generating different types of responses
-in the MockRealtimeClient, including text streaming, audio streaming,
+in the LocalRealtimeClient, including text streaming, audio streaming,
 and function call simulation.
 """
 
@@ -21,7 +21,7 @@ from .models import MockResponseConfig
 
 class ResponseGenerator:
     """
-    Generates different types of responses for the MockRealtimeClient.
+    Generates different types of responses for the LocalRealtimeClient.
     
     This class handles the generation of text, audio, and function call
     responses with configurable timing and streaming behavior.

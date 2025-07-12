@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example usage of the enhanced MockRealtimeClient with saved audio phrases.
+Example usage of the enhanced LocalRealtimeClient with saved audio phrases.
 
 This example shows how to configure the mock client to return different
 responses based on scenarios, including saved audio files.
@@ -10,7 +10,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from opusagent.mock.realtime import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.realtime import LocalRealtimeClient, MockResponseConfig
 from opusagent.models.openai_api import SessionConfig
 
 # Configure logging
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def main():
-    """Example of using the enhanced MockRealtimeClient."""
+    """Example of using the enhanced LocalRealtimeClient."""
     
     # Create session configuration
     session_config = SessionConfig(
@@ -81,7 +81,7 @@ async def main():
     )
     
     # Create the mock client
-    mock_client = MockRealtimeClient(
+    mock_client = LocalRealtimeClient(
         logger=logger,
         session_config=session_config,
         response_configs=response_configs,
@@ -112,7 +112,7 @@ async def main():
         )
     )
     
-    logger.info("MockRealtimeClient configured with multiple response scenarios")
+    logger.info("LocalRealtimeClient configured with multiple response scenarios")
     logger.info(f"Available response keys: {list(response_configs.keys())}")
     
     # Example: Simulate connecting to a mock server
@@ -131,7 +131,7 @@ async def main():
         await mock_client.disconnect()
 
 
-async def simulate_interactions(mock_client: MockRealtimeClient):
+async def simulate_interactions(mock_client: LocalRealtimeClient):
     """Simulate some interactions with the mock client."""
     logger.info("Simulating interactions...")
     

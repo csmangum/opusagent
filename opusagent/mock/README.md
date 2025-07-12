@@ -1,10 +1,10 @@
-# Enhanced MockRealtimeClient
+# Enhanced LocalRealtimeClient
 
-This directory contains an enhanced version of the MockRealtimeClient that supports **saved audio phrases** and **configurable responses**, making it perfect for testing scenarios without requiring an actual OpenAI API connection.
+This directory contains an enhanced version of the LocalRealtimeClient that supports **saved audio phrases** and **configurable responses**, making it perfect for testing scenarios without requiring an actual OpenAI API connection.
 
 ## What's New
 
-The enhanced MockRealtimeClient now supports:
+The enhanced LocalRealtimeClient now supports:
 
 ✅ **Saved Audio Phrases** - Load and play actual audio files instead of silence  
 ✅ **Configurable Responses** - Different responses for different scenarios  
@@ -28,11 +28,11 @@ class MockResponseConfig(BaseModel):
     function_call: Optional[Dict[str, Any]] = None  # Function call to simulate
 ```
 
-### 2. Enhanced MockRealtimeClient
+### 2. Enhanced LocalRealtimeClient
 The main mock client with support for multiple response configurations:
 
 ```python
-mock_client = MockRealtimeClient(
+mock_client = LocalRealtimeClient(
     response_configs={
         "greeting": MockResponseConfig(
             text="Hello! How can I help you?",
@@ -72,10 +72,10 @@ mock_client = create_customer_service_mock(audio_dir="demo/audio")
 ### Custom Responses
 
 ```python
-from opusagent.mock.mock_realtime_client import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, MockResponseConfig
 
 # Create a custom mock client
-mock_client = MockRealtimeClient()
+mock_client = LocalRealtimeClient()
 
 # Add response configurations
 mock_client.add_response_config(
@@ -228,4 +228,4 @@ opusagent/mock/
 3. **Add More Scenarios** - Create additional factory functions for your specific use cases
 4. **Integration Testing** - Use the mock client in your integration tests
 
-The enhanced MockRealtimeClient now provides a complete solution for testing your realtime audio applications with saved audio phrases and configurable responses! 
+The enhanced LocalRealtimeClient now provides a complete solution for testing your realtime audio applications with saved audio phrases and configurable responses! 

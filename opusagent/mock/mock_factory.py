@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Factory functions for creating MockRealtimeClient instances with common configurations.
+Factory functions for creating LocalRealtimeClient instances with common configurations.
 
 This module provides convenient factory functions to create mock clients
 with pre-configured responses and audio files for different testing scenarios.
@@ -10,14 +10,14 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
-from opusagent.mock.realtime import MockRealtimeClient, MockResponseConfig
+from opusagent.mock.realtime import LocalRealtimeClient, MockResponseConfig
 from opusagent.models.openai_api import SessionConfig
 
 
 def create_customer_service_mock(
     audio_dir: str = "demo/audio",
     logger: Optional[logging.Logger] = None
-) -> MockRealtimeClient:
+) -> LocalRealtimeClient:
     """
     Create a mock client configured for customer service scenarios.
     
@@ -26,7 +26,7 @@ def create_customer_service_mock(
         logger: Optional logger instance
         
     Returns:
-        Configured MockRealtimeClient for customer service testing
+        Configured LocalRealtimeClient for customer service testing
     """
     
     # Create session configuration
@@ -98,7 +98,7 @@ def create_customer_service_mock(
         audio_chunk_delay=0.2
     )
     
-    return MockRealtimeClient(
+    return LocalRealtimeClient(
         logger=logger,
         session_config=session_config,
         response_configs=response_configs,
@@ -109,7 +109,7 @@ def create_customer_service_mock(
 def create_sales_mock(
     audio_dir: str = "demo/audio",
     logger: Optional[logging.Logger] = None
-) -> MockRealtimeClient:
+) -> LocalRealtimeClient:
     """
     Create a mock client configured for sales scenarios.
     
@@ -118,7 +118,7 @@ def create_sales_mock(
         logger: Optional logger instance
         
     Returns:
-        Configured MockRealtimeClient for sales testing
+        Configured LocalRealtimeClient for sales testing
     """
     
     session_config = SessionConfig(
@@ -180,7 +180,7 @@ def create_sales_mock(
         audio_chunk_delay=0.2
     )
     
-    return MockRealtimeClient(
+    return LocalRealtimeClient(
         logger=logger,
         session_config=session_config,
         response_configs=response_configs,
@@ -192,7 +192,7 @@ def create_simple_mock(
     responses: Dict[str, str],
     audio_dir: Optional[str] = None,
     logger: Optional[logging.Logger] = None
-) -> MockRealtimeClient:
+) -> LocalRealtimeClient:
     """
     Create a simple mock client with custom text responses.
     
@@ -202,7 +202,7 @@ def create_simple_mock(
         logger: Optional logger instance
         
     Returns:
-        Configured MockRealtimeClient with custom responses
+        Configured LocalRealtimeClient with custom responses
     """
     
     session_config = SessionConfig(
@@ -232,7 +232,7 @@ def create_simple_mock(
         audio_chunk_delay=0.2
     )
     
-    return MockRealtimeClient(
+    return LocalRealtimeClient(
         logger=logger,
         session_config=session_config,
         response_configs=response_configs,
@@ -242,7 +242,7 @@ def create_simple_mock(
 
 def create_function_testing_mock(
     logger: Optional[logging.Logger] = None
-) -> MockRealtimeClient:
+) -> LocalRealtimeClient:
     """
     Create a mock client configured for testing function calls.
     
@@ -250,7 +250,7 @@ def create_function_testing_mock(
         logger: Optional logger instance
         
     Returns:
-        Configured MockRealtimeClient for function call testing
+        Configured LocalRealtimeClient for function call testing
     """
     
     session_config = SessionConfig(
@@ -321,7 +321,7 @@ def create_function_testing_mock(
         delay_seconds=0.04
     )
     
-    return MockRealtimeClient(
+    return LocalRealtimeClient(
         logger=logger,
         session_config=session_config,
         response_configs=response_configs,
@@ -332,7 +332,7 @@ def create_function_testing_mock(
 def create_audio_testing_mock(
     audio_files: Dict[str, str],
     logger: Optional[logging.Logger] = None
-) -> MockRealtimeClient:
+) -> LocalRealtimeClient:
     """
     Create a mock client specifically for testing audio responses.
     
@@ -341,7 +341,7 @@ def create_audio_testing_mock(
         logger: Optional logger instance
         
     Returns:
-        Configured MockRealtimeClient for audio testing
+        Configured LocalRealtimeClient for audio testing
     """
     
     session_config = SessionConfig(
@@ -367,7 +367,7 @@ def create_audio_testing_mock(
         audio_chunk_delay=0.2
     )
     
-    return MockRealtimeClient(
+    return LocalRealtimeClient(
         logger=logger,
         session_config=session_config,
         response_configs=response_configs,

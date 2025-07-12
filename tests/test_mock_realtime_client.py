@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for MockRealtimeClient.
+Unit tests for LocalRealtimeClient.
 """
 
 import asyncio
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import websockets
 
-from opusagent.mock.realtime.client import MockRealtimeClient
+from opusagent.mock.realtime.client import LocalRealtimeClient
 from opusagent.models.openai_api import (
     ClientEventType,
     ResponseCreateOptions,
@@ -21,8 +21,8 @@ from opusagent.models.openai_api import (
 )
 
 
-class TestMockRealtimeClient(unittest.TestCase):
-    """Test cases for MockRealtimeClient."""
+class TestLocalRealtimeClient(unittest.TestCase):
+    """Test cases for LocalRealtimeClient."""
 
     def assert_sent_event(self, mock_ws, event_type):
         """Helper function to find and assert a specific event was sent.
@@ -58,7 +58,7 @@ class TestMockRealtimeClient(unittest.TestCase):
 
         # Create client with mock WebSocket
         with patch("websockets.connect", self.mock_connect):
-            self.client = MockRealtimeClient(logger=self.logger)
+            self.client = LocalRealtimeClient(logger=self.logger)
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
             self.loop.run_until_complete(self.client.connect())
