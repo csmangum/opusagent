@@ -1,26 +1,35 @@
 """
 Audio management for the LocalRealtime module.
 
-This module handles audio file loading, caching, and processing for the
-LocalRealtimeClient. It provides utilities for working with various audio
-formats and generating fallback audio data.
+This module provides a caching wrapper around AudioUtils for the
+LocalRealtimeClient. It adds caching capabilities to the existing
+audio utilities for improved performance.
 """
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
+
+# Import the existing audio utilities
+try:
+    from tui.utils.audio_utils import AudioUtils
+    AUDIO_UTILS_AVAILABLE = True
+except ImportError:
+    AUDIO_UTILS_AVAILABLE = False
+    AudioUtils = None
 
 
 class AudioManager:
     """
-    Manages audio file loading, caching, and processing for mock responses.
+    Caching wrapper around AudioUtils for mock responses.
     
     This class provides efficient audio file handling with caching for
-    improved performance and automatic fallback to silence for missing files.
+    improved performance, using the existing AudioUtils for actual processing.
     
     Attributes:
         logger (logging.Logger): Logger instance for debugging
         _audio_cache (Dict[str, bytes]): Cache for loaded audio files
+        _metadata_cache (Dict[str, Tuple[int, int]]): Cache for audio metadata
     """
     
     def __init__(self, logger: Optional[logging.Logger] = None):
@@ -33,17 +42,22 @@ class AudioManager:
         """
         self.logger = logger or logging.getLogger(__name__)
         self._audio_cache: Dict[str, bytes] = {}
+        self._metadata_cache: Dict[str, Tuple[int, int]] = {}  # (sample_rate, channels)
+        
+        if not AUDIO_UTILS_AVAILABLE:
+            self.logger.warning("[MOCK REALTIME] AudioUtils not available - using fallback mode")
     
-    async def load_audio_file(self, file_path: str) -> bytes:
+    async def load_audio_file(self, file_path: str, target_sample_rate: int = 16000) -> bytes:
         """
         Load an audio file and cache it for future use.
         
-        This method loads audio files from disk and caches them in memory
+        This method uses AudioUtils for loading and processing, with caching
         for improved performance. If the file doesn't exist or can't be loaded,
         it falls back to generating silence.
         
         Args:
             file_path (str): Path to the audio file to load.
+            target_sample_rate (int): Target sample rate for conversion.
         
         Returns:
             bytes: Audio data as bytes. If file loading fails, returns silence.
@@ -57,13 +71,15 @@ class AudioManager:
         
         Note:
             - Files are cached after first load for improved performance
-            - Supports WAV, MP3, and other audio formats
+            - Uses AudioUtils for format support and resampling
             - Falls back to silence if file not found or loading fails
             - Logs warnings and errors for debugging
         """
-        if file_path in self._audio_cache:
-            self.logger.debug(f"Using cached audio file: {file_path}")
-            return self._audio_cache[file_path]
+        cache_key = f"{file_path}:{target_sample_rate}"
+        
+        if cache_key in self._audio_cache:
+            self.logger.debug(f"[MOCK REALTIME] Using cached audio file: {file_path}")
+            return self._audio_cache[cache_key]
         
         try:
             path = Path(file_path)
@@ -71,11 +87,30 @@ class AudioManager:
                 self.logger.warning(f"[MOCK REALTIME] Audio file not found: {file_path}")
                 return self._generate_silence()
             
-            with open(path, 'rb') as f:
-                audio_data = f.read()
-                self._audio_cache[file_path] = audio_data
-                self.logger.info(f"[MOCK REALTIME] Loaded audio file: {file_path} ({len(audio_data)} bytes)")
+            if AUDIO_UTILS_AVAILABLE and AudioUtils:
+                # Use AudioUtils for loading and processing
+                audio_data, sample_rate, channels = AudioUtils.load_audio_file(
+                    file_path, target_sample_rate=target_sample_rate
+                )
+                
+                if not audio_data:
+                    self.logger.warning(f"[MOCK REALTIME] AudioUtils failed to load: {file_path}")
+                    return self._generate_silence()
+                
+                # Cache the result
+                self._audio_cache[cache_key] = audio_data
+                self._metadata_cache[cache_key] = (sample_rate, channels)
+                
+                self.logger.info(f"[MOCK REALTIME] Loaded audio file: {file_path} ({len(audio_data)} bytes, {sample_rate}Hz, {channels}ch)")
                 return audio_data
+            else:
+                # Fallback to basic file loading
+                with open(path, 'rb') as f:
+                    audio_data = f.read()
+                    self._audio_cache[cache_key] = audio_data
+                    self._metadata_cache[cache_key] = (target_sample_rate, 1)
+                    self.logger.info(f"[MOCK REALTIME] Loaded audio file (fallback): {file_path} ({len(audio_data)} bytes)")
+                    return audio_data
                 
         except Exception as e:
             self.logger.error(f"[MOCK REALTIME] Error loading audio file {file_path}: {e}")
@@ -111,6 +146,7 @@ class AudioManager:
         Useful for freeing up memory or forcing reload of files.
         """
         self._audio_cache.clear()
+        self._metadata_cache.clear()
         self.logger.info("[MOCK REALTIME] Audio cache cleared")
     
     def get_cache_size(self) -> int:
@@ -136,30 +172,36 @@ class AudioManager:
             "average_bytes_per_file": total_size // len(self._audio_cache) if self._audio_cache else 0
         }
     
-    def is_cached(self, file_path: str) -> bool:
+    def is_cached(self, file_path: str, target_sample_rate: int = 16000) -> bool:
         """
         Check if a file is currently cached.
         
         Args:
             file_path (str): Path to the audio file to check.
+            target_sample_rate (int): Target sample rate to check.
         
         Returns:
             bool: True if the file is cached, False otherwise.
         """
-        return file_path in self._audio_cache
+        cache_key = f"{file_path}:{target_sample_rate}"
+        return cache_key in self._audio_cache
     
-    def remove_from_cache(self, file_path: str) -> bool:
+    def remove_from_cache(self, file_path: str, target_sample_rate: int = 16000) -> bool:
         """
         Remove a specific file from the cache.
         
         Args:
             file_path (str): Path to the audio file to remove.
+            target_sample_rate (int): Target sample rate to remove.
         
         Returns:
             bool: True if the file was removed, False if it wasn't cached.
         """
-        if file_path in self._audio_cache:
-            del self._audio_cache[file_path]
-            self.logger.debug(f"Removed {file_path} from audio cache")
+        cache_key = f"{file_path}:{target_sample_rate}"
+        if cache_key in self._audio_cache:
+            del self._audio_cache[cache_key]
+            if cache_key in self._metadata_cache:
+                del self._metadata_cache[cache_key]
+            self.logger.debug(f"[MOCK REALTIME] Removed {file_path} from audio cache")
             return True
         return False 

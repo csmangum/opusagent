@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 
 from opusagent.models.openai_api import ResponseCreateOptions, ServerEventType
 
-from .models import MockResponseConfig
+from .models import LocalResponseConfig
 
 
 class ResponseGenerator:
@@ -119,7 +119,7 @@ class ResponseGenerator:
     async def generate_text_response(
         self,
         options: ResponseCreateOptions,
-        config: MockResponseConfig
+        config: LocalResponseConfig
     ) -> None:
         """
         Generate a text response with streaming simulation.
@@ -130,7 +130,7 @@ class ResponseGenerator:
         
         Args:
             options (ResponseCreateOptions): Response creation options.
-            config (MockResponseConfig): Configuration for this response.
+            config (LocalResponseConfig): Configuration for this response.
         
         The streaming process:
         1. Sends text.delta events for each character
@@ -167,7 +167,7 @@ class ResponseGenerator:
     async def generate_audio_response(
         self,
         options: ResponseCreateOptions,
-        config: MockResponseConfig
+        config: LocalResponseConfig
     ) -> None:
         """
         Generate an audio response with streaming simulation.
@@ -178,7 +178,7 @@ class ResponseGenerator:
         
         Args:
             options (ResponseCreateOptions): Response creation options.
-            config (MockResponseConfig): Configuration for this response.
+            config (LocalResponseConfig): Configuration for this response.
         
         Audio sources (in order of precedence):
         1. config.audio_data (raw bytes)
@@ -242,7 +242,7 @@ class ResponseGenerator:
     async def generate_function_call(
         self,
         options: ResponseCreateOptions,
-        config: MockResponseConfig
+        config: LocalResponseConfig
     ) -> None:
         """
         Generate a function call response.
@@ -253,7 +253,7 @@ class ResponseGenerator:
         
         Args:
             options (ResponseCreateOptions): Response creation options.
-            config (MockResponseConfig): Configuration for this response.
+            config (LocalResponseConfig): Configuration for this response.
         
         The function call process:
         1. Determines function call to simulate

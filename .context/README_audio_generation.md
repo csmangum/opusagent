@@ -108,7 +108,7 @@ demo/audio/mock/
 ### Basic Usage
 
 ```python
-from opusagent.mock.mock_realtime_client import LocalRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 
 # Create mock client
 mock_client = LocalRealtimeClient()
@@ -116,7 +116,7 @@ mock_client = LocalRealtimeClient()
 # Add response configuration with audio file
 mock_client.add_response_config(
     "greeting",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="Hello! Welcome to our service.",
         audio_file="demo/audio/mock/greetings/greetings_01.wav",
         delay_seconds=0.03,

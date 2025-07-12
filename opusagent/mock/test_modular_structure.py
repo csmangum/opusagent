@@ -12,20 +12,20 @@ from pathlib import Path
 
 # Test both import paths for backward compatibility
 try:
-    from opusagent.mock.realtime import LocalRealtimeClient, MockResponseConfig
+    from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig
     print("✓ Successfully imported from opusagent.mock.mock_realtime")
 except ImportError as e:
     print(f"✗ Failed to import from opusagent.mock.mock_realtime: {e}")
 
 try:
-    from opusagent.mock.realtime import LocalRealtimeClient as LocalRealtimeClientOld, MockResponseConfig as MockResponseConfigOld
+    from opusagent.mock.realtime import LocalRealtimeClient as LocalRealtimeClientOld, LocalResponseConfig as LocalResponseConfigOld
     print("✓ Successfully imported from opusagent.mock.mock_realtime_client (backward compatibility)")
 except ImportError as e:
     print(f"✗ Failed to import from opusagent.mock.mock_realtime_client: {e}")
 
 # Test individual modules
 try:
-    from opusagent.mock.realtime.models import MockResponseConfig
+    from opusagent.mock.realtime.models import LocalResponseConfig
     from opusagent.mock.realtime.audio import AudioManager
     from opusagent.mock.realtime.handlers import EventHandlerManager
     from opusagent.mock.realtime.generators import ResponseGenerator
@@ -47,13 +47,13 @@ async def test_basic_functionality():
     """Test basic functionality of the modular structure."""
     print("\n=== Testing Basic Functionality ===")
     
-    # Test MockResponseConfig
-    config = MockResponseConfig(
+    # Test LocalResponseConfig
+    config = LocalResponseConfig(
         text="Hello from modular structure!",
         audio_file="test.wav",
         delay_seconds=0.03
     )
-    print(f"✓ Created MockResponseConfig: {config.text}")
+    print(f"✓ Created LocalResponseConfig: {config.text}")
     
     # Test AudioManager
     audio_manager = AudioManager()
@@ -83,7 +83,7 @@ async def test_basic_functionality():
     # Test adding response config
     mock_client.add_response_config(
         "greeting",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="Hello! How can I help you?",
             audio_file="greeting.wav"
         )
@@ -126,12 +126,12 @@ async def test_backward_compatibility():
     print("\n=== Testing Backward Compatibility ===")
     
     # Test that both import paths work
-    from opusagent.mock.realtime import LocalRealtimeClient as NewClient, MockResponseConfig as NewConfig
-    from opusagent.mock.realtime import LocalRealtimeClient as OldClient, MockResponseConfig as OldConfig
+    from opusagent.mock.realtime import LocalRealtimeClient as NewClient, LocalResponseConfig as NewConfig
+    from opusagent.mock.realtime import LocalRealtimeClient as OldClient, LocalResponseConfig as OldConfig
     
     # Test that they're the same classes
     assert NewClient == OldClient, "LocalRealtimeClient classes should be identical"
-    assert NewConfig == OldConfig, "MockResponseConfig classes should be identical"
+    assert NewConfig == OldConfig, "LocalResponseConfig classes should be identical"
     
     print("✓ Backward compatibility verified")
     

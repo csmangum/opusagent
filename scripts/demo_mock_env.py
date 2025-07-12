@@ -63,7 +63,7 @@ async def demo_mock_client():
     print("=== LocalRealtimeClient Demo ===")
     
     from opusagent.mock.realtime.client import LocalRealtimeClient
-    from opusagent.mock.realtime.models import MockResponseConfig
+    from opusagent.mock.realtime.models import LocalResponseConfig
     
     # Create mock client
     mock_client = LocalRealtimeClient()
@@ -71,7 +71,7 @@ async def demo_mock_client():
     # Add some response configurations
     mock_client.add_response_config(
         "greeting",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="Hello! Welcome to our service.",
             audio_file="demo/audio/mock_test/greetings/greetings_01.wav"
         )
@@ -79,7 +79,7 @@ async def demo_mock_client():
     
     mock_client.add_response_config(
         "help",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="How can I help you today?",
             audio_file="demo/audio/mock_test/greetings/greetings_02.wav"
         )

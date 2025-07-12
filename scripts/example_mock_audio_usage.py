@@ -22,7 +22,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from opusagent.mock.realtime.client import LocalRealtimeClient
-from opusagent.mock.realtime.models import MockResponseConfig
+from opusagent.mock.realtime.models import LocalResponseConfig
 from opusagent.mock.mock_factory import create_customer_service_mock
 
 
@@ -36,7 +36,7 @@ async def example_basic_usage():
     # Add response configurations using generated audio files
     mock_client.add_response_config(
         "greeting",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="Hello! Welcome to our customer service. How can I help you today?",
             audio_file="demo/audio/mock/greetings/greetings_01.wav",
             delay_seconds=0.03,
@@ -46,7 +46,7 @@ async def example_basic_usage():
     
     mock_client.add_response_config(
         "card_help",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="I can help you replace your lost card right away.",
             audio_file="demo/audio/mock/card_replacement/card_replacement_01.wav",
             delay_seconds=0.04,
@@ -56,7 +56,7 @@ async def example_basic_usage():
     
     mock_client.add_response_config(
         "farewell",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="Thank you for your time. Have a great day!",
             audio_file="demo/audio/mock/farewells/farewells_01.wav",
             delay_seconds=0.03,
@@ -146,7 +146,7 @@ async def example_function_calls():
     # Add a response config with function call
     mock_client.add_response_config(
         "verify_user",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="I'll verify your information now.",
             audio_file="demo/audio/mock/confirmations/confirmations_01.wav",
             function_call={
@@ -177,7 +177,7 @@ async def example_websocket_simulation():
     # Add some response configs
     mock_client.add_response_config(
         "welcome",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="Welcome to our service!",
             audio_file="demo/audio/mock/greetings/greetings_02.wav"
         )

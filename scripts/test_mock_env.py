@@ -104,7 +104,7 @@ def test_mock_client_import():
     
     try:
         from opusagent.mock.realtime.client import LocalRealtimeClient
-        from opusagent.mock.realtime.models import MockResponseConfig
+        from opusagent.mock.realtime.models import LocalResponseConfig
         print("✓ LocalRealtimeClient imported successfully")
         
         # Test creating mock client
@@ -114,7 +114,7 @@ def test_mock_client_import():
         # Test adding response config
         mock_client.add_response_config(
             "test",
-            MockResponseConfig(
+            LocalResponseConfig(
                 text="Test response",
                 audio_file="demo/audio/mock_test/greetings/greetings_01.wav"
             )

@@ -20,7 +20,7 @@ from opusagent.models.openai_api import ResponseCreateOptions, SessionConfig, Se
 from .audio import AudioManager
 from .handlers import EventHandlerManager
 from .generators import ResponseGenerator
-from .models import MockResponseConfig
+from .models import LocalResponseConfig
 
 
 class LocalRealtimeClient:
@@ -43,7 +43,7 @@ class LocalRealtimeClient:
     
     Key Features:
         - **Response Configuration**: Define different responses for different
-          scenarios using MockResponseConfig objects
+          scenarios using LocalResponseConfig objects
         - **Audio Support**: Load and stream actual audio files instead of silence
         - **Function Calls**: Simulate function calls with custom arguments
         - **Event Handling**: Handle all OpenAI Realtime API event types
@@ -53,8 +53,8 @@ class LocalRealtimeClient:
     Attributes:
         logger (logging.Logger): Logger instance for debugging and monitoring
         session_config (SessionConfig): OpenAI session configuration
-        response_configs (Dict[str, MockResponseConfig]): Available response configurations
-        default_response_config (MockResponseConfig): Default response when no specific config matches
+        response_configs (Dict[str, LocalResponseConfig]): Available response configurations
+        default_response_config (LocalResponseConfig): Default response when no specific config matches
         connected (bool): Connection status
         _ws (Optional[ClientConnection]): WebSocket connection
         _audio_manager (AudioManager): Audio file management
@@ -70,7 +70,7 @@ class LocalRealtimeClient:
         # Add custom response configurations
         mock_client.add_response_config(
             "greeting",
-            MockResponseConfig(
+            LocalResponseConfig(
                 text="Hello! Welcome to our service.",
                 audio_file="audio/greeting.wav"
             )
@@ -85,8 +85,8 @@ class LocalRealtimeClient:
         self,
         logger: Optional[logging.Logger] = None,
         session_config: Optional[SessionConfig] = None,
-        response_configs: Optional[Dict[str, MockResponseConfig]] = None,
-        default_response_config: Optional[MockResponseConfig] = None,
+        response_configs: Optional[Dict[str, LocalResponseConfig]] = None,
+        default_response_config: Optional[LocalResponseConfig] = None,
     ):
         """
         Initialize the LocalRealtimeClient.
@@ -96,10 +96,10 @@ class LocalRealtimeClient:
                                              If None, creates a default logger.
             session_config (Optional[SessionConfig]): OpenAI session configuration.
                                                     If None, uses default settings.
-            response_configs (Optional[Dict[str, MockResponseConfig]]): Pre-configured
+            response_configs (Optional[Dict[str, LocalResponseConfig]]): Pre-configured
                                                                       response configurations
                                                                       for different scenarios.
-            default_response_config (Optional[MockResponseConfig]): Default response
+            default_response_config (Optional[LocalResponseConfig]): Default response
                                                                    configuration when no
                                                                    specific config matches.
         
@@ -110,8 +110,8 @@ class LocalRealtimeClient:
             
             # With custom configurations
             configs = {
-                "greeting": MockResponseConfig(text="Hello!"),
-                "help": MockResponseConfig(text="How can I help?")
+                "greeting": LocalResponseConfig(text="Hello!"),
+                "help": LocalResponseConfig(text="How can I help?")
             }
             mock_client = LocalRealtimeClient(response_configs=configs)
             ```
@@ -125,7 +125,7 @@ class LocalRealtimeClient:
         
         # Response configuration
         self.response_configs = response_configs or {}
-        self.default_response_config = default_response_config or MockResponseConfig()
+        self.default_response_config = default_response_config or LocalResponseConfig()
         
         # Connection state
         self.connected = False
@@ -149,7 +149,7 @@ class LocalRealtimeClient:
             self._handle_response_create
         )
 
-    def add_response_config(self, key: str, config: MockResponseConfig) -> None:
+    def add_response_config(self, key: str, config: LocalResponseConfig) -> None:
         """
         Add a response configuration for a specific scenario.
         
@@ -160,14 +160,14 @@ class LocalRealtimeClient:
         Args:
             key (str): Unique identifier for this response configuration.
                       Used to select the appropriate response during generation.
-            config (MockResponseConfig): Configuration defining how the response
+            config (LocalResponseConfig): Configuration defining how the response
                                        should be generated.
         
         Example:
             ```python
             mock_client.add_response_config(
                 "greeting",
-                MockResponseConfig(
+                LocalResponseConfig(
                     text="Hello! How can I help you?",
                     audio_file="audio/greeting.wav",
                     delay_seconds=0.03
@@ -178,7 +178,7 @@ class LocalRealtimeClient:
         self.response_configs[key] = config
         self.logger.debug(f"Added response config for key: {key}")
 
-    def get_response_config(self, key: Optional[str] = None) -> MockResponseConfig:
+    def get_response_config(self, key: Optional[str] = None) -> LocalResponseConfig:
         """
         Get a response configuration by key, or return the default configuration.
         
@@ -191,7 +191,7 @@ class LocalRealtimeClient:
                                 If None or not found, returns default config.
         
         Returns:
-            MockResponseConfig: The selected response configuration.
+            LocalResponseConfig: The selected response configuration.
         
         Example:
             ```python

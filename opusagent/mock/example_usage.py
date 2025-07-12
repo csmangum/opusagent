@@ -10,7 +10,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from opusagent.mock.realtime import LocalRealtimeClient, MockResponseConfig
+from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig
 from opusagent.models.openai_api import SessionConfig
 
 # Configure logging
@@ -31,28 +31,28 @@ async def main():
     
     # Create response configurations for different scenarios
     response_configs = {
-        "greeting": MockResponseConfig(
+        "greeting": LocalResponseConfig(
             text="Hello! Welcome to our customer service. How can I help you today?",
             audio_file="demo/audio/greeting.wav",  # Path to saved audio file
             delay_seconds=0.03,
             audio_chunk_delay=0.15
         ),
         
-        "help": MockResponseConfig(
+        "help": LocalResponseConfig(
             text="I'd be happy to help you with that. Let me look into your account.",
             audio_file="demo/audio/help_response.wav",
             delay_seconds=0.04,
             audio_chunk_delay=0.2
         ),
         
-        "goodbye": MockResponseConfig(
+        "goodbye": LocalResponseConfig(
             text="Thank you for calling. Have a great day!",
             audio_file="demo/audio/goodbye.wav",
             delay_seconds=0.05,
             audio_chunk_delay=0.25
         ),
         
-        "function_call": MockResponseConfig(
+        "function_call": LocalResponseConfig(
             text="I'll check your account balance for you.",
             function_call={
                 "name": "get_account_balance",
@@ -64,7 +64,7 @@ async def main():
             delay_seconds=0.03
         ),
         
-        "error": MockResponseConfig(
+        "error": LocalResponseConfig(
             text="I'm sorry, I'm having trouble processing your request right now.",
             audio_file="demo/audio/error_response.wav",
             delay_seconds=0.06,
@@ -73,7 +73,7 @@ async def main():
     }
     
     # Create default response configuration
-    default_config = MockResponseConfig(
+    default_config = LocalResponseConfig(
         text="I understand your request. Let me process that for you.",
         audio_file="demo/audio/default_response.wav",
         delay_seconds=0.04,
@@ -91,7 +91,7 @@ async def main():
     # Example: Add a custom response configuration at runtime
     mock_client.add_response_config(
         "custom",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="This is a custom response that was added dynamically.",
             audio_file="demo/audio/custom_response.wav",
             delay_seconds=0.02,
@@ -104,7 +104,7 @@ async def main():
     raw_audio_data = b'\x00\x00\x00\x00' * 16000  # 1 second of silence at 16kHz
     mock_client.add_response_config(
         "raw_audio",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="This response uses raw audio data.",
             audio_data=raw_audio_data,
             delay_seconds=0.03,

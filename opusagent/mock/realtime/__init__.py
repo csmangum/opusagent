@@ -1,5 +1,5 @@
 """
-LocalRealtime Module - Enhanced OpenAI Realtime API Simulator
+LocalRealtime Module - OpenAI Realtime API Simulator
 
 This module provides a comprehensive mock implementation of the OpenAI Realtime API
 WebSocket connection, designed for testing and development without requiring an
@@ -15,7 +15,7 @@ The module is organized into separate concerns:
 
 Example Usage:
     ```python
-    from opusagent.mock.mock_realtime import LocalRealtimeClient, MockResponseConfig
+    from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig
     
     # Create a mock client with saved audio phrases
     mock_client = LocalRealtimeClient()
@@ -23,7 +23,7 @@ Example Usage:
     # Add response configuration
     mock_client.add_response_config(
         "greeting",
-        MockResponseConfig(
+        LocalResponseConfig(
             text="Hello! How can I help you?",
             audio_file="demo/audio/greeting.wav"
         )
@@ -31,12 +31,12 @@ Example Usage:
     ```
 """
 
-from .models import MockResponseConfig
+from .models import LocalResponseConfig
 from .client import LocalRealtimeClient
 
 __all__ = [
     "LocalRealtimeClient",
-    "MockResponseConfig",
+    "LocalResponseConfig",
 ]
 
 __version__ = "2.0.0" 

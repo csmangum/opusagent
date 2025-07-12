@@ -15,11 +15,11 @@ The enhanced LocalRealtimeClient now supports:
 
 ## Key Components
 
-### 1. MockResponseConfig
+### 1. LocalResponseConfig
 A configuration class that defines how a response should be generated:
 
 ```python
-class MockResponseConfig(BaseModel):
+class LocalResponseConfig(BaseModel):
     text: str = "Default response text"
     audio_file: Optional[str] = None  # Path to audio file
     audio_data: Optional[bytes] = None  # Raw audio data
@@ -34,11 +34,11 @@ The main mock client with support for multiple response configurations:
 ```python
 mock_client = LocalRealtimeClient(
     response_configs={
-        "greeting": MockResponseConfig(
+        "greeting": LocalResponseConfig(
             text="Hello! How can I help you?",
             audio_file="demo/audio/greeting.wav"
         ),
-        "help": MockResponseConfig(
+        "help": LocalResponseConfig(
             text="I'd be happy to help you with that.",
             audio_file="demo/audio/help.wav"
         )
@@ -72,7 +72,7 @@ mock_client = create_customer_service_mock(audio_dir="demo/audio")
 ### Custom Responses
 
 ```python
-from opusagent.mock.mock_realtime_client import LocalRealtimeClient, MockResponseConfig
+from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
 
 # Create a custom mock client
 mock_client = LocalRealtimeClient()
@@ -80,7 +80,7 @@ mock_client = LocalRealtimeClient()
 # Add response configurations
 mock_client.add_response_config(
     "greeting",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="Welcome to our service!",
         audio_file="audio/greeting.wav",
         delay_seconds=0.03
@@ -89,7 +89,7 @@ mock_client.add_response_config(
 
 mock_client.add_response_config(
     "help",
-    MockResponseConfig(
+    LocalResponseConfig(
         text="I'm here to help you.",
         audio_file="audio/help.wav",
         delay_seconds=0.04

@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 
-class MockResponseConfig(BaseModel):
+class LocalResponseConfig(BaseModel):
     """
     Configuration for a mock response in the LocalRealtimeClient.
     
@@ -37,7 +37,7 @@ class MockResponseConfig(BaseModel):
     
     Example:
         ```python
-        config = MockResponseConfig(
+        config = LocalResponseConfig(
             text="Hello! How can I help you today?",
             audio_file="audio/greeting.wav",
             delay_seconds=0.03,
