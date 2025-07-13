@@ -13,6 +13,10 @@ def to_float32_mono(audio_data, sample_width, channels):
     
     # 24-bit PCM mono
     elif sample_width == 3 and channels == 1:
+        # Validate that the length of audio_data is divisible by 3
+        if len(audio_data) % 3 != 0:
+            raise ValueError("Invalid PCM24 data: length of audio_data must be a multiple of 3")
+        
         # Unpack 24-bit little-endian signed integers
         samples = []
         for i in range(0, len(audio_data), 3):
