@@ -26,3 +26,7 @@ DEFAULT_TRANSCRIPTION_LANGUAGE = "en"  # Default language
 DEFAULT_WHISPER_MODEL_SIZE = "base"  # Default Whisper model size
 DEFAULT_TRANSCRIPTION_CONFIDENCE_THRESHOLD = 0.5  # Default confidence threshold
 DEFAULT_TRANSCRIPTION_CHUNK_DURATION = 1.0  # Default chunk duration in seconds
+
+# VAD threshold constants for speech detection hysteresis
+SPEECH_START_THRESHOLD = 2  # Number of consecutive speech detections to start speech
+SPEECH_STOP_THRESHOLD = 3   # Number of consecutive silence detections to stop speech
