@@ -53,12 +53,22 @@ Example Usage:
 
 from .models import LocalResponseConfig, ResponseSelectionCriteria, ConversationContext
 from .client import LocalRealtimeClient
+from .transcription import (
+    TranscriptionConfig, 
+    TranscriptionResult, 
+    TranscriptionFactory,
+    load_transcription_config
+)
 
 __all__ = [
     "LocalRealtimeClient",
     "LocalResponseConfig",
     "ResponseSelectionCriteria",
     "ConversationContext",
+    "TranscriptionConfig",
+    "TranscriptionResult", 
+    "TranscriptionFactory",
+    "load_transcription_config",
 ]
 
 __version__ = "3.0.0" 
