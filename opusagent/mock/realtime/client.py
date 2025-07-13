@@ -390,7 +390,7 @@ class LocalRealtimeClient:
                 
                 # Load transcription configuration
                 transcription_config = load_transcription_config()
-                transcription_config.__dict__.update(self._transcription_config)  # Override with provided config
+                transcription_config = transcription_config.__class__(**{**transcription_config.__dict__, **self._transcription_config})  # Merge defaults and overrides
                 
                 # Create transcriber instance
                 self._transcriber = TranscriptionFactory.create_transcriber(transcription_config)
