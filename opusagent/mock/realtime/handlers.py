@@ -591,7 +591,7 @@ class EventHandlerManager:
             self._transcriber.start_session()
             
             # Process audio in chunks for real-time delta events
-            chunk_size = 3200  # 200ms at 16kHz 16-bit (matches OpenAI chunk size)
+            chunk_size = DEFAULT_AUDIO_CHUNK_SIZE
             accumulated_text = ""
             
             for i in range(0, len(combined_audio), chunk_size):
