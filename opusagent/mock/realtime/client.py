@@ -47,6 +47,8 @@ from opusagent.models.openai_api import (
     ServerEventType,
     SessionConfig,
 )
+from opusagent.vad.vad_factory import VADFactory
+from opusagent.vad.vad_config import load_vad_config
 
 from .audio import AudioManager
 from .generators import ResponseGenerator
@@ -138,6 +140,8 @@ class LocalRealtimeClient:
         session_config: Optional[SessionConfig] = None,
         response_configs: Optional[Dict[str, LocalResponseConfig]] = None,
         default_response_config: Optional[LocalResponseConfig] = None,
+        enable_vad: Optional[bool] = None,
+        vad_config: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the LocalRealtimeClient with optional custom configurations.
@@ -166,10 +170,23 @@ class LocalRealtimeClient:
                                                                    configuration used when no specific
                                                                    config matches the conversation context.
                                                                    If None, uses a basic default response.
+            enable_vad (Optional[bool]): Whether to enable Voice Activity Detection (VAD).
+                                       If None, VAD is enabled automatically when session
+                                       configuration includes turn_detection with "server_vad".
+                                       If True, VAD is always enabled. If False, VAD is disabled.
+            vad_config (Optional[Dict[str, Any]]): Custom VAD configuration parameters.
+                                                 Can include:
+                                                 - backend: "silero" (default)
+                                                 - sample_rate: 16000 (default)
+                                                 - threshold: 0.5 (default)
+                                                 - device: "cpu" (default)
+                                                 - chunk_size: 512 (default for 16kHz)
+                                                 If None, uses default VAD configuration.
 
         Raises:
             ValueError: If provided configurations are invalid
             OSError: If audio manager initialization fails
+            RuntimeError: If VAD initialization fails with required VAD enabled
 
         Example:
             ```python
@@ -186,6 +203,27 @@ class LocalRealtimeClient:
                 model="gpt-4o-realtime-preview-2025-06-03",
                 modalities=["text", "audio"],
                 voice="nova"
+            )
+            client = LocalRealtimeClient(session_config=session_config)
+
+            # With VAD enabled and custom configuration
+            vad_config = {
+                "backend": "silero",
+                "sample_rate": 16000,
+                "threshold": 0.3,
+                "device": "cpu"
+            }
+            client = LocalRealtimeClient(
+                enable_vad=True,
+                vad_config=vad_config
+            )
+
+            # With session configuration that enables VAD automatically
+            session_config = SessionConfig(
+                model="gpt-4o-realtime-preview-2025-06-03",
+                modalities=["text", "audio"],
+                voice="alloy",
+                turn_detection={"type": "server_vad"}  # This will enable VAD
             )
             client = LocalRealtimeClient(session_config=session_config)
 
@@ -236,8 +274,16 @@ class LocalRealtimeClient:
 
         # Initialize components
         self._audio_manager = AudioManager(logger=self.logger)
+        
+        # Initialize VAD if enabled
+        self._vad = None
+        self._vad_enabled = False
+        self._vad_config = vad_config or {}
+        self._initialize_vad(enable_vad)
+        
+        # Initialize event handler with VAD support
         self._event_handler = EventHandlerManager(
-            logger=self.logger, session_config=self.session_config
+            logger=self.logger, session_config=self.session_config, vad=self._vad
         )
         self._response_generator = ResponseGenerator(
             logger=self.logger, audio_manager=self._audio_manager
@@ -247,6 +293,48 @@ class LocalRealtimeClient:
         self._event_handler.register_event_handler(
             "response.create", self._handle_response_create
         )
+
+    def _initialize_vad(self, enable_vad: Optional[bool] = None) -> None:
+        """
+        Initialize Voice Activity Detection (VAD) based on session configuration.
+        
+        This method sets up VAD when turn detection is enabled in the session
+        configuration or when explicitly enabled. VAD is used to detect speech
+        activity in incoming audio data for more realistic speech detection.
+        
+        Args:
+            enable_vad (Optional[bool]): Whether to enable VAD. If None, 
+                                       determines from session configuration.
+        """
+        try:
+            # Determine if VAD should be enabled
+            if enable_vad is None:
+                # Check session config for turn detection
+                turn_detection = self.session_config.turn_detection
+                if turn_detection and turn_detection.get("type") == "server_vad":
+                    self._vad_enabled = True
+                else:
+                    self._vad_enabled = False
+            else:
+                self._vad_enabled = enable_vad
+            
+            if self._vad_enabled:
+                # Load VAD configuration
+                vad_config = load_vad_config()
+                vad_config.update(self._vad_config)  # Override with provided config
+                
+                # Create VAD instance
+                self._vad = VADFactory.create_vad(vad_config)
+                self.logger.info(f"[MOCK REALTIME] VAD initialized with backend: {vad_config.get('backend', 'silero')}")
+            else:
+                self._vad = None
+                self.logger.info("[MOCK REALTIME] VAD disabled - using simple speech detection")
+                
+        except Exception as e:
+            self.logger.error(f"[MOCK REALTIME] Failed to initialize VAD: {e}")
+            # Always fall back gracefully to disabled VAD on initialization failure
+            self._vad = None
+            self._vad_enabled = False
 
     def add_response_config(self, key: str, config: LocalResponseConfig) -> None:
         """
@@ -1116,6 +1204,7 @@ class LocalRealtimeClient:
         2. Closing the WebSocket connection
         3. Updating connection status
         4. Cleaning up internal state
+        5. Cleaning up VAD resources
 
         This method should be called when you're done using the client to
         ensure proper resource cleanup and prevent memory leaks.
@@ -1171,6 +1260,25 @@ class LocalRealtimeClient:
             finally:
                 self.connected = False
                 self._ws = None
+
+        # Clean up VAD resources
+        self._cleanup_vad()
+
+    def _cleanup_vad(self) -> None:
+        """
+        Clean up VAD resources.
+        
+        This method safely releases VAD resources when the client is
+        disconnected or no longer needed.
+        """
+        if self._vad:
+            try:
+                self._vad.cleanup()
+                self.logger.debug("[MOCK REALTIME] VAD resources cleaned up")
+            except Exception as e:
+                self.logger.warning(f"[MOCK REALTIME] Error cleaning up VAD: {e}")
+            finally:
+                self._vad = None
 
     async def _message_handler(self) -> None:
         """
@@ -1828,11 +1936,54 @@ class LocalRealtimeClient:
     async def handle_session_update(self, data: Dict[str, Any]) -> None:
         """
         Handle session update events.
+        
+        This method processes session configuration updates and handles
+        VAD configuration changes based on turn_detection settings.
 
         Args:
             data (Dict[str, Any]): Session update event data.
         """
+        session = data.get("session", {})
+        
+        # Check for turn_detection changes before updating
+        turn_detection_changed = False
+        if "turn_detection" in session:
+            old_turn_detection = self.session_config.turn_detection
+            new_turn_detection = session.get("turn_detection")
+            if old_turn_detection != new_turn_detection:
+                turn_detection_changed = True
+                self.logger.info(f"[MOCK REALTIME] Turn detection changing from {old_turn_detection} to {new_turn_detection}")
+        
+        # Let the event handler process the session update
         await self._event_handler._handle_session_update(data)
+        
+        # Handle VAD configuration changes
+        if turn_detection_changed:
+            await self._handle_vad_session_update()
+
+    async def _handle_vad_session_update(self) -> None:
+        """
+        Handle VAD configuration changes when session is updated.
+        
+        This method enables or disables VAD based on the updated
+        turn_detection setting in the session configuration.
+        """
+        turn_detection = self.session_config.turn_detection
+        
+        if turn_detection and turn_detection.get("type") == "server_vad":
+            # Enable VAD if not already enabled
+            if not self.is_vad_enabled():
+                self.logger.info("[MOCK REALTIME] Enabling VAD due to server_vad turn detection")
+                self.enable_vad()
+            else:
+                self.logger.debug("[MOCK REALTIME] VAD already enabled")
+        else:
+            # Disable VAD if currently enabled
+            if self.is_vad_enabled():
+                self.logger.info("[MOCK REALTIME] Disabling VAD due to turn detection change")
+                self.disable_vad()
+            else:
+                self.logger.debug("[MOCK REALTIME] VAD already disabled")
 
     async def handle_audio_append(self, data: Dict[str, Any]) -> None:
         """
@@ -1970,3 +2121,109 @@ class LocalRealtimeClient:
             ```
         """
         return self._response_timings[-100:]  # Return last 100 timings
+
+    # VAD-related methods
+
+    def is_vad_enabled(self) -> bool:
+        """
+        Check if VAD is enabled and initialized.
+        
+        Returns:
+            bool: True if VAD is enabled and initialized, False otherwise.
+        """
+        return self._vad_enabled and self._vad is not None
+
+    def get_vad_config(self) -> Dict[str, Any]:
+        """
+        Get the current VAD configuration.
+        
+        Returns:
+            Dict[str, Any]: Current VAD configuration dictionary.
+        """
+        return self._vad_config.copy()
+
+    def enable_vad(self, vad_config: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Enable VAD with optional configuration.
+        
+        Args:
+            vad_config (Optional[Dict[str, Any]]): VAD configuration to use.
+                                                  If None, uses default configuration.
+        """
+        if vad_config:
+            self._vad_config.update(vad_config)
+        self._initialize_vad(enable_vad=True)
+        # Update event handler with new VAD instance
+        self._event_handler._vad = self._vad
+
+    def disable_vad(self) -> None:
+        """
+        Disable VAD and clean up resources.
+        """
+        self._cleanup_vad()
+        self._vad_enabled = False
+        # Update event handler to remove VAD instance
+        self._event_handler._vad = None
+
+    def get_vad_state(self) -> Dict[str, Any]:
+        """
+        Get current VAD state information.
+        
+        Returns:
+            Dict[str, Any]: VAD state information including:
+                - enabled: Whether VAD is enabled
+                - initialized: Whether VAD is initialized
+                - speech_active: Whether speech is currently active
+                - configuration: Current VAD configuration
+                - state_details: Detailed state information from event handler
+        """
+        state = {
+            "enabled": self._vad_enabled,
+            "initialized": self._vad is not None,
+            "speech_active": self._event_handler._session_state.get("speech_detected", False),
+            "configuration": self._vad_config.copy()
+        }
+        
+        # Add detailed state information if available
+        if hasattr(self._event_handler, '_vad_state'):
+            state["state_details"] = {
+                "speech_active": self._event_handler._vad_state.get("speech_active", False),
+                "confidence_history": self._event_handler._vad_state.get("confidence_history", []),
+                "speech_counter": self._event_handler._vad_state.get("speech_counter", 0),
+                "silence_counter": self._event_handler._vad_state.get("silence_counter", 0),
+                "last_speech_time": self._event_handler._vad_state.get("last_speech_time"),
+                "speech_start_time": self._event_handler._vad_state.get("speech_start_time")
+            }
+        
+        return state
+
+    def reset_vad_state(self) -> None:
+        """
+        Reset VAD state tracking to initial values.
+        
+        This method can be called to reset the VAD state management
+        without disabling VAD completely.
+        """
+        if hasattr(self._event_handler, '_reset_vad_state'):
+            self._event_handler._reset_vad_state()
+            self.logger.debug("[MOCK REALTIME] VAD state reset via client")
+
+    def update_vad_config(self, config_updates: Dict[str, Any]) -> None:
+        """
+        Update VAD configuration with new parameters.
+        
+        This method updates the VAD configuration and reinitializes
+        VAD if it's currently enabled.
+        
+        Args:
+            config_updates (Dict[str, Any]): Configuration updates to apply.
+        """
+        self._vad_config.update(config_updates)
+        
+        # Reinitialize VAD if it's currently enabled
+        if self._vad_enabled:
+            self.logger.info("[MOCK REALTIME] Reinitializing VAD with updated configuration")
+            self._cleanup_vad()
+            self._initialize_vad(enable_vad=True)
+            # Update event handler with new VAD instance
+            self._event_handler._vad = self._vad
