@@ -142,6 +142,8 @@ class LocalRealtimeClient:
         default_response_config: Optional[LocalResponseConfig] = None,
         enable_vad: Optional[bool] = None,
         vad_config: Optional[Dict[str, Any]] = None,
+        enable_transcription: Optional[bool] = None,
+        transcription_config: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the LocalRealtimeClient with optional custom configurations.
@@ -182,6 +184,19 @@ class LocalRealtimeClient:
                                                  - device: "cpu" (default)
                                                  - chunk_size: 512 (default for 16kHz)
                                                  If None, uses default VAD configuration.
+            enable_transcription (Optional[bool]): Whether to enable local audio transcription.
+                                                  If None, transcription is enabled automatically
+                                                  when session configuration includes input_audio_transcription.
+                                                  If True, transcription is always enabled.
+                                                  If False, transcription is disabled.
+            transcription_config (Optional[Dict[str, Any]]): Custom transcription configuration.
+                                                           Can include:
+                                                           - backend: "pocketsphinx" or "whisper" (default: "pocketsphinx")
+                                                           - language: "en" (default)
+                                                           - model_size: "base" (for Whisper)
+                                                           - confidence_threshold: 0.5 (default)
+                                                           - device: "cpu" (default)
+                                                           If None, uses default transcription configuration.
 
         Raises:
             ValueError: If provided configurations are invalid
@@ -281,9 +296,18 @@ class LocalRealtimeClient:
         self._vad_config = vad_config or {}
         self._initialize_vad(enable_vad)
         
-        # Initialize event handler with VAD support
+        # Initialize transcription if enabled
+        self._transcriber = None
+        self._transcription_enabled = False
+        self._transcription_config = transcription_config or {}
+        self._initialize_transcription(enable_transcription)
+        
+        # Initialize event handler with VAD and transcription support
         self._event_handler = EventHandlerManager(
-            logger=self.logger, session_config=self.session_config, vad=self._vad
+            logger=self.logger, 
+            session_config=self.session_config, 
+            vad=self._vad,
+            transcriber=self._transcriber
         )
         self._response_generator = ResponseGenerator(
             logger=self.logger, audio_manager=self._audio_manager
@@ -335,6 +359,53 @@ class LocalRealtimeClient:
             # Always fall back gracefully to disabled VAD on initialization failure
             self._vad = None
             self._vad_enabled = False
+
+    def _initialize_transcription(self, enable_transcription: Optional[bool] = None) -> None:
+        """
+        Initialize local audio transcription based on session configuration.
+        
+        This method sets up transcription when input_audio_transcription is enabled
+        in the session configuration or when explicitly enabled. Transcription is
+        used to convert incoming audio to text for realistic API behavior.
+        
+        Args:
+            enable_transcription (Optional[bool]): Whether to enable transcription.
+                                                  If None, determines from session configuration.
+        """
+        try:
+            # Determine if transcription should be enabled
+            if enable_transcription is None:
+                # Check session config for input audio transcription
+                input_transcription = self.session_config.input_audio_transcription
+                if input_transcription and input_transcription.get("model"):
+                    self._transcription_enabled = True
+                else:
+                    self._transcription_enabled = False
+            else:
+                self._transcription_enabled = enable_transcription
+            
+            if self._transcription_enabled:
+                # Import transcription modules
+                from .transcription import TranscriptionFactory, load_transcription_config
+                
+                # Load transcription configuration
+                transcription_config = load_transcription_config()
+                transcription_config.__dict__.update(self._transcription_config)  # Override with provided config
+                
+                # Create transcriber instance
+                self._transcriber = TranscriptionFactory.create_transcriber(transcription_config)
+                
+                # Initialize transcriber asynchronously (we'll do this in connect())
+                self.logger.info(f"[MOCK REALTIME] Transcription initialized with backend: {transcription_config.backend}")
+            else:
+                self._transcriber = None
+                self.logger.info("[MOCK REALTIME] Transcription disabled - using mock transcript events")
+                
+        except Exception as e:
+            self.logger.error(f"[MOCK REALTIME] Failed to initialize transcription: {e}")
+            # Always fall back gracefully to disabled transcription on initialization failure
+            self._transcriber = None
+            self._transcription_enabled = False
 
     def add_response_config(self, key: str, config: LocalResponseConfig) -> None:
         """
@@ -1180,6 +1251,16 @@ class LocalRealtimeClient:
             self._event_handler.set_websocket_connection(self._ws)
             self._response_generator.set_websocket_connection(self._ws)
 
+            # Initialize transcriber if enabled
+            if self._transcriber and self._transcription_enabled:
+                try:
+                    await self._transcriber.initialize()
+                    self.logger.info("[MOCK REALTIME] Transcriber initialized successfully")
+                except Exception as e:
+                    self.logger.error(f"[MOCK REALTIME] Failed to initialize transcriber: {e}")
+                    self._transcriber = None
+                    self._transcription_enabled = False
+
             # Start message handler
             self._message_task = asyncio.create_task(self._message_handler())
 
@@ -1263,6 +1344,9 @@ class LocalRealtimeClient:
 
         # Clean up VAD resources
         self._cleanup_vad()
+        
+        # Clean up transcription resources
+        self._cleanup_transcription()
 
     def _cleanup_vad(self) -> None:
         """
@@ -1279,6 +1363,23 @@ class LocalRealtimeClient:
                 self.logger.warning(f"[MOCK REALTIME] Error cleaning up VAD: {e}")
             finally:
                 self._vad = None
+
+    def _cleanup_transcription(self) -> None:
+        """
+        Clean up transcription resources.
+        
+        This method safely releases transcription resources when the client is
+        disconnected or no longer needed.
+        """
+        if self._transcriber:
+            try:
+                # Run cleanup in background since it might be async
+                asyncio.create_task(self._transcriber.cleanup())
+                self.logger.debug("[MOCK REALTIME] Transcription resources cleaned up")
+            except Exception as e:
+                self.logger.warning(f"[MOCK REALTIME] Error cleaning up transcription: {e}")
+            finally:
+                self._transcriber = None
 
     async def _message_handler(self) -> None:
         """
@@ -2227,3 +2328,89 @@ class LocalRealtimeClient:
             self._initialize_vad(enable_vad=True)
             # Update event handler with new VAD instance
             self._event_handler._vad = self._vad
+
+    # Transcription-related methods
+
+    def is_transcription_enabled(self) -> bool:
+        """
+        Check if transcription is enabled and initialized.
+        
+        Returns:
+            bool: True if transcription is enabled and initialized, False otherwise.
+        """
+        return self._transcription_enabled and self._transcriber is not None
+
+    def get_transcription_config(self) -> Dict[str, Any]:
+        """
+        Get the current transcription configuration.
+        
+        Returns:
+            Dict[str, Any]: Current transcription configuration dictionary.
+        """
+        return self._transcription_config.copy()
+
+    def enable_transcription(self, transcription_config: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Enable transcription with optional configuration.
+        
+        Args:
+            transcription_config (Optional[Dict[str, Any]]): Transcription configuration to use.
+                                                           If None, uses default configuration.
+        """
+        if transcription_config:
+            self._transcription_config.update(transcription_config)
+        self._initialize_transcription(enable_transcription=True)
+        # Update event handler with new transcriber instance
+        self._event_handler._transcriber = self._transcriber
+
+    def disable_transcription(self) -> None:
+        """
+        Disable transcription and clean up resources.
+        """
+        self._cleanup_transcription()
+        self._transcription_enabled = False
+        # Update event handler to remove transcriber instance
+        self._event_handler._transcriber = None
+
+    def get_transcription_state(self) -> Dict[str, Any]:
+        """
+        Get current transcription state information.
+        
+        Returns:
+            Dict[str, Any]: Transcription state information including:
+                - enabled: Whether transcription is enabled
+                - initialized: Whether transcriber is initialized
+                - backend: Current transcription backend
+                - configuration: Current transcription configuration
+        """
+        state = {
+            "enabled": self._transcription_enabled,
+            "initialized": self._transcriber is not None,
+            "backend": self._transcription_config.get("backend", "pocketsphinx"),
+            "configuration": self._transcription_config.copy()
+        }
+        
+        if self._transcriber:
+            state["transcriber_type"] = type(self._transcriber).__name__
+        
+        return state
+
+    def update_transcription_config(self, config_updates: Dict[str, Any]) -> None:
+        """
+        Update transcription configuration with new parameters.
+        
+        This method updates the transcription configuration and reinitializes
+        transcription if it's currently enabled.
+        
+        Args:
+            config_updates (Dict[str, Any]): Configuration updates to apply.
+        """
+        self._transcription_config.update(config_updates)
+        
+        # Reinitialize transcription if it's currently enabled
+        if self._transcription_enabled:
+            self.logger.info("[MOCK REALTIME] Reinitializing transcription with updated configuration")
+            self._cleanup_transcription()
+            self._initialize_transcription(enable_transcription=True)
+            # Update event handler with new transcriber instance
+            self._event_handler._transcriber = self._transcriber

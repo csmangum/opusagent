@@ -69,7 +69,8 @@ class EventHandlerManager:
         self,
         logger: Optional[logging.Logger] = None,
         session_config: Optional[SessionConfig] = None,
-        vad: Optional[Any] = None
+        vad: Optional[Any] = None,
+        transcriber: Optional[Any] = None
     ):
         """
         Initialize the EventHandlerManager.
@@ -77,12 +78,15 @@ class EventHandlerManager:
         Args:
             logger (Optional[logging.Logger]): Logger instance for debugging.
             session_config (Optional[SessionConfig]): Session configuration.
+            vad (Optional[Any]): Voice Activity Detection instance.
+            transcriber (Optional[Any]): Local transcription instance.
         """
         self.logger = logger or logging.getLogger(__name__)
         self._event_handlers: Dict[str, List[Callable]] = {}
         self._ws: Optional[ClientConnection] = None
         self._session_config = session_config
         self._vad = vad
+        self._transcriber = transcriber
         self._session_state: Dict[str, Any] = {
             "session_id": str(uuid.uuid4()),
             "conversation_id": str(uuid.uuid4()),
@@ -91,7 +95,9 @@ class EventHandlerManager:
             "speech_detected": False,
             "audio_buffer": [],
             "response_audio": [],
-            "response_text": ""
+            "response_text": "",
+            "transcription_enabled": bool(transcriber),
+            "current_item_id": None
         }
         
         # Register default event handlers
@@ -557,13 +563,121 @@ class EventHandlerManager:
         }
         self.logger.debug("[MOCK REALTIME] VAD state reset")
 
+    async def _transcribe_audio_buffer(self, item_id: str) -> None:
+        """
+        Transcribe the current audio buffer using the configured transcriber.
+        
+        This method processes the accumulated audio data through the transcription
+        system and emits appropriate transcription events via WebSocket.
+        
+        Args:
+            item_id (str): ID of the conversation item being transcribed.
+        """
+        if not self._transcriber:
+            self.logger.warning("[MOCK REALTIME] No transcriber available for transcription")
+            return
+        
+        try:
+            # Combine all audio buffer chunks into a single audio stream
+            combined_audio = b"".join(self._session_state["audio_buffer"])
+            
+            if not combined_audio:
+                self.logger.debug("[MOCK REALTIME] No audio data to transcribe")
+                return
+            
+            self.logger.info(f"[MOCK REALTIME] Starting transcription for item {item_id} ({len(combined_audio)} bytes)")
+            
+            # Start transcription session
+            self._transcriber.start_session()
+            
+            # Process audio in chunks for real-time delta events
+            chunk_size = 3200  # 200ms at 16kHz 16-bit (matches OpenAI chunk size)
+            accumulated_text = ""
+            
+            for i in range(0, len(combined_audio), chunk_size):
+                chunk = combined_audio[i:i + chunk_size]
+                
+                # Transcribe chunk
+                result = await self._transcriber.transcribe_chunk(chunk)
+                
+                if result.error:
+                    self.logger.error(f"[MOCK REALTIME] Transcription error: {result.error}")
+                    # Send transcription failed event
+                    await self._send_transcription_failed_event(item_id, result.error)
+                    return
+                
+                # Send delta event if there's new text
+                if result.text and result.text.strip():
+                    await self._send_transcription_delta_event(item_id, result.text, result.confidence)
+                    accumulated_text += result.text
+            
+            # Finalize transcription
+            final_result = await self._transcriber.finalize()
+            
+            if final_result.error:
+                self.logger.error(f"[MOCK REALTIME] Transcription finalization error: {final_result.error}")
+                await self._send_transcription_failed_event(item_id, final_result.error)
+                return
+            
+            # Use final result or accumulated text
+            final_text = final_result.text if final_result.text else accumulated_text
+            
+            # Send completion event
+            await self._send_transcription_completed_event(item_id, final_text, final_result.confidence)
+            
+            # End transcription session
+            self._transcriber.end_session()
+            
+            self.logger.info(f"[MOCK REALTIME] Transcription completed for item {item_id}: '{final_text}'")
+            
+        except Exception as e:
+            self.logger.error(f"[MOCK REALTIME] Error during transcription: {e}")
+            await self._send_transcription_failed_event(item_id, str(e))
+    
+    async def _send_transcription_delta_event(self, item_id: str, text: str, confidence: float) -> None:
+        """Send a transcription delta event."""
+        event = {
+            "type": ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_DELTA,
+            "item_id": item_id,
+            "content_index": 0,
+            "delta": text
+        }
+        await self._send_event(event)
+        self.logger.debug(f"[MOCK REALTIME] Transcription delta: '{text}' (confidence: {confidence:.2f})")
+    
+    async def _send_transcription_completed_event(self, item_id: str, text: str, confidence: float) -> None:
+        """Send a transcription completed event."""
+        event = {
+            "type": ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED,
+            "item_id": item_id,
+            "content_index": 0,
+            "transcript": text
+        }
+        await self._send_event(event)
+        self.logger.info(f"[MOCK REALTIME] Transcription completed: '{text}' (confidence: {confidence:.2f})")
+    
+    async def _send_transcription_failed_event(self, item_id: str, error_message: str) -> None:
+        """Send a transcription failed event."""
+        error_details = {
+            "code": "transcription_failed",
+            "message": error_message
+        }
+        event = {
+            "type": ServerEventType.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_FAILED,
+            "item_id": item_id,
+            "content_index": 0,
+            "error": error_details
+        }
+        await self._send_event(event)
+        self.logger.error(f"[MOCK REALTIME] Transcription failed for {item_id}: {error_message}")
+
     async def _handle_audio_commit(self, data: Dict[str, Any]) -> None:
         """
         Handle input_audio_buffer.commit events from the client.
         
         This method commits the current audio buffer to the conversation,
-        creating a new conversation item. It sends a confirmation event
-        and clears the buffer for future use.
+        creating a new conversation item. It sends a confirmation event,
+        triggers transcription if enabled, and clears the buffer for future use.
         
         Args:
             data (Dict[str, Any]): Commit event data (usually empty).
@@ -571,6 +685,7 @@ class EventHandlerManager:
         if self._session_state["audio_buffer"]:
             # Create a new conversation item
             item_id = str(uuid.uuid4())
+            self._session_state["current_item_id"] = item_id
             
             # Send committed event
             event = {
@@ -578,6 +693,10 @@ class EventHandlerManager:
                 "item_id": item_id
             }
             await self._send_event(event)
+            
+            # Trigger transcription if enabled
+            if self._session_state["transcription_enabled"] and self._transcriber:
+                await self._transcribe_audio_buffer(item_id)
             
             # Clear buffer
             self._session_state["audio_buffer"].clear()
