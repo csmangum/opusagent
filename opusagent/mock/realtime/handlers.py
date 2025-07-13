@@ -520,13 +520,13 @@ class EventHandlerManager:
         
         current_speech_active = self._vad_state["speech_active"]
         
-        if not current_speech_active and self._vad_state["speech_counter"] >= 2:
+        if not current_speech_active and self._vad_state["speech_counter"] >= SPEECH_START_THRESHOLD:
             # Start speech
             self._vad_state["speech_active"] = True
             self._vad_state["speech_start_time"] = current_time
             speech_started = True
             
-        elif current_speech_active and self._vad_state["silence_counter"] >= 3:
+        elif current_speech_active and self._vad_state["silence_counter"] >= SPEECH_STOP_THRESHOLD:
             # Stop speech
             self._vad_state["speech_active"] = False
             self._vad_state["last_speech_time"] = current_time
