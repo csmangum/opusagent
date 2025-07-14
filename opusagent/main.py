@@ -59,6 +59,30 @@ HOST = os.getenv("HOST", "0.0.0.0")
 # VAD configuration - enable by default, can be disabled via environment variable
 VAD_ENABLED = os.getenv("VAD_ENABLED", "true").lower() in ("true", "1", "yes", "on")
 
+# Local realtime configuration
+USE_LOCAL_REALTIME = os.getenv("USE_LOCAL_REALTIME", "false").lower() in ("true", "1", "yes", "on")
+LOCAL_REALTIME_CONFIG = {
+    "enable_transcription": os.getenv("LOCAL_REALTIME_ENABLE_TRANSCRIPTION", "false").lower() in ("true", "1", "yes", "on"),
+    "setup_smart_responses": os.getenv("LOCAL_REALTIME_SETUP_SMART_RESPONSES", "true").lower() in ("true", "1", "yes", "on"),
+    "vad_config": {
+        "backend": os.getenv("LOCAL_REALTIME_VAD_BACKEND", "silero"),
+        "threshold": float(os.getenv("LOCAL_REALTIME_VAD_THRESHOLD", "0.5")),
+        "sample_rate": int(os.getenv("LOCAL_REALTIME_VAD_SAMPLE_RATE", "16000")),
+    },
+    "transcription_config": {
+        "backend": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_BACKEND", "pocketsphinx"),
+        "language": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_LANGUAGE", "en"),
+        "model_size": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_MODEL_SIZE", "base"),
+    }
+}
+
+# Log configuration
+logger.info(f"Server configuration:")
+logger.info(f"  - VAD Enabled: {VAD_ENABLED}")
+logger.info(f"  - Use Local Realtime: {USE_LOCAL_REALTIME}")
+if USE_LOCAL_REALTIME:
+    logger.info(f"  - Local Realtime Config: {LOCAL_REALTIME_CONFIG}")
+
 # Create FastAPI application
 app = FastAPI(
     title="Real-Time Voice Agent",
@@ -81,7 +105,8 @@ async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for handling telephony connections.
 
     This endpoint establishes a WebSocket connection with the telephony client
-    and creates a bridge to the OpenAI Realtime API using the WebSocket manager.
+    and creates a bridge to either the OpenAI Realtime API or Local Realtime Client
+    using the WebSocket manager.
 
     Args:
         websocket (WebSocket): The WebSocket connection from the telephony client
@@ -90,18 +115,39 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info("Telephony WebSocket connection accepted")
 
     try:
-        # Get a managed connection to OpenAI Realtime API
-        async with get_websocket_manager().connection_context() as connection:
-            logger.info(f"Using OpenAI connection: {connection.connection_id}")
-
-            # Create AudioCodes bridge instance
-            bridge = AudioCodesBridge(websocket, connection.websocket, session_config, vad_enabled=VAD_ENABLED)
-
-            # Start receiving from both WebSockets
-            await asyncio.gather(
-                bridge.receive_from_platform(),
-                bridge.receive_from_realtime(),
+        if USE_LOCAL_REALTIME:
+            # Use local realtime client directly
+            logger.info("Using local realtime client for telephony")
+            
+            # Create AudioCodes bridge with local realtime client
+            bridge = AudioCodesBridge(
+                websocket, 
+                None,  # No realtime websocket needed for local client
+                session_config, 
+                vad_enabled=VAD_ENABLED,
+                bridge_type='audiocodes',
+                use_local_realtime=True,
+                local_realtime_config=LOCAL_REALTIME_CONFIG
             )
+        else:
+            # Get a managed connection to OpenAI Realtime API
+            async with get_websocket_manager().connection_context() as connection:
+                logger.info(f"Using OpenAI connection: {connection.connection_id}")
+
+                # Create AudioCodes bridge instance
+                bridge = AudioCodesBridge(
+                    websocket, 
+                    connection.websocket, 
+                    session_config, 
+                    vad_enabled=VAD_ENABLED,
+                    bridge_type='audiocodes'
+                )
+
+        # Start receiving from both WebSockets
+        await asyncio.gather(
+            bridge.receive_from_platform(),
+            bridge.receive_from_realtime(),
+        )
 
     except WebSocketDisconnect:
         logger.info("Telephony client disconnected")
@@ -129,30 +175,50 @@ async def handle_caller_call(caller_websocket: WebSocket):
     logger.info(f"------ Caller connection accepted from {client_address} ------")
 
     try:
-        logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
-
-        # Get a managed connection to OpenAI Realtime API
-        async with get_websocket_manager().connection_context() as connection:
-            logger.info(
-                f"OpenAI WebSocket connection established for Caller: {connection.connection_id}"
+        if USE_LOCAL_REALTIME:
+            # Use local realtime client directly
+            logger.info("Using local realtime client for caller agent")
+            
+            # Instantiate our caller side bridge with local realtime client
+            bridge = CallAgentBridge(
+                caller_websocket, 
+                None,  # No realtime websocket needed for local client
+                session_config, 
+                vad_enabled=VAD_ENABLED,
+                use_local_realtime=True,
+                local_realtime_config=LOCAL_REALTIME_CONFIG
             )
+            logger.info("Caller-Realtime bridge created with local client")
+        else:
+            logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
 
-            # Instantiate our caller side bridge
-            bridge = CallAgentBridge(caller_websocket, connection.websocket, session_config, vad_enabled=VAD_ENABLED)
-            logger.info("Caller-Realtime bridge created")
-
-            # Start bidirectional tasks
-            try:
-                logger.info("Starting Caller bridge tasks...")
-                await asyncio.gather(
-                    bridge.receive_from_platform(), bridge.receive_from_realtime()
+            # Get a managed connection to OpenAI Realtime API
+            async with get_websocket_manager().connection_context() as connection:
+                logger.info(
+                    f"OpenAI WebSocket connection established for Caller: {connection.connection_id}"
                 )
-            except Exception as e:
-                logger.error(f"Error in Caller connection loop: {e}")
-                raise
-            finally:
-                logger.info("Closing Caller bridge...")
-                await bridge.close()
+
+                # Instantiate our caller side bridge
+                bridge = CallAgentBridge(
+                    caller_websocket, 
+                    connection.websocket, 
+                    session_config, 
+                    vad_enabled=VAD_ENABLED
+                )
+                logger.info("Caller-Realtime bridge created")
+
+        # Start bidirectional tasks
+        try:
+            logger.info("Starting Caller bridge tasks...")
+            await asyncio.gather(
+                bridge.receive_from_platform(), bridge.receive_from_realtime()
+            )
+        except Exception as e:
+            logger.error(f"Error in Caller connection loop: {e}")
+            raise
+        finally:
+            logger.info("Closing Caller bridge...")
+            await bridge.close()
 
     except websockets.exceptions.ConnectionClosed as e:
         logger.error(f"OpenAI connection closed (Caller): {e}")
@@ -160,7 +226,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
         logger.error(f"Close reason: {e.reason}")
         await caller_websocket.close()
     except Exception as e:
-        logger.error(f"Error establishing OpenAI connection (Caller): {e}")
+        logger.error(f"Error establishing connection (Caller): {e}")
         await caller_websocket.close()
 
 
@@ -173,28 +239,46 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
     logger.info(f"------ Twilio connection accepted from {client_address} ------")
 
     try:
-        logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
-
-        # Get a managed connection to OpenAI Realtime API
-        async with get_websocket_manager().connection_context() as connection:
-            logger.info(
-                f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
+        if USE_LOCAL_REALTIME:
+            # Use local realtime client directly
+            logger.info("Using local realtime client for Twilio")
+            
+            # Create Twilio bridge with local realtime client
+            bridge = TwilioBridge(
+                twilio_websocket, 
+                None,  # No realtime websocket needed for local client
+                session_config,
+                use_local_realtime=True,
+                local_realtime_config=LOCAL_REALTIME_CONFIG
             )
-            bridge = TwilioBridge(twilio_websocket, connection.websocket, session_config)
-            logger.info("Twilio-Realtime bridge created")
+            logger.info("Twilio-Realtime bridge created with local client")
+        else:
+            logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
 
-            # Start receiving from both WebSockets
-            try:
-                logger.info("Starting Twilio bridge tasks...")
-                await asyncio.gather(
-                    bridge.receive_from_platform(), bridge.receive_from_realtime()
+            # Get a managed connection to OpenAI Realtime API
+            async with get_websocket_manager().connection_context() as connection:
+                logger.info(
+                    f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
                 )
-            except Exception as e:
-                logger.error(f"Error in Twilio main connection loop: {e}")
-                raise
-            finally:
-                logger.info("Closing Twilio bridge...")
-                await bridge.close()
+                bridge = TwilioBridge(
+                    twilio_websocket, 
+                    connection.websocket, 
+                    session_config
+                )
+                logger.info("Twilio-Realtime bridge created")
+
+        # Start receiving from both WebSockets
+        try:
+            logger.info("Starting Twilio bridge tasks...")
+            await asyncio.gather(
+                bridge.receive_from_platform(), bridge.receive_from_realtime()
+            )
+        except Exception as e:
+            logger.error(f"Error in Twilio main connection loop: {e}")
+            raise
+        finally:
+            logger.info("Closing Twilio bridge...")
+            await bridge.close()
 
     except websockets.exceptions.ConnectionClosed as e:
         logger.error(f"OpenAI connection closed (Twilio): {e}")
@@ -202,7 +286,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
         logger.error(f"Close reason: {e.reason}")
         await twilio_websocket.close()
     except Exception as e:
-        logger.error(f"Error establishing OpenAI connection (Twilio): {e}")
+        logger.error(f"Error establishing connection (Twilio): {e}")
         await twilio_websocket.close()
 
 
@@ -271,6 +355,11 @@ async def root():
         "name": "Real-Time Voice Agent",
         "description": "Integration between AudioCodes VoiceAI Connect and OpenAI Realtime API",
         "version": "1.0.0",
+        "configuration": {
+            "vad_enabled": VAD_ENABLED,
+            "use_local_realtime": USE_LOCAL_REALTIME,
+            "local_realtime_config": LOCAL_REALTIME_CONFIG if USE_LOCAL_REALTIME else None,
+        },
         "endpoints": {
             "/ws/telephony": "WebSocket endpoint for AudioCodes VoiceAI Connect",
             "/twilio-agent": "WebSocket endpoint for Twilio Media Streams",
@@ -288,9 +377,23 @@ async def root():
             "elderly": "Patient, polite caller needing guidance",
             "hurried": "Caller in a rush wanting quick service"
         },
+        "environment_variables": {
+            "VAD_ENABLED": "Enable/disable Voice Activity Detection (default: true)",
+            "USE_LOCAL_REALTIME": "Use local realtime client instead of OpenAI API (default: false)",
+            "LOCAL_REALTIME_ENABLE_TRANSCRIPTION": "Enable local transcription (default: false)",
+            "LOCAL_REALTIME_SETUP_SMART_RESPONSES": "Setup smart response examples (default: true)",
+            "LOCAL_REALTIME_VAD_BACKEND": "VAD backend (silero/pocketsphinx, default: silero)",
+            "LOCAL_REALTIME_VAD_THRESHOLD": "VAD threshold (0.0-1.0, default: 0.5)",
+            "LOCAL_REALTIME_VAD_SAMPLE_RATE": "VAD sample rate (default: 16000)",
+            "LOCAL_REALTIME_TRANSCRIPTION_BACKEND": "Transcription backend (pocketsphinx/whisper, default: pocketsphinx)",
+            "LOCAL_REALTIME_TRANSCRIPTION_LANGUAGE": "Transcription language (default: en)",
+            "LOCAL_REALTIME_TRANSCRIPTION_MODEL_SIZE": "Whisper model size (default: base)",
+        },
         "example_usage": {
             "agent_conversation": "/agent-conversation?caller_type=frustrated",
-            "caller_types": "/caller-types"
+            "caller_types": "/caller-types",
+            "local_realtime": "Set USE_LOCAL_REALTIME=true to use local client",
+            "custom_responses": "Configure LOCAL_REALTIME_CONFIG for custom responses"
         }
     }
 
