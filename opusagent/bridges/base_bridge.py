@@ -64,7 +64,7 @@ class BaseRealtimeBridge(ABC):
         realtime_websocket: Union[ClientConnection, Any],
         session_config: SessionConfig,
         vad_enabled: bool = True,  # Enable VAD by default
-        bridge_type: str = 'unknown',
+        bridge_type: str = "unknown",
         use_local_realtime: bool = False,
         local_realtime_config: Optional[Dict[str, Any]] = None,
     ):
@@ -119,10 +119,10 @@ class BaseRealtimeBridge(ABC):
 
         # Configure quality monitoring thresholds
         quality_thresholds = QualityThresholds(
-            min_snr_db=20.0,           # Minimum signal-to-noise ratio
-            max_thd_percent=1.0,       # Maximum total harmonic distortion  
+            min_snr_db=20.0,  # Minimum signal-to-noise ratio
+            max_thd_percent=1.0,  # Maximum total harmonic distortion
             max_clipping_percent=0.1,  # Maximum acceptable clipping
-            min_quality_score=60.0,    # Minimum overall quality score
+            min_quality_score=60.0,  # Minimum overall quality score
         )
 
         # Initialize audio handler with quality monitoring enabled
@@ -160,33 +160,44 @@ class BaseRealtimeBridge(ABC):
         self.register_platform_event_handlers()
 
         # Log configuration
-        connection_type = "Local Realtime Client" if self.use_local_realtime else "OpenAI Realtime API"
+        connection_type = (
+            "Local Realtime Client"
+            if self.use_local_realtime
+            else "OpenAI Realtime API"
+        )
         logger.info(f"Bridge initialized with {connection_type}")
         logger.info(f"VAD handling {'enabled' if self.vad_enabled else 'disabled'}")
 
     def _initialize_local_realtime_client(self):
+        #! Shouldn't this be handled in client? Yes, needs to work like websocket
         """Initialize the local realtime client for testing and development."""
         try:
             from opusagent.mock.realtime import LocalRealtimeClient
-            
+
             # Create local realtime client with configuration
             self.local_realtime_client = LocalRealtimeClient(
                 logger=logger,
                 session_config=self.session_config,
                 enable_vad=self.vad_enabled,
                 vad_config=self.local_realtime_config.get("vad_config", {}),
-                enable_transcription=self.local_realtime_config.get("enable_transcription", False),
-                transcription_config=self.local_realtime_config.get("transcription_config", {}),
+                enable_transcription=self.local_realtime_config.get(
+                    "enable_transcription", False
+                ),
+                transcription_config=self.local_realtime_config.get(
+                    "transcription_config", {}
+                ),
                 response_configs=self.local_realtime_config.get("response_configs", {}),
-                default_response_config=self.local_realtime_config.get("default_response_config"),
+                default_response_config=self.local_realtime_config.get(
+                    "default_response_config"
+                ),
             )
-            
+
             # Set up smart response examples if requested
             if self.local_realtime_config.get("setup_smart_responses", True):
                 self.local_realtime_client.setup_smart_response_examples()
-            
+
             logger.info("Local realtime client initialized successfully")
-            
+
         except ImportError as e:
             logger.error(f"Failed to import LocalRealtimeClient: {e}")
             raise
@@ -327,10 +338,10 @@ class BaseRealtimeBridge(ABC):
                 # Connect to local realtime client
                 await self.local_realtime_client.connect()
                 logger.info("Connected to local realtime client")
-                
+
                 # Update conversation context
                 self.local_realtime_client.update_conversation_context()
-                
+
             except Exception as e:
                 logger.error(f"Failed to connect to local realtime client: {e}")
                 raise
@@ -476,7 +487,7 @@ class BaseRealtimeBridge(ABC):
 
     def get_local_realtime_client(self):
         """Get the local realtime client instance if available.
-        
+
         Returns:
             Optional[LocalRealtimeClient]: The local realtime client instance or None
         """
@@ -484,7 +495,7 @@ class BaseRealtimeBridge(ABC):
 
     def is_using_local_realtime(self) -> bool:
         """Check if the bridge is using local realtime client.
-        
+
         Returns:
             bool: True if using local realtime client, False if using OpenAI API
         """

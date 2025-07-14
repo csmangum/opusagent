@@ -39,10 +39,12 @@ from opusagent.session_manager import SessionManager
 from opusagent.config.websocket_config import WebSocketConfig
 from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
 from opusagent.callers import get_available_caller_types, get_caller_description
+from opusagent.mock.realtime import create_mock_websocket_connection
 
 load_dotenv()
 
 # Configuration
+#! Move these?
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SERVER_URL = "wss://grand-collie-complete.ngrok-free.app/twilio-agent"
 # Load environment variables from .env file if it exists
@@ -116,18 +118,24 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         if USE_LOCAL_REALTIME:
-            # Use local realtime client directly
-            logger.info("Using local realtime client for telephony")
+            # Use mock WebSocket connection with local realtime client
+            logger.info("Using mock WebSocket connection with local realtime client")
             
-            # Create AudioCodes bridge with local realtime client
+            # Create mock WebSocket connection that wraps LocalRealtimeClient
+            mock_connection = await create_mock_websocket_connection(
+                session_config=session_config,
+                local_realtime_config=LOCAL_REALTIME_CONFIG,
+                setup_smart_responses=LOCAL_REALTIME_CONFIG.get("setup_smart_responses", True),
+                enable_vad=VAD_ENABLED,
+                enable_transcription=LOCAL_REALTIME_CONFIG.get("enable_transcription", False)
+            )
+            
+            # Create AudioCodes bridge with mock connection
             bridge = AudioCodesBridge(
                 websocket, 
-                None,  # No realtime websocket needed for local client
+                mock_connection,  # Use mock connection instead of None
                 session_config, 
-                vad_enabled=VAD_ENABLED,
-                bridge_type='audiocodes',
-                use_local_realtime=True,
-                local_realtime_config=LOCAL_REALTIME_CONFIG
+                vad_enabled=VAD_ENABLED
             )
         else:
             # Get a managed connection to OpenAI Realtime API
@@ -139,8 +147,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     websocket, 
                     connection.websocket, 
                     session_config, 
-                    vad_enabled=VAD_ENABLED,
-                    bridge_type='audiocodes'
+                    vad_enabled=VAD_ENABLED
                 )
 
         # Start receiving from both WebSockets
@@ -176,19 +183,26 @@ async def handle_caller_call(caller_websocket: WebSocket):
 
     try:
         if USE_LOCAL_REALTIME:
-            # Use local realtime client directly
-            logger.info("Using local realtime client for caller agent")
+            # Use mock WebSocket connection with local realtime client
+            logger.info("Using mock WebSocket connection with local realtime client for caller agent")
             
-            # Instantiate our caller side bridge with local realtime client
+            # Create mock WebSocket connection that wraps LocalRealtimeClient
+            mock_connection = await create_mock_websocket_connection(
+                session_config=session_config,
+                local_realtime_config=LOCAL_REALTIME_CONFIG,
+                setup_smart_responses=LOCAL_REALTIME_CONFIG.get("setup_smart_responses", True),
+                enable_vad=VAD_ENABLED,
+                enable_transcription=LOCAL_REALTIME_CONFIG.get("enable_transcription", False)
+            )
+            
+            # Instantiate our caller side bridge with mock connection
             bridge = CallAgentBridge(
                 caller_websocket, 
-                None,  # No realtime websocket needed for local client
+                mock_connection,  # Use mock connection instead of None
                 session_config, 
-                vad_enabled=VAD_ENABLED,
-                use_local_realtime=True,
-                local_realtime_config=LOCAL_REALTIME_CONFIG
+                vad_enabled=VAD_ENABLED
             )
-            logger.info("Caller-Realtime bridge created with local client")
+            logger.info("Caller-Realtime bridge created with mock connection")
         else:
             logger.info("Attempting to connect to OpenAI Realtime API for Caller...")
 
@@ -240,18 +254,25 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 
     try:
         if USE_LOCAL_REALTIME:
-            # Use local realtime client directly
-            logger.info("Using local realtime client for Twilio")
+            # Use mock WebSocket connection with local realtime client
+            logger.info("Using mock WebSocket connection with local realtime client for Twilio")
             
-            # Create Twilio bridge with local realtime client
+            # Create mock WebSocket connection that wraps LocalRealtimeClient
+            mock_connection = await create_mock_websocket_connection(
+                session_config=session_config,
+                local_realtime_config=LOCAL_REALTIME_CONFIG,
+                setup_smart_responses=LOCAL_REALTIME_CONFIG.get("setup_smart_responses", True),
+                enable_vad=VAD_ENABLED,
+                enable_transcription=LOCAL_REALTIME_CONFIG.get("enable_transcription", False)
+            )
+            
+            # Create Twilio bridge with mock connection
             bridge = TwilioBridge(
                 twilio_websocket, 
-                None,  # No realtime websocket needed for local client
-                session_config,
-                use_local_realtime=True,
-                local_realtime_config=LOCAL_REALTIME_CONFIG
+                mock_connection,  # Use mock connection instead of None
+                session_config
             )
-            logger.info("Twilio-Realtime bridge created with local client")
+            logger.info("Twilio-Realtime bridge created with mock connection")
         else:
             logger.info("Attempting to connect to OpenAI Realtime API for Twilio...")
 

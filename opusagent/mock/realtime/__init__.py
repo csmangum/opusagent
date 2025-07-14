@@ -53,6 +53,11 @@ Example Usage:
 
 from .models import LocalResponseConfig, ResponseSelectionCriteria, ConversationContext
 from .client import LocalRealtimeClient
+from .websocket_mock import (
+    MockWebSocketConnection,
+    MockWebSocketConnectionManager,
+    create_mock_websocket_connection
+)
 from .transcription import (
     TranscriptionConfig, 
     TranscriptionResult, 
@@ -65,6 +70,9 @@ __all__ = [
     "LocalResponseConfig",
     "ResponseSelectionCriteria",
     "ConversationContext",
+    "MockWebSocketConnection",
+    "MockWebSocketConnectionManager",
+    "create_mock_websocket_connection",
     "TranscriptionConfig",
     "TranscriptionResult", 
     "TranscriptionFactory",
