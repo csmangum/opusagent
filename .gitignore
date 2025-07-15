@@ -189,3 +189,5 @@ recordings/
 call_recordings/
 
 monokit/node_modules/
+
+logs/

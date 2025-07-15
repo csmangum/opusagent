@@ -25,7 +25,7 @@ MAX_LOG_SIZE = 10 * 1024 * 1024  # 10 MB
 BACKUP_COUNT = 5
 
 
-def configure_logging(name: str = LOGGER_NAME, file_path: str = "logs/"):
+def configure_logging(name: str = LOGGER_NAME, file_path: str = "logs/", log_filename: str = "opusagent.log"):
     """
     Configure the application logger with console and file handlers.
     
