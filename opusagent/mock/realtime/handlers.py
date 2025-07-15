@@ -32,6 +32,7 @@ Usage:
 import base64
 import json
 import logging
+import time
 import uuid
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
@@ -45,6 +46,11 @@ from opusagent.config.constants import (
 )
 from opusagent.models.openai_api import ClientEventType, ServerEventType, SessionConfig
 from opusagent.vad.audio_processor import to_float32_mono
+
+# VAD Configuration Constants
+SPEECH_START_THRESHOLD = 2  # Number of consecutive speech detections to start speech
+SPEECH_STOP_THRESHOLD = 3   # Number of consecutive silence detections to stop speech
+DEFAULT_CONFIDENCE_HISTORY_SIZE = 5  # Size of confidence history for smoothing
 
 
 class EventHandlerManager:
@@ -361,23 +367,23 @@ class EventHandlerManager:
             except Exception as e:
                 self.logger.error(f"[MOCK REALTIME] Error processing audio data: {e}")
 
-    async def _process_audio_with_vad(self, audio_bytes: bytes) -> None:
+    async def _process_audio_with_vad(self, audio_data: bytes) -> None:
         """
-        Process audio data using VAD to detect speech activity.
+        Process audio data through VAD for speech detection with enhanced state management.
 
-        This method converts audio data to the format expected by VAD,
-        processes it through the VAD system, and sends appropriate
-        speech detection events based on the results.
+        This method processes audio through the VAD system and generates appropriate
+        speech detection events, ensuring complete event sequences.
 
         Args:
-            audio_bytes (bytes): Raw audio data to process.
+            audio_data (bytes): Raw audio data to process
         """
         try:
             # Get the audio format from session configuration
             audio_format = self._get_audio_format()
 
             # Convert audio to format expected by VAD
-            audio_array = self._convert_audio_for_vad(audio_bytes, audio_format)
+            audio_format = self._get_audio_format()
+            audio_array = self._convert_audio_for_vad(audio_data, audio_format)
 
             if audio_array is None:
                 # Fallback to simple detection if conversion fails
@@ -401,14 +407,19 @@ class EventHandlerManager:
             if not self._vad:
                 raise ValueError("VAD instance is not available")
             vad_result = self._vad.process_audio(audio_array)
+            
+            # Extract results from enhanced VAD
             is_speech = vad_result.get("is_speech", False)
             speech_prob = vad_result.get("speech_prob", 0.0)
-
+            speech_state = vad_result.get("speech_state", "idle")
+            force_stop = vad_result.get("force_stop", False)
+            speech_duration_ms = vad_result.get("speech_duration_ms", 0)
+            
             # Update VAD state with smoothing and hysteresis
             state_info = self._update_vad_state(is_speech, speech_prob)
 
-            # Handle speech state transitions
-            if state_info["speech_started"]:
+            # Handle speech state transitions based on enhanced VAD
+            if speech_state == "started" or state_info["speech_started"]:
                 # Speech started
                 self._session_state["speech_detected"] = True
                 event = {
@@ -418,27 +429,41 @@ class EventHandlerManager:
                 }
                 await self._send_event(event)
                 self.logger.debug(
-                    f"[MOCK REALTIME] Speech started (VAD confidence: {state_info['confidence']:.3f})"
+                    f"[MOCK REALTIME] Speech started (VAD confidence: {speech_prob:.3f})"
                 )
 
-            elif state_info["speech_stopped"]:
-                # Speech stopped
+            elif speech_state == "stopped" or state_info["speech_stopped"] or force_stop:
+                # Speech stopped (natural or forced)
                 self._session_state["speech_detected"] = False
                 event = {
                     "type": ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED,
-                    "audio_end_ms": 0,
+                    "audio_end_ms": int(speech_duration_ms),
                     "item_id": str(uuid.uuid4()),
                 }
                 await self._send_event(event)
-                self.logger.debug(
-                    f"[MOCK REALTIME] Speech stopped (VAD confidence: {state_info['confidence']:.3f})"
+                
+                # Generate commit event for complete sequence
+                if speech_duration_ms >= self._vad.min_speech_duration_ms:
+                    commit_event = {
+                        "type": ServerEventType.INPUT_AUDIO_BUFFER_COMMITTED,
+                        "previous_item_id": str(uuid.uuid4()),
+                        "item_id": str(uuid.uuid4())
+                    }
+                    await self._send_event(commit_event)
+                    self.logger.debug(
+                    f"[MOCK REALTIME] Speech committed (duration: {speech_duration_ms:.1f}ms)")
+                
+                stop_reason = "forced_timeout" if force_stop else "silence_detected"
+                self.logger.debug(f"[MOCK REALTIME] Speech stopped - {stop_reason} (VAD confidence: {speech_prob:.3f})"
                 )
 
             # Log detailed VAD state for debugging (only if state changed)
-            if state_info["state_changed"]:
+            if state_info["state_changed"] or speech_state != "idle":
                 self.logger.debug(
                     f"[MOCK REALTIME] VAD state: active={state_info['speech_active']}, "
-                    f"confidence={state_info['confidence']:.3f}, "
+                    f"confidence={speech_prob:.3f}, "
+                                f"speech_state={speech_state}, "
+                                f"duration={speech_duration_ms:.1f}ms, "
                     f"speech_counter={self._vad_state['speech_counter']}, "
                     f"silence_counter={self._vad_state['silence_counter']}"
                 )
@@ -458,7 +483,7 @@ class EventHandlerManager:
                 }
                 await self._send_event(event)
                 self.logger.debug(
-                    "[MOCK REALTIME] Speech detection started (VAD fallback)"
+                    "[MOCK REALTIME] Speech detection started (VAD error fallback)"
                 )
 
     def _convert_audio_for_vad(
