@@ -939,11 +939,8 @@ async def run_validation_tests(
         success &= await validator.test_conversation_flow()
 
     if not test_name or test_name == "vad-integration":
-        if not test_name:  # Only run if audio was streamed
-            success &= await validator.test_vad_integration()
-        else:
-            # Run full flow first
-            success &= await validator.test_conversation_flow()
+        # Directly test VAD integration
+        success &= await validator.test_vad_integration()
 
     # Always test session termination
     success &= await validator.test_session_termination()
