@@ -48,6 +48,9 @@ from opusagent.config.logging_config import configure_logging
 # Configure logging
 logger = configure_logging("run")
 
+# Set the environment variable to use the local realtime client
+os.environ["USE_LOCAL_REALTIME"] = "true"
+
 
 def validate_mock_setup():
     """Validate mock mode setup and provide helpful information."""

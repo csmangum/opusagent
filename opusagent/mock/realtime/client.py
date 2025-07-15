@@ -54,6 +54,7 @@ from .audio import AudioManager
 from .generators import ResponseGenerator
 from .handlers import EventHandlerManager
 from .models import ConversationContext, LocalResponseConfig, ResponseSelectionCriteria
+from opusagent.config.logging_config import configure_logging
 
 
 class LocalRealtimeClient:
@@ -268,7 +269,10 @@ class LocalRealtimeClient:
             client = LocalRealtimeClient(default_response_config=default_config)
             ```
         """
-        self.logger = logger or logging.getLogger(__name__)
+        if logger is None:
+            self.logger = configure_logging(name="realtime_client", log_filename="realtime_client.log")
+        else:
+            self.logger = logger
         self.session_config = session_config or SessionConfig(
             model="gpt-4o-realtime-preview-2025-06-03",
             modalities=["text", "audio"],
