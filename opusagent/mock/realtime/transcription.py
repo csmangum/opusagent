@@ -141,10 +141,10 @@ class BaseTranscriber(ABC):
         """End the current transcription session."""
         self._session_active = False
         self.logger.debug("Transcription session ended")
-    
+
     def reset_session(self) -> None:
         """Reset session state without destroying the transcriber.
-        
+
         This method clears session-specific state (audio buffer, accumulated text)
         without destroying the underlying transcriber resources. Use this when
         you want to process multiple audio files with the same transcriber instance.
@@ -381,7 +381,7 @@ class PocketSphinxTranscriber(BaseTranscriber):
         self._decoder = None
         self._initialized = False
         self.logger.debug("PocketSphinx transcriber cleaned up")
-    
+
     def reset_session(self) -> None:
         """Reset session state without destroying the transcriber."""
         self._audio_buffer.clear()
@@ -629,7 +629,7 @@ class WhisperTranscriber(BaseTranscriber):
         self._model = None
         self._initialized = False
         self.logger.debug("Whisper transcriber cleaned up")
-    
+
     def reset_session(self) -> None:
         """Reset session state without destroying the transcriber."""
         self._audio_buffer.clear()
