@@ -212,7 +212,11 @@ class TestVADConfig:
         config = load_vad_config()
         
         assert isinstance(config, dict)
-        expected_keys = {'backend', 'sample_rate', 'threshold', 'device', 'chunk_size'}
+        expected_keys = {
+            'backend', 'sample_rate', 'threshold', 'silence_threshold',
+            'min_speech_duration_ms', 'speech_start_threshold', 'speech_stop_threshold',
+            'device', 'chunk_size', 'confidence_history_size', 'force_stop_timeout_ms'
+        }
         assert set(config.keys()) == expected_keys
 
     def test_load_vad_config_immutability(self):
@@ -236,4 +240,105 @@ class TestVADConfig:
             
             assert config1 == config2
             assert config1['backend'] == 'test_backend'
-            assert config1['sample_rate'] == 44100 
+            assert config1['sample_rate'] == 44100
+
+    def test_load_vad_config_new_parameters_defaults(self):
+        """Test that new VAD parameters have correct default values."""
+        with patch.dict(os.environ, {}, clear=True):
+            config = load_vad_config()
+            
+            assert config['silence_threshold'] == 0.6
+            assert config['min_speech_duration_ms'] == 500
+            assert config['speech_start_threshold'] == 2
+            assert config['speech_stop_threshold'] == 3
+            assert config['confidence_history_size'] == 5
+            assert config['force_stop_timeout_ms'] == 2000
+
+    def test_load_vad_config_new_parameters_from_environment(self):
+        """Test loading new VAD parameters from environment variables."""
+        env_vars = {
+            'VAD_SILENCE_THRESHOLD': '0.3',
+            'VAD_MIN_SPEECH_DURATION_MS': '1000',
+            'VAD_SPEECH_START_THRESHOLD': '5',
+            'VAD_SPEECH_STOP_THRESHOLD': '7',
+            'VAD_CONFIDENCE_HISTORY_SIZE': '10',
+            'VAD_FORCE_STOP_TIMEOUT_MS': '5000'
+        }
+        
+        with patch.dict(os.environ, env_vars, clear=True):
+            config = load_vad_config()
+            
+            assert config['silence_threshold'] == 0.3
+            assert config['min_speech_duration_ms'] == 1000
+            assert config['speech_start_threshold'] == 5
+            assert config['speech_stop_threshold'] == 7
+            assert config['confidence_history_size'] == 10
+            assert config['force_stop_timeout_ms'] == 5000
+
+    def test_load_vad_config_new_parameters_numeric_conversion(self):
+        """Test that new numeric parameters are properly converted."""
+        env_vars = {
+            'VAD_SILENCE_THRESHOLD': '0.789',
+            'VAD_MIN_SPEECH_DURATION_MS': '750',
+            'VAD_SPEECH_START_THRESHOLD': '1',
+            'VAD_SPEECH_STOP_THRESHOLD': '4',
+            'VAD_CONFIDENCE_HISTORY_SIZE': '8',
+            'VAD_FORCE_STOP_TIMEOUT_MS': '3000'
+        }
+        
+        with patch.dict(os.environ, env_vars, clear=True):
+            config = load_vad_config()
+            
+            assert isinstance(config['silence_threshold'], float)
+            assert config['silence_threshold'] == 0.789
+            
+            assert isinstance(config['min_speech_duration_ms'], int)
+            assert config['min_speech_duration_ms'] == 750
+            
+            assert isinstance(config['speech_start_threshold'], int)
+            assert config['speech_start_threshold'] == 1
+            
+            assert isinstance(config['speech_stop_threshold'], int)
+            assert config['speech_stop_threshold'] == 4
+            
+            assert isinstance(config['confidence_history_size'], int)
+            assert config['confidence_history_size'] == 8
+            
+            assert isinstance(config['force_stop_timeout_ms'], int)
+            assert config['force_stop_timeout_ms'] == 3000
+
+    def test_load_vad_config_new_parameters_invalid_values(self):
+        """Test handling of invalid numeric values for new parameters."""
+        env_vars = {
+            'VAD_SILENCE_THRESHOLD': 'invalid',
+            'VAD_MIN_SPEECH_DURATION_MS': 'not_a_number',
+            'VAD_SPEECH_START_THRESHOLD': 'abc',
+            'VAD_SPEECH_STOP_THRESHOLD': 'xyz',
+            'VAD_CONFIDENCE_HISTORY_SIZE': 'def',
+            'VAD_FORCE_STOP_TIMEOUT_MS': 'ghi'
+        }
+        
+        with patch.dict(os.environ, env_vars, clear=True):
+            with pytest.raises(ValueError):
+                load_vad_config()
+
+    def test_load_vad_config_new_parameters_edge_cases(self):
+        """Test edge case values for new VAD parameters."""
+        env_vars = {
+            'VAD_SILENCE_THRESHOLD': '0.0',
+            'VAD_MIN_SPEECH_DURATION_MS': '0',
+            'VAD_SPEECH_START_THRESHOLD': '1',
+            'VAD_SPEECH_STOP_THRESHOLD': '1',
+            'VAD_CONFIDENCE_HISTORY_SIZE': '1',
+            'VAD_FORCE_STOP_TIMEOUT_MS': '0'
+        }
+        
+        with patch.dict(os.environ, env_vars, clear=True):
+            config = load_vad_config()
+            
+            assert config['silence_threshold'] == 0.0
+            assert config['min_speech_duration_ms'] == 0
+            assert config['speech_start_threshold'] == 1
+            assert config['speech_stop_threshold'] == 1
+            assert config['confidence_history_size'] == 1
+            assert config['force_stop_timeout_ms'] == 0 
