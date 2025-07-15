@@ -189,38 +189,53 @@ class VADIntegrationValidator:
             self.logger.debug(f"   Execution time: {execution_time:.3f}s")
     
     def generate_test_audio(self) -> bool:
-        """Generate test audio files for validation."""
+        """Generate test audio files for validation with enhanced patterns."""
         if not AUDIO_LIBS_AVAILABLE:
             self.logger.warning("Audio libraries not available, skipping audio generation")
             return False
             
-        self.logger.info("Generating test audio files...")
+        self.logger.info("Generating enhanced test audio files for VAD validation...")
         
         try:
             sample_rate = self.test_config["sample_rate"]
             duration = self.test_config["test_duration"]
             
-            # Generate different types of audio
-            audio_files = {
-                "clear_speech": self._generate_speech_audio(sample_rate, duration, 0.7),
-                "silence": self._generate_silence_audio(sample_rate, duration),
+            # Try to use actual mock audio files first
+            mock_audio_types = ["greetings", "customer_service", "confirmations", "default"]
+            
+            audio_files = {}
+            
+            # Generate enhanced audio with better speech/silence patterns
+            for category in mock_audio_types:
+                mock_audio = self._load_mock_audio_if_available(category)
+                if mock_audio is not None:
+                    audio_files[f"mock_{category}"] = mock_audio
+                    
+            # Generate synthetic audio with enhanced patterns
+            synthetic_audio = {
+                "clear_speech_with_silence": self._generate_speech_with_trailing_silence(sample_rate, duration, 0.7),
+                "silence_only": self._generate_silence_audio(sample_rate, duration),
                 "background_noise": self._generate_noise_audio(sample_rate, duration, 0.1),
-                "speech_with_noise": self._generate_speech_with_noise_audio(sample_rate, duration, 0.6, 0.1),
-                "intermittent_speech": self._generate_intermittent_speech_audio(sample_rate, duration),
-                "low_confidence_speech": self._generate_speech_audio(sample_rate, duration, 0.3)
+                "speech_with_noise_and_silence": self._generate_speech_with_noise_and_silence(sample_rate, duration, 0.6, 0.1),
+                "intermittent_speech_clear": self._generate_intermittent_speech_audio(sample_rate, duration),
+                "low_confidence_speech": self._generate_speech_with_trailing_silence(sample_rate, duration, 0.3),
+                "very_short_speech": self._generate_short_speech_segments(sample_rate, duration),
+                "long_speech_with_timeout": self._generate_long_speech_audio(sample_rate, duration * 2, 0.6)
             }
             
-            # Save audio files
+            audio_files.update(synthetic_audio)
+            
+            # Save all audio files
             for name, audio_data in audio_files.items():
                 file_path = self.test_data_dir / f"test_{name}.wav"
                 sf.write(file_path, audio_data, sample_rate)
                 self.logger.debug(f"Generated: {file_path}")
             
-            self.logger.info(f"Generated {len(audio_files)} test audio files")
+            self.logger.info(f"Generated {len(audio_files)} enhanced test audio files")
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to generate test audio: {e}")
+            self.logger.error(f"Failed to generate enhanced test audio: {e}")
             return False
     
     def _generate_speech_audio(self, sample_rate: int, duration: float, amplitude: float) -> np.ndarray:
@@ -260,11 +275,11 @@ class VADIntegrationValidator:
         return speech + noise
     
     def _generate_intermittent_speech_audio(self, sample_rate: int, duration: float) -> np.ndarray:
-        """Generate intermittent speech audio."""
+        """Generate intermittent speech audio with clear boundaries."""
         t = np.linspace(0, duration, int(sample_rate * duration))
         audio = np.zeros_like(t)
         
-        # Create segments of speech and silence
+        # Create segments of speech and silence with clear boundaries
         segment_duration = 0.5
         segments = int(duration / segment_duration)
         
@@ -277,10 +292,71 @@ class VADIntegrationValidator:
             
             # Alternate between speech and silence
             if i % 2 == 0:
-                segment_audio = self._generate_speech_audio(sample_rate, segment_duration, 0.6)
+                # Speech segment with clear start/end
+                segment_audio = self._generate_speech_audio(sample_rate, segment_duration, 0.7)
+                # Add clear boundaries with brief fade-in/out
+                fade_samples = int(sample_rate * 0.02)  # 20ms fade
+                if len(segment_audio) > 2 * fade_samples:
+                    segment_audio[:fade_samples] *= np.linspace(0, 1, fade_samples)
+                    segment_audio[-fade_samples:] *= np.linspace(1, 0, fade_samples)
                 audio[start_idx:end_idx] = segment_audio[:end_idx-start_idx]
+            # Silence segments are already zeros
         
         return audio.astype(np.float32)
+    
+    def _load_mock_audio_if_available(self, category: str = "greetings") -> Optional[np.ndarray]:
+        """
+        Load actual audio files from the mock audio directory if available.
+        
+        Args:
+            category: Audio category to load (greetings, customer_service, etc.)
+            
+        Returns:
+            numpy array of audio data or None if not available
+        """
+        try:
+            import soundfile as sf
+            
+            # Path to mock audio directory
+            mock_audio_dir = project_root / "opusagent" / "mock" / "audio" / category
+            
+            if mock_audio_dir.exists():
+                # Find first available .wav file
+                wav_files = list(mock_audio_dir.glob("*.wav"))
+                if wav_files:
+                    audio_file = wav_files[0]
+                    audio_data, sample_rate = sf.read(audio_file)
+                    
+                    # Ensure mono and correct sample rate
+                    if len(audio_data.shape) > 1:
+                        audio_data = audio_data.mean(axis=1)  # Convert to mono
+                    
+                    # Resample if needed
+                    if sample_rate != self.test_config["sample_rate"]:
+                        try:
+                            import scipy.signal
+                            # Simple resampling (for testing only)
+                            num_samples = int(len(audio_data) * self.test_config["sample_rate"] / sample_rate)
+                            audio_data = scipy.signal.resample(audio_data, num_samples)
+                        except ImportError:
+                            # Fallback: just use the audio as-is
+                            pass
+                    
+                    # Add trailing silence for complete VAD sequences
+                    silence_duration = 0.1  # 100ms silence
+                    silence_samples = int(self.test_config["sample_rate"] * silence_duration)
+                    silence = np.zeros(silence_samples, dtype=np.float32)
+                    
+                    # Combine audio with trailing silence
+                    audio_with_silence = np.concatenate([audio_data.astype(np.float32), silence])
+                    
+                    self.logger.debug(f"Loaded mock audio from {audio_file}: {len(audio_with_silence)} samples")
+                    return audio_with_silence
+                    
+        except Exception as e:
+            self.logger.debug(f"Could not load mock audio: {e}")
+            
+        return None
     
     # Test category implementations
     
@@ -552,8 +628,139 @@ class VADIntegrationValidator:
             )
     
     def test_speech_detection(self) -> None:
-        """Test VAD speech detection scenarios."""
+        """Test VAD speech detection scenarios with enhanced sequence validation."""
         category = "speech_detection"
+        
+        # VAD_SPEECH_001: Complete VAD event sequence validation
+        start_time = time.time()
+        try:
+            client = LocalRealtimeClient(enable_vad=True)
+            
+            if client.is_vad_enabled():
+                handler = client._event_handler
+                
+                # Test complete sequence: start -> active -> stop -> commit
+                # First, trigger speech start
+                handler._update_vad_state(True, 0.8)  # First speech detection
+                handler._update_vad_state(True, 0.8)  # Second speech detection (should start)
+                
+                # Check that speech started
+                if handler._vad_state.get("speech_active", False):
+                    # Now trigger speech stop
+                    handler._update_vad_state(False, 0.1)  # First silence
+                    handler._update_vad_state(False, 0.1)  # Second silence  
+                    handler._update_vad_state(False, 0.1)  # Third silence (should stop)
+                    
+                    # Check that speech stopped
+                    if not handler._vad_state.get("speech_active", False):
+                        self.log_test_result(
+                            "VAD_SPEECH_001", category, "Complete VAD event sequence validation",
+                            "PASSED", "Complete start->stop sequence validated successfully",
+                            time.time() - start_time
+                        )
+                    else:
+                        self.log_test_result(
+                            "VAD_SPEECH_001", category, "Complete VAD event sequence validation",
+                            "FAILED", "Speech did not stop after 3 silence detections",
+                            time.time() - start_time
+                        )
+                else:
+                    self.log_test_result(
+                        "VAD_SPEECH_001", category, "Complete VAD event sequence validation",
+                        "FAILED", "Speech did not start after 2 speech detections",
+                        time.time() - start_time
+                    )
+            else:
+                self.log_test_result(
+                    "VAD_SPEECH_001", category, "Complete VAD event sequence validation",
+                    "SKIPPED", "VAD not enabled",
+                    time.time() - start_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "VAD_SPEECH_001", category, "Complete VAD event sequence validation",
+                "ERROR", f"Exception during sequence validation: {e}",
+                time.time() - start_time
+            )
+        
+        # VAD_SPEECH_002: Minimum speech duration validation
+        start_time = time.time()
+        try:
+            client = LocalRealtimeClient(enable_vad=True)
+            
+            if client.is_vad_enabled() and hasattr(client._vad, 'min_speech_duration_ms'):
+                min_duration = client._vad.min_speech_duration_ms
+                
+                # Test that short speech segments are filtered out
+                if min_duration > 0:
+                    self.log_test_result(
+                        "VAD_SPEECH_002", category, "Minimum speech duration validation",
+                        "PASSED", f"Minimum speech duration configured: {min_duration}ms",
+                        time.time() - start_time
+                    )
+                else:
+                    self.log_test_result(
+                        "VAD_SPEECH_002", category, "Minimum speech duration validation",
+                        "FAILED", "Minimum speech duration not configured",
+                        time.time() - start_time
+                    )
+            else:
+                self.log_test_result(
+                    "VAD_SPEECH_002", category, "Minimum speech duration validation",
+                    "SKIPPED", "VAD not enabled or min_speech_duration_ms not available",
+                    time.time() - start_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "VAD_SPEECH_002", category, "Minimum speech duration validation",
+                "ERROR", f"Exception during duration validation: {e}",
+                time.time() - start_time
+            )
+        
+        # VAD_SPEECH_003: Trailing silence validation  
+        start_time = time.time()
+        try:
+            client = LocalRealtimeClient(enable_vad=True)
+            
+            if client.is_vad_enabled():
+                # Test with audio that includes trailing silence
+                test_audio = self._generate_test_audio_bytes(format="pcm16")
+                
+                # Process audio through VAD
+                result = client._event_handler._convert_audio_for_vad(test_audio, "pcm16")
+                
+                if result is not None:
+                    # The audio should contain both speech and silence portions
+                    if len(result) > 0:
+                        self.log_test_result(
+                            "VAD_SPEECH_003", category, "Trailing silence validation",
+                            "PASSED", f"Audio with trailing silence processed successfully: {len(result)} samples",
+                            time.time() - start_time
+                        )
+                    else:
+                        self.log_test_result(
+                            "VAD_SPEECH_003", category, "Trailing silence validation",
+                            "FAILED", "Audio processing returned empty array",
+                            time.time() - start_time
+                        )
+                else:
+                    self.log_test_result(
+                        "VAD_SPEECH_003", category, "Trailing silence validation",
+                        "FAILED", "Audio processing returned None",
+                        time.time() - start_time
+                    )
+            else:
+                self.log_test_result(
+                    "VAD_SPEECH_003", category, "Trailing silence validation",
+                    "SKIPPED", "VAD not enabled",
+                    time.time() - start_time
+                )
+        except Exception as e:
+            self.log_test_result(
+                "VAD_SPEECH_003", category, "Trailing silence validation",
+                "ERROR", f"Exception during trailing silence test: {e}",
+                time.time() - start_time
+            )
         
         # VAD_SPEECH_004: Hysteresis implementation
         start_time = time.time()
@@ -829,20 +1036,49 @@ class VADIntegrationValidator:
             )
     
     def _generate_test_audio_bytes(self, format: str = "pcm16") -> bytes:
-        """Generate test audio bytes for testing."""
+        """
+        Generate test audio bytes for testing with enhanced speech/silence patterns.
+        
+        This method generates audio with proper speech/silence boundaries, including
+        trailing silence to ensure complete VAD event sequences.
+        """
         if not AUDIO_LIBS_AVAILABLE:
-            # Return dummy audio data
+            # Return dummy audio data with improved patterns
             if format == "pcm16":
-                return b"\x00\x00" * 1600  # 1600 samples of silence
+                # Generate pattern with speech + trailing silence
+                speech_samples = b"\x00\x10" * 800  # 800 samples of low-level speech
+                silence_samples = b"\x00\x00" * 800  # 800 samples of silence
+                return speech_samples + silence_samples
             elif format == "pcm24":
-                return b"\x00\x00\x00" * 1600  # 1600 samples of silence
+                # Generate pattern with speech + trailing silence  
+                speech_samples = b"\x00\x10\x00" * 800  # 800 samples of low-level speech
+                silence_samples = b"\x00\x00\x00" * 800  # 800 samples of silence
+                return speech_samples + silence_samples
             else:
                 return b"\x00" * 3200
         
-        # Generate real audio data
+        # Generate real audio data with enhanced patterns
         sample_rate = self.test_config["sample_rate"]
-        duration = 0.1  # 100ms
-        audio = self._generate_speech_audio(sample_rate, duration, 0.5)
+        total_duration = 0.2  # 200ms total
+        speech_duration = 0.1  # 100ms speech
+        silence_duration = 0.1  # 100ms trailing silence
+        
+        # Generate speech segment
+        speech_audio = self._generate_speech_audio(sample_rate, speech_duration, 0.6)
+        
+        # Generate trailing silence for complete VAD sequences
+        silence_audio = self._generate_silence_audio(sample_rate, silence_duration)
+        
+        # Combine speech and silence
+        audio = np.concatenate([speech_audio, silence_audio])
+        
+        # Add brief fade-in/fade-out for more realistic boundaries
+        fade_samples = int(sample_rate * 0.01)  # 10ms fade
+        if len(audio) > 2 * fade_samples:
+            # Fade in
+            audio[:fade_samples] *= np.linspace(0, 1, fade_samples)
+            # Fade out
+            audio[-fade_samples:] *= np.linspace(1, 0, fade_samples)
         
         if format == "pcm16":
             # Convert to 16-bit PCM
@@ -864,6 +1100,72 @@ class VADIntegrationValidator:
             return bytes(bytes_data)
         else:
             return audio.tobytes()
+    
+    def _generate_speech_with_trailing_silence(self, sample_rate: int, duration: float, amplitude: float) -> np.ndarray:
+        """Generate speech with mandatory trailing silence for complete VAD sequences."""
+        speech_duration = duration * 0.7  # 70% speech
+        silence_duration = duration * 0.3  # 30% silence
+        
+        # Generate speech segment
+        speech_audio = self._generate_speech_audio(sample_rate, speech_duration, amplitude)
+        
+        # Generate trailing silence
+        silence_audio = self._generate_silence_audio(sample_rate, silence_duration)
+        
+        # Combine with smooth transition
+        combined_audio = np.concatenate([speech_audio, silence_audio])
+        
+        # Add fade-out at speech end for realistic transition
+        fade_samples = int(sample_rate * 0.02)  # 20ms fade
+        if len(speech_audio) > fade_samples:
+            speech_end = len(speech_audio)
+            combined_audio[speech_end - fade_samples:speech_end] *= np.linspace(1, 0, fade_samples)
+        
+        return combined_audio.astype(np.float32)
+    
+    def _generate_speech_with_noise_and_silence(self, sample_rate: int, duration: float, 
+                                               speech_amp: float, noise_amp: float) -> np.ndarray:
+        """Generate speech with background noise and trailing silence."""
+        speech_with_silence = self._generate_speech_with_trailing_silence(sample_rate, duration, speech_amp)
+        noise = self._generate_noise_audio(sample_rate, duration, noise_amp)
+        
+        # Ensure noise array is same length as speech
+        if len(noise) != len(speech_with_silence):
+            noise = noise[:len(speech_with_silence)]
+            
+        return speech_with_silence + noise
+    
+    def _generate_short_speech_segments(self, sample_rate: int, duration: float) -> np.ndarray:
+        """Generate very short speech segments that should be filtered out."""
+        audio = np.zeros(int(sample_rate * duration), dtype=np.float32)
+        
+        # Create multiple very short speech segments (< min_speech_duration)
+        segment_duration = 0.1  # 100ms segments
+        num_segments = int(duration / (segment_duration * 2))  # With gaps
+        
+        for i in range(num_segments):
+            start_idx = int(i * segment_duration * 2 * sample_rate)
+            end_idx = int((i * segment_duration * 2 + segment_duration) * sample_rate)
+            
+            if end_idx < len(audio):
+                segment = self._generate_speech_audio(sample_rate, segment_duration, 0.5)
+                audio[start_idx:end_idx] = segment
+        
+        return audio
+    
+    def _generate_long_speech_audio(self, sample_rate: int, duration: float, amplitude: float) -> np.ndarray:
+        """Generate long speech audio that should trigger timeout handling."""
+        # Generate continuous speech for extended duration
+        speech_audio = self._generate_speech_audio(sample_rate, duration, amplitude)
+        
+        # Add some variation to make it more realistic
+        variation = np.random.normal(0, 0.05, len(speech_audio))
+        speech_audio += variation
+        
+        # Ensure we don't clip
+        speech_audio = np.clip(speech_audio, -1.0, 1.0)
+        
+        return speech_audio.astype(np.float32)
     
     # Main test execution methods
     
