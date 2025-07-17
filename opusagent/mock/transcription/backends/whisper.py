@@ -93,16 +93,18 @@ class WhisperTranscriber(BaseTranscriber):
                 result = await asyncio.get_event_loop().run_in_executor(
                     None, self._transcribe_with_whisper, chunk_data
                 )
-                processing_time = time.time() - start_time
+                processing_time = max(time.time() - start_time, 0.001)  # Ensure minimum time
                 result.processing_time = processing_time
                 return result
+            processing_time = max(time.time() - start_time, 0.001)  # Ensure minimum time
             return TranscriptionResult(
-                text="", processing_time=time.time() - start_time
+                text="", processing_time=processing_time
             )
         except Exception as e:
             self.logger.error(f"Error in Whisper transcription: {e}")
+            processing_time = max(time.time() - start_time, 0.001)  # Ensure minimum time
             return TranscriptionResult(
-                text="", error=str(e), processing_time=time.time() - start_time
+                text="", error=str(e), processing_time=processing_time
             )
 
     def _transcribe_with_whisper(self, audio_data: np.ndarray) -> TranscriptionResult:
@@ -129,7 +131,7 @@ class WhisperTranscriber(BaseTranscriber):
             delta_text = ""
             if text and text != self._accumulated_text:
                 if text.startswith(self._accumulated_text):
-                    delta_text = text[len(self._accumulated_text) :].strip()
+                    delta_text = text[len(self._accumulated_text) :]
                 else:
                     delta_text = text
                 self._accumulated_text = text
@@ -157,6 +159,7 @@ class WhisperTranscriber(BaseTranscriber):
         import time
         start_time = time.time()
         try:
+            final_text = self._accumulated_text
             if self._audio_buffer:
                 remaining_audio = np.array(self._audio_buffer)
                 import asyncio
@@ -164,10 +167,10 @@ class WhisperTranscriber(BaseTranscriber):
                     None, self._transcribe_with_whisper, remaining_audio
                 )
                 if result.text:
-                    self._accumulated_text = result.text
-            processing_time = time.time() - start_time
+                    final_text = result.text
+            processing_time = max(time.time() - start_time, 0.001)  # Ensure minimum time
             final_result = TranscriptionResult(
-                text=self._accumulated_text,
+                text=final_text,
                 confidence=1.0,
                 is_final=True,
                 processing_time=processing_time,
@@ -177,22 +180,22 @@ class WhisperTranscriber(BaseTranscriber):
             return final_result
         except Exception as e:
             self.logger.error(f"Error in Whisper finalization: {e}")
+            processing_time = max(time.time() - start_time, 0.001)  # Ensure minimum time
             return TranscriptionResult(
                 text=self._accumulated_text,
                 error=str(e),
                 is_final=True,
-                processing_time=time.time() - start_time,
+                processing_time=processing_time,
             )
 
     async def cleanup(self) -> None:
         if self._temp_dir:
             from pathlib import Path
             import shutil
-            if Path(self._temp_dir).exists():
-                try:
-                    shutil.rmtree(self._temp_dir)
-                except Exception as e:
-                    self.logger.warning(f"Failed to clean up temp directory: {e}")
+            try:
+                shutil.rmtree(self._temp_dir)
+            except Exception as e:
+                self.logger.warning(f"Failed to clean up temp directory: {e}")
         self._model = None
         self._initialized = False
         self.logger.debug("Whisper transcriber cleaned up")
