@@ -302,8 +302,8 @@ class TestWhisperTranscriber:
         audio_data = np.array([0.1], dtype=np.float32)
         
         result = self.transcriber._transcribe_with_whisper(audio_data)
-        
-        assert result.text == " world"  # Only the new part
+
+        assert result.text == "world"  # Only the new part (stripped)
         assert self.transcriber._accumulated_text == "hello world"
 
     def test_transcribe_with_whisper_confidence_calculation(self):
@@ -365,7 +365,7 @@ class TestWhisperTranscriber:
             result = await self.transcriber.finalize()
         
         assert isinstance(result, TranscriptionResult)
-        assert result.text == "additional text"  # Text from remaining audio
+        assert result.text == "final text additional text"  # Combined accumulated + additional text
         assert result.confidence == 1.0
         assert result.is_final == True
         assert result.processing_time > 0

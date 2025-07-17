@@ -694,14 +694,17 @@ class TestWhisperTranscriber:
         transcriber._audio_buffer = [0.1, 0.2, 0.3]  # Some audio data
         
         with patch('asyncio.get_event_loop') as mock_loop:
-            mock_loop.return_value.run_in_executor.return_value = TranscriptionResult(
+            # run_in_executor returns a Future that resolves to the result
+            future = asyncio.Future()
+            future.set_result(TranscriptionResult(
                 text="final transcription", confidence=0.9
-            )
+            ))
+            mock_loop.return_value.run_in_executor.return_value = future
             
             result = await transcriber.finalize()
             
-            # Should return accumulated text even if finalization fails
-            assert result.text == "partial text"
+            # Should return accumulated text from chunks, combined with finalization result
+            assert result.text == "partial text final transcription"
             assert result.is_final == True
 
     @pytest.mark.asyncio
