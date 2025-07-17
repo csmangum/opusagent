@@ -42,19 +42,19 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import websockets
 from websockets.asyncio.client import ClientConnection
 
+from opusagent.config.logging_config import configure_logging
 from opusagent.models.openai_api import (
     ResponseCreateOptions,
     ServerEventType,
     SessionConfig,
 )
-from opusagent.vad.vad_factory import VADFactory
 from opusagent.vad.vad_config import load_vad_config
+from opusagent.vad.vad_factory import VADFactory
 
 from .audio import AudioManager
 from .generators import ResponseGenerator
 from .handlers import EventHandlerManager
 from .models import ConversationContext, LocalResponseConfig, ResponseSelectionCriteria
-from opusagent.config.logging_config import configure_logging
 
 
 class LocalRealtimeClient:
@@ -270,7 +270,9 @@ class LocalRealtimeClient:
             ```
         """
         if logger is None:
-            self.logger = configure_logging(name="realtime_client", log_filename="realtime_client.log")
+            self.logger = configure_logging(
+                name="realtime_client", log_filename="realtime_client.log"
+            )
         else:
             self.logger = logger
         self.session_config = session_config or SessionConfig(
@@ -293,25 +295,25 @@ class LocalRealtimeClient:
 
         # Initialize components
         self._audio_manager = AudioManager(logger=self.logger)
-        
+
         # Initialize VAD if enabled
         self._vad = None
         self._vad_enabled = False
         self._vad_config = vad_config or {}
         self._initialize_vad(enable_vad)
-        
+
         # Initialize transcription if enabled
         self._transcriber = None
         self._transcription_enabled = False
         self._transcription_config = transcription_config or {}
         self._initialize_transcription(enable_transcription)
-        
+
         # Initialize event handler with VAD and transcription support
         self._event_handler = EventHandlerManager(
-            logger=self.logger, 
-            session_config=self.session_config, 
+            logger=self.logger,
+            session_config=self.session_config,
             vad=self._vad,
-            transcriber=self._transcriber
+            transcriber=self._transcriber,
         )
         self._response_generator = ResponseGenerator(
             logger=self.logger, audio_manager=self._audio_manager
@@ -325,13 +327,13 @@ class LocalRealtimeClient:
     def _initialize_vad(self, enable_vad: Optional[bool] = None) -> None:
         """
         Initialize Voice Activity Detection (VAD) based on session configuration.
-        
+
         This method sets up VAD when turn detection is enabled in the session
         configuration or when explicitly enabled. VAD is used to detect speech
         activity in incoming audio data for more realistic speech detection.
-        
+
         Args:
-            enable_vad (Optional[bool]): Whether to enable VAD. If None, 
+            enable_vad (Optional[bool]): Whether to enable VAD. If None,
                                        determines from session configuration.
         """
         try:
@@ -345,33 +347,39 @@ class LocalRealtimeClient:
                     self._vad_enabled = False
             else:
                 self._vad_enabled = enable_vad
-            
+
             if self._vad_enabled:
                 # Load VAD configuration
                 vad_config = load_vad_config()
                 vad_config.update(self._vad_config)  # Override with provided config
-                
+
                 # Create VAD instance
                 self._vad = VADFactory.create_vad(vad_config)
-                self.logger.info(f"[MOCK REALTIME] VAD initialized with backend: {vad_config.get('backend', 'silero')}")
+                self.logger.info(
+                    f"[MOCK REALTIME] VAD initialized with backend: {vad_config.get('backend', 'silero')}"
+                )
             else:
                 self._vad = None
-                self.logger.info("[MOCK REALTIME] VAD disabled - using simple speech detection")
-                
+                self.logger.info(
+                    "[MOCK REALTIME] VAD disabled - using simple speech detection"
+                )
+
         except Exception as e:
             self.logger.error(f"[MOCK REALTIME] Failed to initialize VAD: {e}")
             # Always fall back gracefully to disabled VAD on initialization failure
             self._vad = None
             self._vad_enabled = False
 
-    def _initialize_transcription(self, enable_transcription: Optional[bool] = None) -> None:
+    def _initialize_transcription(
+        self, enable_transcription: Optional[bool] = None
+    ) -> None:
         """
         Initialize local audio transcription based on session configuration.
-        
+
         This method sets up transcription when input_audio_transcription is enabled
         in the session configuration or when explicitly enabled. Transcription is
         used to convert incoming audio to text for realistic API behavior.
-        
+
         Args:
             enable_transcription (Optional[bool]): Whether to enable transcription.
                                                   If None, determines from session configuration.
@@ -387,26 +395,39 @@ class LocalRealtimeClient:
                     self._transcription_enabled = False
             else:
                 self._transcription_enabled = enable_transcription
-            
+
             if self._transcription_enabled:
                 # Import transcription modules
-                from .transcription import TranscriptionFactory, load_transcription_config
-                
+                from opusagent.mock.transcription import (
+                    TranscriptionFactory,
+                    load_transcription_config,
+                )
+
                 # Load transcription configuration
                 transcription_config = load_transcription_config()
-                transcription_config = transcription_config.__class__(**{**transcription_config.__dict__, **self._transcription_config})  # Merge defaults and overrides
-                
+                transcription_config = transcription_config.__class__(
+                    **{**transcription_config.__dict__, **self._transcription_config}
+                )  # Merge defaults and overrides
+
                 # Create transcriber instance
-                self._transcriber = TranscriptionFactory.create_transcriber(transcription_config)
-                
+                self._transcriber = TranscriptionFactory.create_transcriber(
+                    transcription_config
+                )
+
                 # Initialize transcriber asynchronously (we'll do this in connect())
-                self.logger.info(f"[MOCK REALTIME] Transcription initialized with backend: {transcription_config.backend}")
+                self.logger.info(
+                    f"[MOCK REALTIME] Transcription initialized with backend: {transcription_config.backend}"
+                )
             else:
                 self._transcriber = None
-                self.logger.info("[MOCK REALTIME] Transcription disabled - using mock transcript events")
-                
+                self.logger.info(
+                    "[MOCK REALTIME] Transcription disabled - using mock transcript events"
+                )
+
         except Exception as e:
-            self.logger.error(f"[MOCK REALTIME] Failed to initialize transcription: {e}")
+            self.logger.error(
+                f"[MOCK REALTIME] Failed to initialize transcription: {e}"
+            )
             # Always fall back gracefully to disabled transcription on initialization failure
             self._transcriber = None
             self._transcription_enabled = False
@@ -811,10 +832,12 @@ class LocalRealtimeClient:
         if context.last_user_input and config.text:
             user_input_lower = context.last_user_input.lower()
             config_text_lower = config.text.lower()
-            
+
             # Check if either string contains the other
-            if (config_text_lower in user_input_lower or 
-                user_input_lower in config_text_lower):
+            if (
+                config_text_lower in user_input_lower
+                or user_input_lower in config_text_lower
+            ):
                 score += 3.0
             # Check for word overlap (at least one common word)
             else:
@@ -1259,9 +1282,13 @@ class LocalRealtimeClient:
             if self._transcriber and self._transcription_enabled:
                 try:
                     await self._transcriber.initialize()
-                    self.logger.info("[MOCK REALTIME] Transcriber initialized successfully")
+                    self.logger.info(
+                        "[MOCK REALTIME] Transcriber initialized successfully"
+                    )
                 except Exception as e:
-                    self.logger.error(f"[MOCK REALTIME] Failed to initialize transcriber: {e}")
+                    self.logger.error(
+                        f"[MOCK REALTIME] Failed to initialize transcriber: {e}"
+                    )
                     self._transcriber = None
                     self._transcription_enabled = False
 
@@ -1348,14 +1375,14 @@ class LocalRealtimeClient:
 
         # Clean up VAD resources
         self._cleanup_vad()
-        
+
         # Clean up transcription resources
         self._cleanup_transcription()
 
     def _cleanup_vad(self) -> None:
         """
         Clean up VAD resources.
-        
+
         This method safely releases VAD resources when the client is
         disconnected or no longer needed.
         """
@@ -1371,7 +1398,7 @@ class LocalRealtimeClient:
     def _cleanup_transcription(self) -> None:
         """
         Clean up transcription resources.
-        
+
         This method safely releases transcription resources when the client is
         disconnected or no longer needed.
         """
@@ -1381,7 +1408,9 @@ class LocalRealtimeClient:
                 asyncio.create_task(self._transcriber.cleanup())
                 self.logger.debug("[MOCK REALTIME] Transcription resources cleaned up")
             except Exception as e:
-                self.logger.warning(f"[MOCK REALTIME] Error cleaning up transcription: {e}")
+                self.logger.warning(
+                    f"[MOCK REALTIME] Error cleaning up transcription: {e}"
+                )
             finally:
                 self._transcriber = None
 
@@ -2041,7 +2070,7 @@ class LocalRealtimeClient:
     async def handle_session_update(self, data: Dict[str, Any]) -> None:
         """
         Handle session update events.
-        
+
         This method processes session configuration updates and handles
         VAD configuration changes based on turn_detection settings.
 
@@ -2049,7 +2078,7 @@ class LocalRealtimeClient:
             data (Dict[str, Any]): Session update event data.
         """
         session = data.get("session", {})
-        
+
         # Check for turn_detection changes before updating
         turn_detection_changed = False
         if "turn_detection" in session:
@@ -2057,11 +2086,13 @@ class LocalRealtimeClient:
             new_turn_detection = session.get("turn_detection")
             if old_turn_detection != new_turn_detection:
                 turn_detection_changed = True
-                self.logger.info(f"[MOCK REALTIME] Turn detection changing from {old_turn_detection} to {new_turn_detection}")
-        
+                self.logger.info(
+                    f"[MOCK REALTIME] Turn detection changing from {old_turn_detection} to {new_turn_detection}"
+                )
+
         # Let the event handler process the session update
         await self._event_handler._handle_session_update(data)
-        
+
         # Handle VAD configuration changes
         if turn_detection_changed:
             await self._handle_vad_session_update()
@@ -2069,23 +2100,27 @@ class LocalRealtimeClient:
     async def _handle_vad_session_update(self) -> None:
         """
         Handle VAD configuration changes when session is updated.
-        
+
         This method enables or disables VAD based on the updated
         turn_detection setting in the session configuration.
         """
         turn_detection = self.session_config.turn_detection
-        
+
         if turn_detection and turn_detection.get("type") == "server_vad":
             # Enable VAD if not already enabled
             if not self.is_vad_enabled():
-                self.logger.info("[MOCK REALTIME] Enabling VAD due to server_vad turn detection")
+                self.logger.info(
+                    "[MOCK REALTIME] Enabling VAD due to server_vad turn detection"
+                )
                 self.enable_vad()
             else:
                 self.logger.debug("[MOCK REALTIME] VAD already enabled")
         else:
             # Disable VAD if currently enabled
             if self.is_vad_enabled():
-                self.logger.info("[MOCK REALTIME] Disabling VAD due to turn detection change")
+                self.logger.info(
+                    "[MOCK REALTIME] Disabling VAD due to turn detection change"
+                )
                 self.disable_vad()
             else:
                 self.logger.debug("[MOCK REALTIME] VAD already disabled")
@@ -2232,7 +2267,7 @@ class LocalRealtimeClient:
     def is_vad_enabled(self) -> bool:
         """
         Check if VAD is enabled and initialized.
-        
+
         Returns:
             bool: True if VAD is enabled and initialized, False otherwise.
         """
@@ -2241,7 +2276,7 @@ class LocalRealtimeClient:
     def get_vad_config(self) -> Dict[str, Any]:
         """
         Get the current VAD configuration.
-        
+
         Returns:
             Dict[str, Any]: Current VAD configuration dictionary.
         """
@@ -2250,7 +2285,7 @@ class LocalRealtimeClient:
     def enable_vad(self, vad_config: Optional[Dict[str, Any]] = None) -> None:
         """
         Enable VAD with optional configuration.
-        
+
         Args:
             vad_config (Optional[Dict[str, Any]]): VAD configuration to use.
                                                   If None, uses default configuration.
@@ -2273,7 +2308,7 @@ class LocalRealtimeClient:
     def get_vad_state(self) -> Dict[str, Any]:
         """
         Get current VAD state information.
-        
+
         Returns:
             Dict[str, Any]: VAD state information including:
                 - enabled: Whether VAD is enabled
@@ -2285,49 +2320,65 @@ class LocalRealtimeClient:
         state = {
             "enabled": self._vad_enabled,
             "initialized": self._vad is not None,
-            "speech_active": self._event_handler._session_state.get("speech_detected", False),
-            "configuration": self._vad_config.copy()
+            "speech_active": self._event_handler._session_state.get(
+                "speech_detected", False
+            ),
+            "configuration": self._vad_config.copy(),
         }
-        
+
         # Add detailed state information if available
-        if hasattr(self._event_handler, '_vad_state'):
+        if hasattr(self._event_handler, "_vad_state"):
             state["state_details"] = {
-                "speech_active": self._event_handler._vad_state.get("speech_active", False),
-                "confidence_history": self._event_handler._vad_state.get("confidence_history", []),
-                "speech_counter": self._event_handler._vad_state.get("speech_counter", 0),
-                "silence_counter": self._event_handler._vad_state.get("silence_counter", 0),
-                "last_speech_time": self._event_handler._vad_state.get("last_speech_time"),
-                "speech_start_time": self._event_handler._vad_state.get("speech_start_time")
+                "speech_active": self._event_handler._vad_state.get(
+                    "speech_active", False
+                ),
+                "confidence_history": self._event_handler._vad_state.get(
+                    "confidence_history", []
+                ),
+                "speech_counter": self._event_handler._vad_state.get(
+                    "speech_counter", 0
+                ),
+                "silence_counter": self._event_handler._vad_state.get(
+                    "silence_counter", 0
+                ),
+                "last_speech_time": self._event_handler._vad_state.get(
+                    "last_speech_time"
+                ),
+                "speech_start_time": self._event_handler._vad_state.get(
+                    "speech_start_time"
+                ),
             }
-        
+
         return state
 
     def reset_vad_state(self) -> None:
         """
         Reset VAD state tracking to initial values.
-        
+
         This method can be called to reset the VAD state management
         without disabling VAD completely.
         """
-        if hasattr(self._event_handler, '_reset_vad_state'):
+        if hasattr(self._event_handler, "_reset_vad_state"):
             self._event_handler._reset_vad_state()
             self.logger.debug("[MOCK REALTIME] VAD state reset via client")
 
     def update_vad_config(self, config_updates: Dict[str, Any]) -> None:
         """
         Update VAD configuration with new parameters.
-        
+
         This method updates the VAD configuration and reinitializes
         VAD if it's currently enabled.
-        
+
         Args:
             config_updates (Dict[str, Any]): Configuration updates to apply.
         """
         self._vad_config.update(config_updates)
-        
+
         # Reinitialize VAD if it's currently enabled
         if self._vad_enabled:
-            self.logger.info("[MOCK REALTIME] Reinitializing VAD with updated configuration")
+            self.logger.info(
+                "[MOCK REALTIME] Reinitializing VAD with updated configuration"
+            )
             self._cleanup_vad()
             self._initialize_vad(enable_vad=True)
             # Update event handler with new VAD instance
@@ -2338,7 +2389,7 @@ class LocalRealtimeClient:
     def is_transcription_enabled(self) -> bool:
         """
         Check if transcription is enabled and initialized.
-        
+
         Returns:
             bool: True if transcription is enabled and initialized, False otherwise.
         """
@@ -2347,16 +2398,18 @@ class LocalRealtimeClient:
     def get_transcription_config(self) -> Dict[str, Any]:
         """
         Get the current transcription configuration.
-        
+
         Returns:
             Dict[str, Any]: Current transcription configuration dictionary.
         """
         return self._transcription_config.copy()
 
-    def enable_transcription(self, transcription_config: Optional[Dict[str, Any]] = None) -> None:
+    def enable_transcription(
+        self, transcription_config: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Enable transcription with optional configuration.
-        
+
         Args:
             transcription_config (Optional[Dict[str, Any]]): Transcription configuration to use.
                                                            If None, uses default configuration.
@@ -2379,7 +2432,7 @@ class LocalRealtimeClient:
     def get_transcription_state(self) -> Dict[str, Any]:
         """
         Get current transcription state information.
-        
+
         Returns:
             Dict[str, Any]: Transcription state information including:
                 - enabled: Whether transcription is enabled
@@ -2391,29 +2444,31 @@ class LocalRealtimeClient:
             "enabled": self._transcription_enabled,
             "initialized": self._transcriber is not None,
             "backend": self._transcription_config.get("backend", "pocketsphinx"),
-            "configuration": self._transcription_config.copy()
+            "configuration": self._transcription_config.copy(),
         }
-        
+
         if self._transcriber:
             state["transcriber_type"] = type(self._transcriber).__name__
-        
+
         return state
 
     def update_transcription_config(self, config_updates: Dict[str, Any]) -> None:
         """
         Update transcription configuration with new parameters.
-        
+
         This method updates the transcription configuration and reinitializes
         transcription if it's currently enabled.
-        
+
         Args:
             config_updates (Dict[str, Any]): Configuration updates to apply.
         """
         self._transcription_config.update(config_updates)
-        
+
         # Reinitialize transcription if it's currently enabled
         if self._transcription_enabled:
-            self.logger.info("[MOCK REALTIME] Reinitializing transcription with updated configuration")
+            self.logger.info(
+                "[MOCK REALTIME] Reinitializing transcription with updated configuration"
+            )
             self._cleanup_transcription()
             self._initialize_transcription(enable_transcription=True)
             # Update event handler with new transcriber instance
