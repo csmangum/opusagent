@@ -1,5 +1,13 @@
 """
 TranscriptionFactory for creating transcription backend instances.
+
+This module provides:
+- TranscriptionFactory: A factory class for instantiating transcription backends (PocketSphinx, Whisper) based on configuration.
+- Centralized logic for backend selection, validation, and runtime availability checks.
+
+Usage:
+    from opusagent.mock.transcription.factory import TranscriptionFactory
+    transcriber = TranscriptionFactory.create_transcriber(config)
 """
 from typing import Any, Dict, List, Union
 from .models import TranscriptionConfig

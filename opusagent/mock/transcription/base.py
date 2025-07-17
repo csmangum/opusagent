@@ -1,8 +1,14 @@
 """
-Base transcriber class and shared utilities for the transcription module.
+Abstract base class and shared utilities for the transcription module.
 
-This module provides the abstract base class for transcription backends
-and common utility functions used across different transcription implementations.
+This module provides:
+- BaseTranscriber: The abstract interface for all transcription backends, defining the required async methods and session management.
+- Utility functions for audio conversion, resampling, and preprocessing, used by all backend implementations.
+
+All transcription backends (e.g., PocketSphinx, Whisper) should inherit from BaseTranscriber to ensure a consistent API and behavior.
+
+Usage:
+    from opusagent.mock.transcription.base import BaseTranscriber
 """
 
 import logging

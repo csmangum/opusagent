@@ -1,5 +1,13 @@
 """
 Configuration loader for the transcription module.
+
+This module provides:
+- load_transcription_config: Loads and validates transcription configuration from environment variables, with sensible defaults for all supported backends.
+- Integrates with opusagent.config.constants for default values.
+
+Usage:
+    from opusagent.mock.transcription.config import load_transcription_config
+    config = load_transcription_config()
 """
 import os
 from .models import TranscriptionConfig

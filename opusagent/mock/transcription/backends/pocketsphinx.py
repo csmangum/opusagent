@@ -1,7 +1,13 @@
 """
 PocketSphinx-based transcription backend for the transcription module.
 
-Implements the PocketSphinxTranscriber class for lightweight, offline processing.
+This module provides:
+- PocketSphinxTranscriber: A lightweight, offline transcription backend using PocketSphinx, optimized for real-time and resource-constrained environments.
+- Implements audio resampling, preprocessing, and chunked streaming for best performance.
+
+Usage:
+    from opusagent.mock.transcription.backends.pocketsphinx import PocketSphinxTranscriber
+    transcriber = PocketSphinxTranscriber(config)
 """
 
 import logging

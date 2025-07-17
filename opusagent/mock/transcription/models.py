@@ -1,6 +1,14 @@
 """
-This module provides Pydantic models for transcription configuration and results,
-ensuring type safety and validation for the transcription system.
+Pydantic models for transcription configuration and results.
+
+This module defines:
+- TranscriptionResult: Represents the output of a transcription operation, including text, confidence, timing, and error details.
+- TranscriptionConfig: Configuration for selecting and tuning transcription backends (PocketSphinx, Whisper), including backend-specific and optimization options.
+
+These models ensure type safety, validation, and consistent data structures throughout the transcription system.
+
+Usage:
+    from opusagent.mock.transcription.models import TranscriptionResult, TranscriptionConfig
 """
 
 from typing import Any, Dict, List, Optional

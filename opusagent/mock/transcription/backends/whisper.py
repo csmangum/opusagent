@@ -1,7 +1,13 @@
 """
 Whisper-based transcription backend for the transcription module.
 
-Implements the WhisperTranscriber class for high-accuracy transcription.
+This module provides:
+- WhisperTranscriber: A high-accuracy transcription backend using OpenAI Whisper, supporting multiple model sizes and advanced features.
+- Implements async processing, segment timing, and confidence scoring for detailed transcription results.
+
+Usage:
+    from opusagent.mock.transcription.backends.whisper import WhisperTranscriber
+    transcriber = WhisperTranscriber(config)
 """
 
 import logging

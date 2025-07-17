@@ -8,11 +8,11 @@ The transcription module provides a modular, extensible system for audio transcr
 
 ### Core Design Principles
 
-1ration of Concerns**: Each component has a single, well-defined responsibility
+1. **Separation of Concerns**: Each component has a single, well-defined responsibility
 2. **Open/Closed Principle**: Easy to add new backends without modifying existing code
-3pendency Inversion**: High-level modules depend on abstractions, not concrete implementations
+3. **Dependency Inversion**: High-level modules depend on abstractions, not concrete implementations
 4. **Factory Pattern**: Centralized creation of transcriber instances
-5uration Management**: Environment-based configuration with sensible defaults
+5. **Configuration Management**: Environment-based configuration with sensible defaults
 
 ### Module Structure
 
@@ -31,7 +31,7 @@ opusagent/mock/transcription/
 
 ## Components
 
-### 1Models (`models.py`)
+### 1. Models (`models.py`)
 
 **Purpose**: Define data structures with validation and type safety using Pydantic.
 
@@ -39,7 +39,8 @@ opusagent/mock/transcription/
 - **Purpose**: Represents the result of a transcription operation
 - **Fields**:
   - `text`: Transcribed text content
-  - `confidence`: Confidence score (010is_final`: Whether this is the final result
+  - `confidence`: Confidence score (0-1.0)
+  - `is_final`: Whether this is the final result
   - `segments`: Optional detailed segments (Whisper)
   - `processing_time`: Time taken for processing
   - `error`: Optional error message
@@ -47,14 +48,14 @@ opusagent/mock/transcription/
 #### `TranscriptionConfig`
 - **Purpose**: Configuration for transcription backends
 - **Core Fields**:
-  - `backend`: Backend type ("pocketsphinx" or "whisper)
-  - `language`: Language code (default: "en)
+  - `backend`: Backend type ("pocketsphinx" or "whisper")
+  - `language`: Language code (default: "en")
   - `model_size`: Model size for Whisper
   - `chunk_duration`: Audio chunk duration in seconds
   - `confidence_threshold`: Minimum confidence threshold
   - `sample_rate`: Audio sample rate
   - `enable_vad`: Whether to enable VAD
-  - `device`: Processing device (cpu" or cuda")
+  - `device`: Processing device ("cpu" or "cuda")
 
 **Backend-Specific Fields**:
 - **PocketSphinx**: Custom model paths, preprocessing settings, VAD settings
@@ -88,8 +89,8 @@ opusagent/mock/transcription/
   - `_apply_audio_preprocessing()`: Audio preprocessing pipeline
 
 **Audio Processing Pipeline**:
-1ampling**: Convert to optimal sample rate (16kHz for PocketSphinx)
-2**Preprocessing**: Apply normalization, amplification, or silence trimming
+1. **Resampling**: Convert to optimal sample rate (16kHz for PocketSphinx)
+2. **Preprocessing**: Apply normalization, amplification, or silence trimming
 3. **Buffer Management**: Accumulate audio chunks for processing
 4. **Chunk Processing**: Process accumulated audio in configurable chunks
 
@@ -127,13 +128,13 @@ opusagent/mock/transcription/
 #### PocketSphinx Backend (`backends/pocketsphinx.py`)
 
 **Characteristics**:
-- **Speed**: Fastest (0.288rage)
+- **Speed**: Fastest (0.288s average)
 - **Accuracy**: Good for real-time applications
 - **Resource Usage**: Lightweight, no model downloads
 - **Offline**: Works without internet connection
 
 **Optimizations**:
-- **Audio Resampling**: Automatic 24kHz → 16Hz conversion
+- **Audio Resampling**: Automatic 24kHz → 16kHz conversion
 - **Preprocessing**: Normalization, amplification, silence trimming
 - **Chunk Processing**: Configurable chunk sizes for real-time streaming
 - **Utterance Management**: Proper start/end utterance handling
@@ -178,7 +179,7 @@ transcriber = TranscriptionFactory.create_transcriber(config)
 await transcriber.transcribe_chunk(audio_data)
 ```
 
-### 3ate Method Pattern
+### 3. Template Method Pattern
 ```python
 # Base class defines algorithm structure, subclasses implement details
 class BaseTranscriber:
@@ -203,10 +204,10 @@ transcriber = TranscriptionFactory.create_transcriber(config)
 ### Audio Processing Pipeline
 
 1. **Input Validation**: Check audio data format and size
-2ampling**: Convert to optimal sample rate (if needed)
-3**Preprocessing**: Apply audio enhancements
+2. **Resampling**: Convert to optimal sample rate (if needed)
+3. **Preprocessing**: Apply audio enhancements
 4. **Chunking**: Split into processing chunks
-5**Transcription**: Backend-specific processing
+5. **Transcription**: Backend-specific processing
 6. **Post-processing**: Confidence scoring and result formatting
 
 ### Memory Management
@@ -236,7 +237,7 @@ transcriber = TranscriptionFactory.create_transcriber(config)
 1. **Initialization Errors**: Backend not available, model loading failed
 2. **Processing Errors**: Invalid audio data, transcription failures
 3. **Resource Errors**: Memory issues, file system problems
-4nfiguration Errors**: Invalid settings, missing dependencies
+4. **Configuration Errors**: Invalid settings, missing dependencies
 
 ### Error Recovery
 - **Graceful Degradation**: Fall back to simpler processing
@@ -282,7 +283,7 @@ print(f"Transcribed: {result.text}")
 
 # Finalize
 final_result = await transcriber.finalize()
-print(f"Final: [object Object]final_result.text}")
+print(f"Final: {final_result.text}")
 
 # Cleanup
 await transcriber.cleanup()
@@ -295,7 +296,9 @@ from opusagent.mock.transcription import TranscriptionConfig, TranscriptionFacto
 # Custom configuration
 config = TranscriptionConfig(
     backend="whisper",
-    model_size=base,    device=cpu    chunk_duration=20
+    model_size="base",
+    device="cpu",
+    chunk_duration=2.0,
     confidence_threshold=0.7
 )
 
@@ -309,7 +312,11 @@ transcriber = TranscriptionFactory.create_transcriber(config)
 export TRANSCRIPTION_BACKEND=whisper
 export WHISPER_MODEL_SIZE=base
 export TRANSCRIPTION_CHUNK_DURATION=1.5
-export TRANSCRIPTION_CONFIDENCE_THRESHOLD=00.8Use in code
+export TRANSCRIPTION_CONFIDENCE_THRESHOLD=0.8
+```
+
+```python
+# Use in code
 config = load_transcription_config()
 ```
 
@@ -317,15 +324,15 @@ config = load_transcription_config()
 
 ### Planned Features
 1. **Additional Backends**: Support for more transcription engines
-2**Streaming API**: Real-time streaming transcription
+2. **Streaming API**: Real-time streaming transcription
 3. **Batch Processing**: Efficient batch processing of multiple files
-4**Model Caching**: Cache downloaded models for faster startup
+4. **Model Caching**: Cache downloaded models for faster startup
 5. **GPU Acceleration**: Better GPU support for Whisper
 
 ### Extensibility Points
 1. **Custom Preprocessing**: Plugin system for audio preprocessing
 2. **Custom Backends**: Easy addition of new transcription backends
-3**Custom Models**: Support for custom trained models
+3. **Custom Models**: Support for custom trained models
 4. **Metrics Collection**: Performance and accuracy metrics
 5. **Plugin Architecture**: Extensible plugin system
 
