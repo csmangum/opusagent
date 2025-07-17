@@ -37,7 +37,7 @@ from opusagent.mock.realtime import (
     TranscriptionFactory,
     load_transcription_config
 )
-from opusagent.mock.realtime.transcription import TranscriptionResult
+from opusagent.mock.transcription import TranscriptionResult
 
 
 class TranscriptionTester:

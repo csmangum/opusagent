@@ -64,7 +64,7 @@ VAD_ENABLED = os.getenv("VAD_ENABLED", "true").lower() in ("true", "1", "yes", "
 # Local realtime configuration
 USE_LOCAL_REALTIME = os.getenv("USE_LOCAL_REALTIME", "false").lower() in ("true", "1", "yes", "on")
 LOCAL_REALTIME_CONFIG = {
-    "enable_transcription": os.getenv("LOCAL_REALTIME_ENABLE_TRANSCRIPTION", "false").lower() in ("true", "1", "yes", "on"),
+    "enable_transcription": os.getenv("LOCAL_REALTIME_ENABLE_TRANSCRIPTION", "true").lower() in ("true", "1", "yes", "on"),
     "setup_smart_responses": os.getenv("LOCAL_REALTIME_SETUP_SMART_RESPONSES", "true").lower() in ("true", "1", "yes", "on"),
     "vad_config": {
         "backend": os.getenv("LOCAL_REALTIME_VAD_BACKEND", "silero"),
