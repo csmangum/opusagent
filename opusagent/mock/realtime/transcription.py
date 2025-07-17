@@ -75,6 +75,12 @@ class TranscriptionConfig:
     pocketsphinx_hmm: Optional[str] = None
     pocketsphinx_lm: Optional[str] = None
     pocketsphinx_dict: Optional[str] = None
+    
+    # PocketSphinx optimization settings (based on analysis results)
+    pocketsphinx_audio_preprocessing: str = "normalize"  # "none", "normalize", "amplify", "noise_reduction", "silence_trim"
+    pocketsphinx_vad_settings: str = "conservative"  # "default", "aggressive", "conservative"
+    pocketsphinx_auto_resample: bool = True  # Automatically resample audio to 16kHz
+    pocketsphinx_input_sample_rate: int = 24000  # Expected input sample rate for resampling
 
     # Whisper specific
     whisper_model_dir: Optional[str] = None
@@ -174,6 +180,117 @@ class BaseTranscriber(ABC):
             self.logger.error(f"Error converting audio data: {e}")
             return np.array([], dtype=np.float32)
 
+    def _resample_audio_for_pocketsphinx(self, audio_data: bytes, 
+                                       original_rate: int = 24000,
+                                       target_rate: int = 16000) -> bytes:
+        """Resample audio to 16kHz for optimal PocketSphinx performance.
+        
+        This is critical for PocketSphinx accuracy - it expects 16kHz audio.
+        
+        Args:
+            audio_data: Raw audio bytes (16-bit PCM)
+            original_rate: Original sample rate (default: 24000)
+            target_rate: Target sample rate (default: 16000)
+            
+        Returns:
+            Resampled audio bytes at target sample rate
+        """
+        try:
+            # Convert bytes to numpy array
+            audio_int16 = np.frombuffer(audio_data, dtype=np.int16)
+            
+            # Simple linear interpolation resampling
+            # This is a basic implementation - for production, consider using scipy.signal.resample
+            if original_rate == target_rate:
+                return audio_data
+                
+            # Calculate resampling ratio
+            ratio = target_rate / original_rate
+            new_length = int(len(audio_int16) * ratio)
+            
+            # Simple linear interpolation
+            resampled = np.zeros(new_length, dtype=np.int16)
+            for i in range(new_length):
+                old_index = i / ratio
+                old_index_int = int(old_index)
+                old_index_frac = old_index - old_index_int
+                
+                if old_index_int >= len(audio_int16) - 1:
+                    resampled[i] = audio_int16[-1]
+                else:
+                    # Linear interpolation between samples
+                    sample1 = audio_int16[old_index_int]
+                    sample2 = audio_int16[old_index_int + 1]
+                    resampled[i] = int(sample1 * (1 - old_index_frac) + sample2 * old_index_frac)
+            
+            return resampled.tobytes()
+            
+        except Exception as e:
+            self.logger.error(f"Error resampling audio: {e}")
+            # Return original data if resampling fails
+            return audio_data
+
+    def _apply_audio_preprocessing(self, audio_array: np.ndarray, 
+                                 preprocessing_type: str) -> np.ndarray:
+        """Apply audio preprocessing based on optimization analysis.
+        
+        Args:
+            audio_array: Float32 audio array [-1, 1]
+            preprocessing_type: Type of preprocessing to apply
+            
+        Returns:
+            Preprocessed audio array
+        """
+        try:
+            if preprocessing_type == "none":
+                return audio_array
+                
+            elif preprocessing_type == "normalize":
+                # Normalize audio levels (recommended for best performance)
+                if len(audio_array) > 0:
+                    max_val = np.max(np.abs(audio_array))
+                    if max_val > 0:
+                        return audio_array / max_val
+                return audio_array
+                
+            elif preprocessing_type == "amplify":
+                # Amplify audio (similar to normalize)
+                if len(audio_array) > 0:
+                    max_val = np.max(np.abs(audio_array))
+                    if max_val > 0 and max_val < 0.5:
+                        return audio_array * (0.5 / max_val)
+                return audio_array
+                
+            elif preprocessing_type == "noise_reduction":
+                # Simple noise reduction (avoid - reduces accuracy)
+                # This is a placeholder - avoid using this preprocessing
+                self.logger.warning("Noise reduction preprocessing reduces PocketSphinx accuracy")
+                return audio_array
+                
+            elif preprocessing_type == "silence_trim":
+                # Trim silence from beginning and end
+                if len(audio_array) == 0:
+                    return audio_array
+                    
+                # Find non-silent regions
+                threshold = 0.01
+                non_silent = np.abs(audio_array) > threshold
+                
+                if np.any(non_silent):
+                    start = np.argmax(non_silent)
+                    end = len(audio_array) - np.argmax(non_silent[::-1])
+                    return audio_array[start:end]
+                    
+                return audio_array
+                
+            else:
+                self.logger.warning(f"Unknown preprocessing type: {preprocessing_type}")
+                return audio_array
+                
+        except Exception as e:
+            self.logger.error(f"Error in audio preprocessing: {e}")
+            return audio_array
+
 
 class PocketSphinxTranscriber(BaseTranscriber):
     """PocketSphinx-based transcription for lightweight, offline processing."""
@@ -182,6 +299,22 @@ class PocketSphinxTranscriber(BaseTranscriber):
         super().__init__(config)
         self._decoder = None
         self._accumulated_text = ""
+        
+        # Validate and warn about sample rate configuration
+        if self.config.sample_rate != 16000:
+            self.logger.warning(
+                f"PocketSphinx works best with 16kHz audio. "
+                f"Current sample rate: {self.config.sample_rate}Hz. "
+                f"Auto-resampling is {'enabled' if self.config.pocketsphinx_auto_resample else 'disabled'}."
+            )
+        
+        # Log optimization settings
+        self.logger.info(
+            f"PocketSphinx optimization settings: "
+            f"preprocessing={self.config.pocketsphinx_audio_preprocessing}, "
+            f"vad_settings={self.config.pocketsphinx_vad_settings}, "
+            f"auto_resample={self.config.pocketsphinx_auto_resample}"
+        )
 
     async def initialize(self) -> bool:
         """Initialize PocketSphinx decoder."""
@@ -246,23 +379,38 @@ class PocketSphinxTranscriber(BaseTranscriber):
             return False
 
     async def transcribe_chunk(self, audio_data: bytes) -> TranscriptionResult:
-        """Transcribe audio chunk using PocketSphinx."""
+        """Transcribe audio chunk using PocketSphinx with optimizations."""
         if not self._initialized or not self._decoder:
             return TranscriptionResult(text="", error="Transcriber not initialized")
 
         start_time = time.time()
 
         try:
+            # Apply audio resampling if enabled and needed
+            if self.config.pocketsphinx_auto_resample and self.config.pocketsphinx_input_sample_rate != 16000:
+                audio_data = self._resample_audio_for_pocketsphinx(
+                    audio_data, 
+                    self.config.pocketsphinx_input_sample_rate, 
+                    16000
+                )
+                self.logger.debug("Applied audio resampling for PocketSphinx optimization")
+
             # Convert audio data
             audio_array = self._convert_audio_for_processing(audio_data)
             if len(audio_array) == 0:
                 return TranscriptionResult(text="", error="Invalid audio data")
 
+            # Apply audio preprocessing based on optimization analysis
+            audio_array = self._apply_audio_preprocessing(
+                audio_array, 
+                self.config.pocketsphinx_audio_preprocessing
+            )
+
             # Add to buffer for continuous processing
             self._audio_buffer.extend(audio_array)
 
             # Process in chunks to simulate real-time transcription
-            chunk_samples = int(self.config.sample_rate * self.config.chunk_duration)
+            chunk_samples = int(16000 * self.config.chunk_duration)  # Always use 16kHz for processing
 
             if len(self._audio_buffer) >= chunk_samples:
                 # Extract chunk for processing
@@ -310,16 +458,23 @@ class PocketSphinxTranscriber(BaseTranscriber):
             )
 
     async def finalize(self) -> TranscriptionResult:
-        """Finalize PocketSphinx transcription."""
+        """Finalize PocketSphinx transcription with optimizations."""
         if not self._initialized or not self._decoder:
             return TranscriptionResult(text="", error="Transcriber not initialized")
 
         start_time = time.time()
 
         try:
-            # Process any remaining audio
+            # Process any remaining audio with preprocessing applied
             if self._audio_buffer:
                 remaining_audio = np.array(self._audio_buffer)
+                
+                # Apply preprocessing to remaining audio
+                remaining_audio = self._apply_audio_preprocessing(
+                    remaining_audio, 
+                    self.config.pocketsphinx_audio_preprocessing
+                )
+                
                 chunk_int16 = (remaining_audio * 32767).astype(np.int16)
                 self._decoder.process_raw(chunk_int16.tobytes(), False, True)
 
@@ -730,6 +885,11 @@ def load_transcription_config() -> TranscriptionConfig:
         pocketsphinx_hmm=os.getenv("POCKETSPHINX_HMM"),
         pocketsphinx_lm=os.getenv("POCKETSPHINX_LM"),
         pocketsphinx_dict=os.getenv("POCKETSPHINX_DICT"),
+        # PocketSphinx optimization settings
+        pocketsphinx_audio_preprocessing=os.getenv("POCKETSPHINX_AUDIO_PREPROCESSING", "normalize"),
+        pocketsphinx_vad_settings=os.getenv("POCKETSPHINX_VAD_SETTINGS", "conservative"),
+        pocketsphinx_auto_resample=os.getenv("POCKETSPHINX_AUTO_RESAMPLE", "true").lower() == "true",
+        pocketsphinx_input_sample_rate=int(os.getenv("POCKETSPHINX_INPUT_SAMPLE_RATE", "24000")),
         whisper_model_dir=os.getenv("WHISPER_MODEL_DIR"),
         whisper_temperature=float(os.getenv("WHISPER_TEMPERATURE", "0.0")),
     )

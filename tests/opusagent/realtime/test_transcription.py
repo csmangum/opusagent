@@ -2,7 +2,6 @@
 Tests for the transcription module.
 
 This module contains tests for the local audio transcription functionality
-in the LocalRealtimeClient mock system.
 """
 
 import asyncio
@@ -13,16 +12,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import numpy as np
+import pydantic
 
-from opusagent.mock.realtime.transcription import (
-    BaseTranscriber,
-    PocketSphinxTranscriber,
+from opusagent.mock.transcription import (
     TranscriptionConfig,
     TranscriptionFactory,
     TranscriptionResult,
-    WhisperTranscriber,
     load_transcription_config,
+    BaseTranscriber,
 )
+from opusagent.mock.transcription.backends import PocketSphinxTranscriber, WhisperTranscriber
 
 
 class TestTranscriptionConfig:
@@ -154,9 +153,8 @@ class TestTranscriptionFactory:
 
     def test_unsupported_backend(self):
         """Test creating transcriber with unsupported backend."""
-        config = TranscriptionConfig(backend="unsupported")
-        with pytest.raises(ValueError, match="Unsupported transcription backend"):
-            TranscriptionFactory.create_transcriber(config)
+        with pytest.raises(pydantic.ValidationError, match="Unsupported transcription backend"):
+            TranscriptionConfig(backend="unsupported")
 
     def test_get_available_backends(self):
         """Test getting available backends."""
@@ -427,10 +425,13 @@ class TestPocketSphinxTranscriber:
         
         transcriber._decoder = mock_decoder
         transcriber._initialized = True
+        transcriber._accumulated_text = ""  # Ensure it's empty
         
         # Create test audio data (enough for chunk processing)
         audio_data = np.zeros(16000, dtype=np.int16).tobytes()  # 1 second at 16kHz
         
+        # First call fills the buffer, second call processes it
+        await transcriber.transcribe_chunk(audio_data)
         result = await transcriber.transcribe_chunk(audio_data)
         
         assert result.text == "test transcription"
