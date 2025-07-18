@@ -724,8 +724,21 @@ class MockAudioCodesClient:
                 "audioChunk": audio_chunk,
             }
             
-            # Use asyncio.create_task to send asynchronously
-            asyncio.create_task(self._ws.send(json.dumps(audio_chunk_msg)))
+            # Use asyncio.run_coroutine_threadsafe to send from different thread
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.run_coroutine_threadsafe(
+                        self._ws.send(json.dumps(audio_chunk_msg)), 
+                        loop
+                    )
+                else:
+                    # Fallback: try to send directly if no event loop
+                    self.logger.warning("[CLIENT] No running event loop for audio chunk")
+            except RuntimeError:
+                # No event loop in current thread, skip sending
+                pass
             
         except Exception as e:
             self.logger.error(f"[CLIENT] Error sending live audio chunk: {e}")
@@ -755,9 +768,21 @@ class MockAudioCodesClient:
                 message["speech_prob"] = event["data"].get("speech_prob", 0.0)
                 message["speech_duration_ms"] = event["data"].get("speech_duration_ms", 0)
 
-            # Send to bridge
-            asyncio.create_task(self._ws.send(json.dumps(message)))
-            self.logger.debug(f"[CLIENT] Sent live VAD event: {event['type']}")
+            # Send to bridge using thread-safe method
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.run_coroutine_threadsafe(
+                        self._ws.send(json.dumps(message)), 
+                        loop
+                    )
+                    self.logger.debug(f"[CLIENT] Sent live VAD event: {event['type']}")
+                else:
+                    self.logger.warning("[CLIENT] No running event loop for VAD event")
+            except RuntimeError:
+                # No event loop in current thread, skip sending
+                pass
 
         except Exception as e:
             self.logger.error(f"[CLIENT] Error sending live VAD event: {e}")
