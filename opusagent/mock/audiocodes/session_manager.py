@@ -46,6 +46,7 @@ from .models import (
     SessionState,
     SessionStatus,
     StreamState,
+    StreamStatus,
 )
 
 
@@ -97,7 +98,7 @@ class SessionManager:
                                   for session establishment and management
             logger (Optional[logging.Logger]): Logger instance for debugging and monitoring.
                                              If None, creates a default logger for this module.
-        
+
         Example:
             # Create SessionManager with configuration
             config = SessionConfig(
@@ -124,7 +125,7 @@ class SessionManager:
         The session creation process:
         1. Generate or use provided conversation ID
         2. Initialize session state with default values
-        3. Set session status to DISCONNECTED
+        3. Set session status to CONNECTED
         4. Record creation timestamp
         5. Log session creation details
 
@@ -145,7 +146,7 @@ class SessionManager:
             # Create new session with auto-generated ID
             conv_id = session_manager.create_session()
             print(f"Created session with ID: {conv_id}")
-            
+
             # Create session with existing ID
             conv_id = session_manager.create_session("conv_existing_123")
         """
@@ -155,7 +156,7 @@ class SessionManager:
 
         # Initialize session state
         self.session_state.conversation_id = conversation_id
-        self.session_state.status = SessionStatus.DISCONNECTED
+        self.session_state.status = SessionStatus.CONNECTED
         self.session_state.created_at = datetime.now()
 
         # Initialize conversation state
@@ -182,9 +183,10 @@ class SessionManager:
         The initiation message follows the AudioCodes protocol format:
         - type: "session.initiate"
         - conversationId: Unique session identifier
-        - bot: Bot name and caller information
-        - media: Audio format and capabilities
+        - botName: Bot name identifier
+        - caller: Caller phone number
         - expectAudioMessages: Audio message handling flag
+        - supportedMediaFormats: List of supported audio formats
 
         State Transition:
         - Updates session status to INITIATING
@@ -198,11 +200,15 @@ class SessionManager:
             # Initiate session
             message = session_manager.initiate_session()
             await websocket.send(json.dumps(message))
-            
+
             # Check session status
             if session_manager.session_state.status == SessionStatus.INITIATING:
                 print("Session initiation in progress")
         """
+        # Auto-create session if needed
+        if self.session_state.conversation_id is None:
+            self.create_session()
+
         # Update session status to initiating
         self.session_state.status = SessionStatus.INITIATING
         self.session_state.last_activity = datetime.now()
@@ -211,15 +217,10 @@ class SessionManager:
         message = {
             "type": "session.initiate",
             "conversationId": self.session_state.conversation_id,
-            "bot": {
-                "name": self.config.bot_name,
-                "caller": self.config.caller,
-            },
-            "media": {
-                "format": self.config.media_format,
-                "supportedFormats": self.config.supported_media_formats,
-            },
+            "botName": self.config.bot_name,
+            "caller": self.config.caller,
             "expectAudioMessages": self.config.expect_audio_messages,
+            "supportedMediaFormats": self.config.supported_media_formats,
         }
 
         self.logger.info(
@@ -251,7 +252,8 @@ class SessionManager:
         The resumption message includes:
         - type: "session.resume"
         - conversationId: Existing conversation identifier
-        - bot: Bot configuration for resumption
+        - botName: Bot name identifier
+        - caller: Caller phone number
 
         Args:
             conversation_id (str): Conversation ID of the session to resume
@@ -273,13 +275,13 @@ class SessionManager:
         message = {
             "type": "session.resume",
             "conversationId": conversation_id,
-            "bot": {
-                "name": self.config.bot_name,
-                "caller": self.config.caller,
-            },
+            "botName": self.config.bot_name,
+            "caller": self.config.caller,
         }
 
-        self.logger.info(f"[SESSION] Prepared session resumption for: {conversation_id}")
+        self.logger.info(
+            f"[SESSION] Prepared session resumption for: {conversation_id}"
+        )
         return message
 
     def validate_connection(self) -> Dict[str, Any]:
@@ -309,11 +311,18 @@ class SessionManager:
         Returns:
             Dict[str, Any]: WebSocket message for connection validation
 
+        Raises:
+            ValueError: If no conversation ID is available
+
         Example:
             # Validate connection
             message = session_manager.validate_connection()
             await websocket.send(json.dumps(message))
         """
+        # Check for conversation ID
+        if self.session_state.conversation_id is None:
+            raise ValueError("No conversation ID available")
+
         # Update session state for validation
         self.session_state.validation_pending = True
         self.session_state.last_activity = datetime.now()
@@ -347,6 +356,7 @@ class SessionManager:
         The termination message includes:
         - type: "session.end"
         - conversationId: Current conversation identifier
+        - reasonCode: Termination reason code (default: "normal")
         - reason: Termination reason for logging
 
         State Cleanup:
@@ -360,14 +370,21 @@ class SessionManager:
         Returns:
             Dict[str, Any]: WebSocket message for session termination
 
+        Raises:
+            ValueError: If no conversation ID is available
+
         Example:
             # End session normally
             message = session_manager.end_session("Test completed")
             await websocket.send(json.dumps(message))
-            
+
             # End session with error
             message = session_manager.end_session("Connection lost")
         """
+        # Check for conversation ID
+        if self.session_state.conversation_id is None:
+            raise ValueError("No conversation ID available")
+
         # Update session state for termination
         self.session_state.status = SessionStatus.ENDED
         self.session_state.last_activity = datetime.now()
@@ -376,6 +393,7 @@ class SessionManager:
         message = {
             "type": "session.end",
             "conversationId": self.session_state.conversation_id,
+            "reasonCode": "normal",
             "reason": reason,
         }
 
@@ -506,7 +524,7 @@ class SessionManager:
         self.session_state.last_activity = datetime.now()
 
         # Extract error information
-        self.session_state.error_reason = data.get("error", "Unknown error")
+        self.session_state.error_reason = data.get("reason", "Unknown error")
 
         self.logger.error(
             f"[SESSION] Session error: {self.session_state.conversation_id} - {self.session_state.error_reason}"
@@ -577,25 +595,32 @@ class SessionManager:
         Returns:
             Dict[str, Any]: WebSocket message for DTMF event
 
+        Raises:
+            ValueError: If no conversation ID is available
+
         Example:
             # Send DTMF digit
             message = session_manager.send_dtmf_event("1")
             await websocket.send(json.dumps(message))
-            
+
             # Send multiple digits
             for digit in "123":
                 message = session_manager.send_dtmf_event(digit)
                 await websocket.send(json.dumps(message))
         """
+        # Check for conversation ID
+        if self.session_state.conversation_id is None:
+            raise ValueError("No conversation ID available")
+
         # Prepare DTMF event message
         message = {
             "type": "activities",
             "conversationId": self.session_state.conversation_id,
             "activities": [
                 {
-                    "type": "dtmf",
-                    "digit": digit,
-                    "timestamp": datetime.now().isoformat(),
+                    "type": "event",
+                    "name": "dtmf",
+                    "value": digit,
                 }
             ],
         }
@@ -628,19 +653,26 @@ class SessionManager:
         Returns:
             Dict[str, Any]: WebSocket message for hangup event
 
+        Raises:
+            ValueError: If no conversation ID is available
+
         Example:
             # Send hangup event
             message = session_manager.send_hangup_event()
             await websocket.send(json.dumps(message))
         """
+        # Check for conversation ID
+        if self.session_state.conversation_id is None:
+            raise ValueError("No conversation ID available")
+
         # Prepare hangup event message
         message = {
             "type": "activities",
             "conversationId": self.session_state.conversation_id,
             "activities": [
                 {
-                    "type": "hangup",
-                    "timestamp": datetime.now().isoformat(),
+                    "type": "event",
+                    "name": "hangup",
                 }
             ],
         }
@@ -676,6 +708,9 @@ class SessionManager:
         Returns:
             Dict[str, Any]: WebSocket message for custom activity
 
+        Raises:
+            ValueError: If no conversation ID is available
+
         Example:
             # Send custom activity
             custom_activity = {
@@ -686,6 +721,10 @@ class SessionManager:
             message = session_manager.send_custom_activity(custom_activity)
             await websocket.send(json.dumps(message))
         """
+        # Check for conversation ID
+        if self.session_state.conversation_id is None:
+            raise ValueError("No conversation ID available")
+
         # Prepare custom activity message
         message = {
             "type": "activities",
@@ -725,10 +764,10 @@ class SessionManager:
         """
         # Reset session state
         self.session_state = SessionState()
-        
+
         # Reset stream state
         self.stream_state = StreamState()
-        
+
         # Clear conversation state
         self.conversation_state = None
 
@@ -769,20 +808,51 @@ class SessionManager:
             "media_format": self.session_state.media_format,
             "connection_validated": self.session_state.connection_validated,
             "validation_pending": self.session_state.validation_pending,
-            "created_at": self.session_state.created_at.isoformat() if self.session_state.created_at else None,
-            "last_activity": self.session_state.last_activity.isoformat() if self.session_state.last_activity else None,
+            "created_at": (
+                self.session_state.created_at.isoformat()
+                if self.session_state.created_at
+                else None
+            ),
+            "last_activity": (
+                self.session_state.last_activity.isoformat()
+                if self.session_state.last_activity
+                else None
+            ),
             "is_active": self.is_session_active(),
             "is_connected": self.is_connected(),
+            "user_stream_active": self.stream_state.user_stream == StreamStatus.ACTIVE,
+            "play_stream_active": self.stream_state.play_stream == StreamStatus.ACTIVE,
+            "speech_active": self.stream_state.speech_active,
+            "conversation_turn_count": (
+                self.conversation_state.turn_count if self.conversation_state else 0
+            ),
+            "activities_count": (
+                len(self.conversation_state.activities_received)
+                if self.conversation_state
+                else 0
+            ),
             "stream_state": {
                 "user_stream": self.stream_state.user_stream.value,
                 "play_stream": self.stream_state.play_stream.value,
                 "speech_active": self.stream_state.speech_active,
                 "speech_committed": self.stream_state.speech_committed,
             },
-            "conversation_state": {
-                "turn_count": self.conversation_state.turn_count if self.conversation_state else 0,
-                "started_at": self.conversation_state.started_at.isoformat() if self.conversation_state else None,
-            } if self.conversation_state else None,
+            "conversation_state": (
+                {
+                    "turn_count": (
+                        self.conversation_state.turn_count
+                        if self.conversation_state
+                        else 0
+                    ),
+                    "started_at": (
+                        self.conversation_state.started_at.isoformat()
+                        if self.conversation_state
+                        else None
+                    ),
+                }
+                if self.conversation_state
+                else None
+            ),
         }
 
     def is_session_active(self) -> bool:

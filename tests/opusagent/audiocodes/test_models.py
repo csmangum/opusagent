@@ -247,7 +247,7 @@ class TestAudioChunk:
         """Test AudioChunk validation with None data."""
         with pytest.raises(ValidationError):
             AudioChunk(
-                data="",  # Empty string instead of None
+                data=None,  # type: ignore  # Actually test with None
                 chunk_index=1,
                 size_bytes=16
             )

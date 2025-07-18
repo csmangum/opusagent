@@ -434,13 +434,14 @@ class TestMockAudioCodesClient:
         
         # Create session
         client.session_manager.create_session("test-123")
-        client.session_manager.session_state.accepted = True
+        # Simulate session acceptance by calling the proper handler
+        client.session_manager.handle_session_accepted({"mediaFormat": "raw/lpcm16"})
         
         status = client.get_session_status()
         
         assert status["conversation_id"] == "test-123"
         assert status["accepted"] is True
-        assert status["status"] == SessionStatus.CONNECTED.value
+        assert status["status"] == SessionStatus.ACTIVE.value
 
     def test_reset_session_state(self, client_config):
         """Test resetting session state."""
