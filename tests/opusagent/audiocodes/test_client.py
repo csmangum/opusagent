@@ -140,7 +140,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_client_context_manager_connect(self, client_config, mock_websocket_connect):
         """Test client context manager connection."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 assert client._ws is not None
                 assert client._message_task is not None
@@ -149,7 +149,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_client_context_manager_disconnect(self, client_config, mock_websocket_connect):
         """Test client context manager disconnection."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 pass  # Context manager should handle cleanup
         
@@ -159,7 +159,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_initiate_session_success(self, client_config, mock_websocket_connect):
         """Test successful session initiation."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Mock session acceptance
                 client.session_manager.session_state.accepted = True
@@ -174,7 +174,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_initiate_session_timeout(self, client_config, mock_websocket_connect):
         """Test session initiation timeout."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Don't set session as accepted, should timeout
                 success = await client.initiate_session()
@@ -184,7 +184,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_initiate_session_error(self, client_config, mock_websocket_connect):
         """Test session initiation with error."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Mock session error
                 client.session_manager.session_state.error = True
@@ -206,7 +206,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_resume_session_success(self, client_config, mock_websocket_connect):
         """Test successful session resumption."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Mock session resumption
                 client.session_manager.session_state.resumed = True
@@ -220,7 +220,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_resume_session_timeout(self, client_config, mock_websocket_connect):
         """Test session resumption timeout."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 success = await client.resume_session("test-conv-123")
                 
@@ -229,7 +229,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_validate_connection_success(self, client_config, mock_websocket_connect):
         """Test successful connection validation."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -246,7 +246,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_validate_connection_timeout(self, client_config, mock_websocket_connect):
         """Test connection validation timeout."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -258,7 +258,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_dtmf_event_success(self, client_config, mock_websocket_connect):
         """Test successful DTMF event sending."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -272,7 +272,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_dtmf_event_failure(self, client_config, mock_websocket_connect):
         """Test DTMF event sending failure."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -288,7 +288,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_hangup_event_success(self, client_config, mock_websocket_connect):
         """Test successful hangup event sending."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -302,7 +302,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_custom_activity_success(self, client_config, mock_websocket_connect):
         """Test successful custom activity sending."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -317,7 +317,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_user_audio_success(self, client_config, mock_websocket_connect, temp_audio_file):
         """Test successful user audio sending."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -338,7 +338,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_user_audio_no_chunks(self, client_config, mock_websocket_connect):
         """Test user audio sending with no chunks."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -353,7 +353,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_wait_for_llm_greeting(self, client_config, mock_websocket_connect):
         """Test waiting for LLM greeting."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Start conversation
                 client.conversation_manager.start_conversation("test-123")
@@ -371,7 +371,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_wait_for_llm_response(self, client_config, mock_websocket_connect):
         """Test waiting for LLM response."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Start conversation
                 client.conversation_manager.start_conversation("test-123")
@@ -389,7 +389,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_multi_turn_conversation(self, client_config, mock_websocket_connect, temp_audio_file):
         """Test multi-turn conversation."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Start conversation
                 client.conversation_manager.start_conversation("test-123")
@@ -410,7 +410,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_end_session(self, client_config, mock_websocket_connect):
         """Test ending session."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session first
                 client.session_manager.create_session("test-conv-123")
@@ -479,7 +479,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_message_handler_integration(self, client_config, mock_websocket_connect):
         """Test message handler integration."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session
                 client.session_manager.create_session("test-123")
@@ -631,7 +631,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_user_audio_with_vad_success(self, client_config, mock_websocket_connect, temp_audio_file):
         """Test sending user audio with VAD processing."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Mock VAD manager
                 mock_vad_manager = Mock()
@@ -660,7 +660,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_send_user_audio_with_vad_fallback(self, client_config, mock_websocket_connect, temp_audio_file):
         """Test sending user audio with VAD when VAD is disabled (fallback)."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Mock VAD manager
                 mock_vad_manager = Mock()
@@ -688,7 +688,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_vad_event(self, client_config, mock_websocket_connect):
         """Test handling VAD events."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session
                 client.session_manager.create_session("test-conv-123")
@@ -709,7 +709,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_vad_event_speech_hypothesis(self, client_config, mock_websocket_connect):
         """Test handling VAD speech hypothesis event."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session
                 client.session_manager.create_session("test-conv-123")
@@ -734,7 +734,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_vad_event_speech_committed(self, client_config, mock_websocket_connect):
         """Test handling VAD speech committed event."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Create session
                 client.session_manager.create_session("test-conv-123")
@@ -803,7 +803,7 @@ class TestMockAudioCodesClient:
         """Test successful live audio capture start."""
         client = MockAudioCodesClient(**client_config)
         
-        with patch('opusagent.mock.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
+        with patch('opusagent.local.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
             mock_live_manager = Mock()
             mock_live_manager.start_capture.return_value = True
             mock_live_manager_class.return_value = mock_live_manager
@@ -834,7 +834,7 @@ class TestMockAudioCodesClient:
         mock_logger = Mock()
         client = MockAudioCodesClient(**client_config, logger=mock_logger)
         
-        with patch('opusagent.mock.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
+        with patch('opusagent.local.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
             mock_live_manager = Mock()
             mock_live_manager.start_capture.return_value = False
             mock_live_manager_class.return_value = mock_live_manager
@@ -856,7 +856,7 @@ class TestMockAudioCodesClient:
         }
         device_index = 1
         
-        with patch('opusagent.mock.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
+        with patch('opusagent.local.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
             mock_live_manager = Mock()
             mock_live_manager.start_capture.return_value = True
             mock_live_manager_class.return_value = mock_live_manager
@@ -888,7 +888,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_live_audio_chunk(self, client_config, mock_websocket_connect):
         """Test handling live audio chunk."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 client._live_audio_enabled = True
                 
@@ -912,7 +912,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_live_audio_chunk_not_enabled(self, client_config, mock_websocket_connect):
         """Test handling live audio chunk when not enabled."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 client._live_audio_enabled = False
                 
@@ -932,7 +932,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_live_vad_event(self, client_config, mock_websocket_connect):
         """Test handling live VAD event."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 client._live_audio_enabled = True
                 
@@ -963,7 +963,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_handle_live_vad_event_speech_stopped(self, client_config, mock_websocket_connect):
         """Test handling live VAD speech stopped event."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 client._live_audio_enabled = True
                 
@@ -1002,7 +1002,7 @@ class TestMockAudioCodesClient:
             {"index": 1, "name": "Device 1", "channels": 2, "sample_rate": 44100}
         ]
         
-        with patch('opusagent.mock.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
+        with patch('opusagent.local.audiocodes.client.LiveAudioManager') as mock_live_manager_class:
             mock_live_manager = Mock()
             mock_live_manager.get_available_devices.return_value = mock_devices
             mock_live_manager_class.return_value = mock_live_manager
@@ -1108,7 +1108,7 @@ class TestMockAudioCodesClient:
     @pytest.mark.asyncio
     async def test_client_context_manager_with_live_audio_cleanup(self, client_config, mock_websocket_connect):
         """Test client context manager cleanup with live audio."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 # Set up live audio
                 mock_manager = Mock()

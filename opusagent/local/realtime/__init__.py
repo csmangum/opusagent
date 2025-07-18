@@ -23,7 +23,7 @@ Key Features:
 
 Example Usage:
     ```python
-    from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig, ResponseSelectionCriteria
+    from opusagent.local.realtime import LocalRealtimeClient, LocalResponseConfig, ResponseSelectionCriteria
 
     # Create a mock client with smart response selection
     mock_client = LocalRealtimeClient()

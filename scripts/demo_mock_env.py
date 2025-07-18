@@ -62,8 +62,8 @@ async def demo_mock_client():
     """Demonstrate LocalRealtimeClient functionality."""
     print("=== LocalRealtimeClient Demo ===")
     
-    from opusagent.mock.realtime.client import LocalRealtimeClient
-    from opusagent.mock.realtime.models import LocalResponseConfig
+    from opusagent.local.realtime.client import LocalRealtimeClient
+    from opusagent.local.realtime.models import LocalResponseConfig
     
     # Create mock client
     mock_client = LocalRealtimeClient()

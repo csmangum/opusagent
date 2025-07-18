@@ -37,8 +37,8 @@ from unittest.mock import AsyncMock, patch, MagicMock
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from opusagent.mock.realtime.client import LocalRealtimeClient
-from opusagent.mock.realtime.models import (
+from opusagent.local.realtime.client import LocalRealtimeClient
+from opusagent.local.realtime.models import (
     LocalResponseConfig,
     ResponseSelectionCriteria,
     ConversationContext

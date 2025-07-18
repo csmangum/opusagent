@@ -1,5 +1,5 @@
 """
-Configuration and fixtures for opusagent.mock.realtime tests.
+Configuration and fixtures for opusagent.local.realtime tests.
 """
 
 import pytest

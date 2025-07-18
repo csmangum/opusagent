@@ -1,5 +1,5 @@
 """
-Unit tests for opusagent.mock.realtime.audio module.
+Unit tests for opusagent.local.realtime.audio module.
 """
 
 import pytest
@@ -52,8 +52,8 @@ class TestAudioManager:
         logger.debug.assert_called_with("[MOCK REALTIME] Using cached audio file: test_file.wav")
 
     @pytest.mark.asyncio
-    @patch('opusagent.mock.realtime.audio.AUDIO_UTILS_AVAILABLE', True)
-    @patch('opusagent.mock.realtime.audio.AudioUtils')
+    @patch('opusagent.local.realtime.audio.AUDIO_UTILS_AVAILABLE', True)
+    @patch('opusagent.local.realtime.audio.AudioUtils')
     async def test_load_audio_file_with_audio_utils(self, mock_audio_utils):
         """Test loading audio file with AudioUtils available."""
         logger = Mock()
@@ -71,8 +71,8 @@ class TestAudioManager:
         logger.info.assert_called_with("[MOCK REALTIME] Loaded audio file: test_file.wav (10 bytes, 16000Hz, 1ch)")
 
     @pytest.mark.asyncio
-    @patch('opusagent.mock.realtime.audio.AUDIO_UTILS_AVAILABLE', True)
-    @patch('opusagent.mock.realtime.audio.AudioUtils')
+    @patch('opusagent.local.realtime.audio.AUDIO_UTILS_AVAILABLE', True)
+    @patch('opusagent.local.realtime.audio.AudioUtils')
     async def test_load_audio_file_audio_utils_failure(self, mock_audio_utils):
         """Test loading audio file when AudioUtils fails."""
         logger = Mock()
@@ -91,7 +91,7 @@ class TestAudioManager:
         logger.warning.assert_called_with("[MOCK REALTIME] AudioUtils failed to load: test_file.wav")
 
     @pytest.mark.asyncio
-    @patch('opusagent.mock.realtime.audio.AUDIO_UTILS_AVAILABLE', False)
+    @patch('opusagent.local.realtime.audio.AUDIO_UTILS_AVAILABLE', False)
     async def test_load_audio_file_fallback_mode(self):
         """Test loading audio file in fallback mode (no AudioUtils)."""
         logger = Mock()
@@ -248,8 +248,8 @@ class TestAudioManager:
         manager = AudioManager(logger)
         
         # Mock AudioUtils
-        with patch('opusagent.mock.realtime.audio.AUDIO_UTILS_AVAILABLE', True):
-            with patch('opusagent.mock.realtime.audio.AudioUtils') as mock_audio_utils:
+        with patch('opusagent.local.realtime.audio.AUDIO_UTILS_AVAILABLE', True):
+            with patch('opusagent.local.realtime.audio.AudioUtils') as mock_audio_utils:
                 mock_audio_utils.load_audio_file.return_value = (b"audio_data", 16000, 1)
                 
                 # Mock file exists
@@ -286,8 +286,8 @@ class TestAudioManager:
 
     def test_audio_manager_warning_logging(self):
         """Test that warnings are logged when AudioUtils is not available."""
-        with patch('opusagent.mock.realtime.audio.AUDIO_UTILS_AVAILABLE', False):
-            with patch('opusagent.mock.realtime.audio.AudioUtils', None):
+        with patch('opusagent.local.realtime.audio.AUDIO_UTILS_AVAILABLE', False):
+            with patch('opusagent.local.realtime.audio.AudioUtils', None):
                 logger = Mock()
                 manager = AudioManager(logger)
                 

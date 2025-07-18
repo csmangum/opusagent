@@ -72,7 +72,7 @@ responsibility:
 Usage Examples:
 
 Basic Session Management:
-    from opusagent.mock.audiocodes import MockAudioCodesClient
+    from opusagent.local.audiocodes import MockAudioCodesClient
     
     async with MockAudioCodesClient("ws://localhost:8080") as client:
         # Initiate session

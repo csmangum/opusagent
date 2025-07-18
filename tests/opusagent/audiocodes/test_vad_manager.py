@@ -79,8 +79,8 @@ class TestVADManager:
         vad_manager = VADManager(stream_state, event_callback=mock_event_callback)
         assert vad_manager.logger is not None
 
-    @patch('opusagent.mock.audiocodes.vad_manager.VADFactory')
-    @patch('opusagent.mock.audiocodes.vad_manager.load_vad_config')
+    @patch('opusagent.local.audiocodes.vad_manager.VADFactory')
+    @patch('opusagent.local.audiocodes.vad_manager.load_vad_config')
     def test_initialize_success(self, mock_load_config, mock_vad_factory, vad_manager):
         """Test successful VAD initialization."""
         # Mock VAD configuration
@@ -114,8 +114,8 @@ class TestVADManager:
         mock_vad.initialize.assert_called_once_with(mock_config)
         vad_manager.logger.info.assert_called()
 
-    @patch('opusagent.mock.audiocodes.vad_manager.VADFactory')
-    @patch('opusagent.mock.audiocodes.vad_manager.load_vad_config')
+    @patch('opusagent.local.audiocodes.vad_manager.VADFactory')
+    @patch('opusagent.local.audiocodes.vad_manager.load_vad_config')
     def test_initialize_with_custom_config(self, mock_load_config, mock_vad_factory, vad_manager):
         """Test VAD initialization with custom configuration."""
         # Mock base configuration
@@ -138,7 +138,7 @@ class TestVADManager:
         expected_config.update(custom_config)
         mock_vad.initialize.assert_called_once_with(expected_config)
 
-    @patch('opusagent.mock.audiocodes.vad_manager.VADFactory')
+    @patch('opusagent.local.audiocodes.vad_manager.VADFactory')
     def test_initialize_vad_creation_failure(self, mock_vad_factory, vad_manager):
         """Test VAD initialization when VAD creation fails."""
         mock_vad_factory.create_vad.return_value = None
@@ -149,7 +149,7 @@ class TestVADManager:
         assert vad_manager.enabled is False
         vad_manager.logger.error.assert_called()
 
-    @patch('opusagent.mock.audiocodes.vad_manager.VADFactory')
+    @patch('opusagent.local.audiocodes.vad_manager.VADFactory')
     def test_initialize_vad_initialization_failure(self, mock_vad_factory, vad_manager):
         """Test VAD initialization when VAD initialization fails."""
         mock_vad = Mock()
@@ -175,7 +175,7 @@ class TestVADManager:
         result = vad_manager.process_audio_chunk(sample_audio_chunk)
         assert result is None
 
-    @patch('opusagent.mock.audiocodes.vad_manager.to_float32_mono')
+    @patch('opusagent.local.audiocodes.vad_manager.to_float32_mono')
     def test_process_audio_chunk_success(self, mock_to_float32, vad_manager, sample_audio_chunk):
         """Test successful audio chunk processing."""
         # Setup VAD
@@ -199,7 +199,7 @@ class TestVADManager:
         mock_vad.process_audio.assert_called_once()
         mock_to_float32.assert_called_once()
 
-    @patch('opusagent.mock.audiocodes.vad_manager.to_float32_mono')
+    @patch('opusagent.local.audiocodes.vad_manager.to_float32_mono')
     def test_process_audio_chunk_processing_error(self, mock_to_float32, vad_manager, sample_audio_chunk):
         """Test audio chunk processing with error."""
         # Setup VAD
@@ -487,8 +487,8 @@ class TestVADManager:
         assert vad_manager.enabled is False
         vad_manager.logger.info.assert_called()
 
-    @patch('opusagent.mock.audiocodes.vad_manager.VADFactory')
-    @patch('opusagent.mock.audiocodes.vad_manager.load_vad_config')
+    @patch('opusagent.local.audiocodes.vad_manager.VADFactory')
+    @patch('opusagent.local.audiocodes.vad_manager.load_vad_config')
     def test_integration_speech_detection_cycle(self, mock_load_config, mock_vad_factory, vad_manager, mock_event_callback):
         """Test complete speech detection cycle."""
         # Setup VAD with proper configuration

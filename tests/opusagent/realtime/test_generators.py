@@ -1,5 +1,5 @@
 """
-Unit tests for opusagent.mock.realtime.generators module.
+Unit tests for opusagent.local.realtime.generators module.
 """
 
 import pytest

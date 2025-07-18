@@ -1,5 +1,5 @@
 """
-Unit tests for opusagent.mock.realtime.__init__ module.
+Unit tests for opusagent.local.realtime.__init__ module.
 """
 
 import pytest

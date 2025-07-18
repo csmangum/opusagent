@@ -65,8 +65,8 @@ from unittest.mock import Mock, patch, AsyncMock, MagicMock
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from opusagent.mock.realtime.client import LocalRealtimeClient
-from opusagent.mock.realtime.models import LocalResponseConfig, ResponseSelectionCriteria
+from opusagent.local.realtime.client import LocalRealtimeClient
+from opusagent.local.realtime.models import LocalResponseConfig, ResponseSelectionCriteria
 from opusagent.models.openai_api import SessionConfig, ResponseCreateOptions
 from opusagent.vad.vad_factory import VADFactory
 from opusagent.vad.vad_config import load_vad_config

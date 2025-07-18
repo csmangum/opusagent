@@ -42,7 +42,7 @@ sys.path.insert(0, str(project_root))
 import websockets
 from websockets.server import WebSocketServerProtocol
 
-from opusagent.mock.realtime import (
+from opusagent.local.realtime import (
     LocalRealtimeClient,
     TranscriptionConfig,
     TranscriptionFactory
