@@ -503,11 +503,18 @@ class AudioChunk(BaseModel):
     @field_validator("data")
     def validate_data(cls, v):
         """Validate base64 audio data format."""
+        if not v or v.strip() == "":
+            raise ValueError("Audio data cannot be empty")
+        
         try:
             import base64
-            base64.b64decode(v)
+            decoded_data = base64.b64decode(v)
+            if len(decoded_data) == 0:
+                raise ValueError("Audio data cannot be empty after base64 decoding")
             return v
-        except Exception:
+        except Exception as e:
+            if isinstance(e, ValueError) and "empty" in str(e):
+                raise
             raise ValueError("Audio data must be valid base64-encoded")
 
 

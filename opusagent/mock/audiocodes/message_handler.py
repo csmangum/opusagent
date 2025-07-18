@@ -419,14 +419,21 @@ class MessageHandler:
         from .models import StreamStatus
         self.session_manager.stream_state.play_stream = StreamStatus.ACTIVE
         
+        # Set current stream ID if provided
+        stream_id = data.get("streamId")
+        if stream_id:
+            self.session_manager.stream_state.current_stream_id = stream_id
+        
         # Update conversation state for audio collection
         if self.session_manager.conversation_state:
             if not self.session_manager.conversation_state.greeting_chunks:
                 # First audio - likely greeting
                 self.session_manager.conversation_state.collecting_greeting = True
+                self.session_manager.conversation_state.collecting_response = False
             else:
                 # Subsequent audio - likely response
                 self.session_manager.conversation_state.collecting_response = True
+                self.session_manager.conversation_state.collecting_greeting = False
 
         self.logger.info("[MESSAGE] Play stream started")
 
@@ -455,7 +462,7 @@ class MessageHandler:
         Example:
             # Internal handler - called automatically by process_message()
         """
-        audio_chunk = data.get("chunk")
+        audio_chunk = data.get("audioChunk")
         if audio_chunk and self.session_manager.conversation_state:
             if self.session_manager.conversation_state.collecting_greeting:
                 self.session_manager.conversation_state.greeting_chunks.append(audio_chunk)
@@ -491,7 +498,6 @@ class MessageHandler:
             # Internal handler - called automatically by process_message()
         """
         from .models import StreamStatus
-        self.session_manager.stream_state.play_stream = StreamStatus.STOPPED
         
         # Finalize audio collection
         if self.session_manager.conversation_state:
@@ -500,11 +506,16 @@ class MessageHandler:
                 self.logger.info(
                     f"[MESSAGE] Greeting collection completed: {len(self.session_manager.conversation_state.greeting_chunks)} chunks"
                 )
+                # Set to INACTIVE for greeting completion
+                self.session_manager.stream_state.play_stream = StreamStatus.INACTIVE
             elif self.session_manager.conversation_state.collecting_response:
                 self.session_manager.conversation_state.collecting_response = False
                 self.logger.info(
                     f"[MESSAGE] Response collection completed: {len(self.session_manager.conversation_state.response_chunks)} chunks"
                 )
+                # Set to STOPPED for response completion and clear stream ID
+                self.session_manager.stream_state.play_stream = StreamStatus.STOPPED
+                self.session_manager.stream_state.current_stream_id = None
 
         self.logger.info("[MESSAGE] Play stream stopped")
 
@@ -628,9 +639,9 @@ class MessageHandler:
         Example:
             # Internal handler - called automatically by process_message()
         """
-        hypothesis = data.get("hypothesis", [])
-        self.session_manager.stream_state.current_hypothesis = hypothesis
-        self.logger.debug(f"[MESSAGE] Speech hypothesis: {len(hypothesis)} results")
+        alternatives = data.get("alternatives", [])
+        self.session_manager.stream_state.current_hypothesis = alternatives
+        self.logger.debug(f"[MESSAGE] Speech hypothesis: {len(alternatives)} results")
 
     def get_received_messages(self) -> List[Dict[str, Any]]:
         """

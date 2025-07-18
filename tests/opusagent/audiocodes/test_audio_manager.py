@@ -43,8 +43,18 @@ class TestAudioManager:
             
             yield temp_file.name
             
-            # Cleanup
-            os.unlink(temp_file.name)
+            # Cleanup - add retry logic for Windows file locking issues
+            try:
+                os.unlink(temp_file.name)
+            except PermissionError:
+                # On Windows, files might be locked briefly
+                import time
+                time.sleep(0.1)
+                try:
+                    os.unlink(temp_file.name)
+                except PermissionError:
+                    # If still locked, just log and continue
+                    pass
 
     @pytest.fixture
     def temp_wav_file_8khz(self):
@@ -64,8 +74,18 @@ class TestAudioManager:
             
             yield temp_file.name
             
-            # Cleanup
-            os.unlink(temp_file.name)
+            # Cleanup - add retry logic for Windows file locking issues
+            try:
+                os.unlink(temp_file.name)
+            except PermissionError:
+                # On Windows, files might be locked briefly
+                import time
+                time.sleep(0.1)
+                try:
+                    os.unlink(temp_file.name)
+                except PermissionError:
+                    # If still locked, just log and continue
+                    pass
 
     def test_audio_manager_initialization(self, audio_manager):
         """Test AudioManager initialization."""
@@ -199,7 +219,10 @@ class TestAudioManager:
                 
         finally:
             if os.path.exists(output_path):
-                os.unlink(output_path)
+                try:
+                    os.unlink(output_path)
+                except PermissionError:
+                    pass
 
     def test_save_audio_chunks_empty_chunks(self, audio_manager):
         """Test saving empty chunks list."""
@@ -214,7 +237,10 @@ class TestAudioManager:
             
         finally:
             if os.path.exists(output_path):
-                os.unlink(output_path)
+                try:
+                    os.unlink(output_path)
+                except PermissionError:
+                    pass
 
     def test_save_audio_chunks_error_handling(self, audio_manager):
         """Test error handling when saving audio chunks."""
@@ -248,7 +274,7 @@ class TestAudioManager:
         assert info is not None
         assert info["channels"] == 1
         assert info["sample_width"] == 2
-        assert info["frame_rate"] == 16000
+        assert info["sample_rate"] == 16000  # Fixed: use sample_rate not frame_rate
         assert info["duration"] == 1.0
         assert info["file_size"] > 0
 
@@ -277,16 +303,16 @@ class TestAudioManager:
         # Initially empty
         cache_info = audio_manager.get_cache_info()
         assert cache_info["cached_files"] == 0
-        assert cache_info["total_bytes"] == 0
-        assert cache_info["average_bytes_per_file"] == 0
+        assert cache_info["total_memory"] == 0  # Fixed: use total_memory not total_bytes
+        assert cache_info["metadata_entries"] == 0
         
         # Load a file
         audio_manager.load_audio_chunks(temp_wav_file)
         
         cache_info = audio_manager.get_cache_info()
         assert cache_info["cached_files"] == 1
-        assert cache_info["total_bytes"] > 0
-        assert cache_info["average_bytes_per_file"] > 0
+        assert cache_info["total_memory"] > 0  # Fixed: use total_memory not total_bytes
+        assert cache_info["metadata_entries"] > 0
 
     def test_is_cached(self, audio_manager, temp_wav_file):
         """Test checking if file is cached."""

@@ -19,13 +19,13 @@ Environment Variables:
 Examples:
     # Run with real OpenAI API
     python run_opus_server.py
-    
+
     # Run with mock mode
     OPUSAGENT_USE_MOCK=true python run_opus_server.py
-    
+
     # Run with custom mock server
     OPUSAGENT_USE_MOCK=true OPUSAGENT_MOCK_SERVER_URL=ws://localhost:9000 python run_opus_server.py
-    
+
     # Run with command line flags
     python run_opus_server.py --mock --port 9000
 """
@@ -57,17 +57,17 @@ def validate_mock_setup():
     try:
         from opusagent.mock.realtime import LocalRealtimeClient
         from opusagent.websocket_manager import create_mock_websocket_manager
-        
+
         # Test creating a mock client
         mock_client = LocalRealtimeClient()
         logger.info("✓ LocalRealtimeClient imported successfully")
-        
+
         # Test creating a mock WebSocket manager
         mock_manager = create_mock_websocket_manager()
         logger.info("✓ Mock WebSocket manager created successfully")
-        
+
         return True
-        
+
     except ImportError as e:
         logger.error(f"✗ Mock client import failed: {e}")
         print(f"\nError: Mock client not available: {e}")
@@ -85,7 +85,9 @@ def show_mock_help():
     print("\n📚 Mock Mode Help:")
     print("==================")
     print("Mock mode allows you to test the server without using the real OpenAI API.")
-    print("This is useful for development, testing, and when you don't have API credits.")
+    print(
+        "This is useful for development, testing, and when you don't have API credits."
+    )
     print()
     print("Features available in mock mode:")
     print("  ✓ WebSocket connections and event handling")
@@ -145,34 +147,38 @@ def main():
 
     # Handle mock mode configuration
     use_mock = args.mock or os.getenv("OPUSAGENT_USE_MOCK", "false").lower() == "true"
-    
+
     if use_mock:
         # Set environment variables for mock mode
         os.environ["OPUSAGENT_USE_MOCK"] = "true"
         os.environ["OPUSAGENT_MOCK_SERVER_URL"] = args.mock_server_url
         logger.info("Mock mode enabled")
         logger.info(f"Mock server URL: {args.mock_server_url}")
-        
+
         # Validate mock setup
         if not validate_mock_setup():
             print("\n❌ Mock mode setup validation failed")
             print("Please check the errors above and try again.")
             sys.exit(1)
-        
+
         # Show mock help
         show_mock_help()
     else:
         # Verify OpenAI API key is set for real mode
         if not os.getenv("OPENAI_API_KEY"):
             logger.error("OPENAI_API_KEY environment variable not set")
-            print("\nError: OPENAI_API_KEY environment variable is required for real mode")
+            print(
+                "\nError: OPENAI_API_KEY environment variable is required for real mode"
+            )
             print("\nTo set the API key in PowerShell:")
             print("$env:OPENAI_API_KEY = 'your-api-key'")
             print("\nTo set the API key in Command Prompt:")
             print("set OPENAI_API_KEY=your-api-key")
             print("\nTo enable mock mode instead:")
             print("OPUSAGENT_USE_MOCK=true python run_opus_server.py")
-            print("\nMake sure to replace 'your-api-key' with your actual OpenAI API key.")
+            print(
+                "\nMake sure to replace 'your-api-key' with your actual OpenAI API key."
+            )
             sys.exit(1)
 
         # Verify OpenAI API key format
@@ -192,7 +198,7 @@ def main():
     logger.info(f"Log level: {args.log_level}")
     logger.info(f"Environment: {os.getenv('ENV', 'production')}")
     logger.info(f"Mode: {'MOCK' if use_mock else 'REAL'} API")
-    
+
     if use_mock:
         logger.info(f"Mock server URL: {args.mock_server_url}")
         logger.info("OpenAI API key: Not required (mock mode)")
@@ -201,7 +207,7 @@ def main():
         logger.info(
             f"OpenAI API key format: {'Valid' if api_key and api_key.startswith('sk-') else 'Invalid'}"
         )
-    
+
     logger.info("=========================")
 
     try:
