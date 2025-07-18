@@ -10,8 +10,11 @@ The AudioCodes mock client is designed to test bridge server functionality by si
 - Audio streaming (user and play streams)
 - Multi-turn conversations
 - DTMF events and activities
-- Speech/VAD events (Phase 2 preparation)
+- Speech/VAD events with real-time processing
 - Audio file handling and caching
+- **Live microphone input** for realistic testing
+- **Real-time VAD** with configurable thresholds
+- **Audio device management** and selection
 
 ## Module Structure
 
@@ -24,6 +27,7 @@ opusagent/mock/audiocodes/
 ├── session_manager.py      # Session state and lifecycle management
 ├── message_handler.py      # WebSocket message processing
 ├── audio_manager.py        # Audio file handling and caching
+├── live_audio_manager.py   # Live microphone input and VAD
 └── conversation_manager.py # Multi-turn conversation handling
 ```
 
@@ -84,7 +88,18 @@ Handles multi-turn conversations:
 - Conversation result analysis
 - Audio saving and analysis
 
-### 6. Main Client (`client.py`)
+### 6. Live Audio Manager (`live_audio_manager.py`)
+
+Handles real-time microphone input and VAD:
+
+- Live audio capture from microphone
+- Real-time Voice Activity Detection (VAD)
+- Audio device enumeration and selection
+- Configurable VAD thresholds and parameters
+- Audio level monitoring and visualization
+- Thread-safe audio processing
+
+### 7. Main Client (`client.py`)
 
 Integrates all components into a cohesive client:
 
@@ -92,6 +107,8 @@ Integrates all components into a cohesive client:
 - Component coordination
 - High-level API for testing
 - Conversation testing utilities
+- **Live audio capture integration**
+- **Real-time VAD event handling**
 
 ## Usage
 
@@ -169,6 +186,41 @@ async def test_session_features():
         print(f"Session status: {status}")
 ```
 
+### Live Audio Testing
+
+```python
+async def test_live_audio():
+    async with MockAudioCodesClient("ws://localhost:8080") as client:
+        # Get available audio devices
+        devices = client.get_available_audio_devices()
+        print(f"Available devices: {len(devices)}")
+        
+        # Initiate session
+        await client.initiate_session()
+        
+        # Start live audio capture with VAD
+        live_config = {
+            "vad_enabled": True,
+            "vad_threshold": 0.3,
+            "vad_silence_threshold": 0.1,
+            "chunk_delay": 0.02,
+        }
+        
+        success = client.start_live_audio_capture(config=live_config)
+        if success:
+            print("Live audio capture started - speak into your microphone!")
+            
+            # Monitor audio levels
+            for _ in range(100):  # 10 seconds
+                level = client.get_audio_level()
+                print(f"Audio level: {level:.3f}")
+                await asyncio.sleep(0.1)
+            
+            client.stop_live_audio_capture()
+        
+        await client.end_session("Live audio test completed")
+```
+
 ### Enhanced Testing
 
 ```python
@@ -227,6 +279,9 @@ The audio manager supports various audio formats and automatically handles:
 - **Format handling**: Test various audio formats and conversions
 - **Chunking**: Test audio chunking and streaming
 - **Caching**: Test audio file caching performance
+- **Live audio capture**: Test real-time microphone input
+- **VAD processing**: Test voice activity detection
+- **Device management**: Test audio device selection
 
 ## Error Handling
 
@@ -246,6 +301,7 @@ All components use structured logging with prefixes:
 - `[SESSION]`: Session management
 - `[MESSAGE]`: Message handling
 - `[AUDIO]`: Audio operations
+- `[LIVE_AUDIO]`: Live audio capture and VAD
 - `[CONVERSATION]`: Conversation management
 
 ## Performance Features
@@ -264,14 +320,46 @@ The mock client is designed to work seamlessly with the bridge server:
 - Session state synchronization
 - Audio stream handling
 
+## Live Audio Features
+
+### Real-time Microphone Input
+
+The live audio manager provides comprehensive real-time audio capture:
+
+- **Device enumeration**: Automatically detect available audio input devices
+- **Device selection**: Choose specific audio input devices
+- **Real-time capture**: Stream audio directly from microphone
+- **Configurable parameters**: Adjust sample rate, chunk size, and buffer settings
+- **Thread-safe processing**: Non-blocking audio capture and processing
+
+### Voice Activity Detection (VAD)
+
+Built-in VAD with configurable parameters:
+
+- **Energy-based detection**: Simple and efficient speech detection
+- **Configurable thresholds**: Adjust speech and silence detection sensitivity
+- **Duration filtering**: Minimum speech and silence duration settings
+- **Real-time events**: Immediate VAD event generation
+- **Bridge integration**: Automatic VAD event forwarding to bridge server
+
+### Audio Level Monitoring
+
+Real-time audio level monitoring for visualization:
+
+- **Level calculation**: Current audio level (0.0 to 1.0)
+- **Visualization support**: Ready for audio level meters
+- **Performance optimized**: Efficient level calculation
+- **Thread-safe access**: Safe concurrent access from multiple threads
+
 ## Future Enhancements
 
-### Phase 2 Features (Planned)
+### Advanced Audio Features (Planned)
 
-- **Speech/VAD integration**: Real-time speech detection
+- **Advanced VAD algorithms**: More sophisticated speech detection
 - **Transcription support**: Audio-to-text conversion
 - **Advanced audio processing**: Enhanced audio format support
 - **Performance monitoring**: Detailed metrics and analytics
+- **Multi-channel support**: Stereo and multi-channel audio
 
 ## Examples
 

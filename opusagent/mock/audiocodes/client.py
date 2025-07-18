@@ -10,6 +10,7 @@ bridge server interactions.
 import asyncio
 import json
 import logging
+import time
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -17,9 +18,11 @@ import websockets
 
 from .audio_manager import AudioManager
 from .conversation_manager import ConversationManager
+from .live_audio_manager import LiveAudioManager
 from .message_handler import MessageHandler
 from .models import ConversationResult, SessionConfig
 from .session_manager import SessionManager
+from .vad_manager import VADManager
 
 
 class MockAudioCodesClient:
@@ -46,6 +49,7 @@ class MockAudioCodesClient:
         bot_name: str = "TestBot",
         caller: str = "+15551234567",
         logger: Optional[logging.Logger] = None,
+        vad_config: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the MockAudioCodesClient.
@@ -55,6 +59,7 @@ class MockAudioCodesClient:
             bot_name (str): Name of the bot
             caller (str): Caller phone number
             logger (Optional[logging.Logger]): Logger instance for debugging
+            vad_config (Optional[Dict[str, Any]]): VAD configuration
         """
         self.logger = logger or logging.getLogger(__name__)
 
@@ -71,9 +76,31 @@ class MockAudioCodesClient:
             self.session_manager, self.audio_manager, self.logger
         )
 
+        # Initialize VAD manager
+        self.vad_manager = VADManager(
+            self.session_manager.stream_state,
+            self.logger,
+            self._handle_vad_event
+        )
+        
+        # Initialize VAD if enabled
+        if self.config.enable_vad:
+            vad_config = vad_config or {}
+            vad_config.update({
+                "threshold": self.config.vad_threshold,
+                "silence_threshold": self.config.vad_silence_threshold,
+                "min_speech_duration_ms": self.config.vad_min_speech_duration_ms,
+                "min_silence_duration_ms": self.config.vad_min_silence_duration_ms,
+            })
+            self.vad_manager.initialize(vad_config)
+
         # WebSocket connection
         self._ws = None
         self._message_task = None
+        
+        # Live audio capture
+        self._live_audio_manager = None
+        self._live_audio_enabled = False
 
     async def __aenter__(self):
         """Connect to the bridge server."""
@@ -93,7 +120,52 @@ class MockAudioCodesClient:
             self._message_task.cancel()
         if self._ws:
             await self._ws.close()
+        
+        # Clean up VAD resources
+        if hasattr(self, 'vad_manager'):
+            self.vad_manager.cleanup()
+        
+        # Clean up live audio resources
+        if self._live_audio_manager:
+            self._live_audio_manager.stop_capture()
+            self._live_audio_manager = None
+        
         self.logger.info("[CLIENT] Disconnected from bridge server")
+
+    def _handle_vad_event(self, event: Dict[str, Any]) -> None:
+        """
+        Handle VAD events and send them to the bridge.
+
+        Args:
+            event (Dict[str, Any]): VAD event data
+        """
+        if self._ws is None:
+            return
+
+        try:
+            # Create message for the bridge
+            message = {
+                "type": event["type"],
+                "conversationId": self.session_manager.get_conversation_id(),
+                "timestamp": event.get("timestamp", time.time()),
+            }
+            
+            # Add event-specific data
+            if event["type"] == "userStream.speech.hypothesis":
+                message["alternatives"] = event["data"].get("alternatives", [])
+            elif event["type"] == "userStream.speech.committed":
+                message["text"] = event["data"].get("text", "")
+            elif event["type"] in ["userStream.speech.started", "userStream.speech.stopped"]:
+                message["speech_prob"] = event["data"].get("speech_prob", 0.0)
+                if event["type"] == "userStream.speech.stopped":
+                    message["speech_duration_ms"] = event["data"].get("speech_duration_ms", 0)
+
+            # Send to bridge
+            asyncio.create_task(self._ws.send(json.dumps(message)))
+            self.logger.debug(f"[CLIENT] Sent VAD event: {event['type']}")
+
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error sending VAD event: {e}")
 
     async def _message_handler(self):
         """Handle incoming messages from the bridge."""
@@ -288,14 +360,15 @@ class MockAudioCodesClient:
             return False
 
     async def send_user_audio(
-        self, audio_file_path: str, chunk_delay: float = 0.02
+        self, audio_file_path: str, chunk_delay: float = 0.02, enable_vad: bool = True
     ) -> bool:
         """
-        Send user audio to the bridge.
+        Send user audio to the bridge with optional VAD processing.
 
         Args:
             audio_file_path (str): Path to audio file
             chunk_delay (float): Delay between audio chunks
+            enable_vad (bool): Whether to enable VAD processing for this audio
 
         Returns:
             bool: True if sent successfully, False otherwise
@@ -330,7 +403,7 @@ class MockAudioCodesClient:
                 self.logger.error("[CLIENT] User stream not started")
                 return False
 
-            # Send audio chunks
+            # Send audio chunks with VAD processing
             for i, chunk in enumerate(audio_chunks):
                 audio_chunk_msg = {
                     "type": "userStream.chunk",
@@ -338,6 +411,19 @@ class MockAudioCodesClient:
                     "audioChunk": chunk,
                 }
                 await self._ws.send(json.dumps(audio_chunk_msg))
+
+                # Process VAD if enabled
+                if enable_vad and self.vad_manager.enabled:
+                    vad_result = self.vad_manager.process_audio_chunk(chunk)
+                    if vad_result and self.config.enable_speech_hypothesis:
+                        # Simulate speech hypothesis for demonstration
+                        if vad_result.get("is_speech", False):
+                            # Generate a simple hypothesis based on speech probability
+                            prob = vad_result.get("speech_prob", 0.0)
+                            if prob > 0.7:
+                                self.vad_manager.simulate_speech_hypothesis(
+                                    "Hello, I need help", prob
+                                )
 
                 if i % 10 == 0 or i == len(audio_chunks) - 1:
                     self.logger.debug(f"[CLIENT] Sent chunk {i+1}/{len(audio_chunks)}")
@@ -356,6 +442,396 @@ class MockAudioCodesClient:
         except Exception as e:
             self.logger.error(f"[CLIENT] Error sending user audio: {e}")
             return False
+
+    async def send_user_audio_with_vad(
+        self, 
+        audio_file_path: str, 
+        chunk_delay: float = 0.02,
+        vad_threshold: float = 0.5,
+        simulate_hypothesis: bool = True
+    ) -> bool:
+        """
+        Send user audio with enhanced VAD processing and realistic speech events.
+
+        Args:
+            audio_file_path (str): Path to audio file
+            chunk_delay (float): Delay between audio chunks
+            vad_threshold (float): VAD threshold for speech detection
+            simulate_hypothesis (bool): Whether to simulate speech hypothesis
+
+        Returns:
+            bool: True if sent successfully, False otherwise
+        """
+        if self._ws is None:
+            self.logger.error("[CLIENT] WebSocket connection is None")
+            return False
+
+        if not self.vad_manager.enabled:
+            self.logger.warning("[CLIENT] VAD not enabled, falling back to regular audio sending")
+            return await self.send_user_audio(audio_file_path, chunk_delay, enable_vad=False)
+
+        try:
+            # Load audio chunks
+            audio_chunks = self.audio_manager.load_audio_chunks(audio_file_path)
+            if not audio_chunks:
+                return False
+
+            self.logger.info(
+                f"[CLIENT] Sending user audio with VAD: {audio_file_path} ({len(audio_chunks)} chunks)"
+            )
+
+            # Start user stream
+            user_stream_start = {
+                "type": "userStream.start",
+                "conversationId": self.session_manager.get_conversation_id(),
+            }
+            await self._ws.send(json.dumps(user_stream_start))
+
+            # Wait for userStream.started
+            for _ in range(20):
+                if self.session_manager.stream_state.user_stream.value == "active":
+                    break
+                await asyncio.sleep(0.1)
+            else:
+                self.logger.error("[CLIENT] User stream not started")
+                return False
+
+            # Reset VAD state
+            self.vad_manager.reset()
+
+            # Send audio chunks with enhanced VAD processing
+            speech_segments = []
+            current_segment = {"start": None, "chunks": [], "end": None}
+
+            for i, chunk in enumerate(audio_chunks):
+                # Send audio chunk
+                audio_chunk_msg = {
+                    "type": "userStream.chunk",
+                    "conversationId": self.session_manager.get_conversation_id(),
+                    "audioChunk": chunk,
+                }
+                await self._ws.send(json.dumps(audio_chunk_msg))
+
+                # Process VAD
+                vad_result = self.vad_manager.process_audio_chunk(chunk)
+                
+                if vad_result:
+                    speech_prob = vad_result.get("speech_prob", 0.0)
+                    is_speech = vad_result.get("is_speech", False)
+                    
+                    # Track speech segments
+                    if is_speech and speech_prob > vad_threshold:
+                        if current_segment["start"] is None:
+                            current_segment["start"] = i
+                        current_segment["chunks"].append(chunk)
+                    elif current_segment["start"] is not None:
+                        # End of speech segment
+                        current_segment["end"] = i
+                        speech_segments.append(current_segment.copy())
+                        current_segment = {"start": None, "chunks": [], "end": None}
+
+                    # Simulate speech hypothesis if enabled
+                    if simulate_hypothesis and is_speech and speech_prob > 0.7:
+                        # Generate more realistic hypotheses based on speech probability
+                        if speech_prob > 0.9:
+                            hypothesis_text = "Hello, I need assistance with my account"
+                        elif speech_prob > 0.8:
+                            hypothesis_text = "Can you help me please"
+                        else:
+                            hypothesis_text = "I have a question"
+                        
+                        self.vad_manager.simulate_speech_hypothesis(hypothesis_text, speech_prob)
+
+                if i % 10 == 0 or i == len(audio_chunks) - 1:
+                    self.logger.debug(f"[CLIENT] Sent chunk {i+1}/{len(audio_chunks)}")
+                await asyncio.sleep(chunk_delay)
+
+            # Handle final speech segment
+            if current_segment["start"] is not None:
+                current_segment["end"] = len(audio_chunks) - 1
+                speech_segments.append(current_segment)
+
+            # Stop user stream
+            user_stream_stop = {
+                "type": "userStream.stop",
+                "conversationId": self.session_manager.get_conversation_id(),
+            }
+            await self._ws.send(json.dumps(user_stream_stop))
+
+            # Log speech analysis
+            self.logger.info(f"[CLIENT] VAD analysis complete: {len(speech_segments)} speech segments detected")
+            for i, segment in enumerate(speech_segments):
+                duration = (segment["end"] - segment["start"]) * chunk_delay
+                self.logger.info(f"[CLIENT] Segment {i+1}: chunks {segment['start']}-{segment['end']} ({duration:.2f}s)")
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error sending user audio with VAD: {e}")
+            return False
+
+    def enable_vad(self, config: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        Enable VAD processing.
+
+        Args:
+            config (Optional[Dict[str, Any]]): VAD configuration
+
+        Returns:
+            bool: True if VAD was enabled successfully, False otherwise
+        """
+        try:
+            if config:
+                success = self.vad_manager.initialize(config)
+            else:
+                success = self.vad_manager.initialize()
+            
+            if success:
+                self.config.enable_vad = True
+                self.logger.info("[CLIENT] VAD enabled")
+            else:
+                self.config.enable_vad = False
+                self.logger.error("[CLIENT] Failed to enable VAD")
+            
+            return success
+        except Exception as e:
+            self.config.enable_vad = False
+            self.logger.error(f"[CLIENT] Error enabling VAD: {e}")
+            return False
+
+    def disable_vad(self) -> None:
+        """Disable VAD processing."""
+        self.vad_manager.disable()
+        self.config.enable_vad = False
+        self.logger.info("[CLIENT] VAD disabled")
+
+    def get_vad_status(self) -> Dict[str, Any]:
+        """
+        Get VAD status information.
+
+        Returns:
+            Dict[str, Any]: VAD status
+        """
+        return {
+            "enabled": self.config.enable_vad,
+            "vad_manager_status": self.vad_manager.get_status(),
+            "config": {
+                "threshold": self.config.vad_threshold,
+                "silence_threshold": self.config.vad_silence_threshold,
+                "min_speech_duration_ms": self.config.vad_min_speech_duration_ms,
+                "enable_speech_hypothesis": self.config.enable_speech_hypothesis,
+            }
+        }
+
+    def simulate_speech_committed(self, text: str) -> None:
+        """
+        Simulate a speech committed event.
+
+        Args:
+            text (str): Committed text
+        """
+        if self.vad_manager.enabled:
+            self.vad_manager.simulate_speech_committed(text)
+        else:
+            self.logger.warning("[CLIENT] VAD not enabled, cannot simulate speech committed")
+
+    def simulate_speech_hypothesis(self, text: str, confidence: float = 0.8) -> None:
+        """
+        Simulate a speech hypothesis event.
+
+        Args:
+            text (str): Hypothesized text
+            confidence (float): Confidence score
+        """
+        if self.vad_manager.enabled:
+            self.vad_manager.simulate_speech_hypothesis(text, confidence)
+        else:
+            self.logger.warning("[CLIENT] VAD not enabled, cannot simulate speech hypothesis")
+
+    # ===== LIVE AUDIO CAPTURE METHODS =====
+
+    def start_live_audio_capture(
+        self, 
+        config: Optional[Dict[str, Any]] = None,
+        device_index: Optional[int] = None
+    ) -> bool:
+        """
+        Start live audio capture from microphone.
+
+        Args:
+            config (Optional[Dict[str, Any]]): Audio configuration
+            device_index (Optional[int]): Audio device index
+
+        Returns:
+            bool: True if capture started successfully, False otherwise
+        """
+        try:
+            if self._live_audio_enabled:
+                self.logger.warning("[CLIENT] Live audio capture already running")
+                return True
+
+            # Create live audio manager
+            live_config = config or {}
+            if device_index is not None:
+                live_config["device_index"] = device_index
+
+            self._live_audio_manager = LiveAudioManager(
+                audio_callback=self._handle_live_audio_chunk,
+                vad_callback=self._handle_live_vad_event,
+                logger=self.logger,
+                config=live_config
+            )
+
+            # Start capture
+            success = self._live_audio_manager.start_capture()
+            if success:
+                self._live_audio_enabled = True
+                self.logger.info("[CLIENT] Live audio capture started")
+            else:
+                self.logger.error("[CLIENT] Failed to start live audio capture")
+                self._live_audio_manager = None
+
+            return success
+
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error starting live audio capture: {e}")
+            return False
+
+    def stop_live_audio_capture(self) -> None:
+        """Stop live audio capture."""
+        if self._live_audio_manager:
+            self._live_audio_manager.stop_capture()
+            self._live_audio_manager = None
+        
+        self._live_audio_enabled = False
+        self.logger.info("[CLIENT] Live audio capture stopped")
+
+    def _handle_live_audio_chunk(self, audio_chunk: str) -> None:
+        """
+        Handle live audio chunk from microphone.
+
+        Args:
+            audio_chunk (str): Base64-encoded audio chunk
+        """
+        if self._ws is None or not self._live_audio_enabled:
+            return
+
+        try:
+            # Send audio chunk to bridge
+            audio_chunk_msg = {
+                "type": "userStream.chunk",
+                "conversationId": self.session_manager.get_conversation_id(),
+                "audioChunk": audio_chunk,
+            }
+            
+            # Use asyncio.create_task to send asynchronously
+            asyncio.create_task(self._ws.send(json.dumps(audio_chunk_msg)))
+            
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error sending live audio chunk: {e}")
+
+    def _handle_live_vad_event(self, event: Dict[str, Any]) -> None:
+        """
+        Handle VAD event from live audio capture.
+
+        Args:
+            event (Dict[str, Any]): VAD event data
+        """
+        if self._ws is None or not self._live_audio_enabled:
+            return
+
+        try:
+            # Create message for the bridge
+            message = {
+                "type": event["type"],
+                "conversationId": self.session_manager.get_conversation_id(),
+                "timestamp": event.get("timestamp", time.time()),
+            }
+            
+            # Add event-specific data
+            if event["type"] == "userStream.speech.started":
+                message["speech_prob"] = event["data"].get("speech_prob", 0.0)
+            elif event["type"] == "userStream.speech.stopped":
+                message["speech_prob"] = event["data"].get("speech_prob", 0.0)
+                message["speech_duration_ms"] = event["data"].get("speech_duration_ms", 0)
+
+            # Send to bridge
+            asyncio.create_task(self._ws.send(json.dumps(message)))
+            self.logger.debug(f"[CLIENT] Sent live VAD event: {event['type']}")
+
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error sending live VAD event: {e}")
+
+    def get_available_audio_devices(self) -> List[Dict[str, Any]]:
+        """
+        Get list of available audio input devices.
+
+        Returns:
+            List[Dict[str, Any]]: List of device information
+        """
+        try:
+            if self._live_audio_manager:
+                return self._live_audio_manager.get_available_devices()
+            else:
+                # Create temporary manager to get device list
+                temp_manager = LiveAudioManager(logger=self.logger)
+                devices = temp_manager.get_available_devices()
+                return devices
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error getting audio devices: {e}")
+            return []
+
+    def set_audio_device(self, device_index: int) -> bool:
+        """
+        Set the audio input device for live capture.
+
+        Args:
+            device_index (int): Device index
+
+        Returns:
+            bool: True if device was set successfully, False otherwise
+        """
+        if self._live_audio_manager:
+            return self._live_audio_manager.set_device(device_index)
+        else:
+            self.logger.warning("[CLIENT] Live audio not initialized")
+            return False
+
+    def get_live_audio_status(self) -> Dict[str, Any]:
+        """
+        Get live audio capture status.
+
+        Returns:
+            Dict[str, Any]: Live audio status information
+        """
+        if self._live_audio_manager:
+            return self._live_audio_manager.get_status()
+        else:
+            return {
+                "running": False,
+                "enabled": self._live_audio_enabled,
+                "manager": None
+            }
+
+    def get_audio_level(self) -> float:
+        """
+        Get current audio level for visualization.
+
+        Returns:
+            float: Current audio level (0.0 to 1.0)
+        """
+        if self._live_audio_manager:
+            return self._live_audio_manager.get_audio_level()
+        return 0.0
+
+    def is_live_audio_enabled(self) -> bool:
+        """
+        Check if live audio capture is enabled.
+
+        Returns:
+            bool: True if live audio is enabled, False otherwise
+        """
+        return self._live_audio_enabled
 
     async def wait_for_llm_greeting(self, timeout: float = 20.0) -> List[str]:
         """
@@ -429,13 +905,26 @@ class MockAudioCodesClient:
         Returns:
             Dict[str, Any]: Session status information
         """
-        return self.session_manager.get_session_status()
+        status = self.session_manager.get_session_status()
+        
+        # Add VAD status
+        if hasattr(self, 'vad_manager'):
+            status["vad"] = self.get_vad_status()
+        
+        # Add live audio status
+        status["live_audio"] = self.get_live_audio_status()
+        
+        return status
 
     def reset_session_state(self) -> None:
         """Reset all session-related state variables."""
         self.session_manager.reset_session_state()
         self.conversation_manager.reset_conversation_state()
         self.message_handler.clear_message_history()
+        
+        # Reset VAD state
+        if hasattr(self, 'vad_manager'):
+            self.vad_manager.reset()
 
     def save_collected_audio(self, output_dir: str = "validation_output") -> None:
         """

@@ -87,11 +87,25 @@ class SessionConfig(BaseModel):
     expect_audio_messages: bool = Field(
         default=True, description="Expect audio messages"
     )
+    
+    # VAD configuration
+    enable_vad: bool = Field(default=True, description="Enable VAD processing")
+    vad_threshold: float = Field(default=0.5, description="VAD speech detection threshold")
+    vad_silence_threshold: float = Field(default=0.3, description="VAD silence detection threshold")
+    vad_min_speech_duration_ms: int = Field(default=500, description="Minimum speech duration")
+    vad_min_silence_duration_ms: int = Field(default=300, description="Minimum silence duration")
+    enable_speech_hypothesis: bool = Field(default=False, description="Enable speech hypothesis simulation")
 
     @field_validator("bridge_url")
     def validate_bridge_url(cls, v):
         if not v.startswith(("ws://", "wss://")):
             raise ValueError("Bridge URL must start with ws:// or wss://")
+        return v
+    
+    @field_validator("vad_threshold", "vad_silence_threshold")
+    def validate_vad_thresholds(cls, v):
+        if not 0.0 <= v <= 1.0:
+            raise ValueError("VAD thresholds must be between 0.0 and 1.0")
         return v
 
 
