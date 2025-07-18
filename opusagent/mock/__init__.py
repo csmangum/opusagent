@@ -5,21 +5,13 @@ This package provides mock implementations of various components for testing
 and development purposes.
 """
 
-# Import the new modular audiocodes client
+# Import the modular audiocodes client
 try:
     from .audiocodes import MockAudioCodesClient
     AUDIOCODES_AVAILABLE = True
 except ImportError:
     AUDIOCODES_AVAILABLE = False
     MockAudioCodesClient = None
-
-# Import existing mock components
-try:
-    from .mock_audiocodes_client import MockAudioCodesClient as LegacyMockAudioCodesClient
-    LEGACY_AUDIOCODES_AVAILABLE = True
-except ImportError:
-    LEGACY_AUDIOCODES_AVAILABLE = False
-    LegacyMockAudioCodesClient = None
 
 try:
     from .mock_twilio_client import MockTwilioClient
@@ -40,9 +32,6 @@ __all__ = []
 
 if AUDIOCODES_AVAILABLE:
     __all__.append("MockAudioCodesClient")
-
-if LEGACY_AUDIOCODES_AVAILABLE:
-    __all__.append("LegacyMockAudioCodesClient")
 
 if TWILIO_AVAILABLE:
     __all__.append("MockTwilioClient")
