@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 
-from opusagent.mock.transcription.models import TranscriptionConfig
+from opusagent.local.transcription.models import TranscriptionConfig
 
 
 @pytest.fixture

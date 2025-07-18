@@ -11,14 +11,14 @@ import json
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from pathlib import Path
 
-from opusagent.mock.audiocodes.models import (
+from opusagent.local.audiocodes.models import (
     SessionConfig,
     SessionStatus,
     StreamStatus,
     ConversationResult,
     ConversationState,
 )
-from opusagent.mock.audiocodes.client import MockAudioCodesClient
+from opusagent.local.audiocodes.client import MockAudioCodesClient
 
 
 class TestMockAudioCodesClient:
@@ -643,7 +643,7 @@ class TestMockAudioCodesClient:
                 }
                 
                 # Mock stream state
-                from opusagent.mock.audiocodes.models import StreamStatus
+                from opusagent.local.audiocodes.models import StreamStatus
                 client.session_manager.stream_state.user_stream = StreamStatus.ACTIVE
                 
                 # Mock audio manager
@@ -668,7 +668,7 @@ class TestMockAudioCodesClient:
                 mock_vad_manager.enabled = False
                 
                 # Mock stream state
-                from opusagent.mock.audiocodes.models import StreamStatus
+                from opusagent.local.audiocodes.models import StreamStatus
                 client.session_manager.stream_state.user_stream = StreamStatus.ACTIVE
                 
                 # Mock audio manager

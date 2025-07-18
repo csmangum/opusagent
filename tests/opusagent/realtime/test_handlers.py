@@ -11,7 +11,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, Any
 
-from opusagent.mock.realtime.handlers import EventHandlerManager
+from opusagent.local.realtime.handlers import EventHandlerManager
 from opusagent.models.openai_api import (
     ClientEventType,
     ServerEventType,

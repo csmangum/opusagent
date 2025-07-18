@@ -9,15 +9,15 @@ import pytest
 from unittest.mock import Mock, patch
 import json
 
-from opusagent.mock.audiocodes.models import (
+from opusagent.local.audiocodes.models import (
     SessionConfig,
     SessionStatus,
     StreamStatus,
     MessageType,
     ConversationState,
 )
-from opusagent.mock.audiocodes.session_manager import SessionManager
-from opusagent.mock.audiocodes.message_handler import MessageHandler
+from opusagent.local.audiocodes.session_manager import SessionManager
+from opusagent.local.audiocodes.message_handler import MessageHandler
 
 
 class TestMessageHandler:

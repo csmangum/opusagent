@@ -12,14 +12,14 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock
 
-from opusagent.mock.audiocodes.models import (
+from opusagent.local.audiocodes.models import (
     SessionConfig,
     ConversationState,
     ConversationResult,
 )
-from opusagent.mock.audiocodes.session_manager import SessionManager
-from opusagent.mock.audiocodes.audio_manager import AudioManager
-from opusagent.mock.audiocodes.conversation_manager import ConversationManager
+from opusagent.local.audiocodes.session_manager import SessionManager
+from opusagent.local.audiocodes.audio_manager import AudioManager
+from opusagent.local.audiocodes.conversation_manager import ConversationManager
 
 
 class TestConversationManager:

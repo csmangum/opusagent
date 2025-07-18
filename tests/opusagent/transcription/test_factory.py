@@ -4,9 +4,9 @@ Unit tests for transcription factory.
 import pytest
 from unittest.mock import patch, MagicMock
 
-from opusagent.mock.transcription.factory import TranscriptionFactory
-from opusagent.mock.transcription.models import TranscriptionConfig
-from opusagent.mock.transcription.backends import PocketSphinxTranscriber, WhisperTranscriber
+from opusagent.local.transcription.factory import TranscriptionFactory
+from opusagent.local.transcription.models import TranscriptionConfig
+from opusagent.local.transcription.backends import PocketSphinxTranscriber, WhisperTranscriber
 
 
 class TestTranscriptionFactory:

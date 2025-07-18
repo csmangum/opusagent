@@ -5,7 +5,7 @@ Unit tests for opusagent.mock.realtime.__init__ module.
 import pytest
 from unittest.mock import patch
 
-from opusagent.mock.realtime import (
+from opusagent.local.realtime import (
     LocalRealtimeClient,
     LocalResponseConfig,
     ResponseSelectionCriteria,
@@ -23,31 +23,31 @@ class TestModuleImports:
 
     def test_local_realtime_client_import(self):
         """Test LocalRealtimeClient import."""
-        from opusagent.mock.realtime import LocalRealtimeClient
+        from opusagent.local.realtime import LocalRealtimeClient
         assert LocalRealtimeClient is not None
         assert hasattr(LocalRealtimeClient, '__init__')
 
     def test_local_response_config_import(self):
         """Test LocalResponseConfig import."""
-        from opusagent.mock.realtime import LocalResponseConfig
+        from opusagent.local.realtime import LocalResponseConfig
         assert LocalResponseConfig is not None
         assert hasattr(LocalResponseConfig, '__init__')
 
     def test_response_selection_criteria_import(self):
         """Test ResponseSelectionCriteria import."""
-        from opusagent.mock.realtime import ResponseSelectionCriteria
+        from opusagent.local.realtime import ResponseSelectionCriteria
         assert ResponseSelectionCriteria is not None
         assert hasattr(ResponseSelectionCriteria, '__init__')
 
     def test_conversation_context_import(self):
         """Test ConversationContext import."""
-        from opusagent.mock.realtime import ConversationContext
+        from opusagent.local.realtime import ConversationContext
         assert ConversationContext is not None
         assert hasattr(ConversationContext, '__init__')
 
     def test_all_exports(self):
         """Test that all expected exports are available."""
-        from opusagent.mock.realtime import __all__
+        from opusagent.local.realtime import __all__
         
         expected_exports = [
             "LocalRealtimeClient",
@@ -64,7 +64,7 @@ class TestModuleImports:
         # This should not raise any import errors
         # Note: Wildcard imports are generally discouraged, but we test them here
         # for completeness of the module interface
-        import opusagent.mock.realtime as realtime_module
+        import opusagent.local.realtime as realtime_module
         
         # Verify that all expected classes are available in the module
         assert hasattr(realtime_module, 'LocalRealtimeClient')
@@ -147,7 +147,7 @@ class TestModuleFunctionality:
 
     def test_module_docstring(self):
         """Test that module has proper docstring."""
-        import opusagent.mock.realtime as realtime_module
+        import opusagent.local.realtime as realtime_module
         
         assert realtime_module.__doc__ is not None
         assert "LocalRealtime Module" in realtime_module.__doc__
@@ -155,7 +155,7 @@ class TestModuleFunctionality:
 
     def test_module_structure(self):
         """Test that module has proper structure."""
-        import opusagent.mock.realtime as realtime_module
+        import opusagent.local.realtime as realtime_module
         
         # Check for required attributes
         assert hasattr(realtime_module, '__version__')
@@ -178,7 +178,7 @@ class TestModuleFunctionality:
         import time
         
         start_time = time.time()
-        from opusagent.mock.realtime import (
+        from opusagent.local.realtime import (
             LocalRealtimeClient,
             LocalResponseConfig,
             ResponseSelectionCriteria,
@@ -193,7 +193,7 @@ class TestModuleFunctionality:
         """Test that there are no circular import issues."""
         # This should not raise any import errors
         try:
-            from opusagent.mock.realtime import (
+            from opusagent.local.realtime import (
                 LocalRealtimeClient,
                 LocalResponseConfig,
                 ResponseSelectionCriteria,
@@ -205,10 +205,10 @@ class TestModuleFunctionality:
     def test_backward_compatibility(self):
         """Test that the module maintains backward compatibility."""
         # All the main classes should be importable
-        from opusagent.mock.realtime import LocalRealtimeClient
-        from opusagent.mock.realtime import LocalResponseConfig
-        from opusagent.mock.realtime import ResponseSelectionCriteria
-        from opusagent.mock.realtime import ConversationContext
+        from opusagent.local.realtime import LocalRealtimeClient
+        from opusagent.local.realtime import LocalResponseConfig
+        from opusagent.local.realtime import ResponseSelectionCriteria
+        from opusagent.local.realtime import ConversationContext
         
         # All classes should be callable (constructors work)
         client = LocalRealtimeClient()
@@ -220,7 +220,7 @@ class TestModuleFunctionality:
 
     def test_module_attributes(self):
         """Test that module has correct attributes."""
-        import opusagent.mock.realtime as realtime_module
+        import opusagent.local.realtime as realtime_module
         
         # Check that __all__ contains the right exports
         expected_exports = [
@@ -277,7 +277,7 @@ class TestModuleFunctionality:
 
     def test_documentation_consistency(self):
         """Test that module documentation is consistent."""
-        import opusagent.mock.realtime as realtime_module
+        import opusagent.local.realtime as realtime_module
         
         # Check that all exported classes have docstrings
         for export in realtime_module.__all__:

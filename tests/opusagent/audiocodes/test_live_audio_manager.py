@@ -14,7 +14,7 @@ import pyaudio
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from opusagent.mock.audiocodes.live_audio_manager import LiveAudioManager
+from opusagent.local.audiocodes.live_audio_manager import LiveAudioManager
 
 
 class TestLiveAudioManager:

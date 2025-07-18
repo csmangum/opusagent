@@ -27,7 +27,7 @@ def sample_session_config():
 @pytest.fixture
 def sample_response_config():
     """Provide a sample response configuration for testing."""
-    from opusagent.mock.realtime.models import LocalResponseConfig
+    from opusagent.local.realtime.models import LocalResponseConfig
     
     return LocalResponseConfig(
         text="Hello! How can I help you?",
@@ -40,7 +40,7 @@ def sample_response_config():
 @pytest.fixture
 def sample_selection_criteria():
     """Provide a sample selection criteria for testing."""
-    from opusagent.mock.realtime.models import ResponseSelectionCriteria
+    from opusagent.local.realtime.models import ResponseSelectionCriteria
     
     return ResponseSelectionCriteria(
         required_keywords=["hello", "hi"],
@@ -54,7 +54,7 @@ def sample_selection_criteria():
 @pytest.fixture
 def sample_conversation_context():
     """Provide a sample conversation context for testing."""
-    from opusagent.mock.realtime.models import ConversationContext
+    from opusagent.local.realtime.models import ConversationContext
     
     return ConversationContext(
         session_id="test_session_123",

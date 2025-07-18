@@ -14,14 +14,14 @@ import pytest
 import numpy as np
 import pydantic
 
-from opusagent.mock.transcription import (
+from opusagent.local.transcription import (
     TranscriptionConfig,
     TranscriptionFactory,
     TranscriptionResult,
     load_transcription_config,
     BaseTranscriber,
 )
-from opusagent.mock.transcription.backends import PocketSphinxTranscriber, WhisperTranscriber
+from opusagent.local.transcription.backends import PocketSphinxTranscriber, WhisperTranscriber
 
 
 class TestTranscriptionConfig:

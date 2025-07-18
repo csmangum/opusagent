@@ -6,7 +6,7 @@ import pytest
 from datetime import datetime
 from typing import Dict, Any
 
-from opusagent.mock.realtime.models import (
+from opusagent.local.realtime.models import (
     ConversationContext,
     ResponseSelectionCriteria,
     LocalResponseConfig,

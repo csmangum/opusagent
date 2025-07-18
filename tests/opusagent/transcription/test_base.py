@@ -5,8 +5,8 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock, patch
 
-from opusagent.mock.transcription.base import BaseTranscriber
-from opusagent.mock.transcription.models import TranscriptionConfig, TranscriptionResult
+from opusagent.local.transcription.base import BaseTranscriber
+from opusagent.local.transcription.models import TranscriptionConfig, TranscriptionResult
 
 
 class ConcreteTranscriber(BaseTranscriber):

@@ -8,7 +8,7 @@ import uuid
 from unittest.mock import Mock, patch
 from typing import Dict, Any
 
-from opusagent.mock.realtime.utils import (
+from opusagent.local.realtime.utils import (
     validate_response_config,
     create_default_response_config,
     create_error_event,
@@ -327,7 +327,7 @@ class TestUtilityReExports:
 
     def test_audio_utils_re_exports(self):
         """Test that AudioUtils functions are re-exported."""
-        from opusagent.mock.realtime.utils import (
+        from opusagent.local.realtime.utils import (
             create_simple_wav_data,
             chunk_audio_data,
             calculate_audio_duration
@@ -341,7 +341,7 @@ class TestUtilityReExports:
 
     def test_websocket_utils_re_exports(self):
         """Test that WebSocketUtils functions are re-exported."""
-        from opusagent.mock.realtime.utils import (
+        from opusagent.local.realtime.utils import (
             safe_send_event,
             format_event_log
         )
@@ -353,7 +353,7 @@ class TestUtilityReExports:
 
     def test_retry_utils_re_exports(self):
         """Test that RetryUtils functions are re-exported."""
-        from opusagent.mock.realtime.utils import retry_operation
+        from opusagent.local.realtime.utils import retry_operation
         from opusagent.utils.retry_utils import RetryUtils
         
         # This should be the same as the RetryUtils method

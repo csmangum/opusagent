@@ -4,7 +4,7 @@ Unit tests for transcription models.
 import pytest
 from pydantic import ValidationError
 
-from opusagent.mock.transcription.models import TranscriptionResult, TranscriptionConfig
+from opusagent.local.transcription.models import TranscriptionResult, TranscriptionConfig
 
 
 class TestTranscriptionResult:

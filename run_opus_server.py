@@ -55,7 +55,7 @@ os.environ["USE_LOCAL_REALTIME"] = "true"
 def validate_mock_setup():
     """Validate mock mode setup and provide helpful information."""
     try:
-        from opusagent.mock.realtime import LocalRealtimeClient
+        from opusagent.local.realtime import LocalRealtimeClient
         from opusagent.websocket_manager import create_mock_websocket_manager
 
         # Test creating a mock client

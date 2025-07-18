@@ -13,8 +13,8 @@ import os
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from opusagent.mock.audiocodes.vad_manager import VADManager
-from opusagent.mock.audiocodes.models import StreamState
+from opusagent.local.audiocodes.vad_manager import VADManager
+from opusagent.local.audiocodes.models import StreamState
 
 
 class TestVADManager:

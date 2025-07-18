@@ -9,7 +9,7 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from opusagent.mock.audiocodes.models import (
+from opusagent.local.audiocodes.models import (
     SessionStatus,
     StreamStatus,
     MessageType,

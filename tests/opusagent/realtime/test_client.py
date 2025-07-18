@@ -10,8 +10,8 @@ from datetime import datetime
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from typing import Dict, Any
 
-from opusagent.mock.realtime.client import LocalRealtimeClient
-from opusagent.mock.realtime.models import (
+from opusagent.local.realtime.client import LocalRealtimeClient
+from opusagent.local.realtime.models import (
     LocalResponseConfig,
     ResponseSelectionCriteria,
     ConversationContext

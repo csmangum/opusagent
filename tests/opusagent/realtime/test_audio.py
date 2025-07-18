@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Optional
 
-from opusagent.mock.realtime.audio import AudioManager
+from opusagent.local.realtime.audio import AudioManager
 
 
 class TestAudioManager:

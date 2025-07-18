@@ -14,7 +14,7 @@ import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 
-from opusagent.mock.audiocodes.audio_manager import AudioManager
+from opusagent.local.audiocodes.audio_manager import AudioManager
 
 
 class TestAudioManager:

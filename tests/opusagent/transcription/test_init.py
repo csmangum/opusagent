@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 def test_module_imports():
     """Test that all expected classes/functions can be imported."""
     # This should not raise any ImportError
-    from opusagent.mock.transcription import (
+    from opusagent.local.transcription import (
         TranscriptionResult,
         TranscriptionConfig,
         TranscriptionFactory,
@@ -25,7 +25,7 @@ def test_module_imports():
 
 def test_all_exports_defined():
     """Test that __all__ is properly defined."""
-    import opusagent.mock.transcription as transcription_module
+    import opusagent.local.transcription as transcription_module
     
     # Check that __all__ exists and contains expected exports
     assert hasattr(transcription_module, '__all__')
@@ -44,7 +44,7 @@ def test_all_exports_defined():
 
 def test_public_api_functionality():
     """Test that the public API works as expected."""
-    from opusagent.mock.transcription import (
+    from opusagent.local.transcription import (
         TranscriptionResult,
         TranscriptionConfig,
         TranscriptionFactory,
@@ -74,7 +74,7 @@ def test_public_api_functionality():
 
 def test_module_docstring():
     """Test that the module has proper documentation."""
-    import opusagent.mock.transcription as transcription_module
+    import opusagent.local.transcription as transcription_module
     
     assert hasattr(transcription_module, '__doc__')
     assert transcription_module.__doc__ is not None
@@ -89,7 +89,7 @@ def test_module_docstring():
 def test_star_import():
     """Test that star import works correctly."""
     # Import everything from the module
-    import opusagent.mock.transcription as transcription_module
+    import opusagent.local.transcription as transcription_module
     
     # Get all public names (those in __all__)
     public_names = transcription_module.__all__
@@ -105,7 +105,7 @@ def test_star_import():
 
 def test_no_private_exports():
     """Test that private/internal modules are not exported."""
-    import opusagent.mock.transcription as transcription_module
+    import opusagent.local.transcription as transcription_module
     
     # These should not be in __all__
     private_items = [
@@ -123,8 +123,8 @@ def test_no_private_exports():
 def test_backwards_compatibility():
     """Test backwards compatibility with existing imports."""
     # Test that old-style imports still work (if any were documented)
-    from opusagent.mock.transcription import TranscriptionFactory
-    from opusagent.mock.transcription.models import TranscriptionConfig
+    from opusagent.local.transcription import TranscriptionFactory
+    from opusagent.local.transcription.models import TranscriptionConfig
     
     # These should work together
     config = TranscriptionConfig(backend="pocketsphinx")
@@ -136,7 +136,7 @@ def test_backwards_compatibility():
 def test_import_error_handling():
     """Test that import errors are handled gracefully."""
     # This should not raise an exception even if backends are not available
-    from opusagent.mock.transcription import TranscriptionFactory
+    from opusagent.local.transcription import TranscriptionFactory
     
     # Getting available backends should not crash
     available = TranscriptionFactory.get_available_backends()
@@ -145,7 +145,7 @@ def test_import_error_handling():
 
 def test_quick_start_example():
     """Test the quick start example from the module docstring."""
-    from opusagent.mock.transcription import TranscriptionFactory, load_transcription_config
+    from opusagent.local.transcription import TranscriptionFactory, load_transcription_config
     
     # Load configuration (from docstring example)
     config = load_transcription_config()
@@ -162,7 +162,7 @@ def test_quick_start_example():
 
 def test_module_structure():
     """Test the internal module structure is correct."""
-    import opusagent.mock.transcription as transcription_module
+    import opusagent.local.transcription as transcription_module
     
     # Test that internal modules exist (but are not exported)
     assert hasattr(transcription_module, 'models')
@@ -179,7 +179,7 @@ def test_module_structure():
 
 def test_type_availability():
     """Test that imported types work correctly for type hints."""
-    from opusagent.mock.transcription import TranscriptionResult, TranscriptionConfig, BaseTranscriber
+    from opusagent.local.transcription import TranscriptionResult, TranscriptionConfig, BaseTranscriber
     
     # These should be usable as type hints
     def example_function(result: TranscriptionResult, config: TranscriptionConfig) -> None:
