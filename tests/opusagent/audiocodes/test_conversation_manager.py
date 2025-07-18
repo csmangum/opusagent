@@ -434,7 +434,8 @@ class TestConversationManager:
         
         # Mock the _send_user_audio method to succeed for first turn, fail for others
         async def mock_send_audio(file_path, chunk_delay):
-            if "0" in file_path or temp_audio_files[0] in file_path:
+            # Only return True for the exact first file path
+            if file_path == temp_audio_files[0]:
                 return True
             return False
         
