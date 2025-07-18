@@ -44,6 +44,9 @@ class MockAudioCodesClient:
         # Session state
         self.conversation_id: Optional[str] = None
         self.session_accepted = False
+        self.session_resumed = False
+        self.session_error = False
+        self.session_error_reason: Optional[str] = None
         self.media_format = "raw/lpcm16"
 
         # Stream state
@@ -61,6 +64,19 @@ class MockAudioCodesClient:
         # Multi-turn conversation state
         self.conversation_turns: List[Dict[str, Any]] = []
         self._current_turn = 0
+
+        # Connection validation state
+        self.connection_validated = False
+        self.connection_validation_pending = False
+
+        # Activities/Events state
+        self.last_activity: Optional[Dict[str, Any]] = None
+        self.activities_received: List[Dict[str, Any]] = []
+
+        # Speech/VAD state (for future Phase 2)
+        self.speech_active = False
+        self.speech_committed = False
+        self.current_hypothesis: Optional[List[Dict[str, Any]]] = None
 
     async def __aenter__(self):
         """Connect to the bridge server."""
@@ -114,6 +130,26 @@ class MockAudioCodesClient:
                 f"[MOCK] Session accepted with format: {self.media_format}"
             )
 
+        elif msg_type == "session.resumed":
+            self.session_resumed = True
+            self.logger.info("[MOCK] Session resumed successfully")
+
+        elif msg_type == "session.error":
+            self.session_error = True
+            self.session_error_reason = data.get("reason", "Unknown error")
+            self.logger.error(f"[MOCK] Session error: {self.session_error_reason}")
+
+        elif msg_type == "connection.validated":
+            self.connection_validated = True
+            self.connection_validation_pending = False
+            self.logger.info("[MOCK] Connection validated")
+
+        elif msg_type == "activities":
+            activities = data.get("activities", [])
+            self.activities_received.extend(activities)
+            self.last_activity = activities[-1] if activities else None
+            self.logger.info(f"[MOCK] Received activities: {activities}")
+
         elif msg_type == "userStream.started":
             self.user_stream_active = True
             self.logger.info("[MOCK] User stream started")
@@ -121,6 +157,24 @@ class MockAudioCodesClient:
         elif msg_type == "userStream.stopped":
             self.user_stream_active = False
             self.logger.info("[MOCK] User stream stopped")
+
+        # Speech/VAD events (Phase 2 preparation)
+        elif msg_type == "userStream.speech.started":
+            self.speech_active = True
+            self.logger.info("[MOCK] Speech started detected")
+
+        elif msg_type == "userStream.speech.stopped":
+            self.speech_active = False
+            self.logger.info("[MOCK] Speech stopped detected")
+
+        elif msg_type == "userStream.speech.committed":
+            self.speech_committed = True
+            self.logger.info("[MOCK] Speech committed")
+
+        elif msg_type == "userStream.speech.hypothesis":
+            alternatives = data.get("alternatives", [])
+            self.current_hypothesis = alternatives
+            self.logger.info(f"[MOCK] Speech hypothesis: {alternatives}")
 
         elif msg_type == "playStream.start":
             self.play_stream_active = True
@@ -190,10 +244,170 @@ class MockAudioCodesClient:
         for _ in range(100):  # 10 seconds timeout
             if self.session_accepted:
                 return True
+            elif self.session_error:
+                self.logger.error(f"[MOCK] Session rejected: {self.session_error_reason}")
+                return False
             await asyncio.sleep(0.1)
 
         self.logger.error("[MOCK] Session not accepted within timeout")
         return False
+
+    async def resume_session(self, conversation_id: str) -> bool:
+        """Send session.resume to the bridge."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
+        self.conversation_id = conversation_id
+
+        session_resume = {
+            "type": "session.resume",
+            "conversationId": self.conversation_id,
+            "expectAudioMessages": True,
+            "botName": self.bot_name,
+            "caller": self.caller,
+            "supportedMediaFormats": [self.media_format],
+        }
+
+        await self._ws.send(json.dumps(session_resume))
+        self.logger.info(
+            f"[MOCK] Sent session.resume for conversation: {self.conversation_id}"
+        )
+
+        # Wait for session.resumed
+        for _ in range(100):  # 10 seconds timeout
+            if self.session_resumed:
+                return True
+            elif self.session_error:
+                self.logger.error(f"[MOCK] Session resume failed: {self.session_error_reason}")
+                return False
+            await asyncio.sleep(0.1)
+
+        self.logger.error("[MOCK] Session not resumed within timeout")
+        return False
+
+    async def validate_connection(self) -> bool:
+        """Send connection.validate and wait for response."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
+        if not self.conversation_id:
+            self.logger.error("[MOCK] No conversation ID available for validation")
+            return False
+
+        validate_msg = {
+            "type": "connection.validate",
+            "conversationId": self.conversation_id
+        }
+        
+        await self._ws.send(json.dumps(validate_msg))
+        self.connection_validation_pending = True
+        self.logger.info(f"[MOCK] Sent connection.validate for conversation: {self.conversation_id}")
+
+        # Wait for connection.validated
+        for _ in range(50):  # 5 seconds timeout
+            if self.connection_validated:
+                return True
+            await asyncio.sleep(0.1)
+
+        self.logger.error("[MOCK] Connection validation timeout")
+        return False
+
+    async def send_dtmf_event(self, digit: str) -> bool:
+        """Send DTMF event to bridge."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
+        if not self.conversation_id:
+            self.logger.error("[MOCK] No conversation ID available for DTMF event")
+            return False
+
+        activities_msg = {
+            "type": "activities",
+            "conversationId": self.conversation_id,
+            "activities": [{"type": "event", "name": "dtmf", "value": digit}]
+        }
+        
+        await self._ws.send(json.dumps(activities_msg))
+        self.logger.info(f"[MOCK] Sent DTMF event: {digit}")
+        return True
+
+    async def send_hangup_event(self) -> bool:
+        """Send hangup event to bridge."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
+        if not self.conversation_id:
+            self.logger.error("[MOCK] No conversation ID available for hangup event")
+            return False
+
+        activities_msg = {
+            "type": "activities",
+            "conversationId": self.conversation_id,
+            "activities": [{"type": "event", "name": "hangup"}]
+        }
+        
+        await self._ws.send(json.dumps(activities_msg))
+        self.logger.info("[MOCK] Sent hangup event")
+        return True
+
+    async def send_custom_activity(self, activity: Dict[str, Any]) -> bool:
+        """Send custom activity to bridge."""
+        if self._ws is None:
+            self.logger.error("[MOCK] WebSocket connection is None")
+            return False
+            
+        if not self.conversation_id:
+            self.logger.error("[MOCK] No conversation ID available for custom activity")
+            return False
+
+        activities_msg = {
+            "type": "activities",
+            "conversationId": self.conversation_id,
+            "activities": [activity]
+        }
+        
+        await self._ws.send(json.dumps(activities_msg))
+        self.logger.info(f"[MOCK] Sent custom activity: {activity}")
+        return True
+
+    def get_session_status(self) -> Dict[str, Any]:
+        """Get current session status information."""
+        return {
+            "conversation_id": self.conversation_id,
+            "session_accepted": self.session_accepted,
+            "session_resumed": self.session_resumed,
+            "session_error": self.session_error,
+            "session_error_reason": self.session_error_reason,
+            "connection_validated": self.connection_validated,
+            "user_stream_active": self.user_stream_active,
+            "play_stream_active": self.play_stream_active,
+            "speech_active": self.speech_active,
+            "speech_committed": self.speech_committed,
+            "last_activity": self.last_activity,
+            "activities_count": len(self.activities_received)
+        }
+
+    def reset_session_state(self):
+        """Reset all session-related state variables."""
+        self.session_accepted = False
+        self.session_resumed = False
+        self.session_error = False
+        self.session_error_reason = None
+        self.connection_validated = False
+        self.connection_validation_pending = False
+        self.user_stream_active = False
+        self.play_stream_active = False
+        self.current_stream_id = None
+        self.speech_active = False
+        self.speech_committed = False
+        self.current_hypothesis = None
+        self.last_activity = None
+        self.activities_received.clear()
+        self.logger.info("[MOCK] Session state reset")
 
     async def wait_for_llm_greeting(self, timeout: float = 20.0) -> List[str]:
         """Wait for and collect LLM greeting audio."""
@@ -594,3 +808,162 @@ class MockAudioCodesClient:
                 self.logger.error(f"    Error: {turn['error']}")
         
         self.logger.info("=" * 50)
+
+    async def enhanced_conversation_test(
+        self,
+        audio_files: List[str],
+        session_name: str = "EnhancedTest",
+        enable_connection_validation: bool = True,
+        enable_dtmf_testing: bool = False,
+        enable_session_resume: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Enhanced conversation test with Phase 1 features.
+        
+        Args:
+            audio_files: List of audio files for conversation turns
+            session_name: Name for the test session
+            enable_connection_validation: Whether to validate connection
+            enable_dtmf_testing: Whether to test DTMF events
+            enable_session_resume: Whether to test session resume functionality
+            
+        Returns:
+            Dictionary with comprehensive test results
+        """
+        self.logger.info(f"\n[MOCK] === ENHANCED CONVERSATION TEST: {session_name} ===")
+        
+        test_result = {
+            "session_name": session_name,
+            "phase1_features_tested": [],
+            "conversation_result": None,
+            "session_status": None,
+            "success": False,
+            "error": None
+        }
+        
+        try:
+            # Step 1: Initiate session
+            self.logger.info("[MOCK] Step 1: Initiating session...")
+            success = await self.initiate_session()
+            if not success:
+                test_result["error"] = "Failed to initiate session"
+                return test_result
+            
+            test_result["phase1_features_tested"].append("session.initiate")
+            
+            # Step 2: Connection validation (optional)
+            if enable_connection_validation:
+                self.logger.info("[MOCK] Step 2: Validating connection...")
+                validation_success = await self.validate_connection()
+                if validation_success:
+                    test_result["phase1_features_tested"].append("connection.validate")
+                    self.logger.info("[MOCK] Connection validation successful")
+                else:
+                    self.logger.warning("[MOCK] Connection validation failed, continuing anyway...")
+            
+            # Step 3: Session resume test (optional)
+            if enable_session_resume:
+                self.logger.info("[MOCK] Step 3: Testing session resume...")
+                # End current session
+                await self.end_session("Testing session resume")
+                
+                # Reset state and resume
+                self.reset_session_state()
+                if self.conversation_id:
+                    resume_success = await self.resume_session(self.conversation_id)
+                    if resume_success:
+                        test_result["phase1_features_tested"].append("session.resume")
+                        self.logger.info("[MOCK] Session resume successful")
+                    else:
+                        self.logger.warning("[MOCK] Session resume failed, continuing with new session...")
+                        # Fall back to new session
+                        success = await self.initiate_session()
+                        if not success:
+                            test_result["error"] = "Failed to initiate session after resume failure"
+                            return test_result
+                else:
+                    self.logger.warning("[MOCK] No conversation ID available for resume test, continuing with new session...")
+                    success = await self.initiate_session()
+                    if not success:
+                        test_result["error"] = "Failed to initiate session after resume test"
+                        return test_result
+            
+            # Step 4: DTMF testing (optional)
+            if enable_dtmf_testing:
+                self.logger.info("[MOCK] Step 4: Testing DTMF events...")
+                dtmf_success = await self.send_dtmf_event("1")
+                if dtmf_success:
+                    test_result["phase1_features_tested"].append("dtmf_events")
+                    self.logger.info("[MOCK] DTMF event sent successfully")
+                
+                # Wait a moment for any response
+                await asyncio.sleep(1.0)
+            
+            # Step 5: Run multi-turn conversation
+            self.logger.info("[MOCK] Step 5: Running multi-turn conversation...")
+            conversation_result = await self.multi_turn_conversation(audio_files)
+            test_result["conversation_result"] = conversation_result
+            
+            # Step 6: Get final session status
+            test_result["session_status"] = self.get_session_status()
+            
+            # Step 7: End session
+            await self.end_session(f"{session_name} completed")
+            
+            # Step 8: Save collected audio
+            self.save_collected_audio()
+            
+            # Determine overall success
+            test_result["success"] = conversation_result["success"]
+            
+            # Print enhanced summary
+            self._print_enhanced_test_summary(test_result)
+            
+            return test_result
+            
+        except Exception as e:
+            test_result["error"] = str(e)
+            self.logger.error(f"[MOCK] Enhanced conversation test failed: {e}")
+            return test_result
+
+    def _print_enhanced_test_summary(self, test_result: Dict[str, Any]):
+        """Print a comprehensive summary of the enhanced test."""
+        self.logger.info("\n" + "=" * 60)
+        self.logger.info("[MOCK] ENHANCED CONVERSATION TEST SUMMARY")
+        self.logger.info("=" * 60)
+        
+        # Basic info
+        self.logger.info(f"Session Name: {test_result['session_name']}")
+        success_status = "SUCCESS" if test_result["success"] else "FAILED"
+        self.logger.info(f"Overall Status: {success_status}")
+        
+        # Phase 1 features tested
+        features_tested = test_result.get("phase1_features_tested", [])
+        if features_tested:
+            self.logger.info(f"Phase 1 Features Tested: {', '.join(features_tested)}")
+        else:
+            self.logger.info("Phase 1 Features Tested: None")
+        
+        # Session status
+        session_status = test_result.get("session_status", {})
+        if session_status:
+            self.logger.info("\nSession Status:")
+            self.logger.info(f"  Conversation ID: {session_status.get('conversation_id', 'N/A')}")
+            self.logger.info(f"  Session Accepted: {session_status.get('session_accepted', False)}")
+            self.logger.info(f"  Session Resumed: {session_status.get('session_resumed', False)}")
+            self.logger.info(f"  Connection Validated: {session_status.get('connection_validated', False)}")
+            self.logger.info(f"  Activities Count: {session_status.get('activities_count', 0)}")
+            self.logger.info(f"  Speech Active: {session_status.get('speech_active', False)}")
+        
+        # Conversation results
+        conversation_result = test_result.get("conversation_result", {})
+        if conversation_result:
+            self.logger.info(f"\nConversation Results:")
+            self.logger.info(f"  Completed Turns: {conversation_result.get('completed_turns', 0)}/{conversation_result.get('total_turns', 0)}")
+            self.logger.info(f"  Greeting Received: {conversation_result.get('greeting_received', False)}")
+        
+        # Error information
+        if test_result.get("error"):
+            self.logger.error(f"\nError: {test_result['error']}")
+        
+        self.logger.info("=" * 60)
