@@ -7,6 +7,7 @@ handling AudioCodes-specific event types, message formats, and responses.
 from opusagent.bridges.base_bridge import BaseRealtimeBridge
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.audiocodes_api import (
+    ConnectionValidatedResponse,
     SessionAcceptedResponse,
     TelephonyEventType,
     UserStreamSpeechCommittedResponse,
@@ -39,6 +40,9 @@ class AudioCodesBridge(BaseRealtimeBridge):
             TelephonyEventType.SESSION_INITIATE, self.handle_session_start
         )
         self.event_router.register_platform_handler(
+            TelephonyEventType.SESSION_RESUME, self.handle_session_resume
+        )
+        self.event_router.register_platform_handler(
             TelephonyEventType.USER_STREAM_START, self.handle_audio_start
         )
         self.event_router.register_platform_handler(
@@ -49,6 +53,12 @@ class AudioCodesBridge(BaseRealtimeBridge):
         )
         self.event_router.register_platform_handler(
             TelephonyEventType.SESSION_END, self.handle_session_end
+        )
+        self.event_router.register_platform_handler(
+            TelephonyEventType.ACTIVITIES, self.handle_activities
+        )
+        self.event_router.register_platform_handler(
+            TelephonyEventType.CONNECTION_VALIDATE, self.handle_connection_validate
         )
 
         # Register handlers for VAD speech events from OpenAI Realtime API only if VAD is enabled
@@ -141,6 +151,65 @@ class AudioCodesBridge(BaseRealtimeBridge):
         logger.info(f"Session end received: {data.get('reason', 'No reason provided')}")
         await self.close()
         logger.info("AudioCodes-Realtime bridge closed")
+
+    async def handle_session_resume(self, data: dict):
+        """Handle session resume from AudioCodes.
+
+        Args:
+            data (dict): Session resume message data
+        """
+        logger.info(f"Session resume received: {data}")
+        conversation_id = data.get("conversationId")
+        self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
+
+        # For now, treat resume the same as initiate
+        # In a real implementation, you would restore session state from storage
+        await self.initialize_conversation(conversation_id)
+        await self.send_session_resumed()
+
+    async def handle_activities(self, data: dict):
+        """Handle activities/events from AudioCodes.
+
+        Args:
+            data (dict): Activities message data
+        """
+        logger.info(f"Activities received: {data}")
+        activities = data.get("activities", [])
+        
+        for activity in activities:
+            activity_type = activity.get("type")
+            activity_name = activity.get("name")
+            activity_value = activity.get("value")
+            
+            logger.info(f"Processing activity: {activity_type}/{activity_name} = {activity_value}")
+            
+            if activity_name == "dtmf":
+                # Handle DTMF event
+                logger.info(f"DTMF event received: {activity_value}")
+                # You could route this to a function handler or process it directly
+                
+            elif activity_name == "hangup":
+                # Handle hangup event
+                logger.info("Hangup event received")
+                await self.hang_up("User requested hangup")
+                
+            elif activity_name == "start":
+                # Handle call start event
+                logger.info("Call start event received")
+                
+            else:
+                logger.info(f"Unknown activity: {activity_name}")
+
+    async def handle_connection_validate(self, data: dict):
+        """Handle connection validation from AudioCodes.
+
+        Args:
+            data (dict): Connection validate message data
+        """
+        logger.info(f"Connection validation received: {data}")
+        
+        # Send connection validated response
+        await self.send_connection_validated()
 
     async def handle_speech_started(self, data: dict):
         """Handle speech started event from OpenAI Realtime API.
@@ -266,3 +335,24 @@ class AudioCodesBridge(BaseRealtimeBridge):
         except Exception as e:
             logger.error(f"❌ Error sending session end to AudioCodes: {e}")
             # Don't raise - we still want to close the connection
+
+    async def send_session_resumed(self):
+        """Send AudioCodes-specific session resumed response."""
+        kwargs = {
+            "type": TelephonyEventType.SESSION_ACCEPTED,  # Use same as accepted for now
+            "conversationId": self.conversation_id,
+            "mediaFormat": self.media_format or "raw/lpcm16",
+            "participant": self.current_participant,
+        }
+        await self.send_platform_json(SessionAcceptedResponse(**kwargs).model_dump())
+        logger.info("✅ Session resumed response sent to AudioCodes")
+
+    async def send_connection_validated(self):
+        """Send AudioCodes-specific connection validated response."""
+        kwargs = {
+            "type": TelephonyEventType.CONNECTION_VALIDATED,
+            "conversationId": self.conversation_id,
+            "success": True,
+        }
+        await self.send_platform_json(ConnectionValidatedResponse(**kwargs).model_dump())
+        logger.info("✅ Connection validated response sent to AudioCodes")
