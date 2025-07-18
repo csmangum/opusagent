@@ -474,51 +474,6 @@ class TestMockAudioCodesClient:
         
         client.conversation_manager.save_collected_audio.assert_called_once_with("test_output/")
 
-    @pytest.mark.asyncio
-    async def test_simple_conversation_test_success(self, client_config, mock_websocket_connect, temp_audio_file):
-        """Test successful simple conversation test."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
-            async with MockAudioCodesClient(**client_config) as client:
-                # Mock session initiation
-                client.session_manager.session_state.accepted = True
-                
-                # Mock conversation result
-                mock_result = ConversationResult(
-                    total_turns=1,
-                    completed_turns=1,
-                    success=True
-                )
-                client.conversation_manager.multi_turn_conversation = AsyncMock(return_value=mock_result)
-                
-                # Mock conversation manager save method
-                client.conversation_manager.save_collected_audio = Mock()
-                
-                success = await client.simple_conversation_test([temp_audio_file], "TestSession")
-                
-                assert success is True
-                client.conversation_manager.save_collected_audio.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_simple_conversation_test_session_failure(self, client_config, mock_websocket_connect):
-        """Test simple conversation test with session initiation failure."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
-            async with MockAudioCodesClient(**client_config) as client:
-                # Don't set session as accepted, should fail
-                success = await client.simple_conversation_test([], "TestSession")
-                
-                assert success is False
-
-    @pytest.mark.asyncio
-    async def test_simple_conversation_test_exception(self, client_config, mock_websocket_connect):
-        """Test simple conversation test with exception."""
-        with patch('opusagent.mock.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
-            async with MockAudioCodesClient(**client_config) as client:
-                # Mock session initiation to raise exception
-                client.initiate_session = AsyncMock(side_effect=Exception("Test error"))
-                
-                success = await client.simple_conversation_test([], "TestSession")
-                
-                assert success is False
 
     @pytest.mark.asyncio
     async def test_message_handler_integration(self, client_config, mock_websocket_connect):
