@@ -103,8 +103,8 @@ def test_mock_client_import():
     print("\n=== Mock Client Import Test ===")
     
     try:
-        from opusagent.mock.realtime.client import LocalRealtimeClient
-        from opusagent.mock.realtime.models import LocalResponseConfig
+        from opusagent.local.realtime.client import LocalRealtimeClient
+        from opusagent.local.realtime.models import LocalResponseConfig
         print("✓ LocalRealtimeClient imported successfully")
         
         # Test creating mock client

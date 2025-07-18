@@ -15,7 +15,7 @@ from pathlib import Path
 # Add the project root to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from opusagent.mock.audiocodes.live_audio_manager import LiveAudioManager
+from opusagent.local.audiocodes.live_audio_manager import LiveAudioManager
 
 
 class LiveAudioTester:

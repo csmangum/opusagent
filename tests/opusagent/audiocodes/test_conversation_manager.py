@@ -12,14 +12,14 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock
 
-from opusagent.mock.audiocodes.models import (
+from opusagent.local.audiocodes.models import (
     SessionConfig,
     ConversationState,
     ConversationResult,
 )
-from opusagent.mock.audiocodes.session_manager import SessionManager
-from opusagent.mock.audiocodes.audio_manager import AudioManager
-from opusagent.mock.audiocodes.conversation_manager import ConversationManager
+from opusagent.local.audiocodes.session_manager import SessionManager
+from opusagent.local.audiocodes.audio_manager import AudioManager
+from opusagent.local.audiocodes.conversation_manager import ConversationManager
 
 
 class TestConversationManager:
@@ -434,7 +434,8 @@ class TestConversationManager:
         
         # Mock the _send_user_audio method to succeed for first turn, fail for others
         async def mock_send_audio(file_path, chunk_delay):
-            if "0" in file_path or temp_audio_files[0] in file_path:
+            # Only return True for the exact first file path
+            if file_path == temp_audio_files[0]:
                 return True
             return False
         

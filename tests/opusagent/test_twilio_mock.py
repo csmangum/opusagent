@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 import pytest
 
-from opusagent.mock.mock_twilio_client import MockTwilioClient
+from opusagent.local.mock_twilio_client import MockTwilioClient
 
 # Bridge server URL (adjust based on your setup)
 BRIDGE_URL = "ws://localhost:8000/twilio-agent"

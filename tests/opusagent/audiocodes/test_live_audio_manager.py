@@ -14,7 +14,7 @@ import pyaudio
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from opusagent.mock.audiocodes.live_audio_manager import LiveAudioManager
+from opusagent.local.audiocodes.live_audio_manager import LiveAudioManager
 
 
 class TestLiveAudioManager:
@@ -88,7 +88,7 @@ class TestLiveAudioManager:
         assert manager._config["vad_threshold"] == 0.7
         assert manager._config["buffer_size"] == 16000
 
-    @patch('opusagent.mock.audiocodes.live_audio_manager.pyaudio.PyAudio')
+    @patch('opusagent.local.audiocodes.live_audio_manager.pyaudio.PyAudio')
     def test_start_capture_success(self, mock_pyaudio_class, live_audio_manager, mock_logger):
         """Test successful audio capture start."""
         # Mock PyAudio instance
@@ -124,7 +124,7 @@ class TestLiveAudioManager:
         assert call_args[1]["rate"] == live_audio_manager._config["sample_rate"]
         assert call_args[1]["input"] is True
 
-    @patch('opusagent.mock.audiocodes.live_audio_manager.pyaudio.PyAudio')
+    @patch('opusagent.local.audiocodes.live_audio_manager.pyaudio.PyAudio')
     def test_start_capture_already_running(self, mock_pyaudio_class, live_audio_manager, mock_logger):
         """Test starting capture when already running."""
         # Set running flag
@@ -135,7 +135,7 @@ class TestLiveAudioManager:
         assert result is True
         mock_logger.warning.assert_called_with("[LIVE_AUDIO] Capture already running")
 
-    @patch('opusagent.mock.audiocodes.live_audio_manager.pyaudio.PyAudio')
+    @patch('opusagent.local.audiocodes.live_audio_manager.pyaudio.PyAudio')
     def test_start_capture_failure(self, mock_pyaudio_class, live_audio_manager, mock_logger):
         """Test audio capture start failure."""
         # Mock PyAudio to raise exception
@@ -196,7 +196,7 @@ class TestLiveAudioManager:
         mock_logger.error.assert_any_call("[LIVE_AUDIO] Error closing audio stream: Stream error")
         mock_logger.error.assert_any_call("[LIVE_AUDIO] Error terminating PyAudio: PyAudio error")
 
-    @patch('opusagent.mock.audiocodes.live_audio_manager.pyaudio.PyAudio')
+    @patch('opusagent.local.audiocodes.live_audio_manager.pyaudio.PyAudio')
     def test_get_default_device_info(self, mock_pyaudio_class, live_audio_manager):
         """Test getting default device information."""
         mock_pyaudio = Mock()
@@ -381,7 +381,7 @@ class TestLiveAudioManager:
         # Empty arrays are now handled gracefully, so no error should be logged
         mock_logger.error.assert_not_called()
 
-    @patch('opusagent.mock.audiocodes.live_audio_manager.pyaudio.PyAudio')
+    @patch('opusagent.local.audiocodes.live_audio_manager.pyaudio.PyAudio')
     def test_get_available_devices(self, mock_pyaudio_class, live_audio_manager):
         """Test getting available audio devices."""
         mock_pyaudio = Mock()

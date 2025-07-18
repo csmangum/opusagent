@@ -24,7 +24,7 @@ Examples:
     OPUSAGENT_USE_MOCK=true python run_opus_server.py
 
     # Run with custom mock server
-    OPUSAGENT_USE_MOCK=true OPUSAGENT_MOCK_SERVER_URL=ws://localhost:9000 python run_opus_server.py
+    OPUSAGENT_USE_MOCK=true OPUSAGENT_MOCK_SERVER_URL=ws://localhost:8000 python run_opus_server.py
 
     # Run with command line flags
     python run_opus_server.py --mock --port 9000
@@ -49,13 +49,13 @@ from opusagent.config.logging_config import configure_logging
 logger = configure_logging("run")
 
 # Set the environment variable to use the local realtime client
-os.environ["USE_LOCAL_REALTIME"] = "true"
+os.environ["USE_LOCAL_REALTIME"] = "false"
 
 
 def validate_mock_setup():
     """Validate mock mode setup and provide helpful information."""
     try:
-        from opusagent.mock.realtime import LocalRealtimeClient
+        from opusagent.local.realtime import LocalRealtimeClient
         from opusagent.websocket_manager import create_mock_websocket_manager
 
         # Test creating a mock client

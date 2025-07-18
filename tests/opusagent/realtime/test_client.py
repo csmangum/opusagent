@@ -1,5 +1,5 @@
 """
-Unit tests for opusagent.mock.realtime.client module.
+Unit tests for opusagent.local.realtime.client module.
 """
 
 import pytest
@@ -10,8 +10,8 @@ from datetime import datetime
 from unittest.mock import Mock, patch, AsyncMock, MagicMock
 from typing import Dict, Any
 
-from opusagent.mock.realtime.client import LocalRealtimeClient
-from opusagent.mock.realtime.models import (
+from opusagent.local.realtime.client import LocalRealtimeClient
+from opusagent.local.realtime.models import (
     LocalResponseConfig,
     ResponseSelectionCriteria,
     ConversationContext
@@ -375,7 +375,7 @@ class TestLocalRealtimeClient:
         # Mock websockets.connect
         mock_ws = AsyncMock()
         mock_connect = AsyncMock(return_value=mock_ws)
-        with patch('opusagent.mock.realtime.client.websockets.connect', mock_connect):
+        with patch('opusagent.local.realtime.client.websockets.connect', mock_connect):
             await client.connect("ws://localhost:8080")
         
         assert client.connected is True
@@ -391,7 +391,7 @@ class TestLocalRealtimeClient:
         client.logger = logger
         
         # Mock websockets.connect to raise exception
-        with patch('opusagent.mock.realtime.client.websockets.connect', side_effect=Exception("Connection failed")):
+        with patch('opusagent.local.realtime.client.websockets.connect', side_effect=Exception("Connection failed")):
             with pytest.raises(Exception, match="Connection failed"):
                 await client.connect("ws://localhost:8080")
         
@@ -741,8 +741,8 @@ class TestVADIntegration:
             "threshold": 0.3
         }
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero", "sample_rate": 16000}
             mock_vad = Mock()
@@ -768,8 +768,8 @@ class TestVADIntegration:
             turn_detection={"type": "server_vad"}
         )
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero", "sample_rate": 16000}
             mock_vad = Mock()
@@ -800,8 +800,8 @@ class TestVADIntegration:
             turn_detection={"type": "server_vad"}
         )
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero", "sample_rate": 16000}
             mock_vad_factory.create_vad.side_effect = Exception("VAD initialization failed")
@@ -816,8 +816,8 @@ class TestVADIntegration:
         client = LocalRealtimeClient(enable_vad=False)
         assert client.is_vad_enabled() is False
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -846,8 +846,8 @@ class TestVADIntegration:
         client = LocalRealtimeClient(enable_vad=False)
         assert client.is_vad_enabled() is False
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -870,8 +870,8 @@ class TestVADIntegration:
             "sample_rate": 8000
         }
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero", "sample_rate": 16000}
             mock_vad = Mock()
@@ -889,8 +889,8 @@ class TestVADIntegration:
 
     def test_disable_vad_runtime(self):
         """Test disabling VAD at runtime."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -920,8 +920,8 @@ class TestVADIntegration:
 
     def test_get_vad_state_enabled(self):
         """Test getting VAD state when enabled."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -951,8 +951,8 @@ class TestVADIntegration:
 
     def test_reset_vad_state(self):
         """Test resetting VAD state."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -967,8 +967,8 @@ class TestVADIntegration:
 
     def test_update_vad_config(self):
         """Test updating VAD configuration."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero", "threshold": 0.5}
             mock_vad = Mock()
@@ -1006,8 +1006,8 @@ class TestVADIntegration:
     @pytest.mark.asyncio
     async def test_handle_vad_session_update_disable(self):
         """Test VAD session update handling when disabling VAD."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -1062,8 +1062,8 @@ class TestVADIntegration:
     @pytest.mark.asyncio
     async def test_disconnect_cleanup_vad(self):
         """Test that VAD resources are cleaned up on disconnect."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -1098,8 +1098,8 @@ class TestVADIntegration:
 
     def test_vad_event_handler_integration(self):
         """Test that VAD instance is properly passed to event handler."""
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()
@@ -1114,8 +1114,8 @@ class TestVADIntegration:
         client = LocalRealtimeClient(enable_vad=False)
         assert client._event_handler._vad is None
         
-        with patch('opusagent.mock.realtime.client.VADFactory') as mock_vad_factory, \
-             patch('opusagent.mock.realtime.client.load_vad_config') as mock_load_config:
+        with patch('opusagent.local.realtime.client.VADFactory') as mock_vad_factory, \
+             patch('opusagent.local.realtime.client.load_vad_config') as mock_load_config:
             
             mock_load_config.return_value = {"backend": "silero"}
             mock_vad = Mock()

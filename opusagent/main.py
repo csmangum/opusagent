@@ -39,7 +39,7 @@ from opusagent.session_manager import SessionManager
 from opusagent.config.websocket_config import WebSocketConfig
 from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
 from opusagent.callers import get_available_caller_types, get_caller_description
-from opusagent.mock.realtime import create_mock_websocket_connection
+from opusagent.local.realtime import create_mock_websocket_connection
 
 load_dotenv()
 

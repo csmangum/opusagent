@@ -10,13 +10,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from opusagent.mock.audiocodes.models import (
+from opusagent.local.audiocodes.models import (
     ConversationState,
     SessionConfig,
     SessionStatus,
     StreamStatus,
 )
-from opusagent.mock.audiocodes.session_manager import SessionManager
+from opusagent.local.audiocodes.session_manager import SessionManager
 
 
 class TestSessionManager:

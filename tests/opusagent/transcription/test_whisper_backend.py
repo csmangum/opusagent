@@ -8,8 +8,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from opusagent.mock.transcription.backends.whisper import WhisperTranscriber
-from opusagent.mock.transcription.models import TranscriptionConfig, TranscriptionResult
+from opusagent.local.transcription.backends.whisper import WhisperTranscriber
+from opusagent.local.transcription.models import TranscriptionConfig, TranscriptionResult
 
 
 class TestWhisperTranscriber:

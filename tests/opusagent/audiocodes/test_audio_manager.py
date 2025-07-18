@@ -14,7 +14,7 @@ import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open
 
-from opusagent.mock.audiocodes.audio_manager import AudioManager
+from opusagent.local.audiocodes.audio_manager import AudioManager
 
 
 class TestAudioManager:
@@ -353,7 +353,7 @@ class TestAudioManager:
         
         assert removed is False
 
-    @patch('opusagent.mock.audiocodes.audio_manager.wave.open')
+    @patch('opusagent.local.audiocodes.audio_manager.wave.open')
     def test_load_audio_chunks_wave_error(self, mock_wave_open, audio_manager):
         """Test handling wave file errors."""
         mock_wave_open.side_effect = Exception("Wave file error")
@@ -361,7 +361,7 @@ class TestAudioManager:
         with pytest.raises(Exception):
             audio_manager.load_audio_chunks("test.wav")
 
-    @patch('opusagent.mock.audiocodes.audio_manager.signal.resample')
+    @patch('opusagent.local.audiocodes.audio_manager.signal.resample')
     def test_load_audio_chunks_resampling_error(self, mock_resample, audio_manager, temp_wav_file_8khz):
         """Test handling resampling errors."""
         mock_resample.side_effect = Exception("Resampling error")

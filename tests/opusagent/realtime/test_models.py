@@ -1,12 +1,12 @@
 """
-Unit tests for opusagent.mock.realtime.models module.
+Unit tests for opusagent.local.realtime.models module.
 """
 
 import pytest
 from datetime import datetime
 from typing import Dict, Any
 
-from opusagent.mock.realtime.models import (
+from opusagent.local.realtime.models import (
     ConversationContext,
     ResponseSelectionCriteria,
     LocalResponseConfig,

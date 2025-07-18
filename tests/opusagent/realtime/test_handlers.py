@@ -1,5 +1,5 @@
 """
-Unit tests for opusagent.mock.realtime.handlers module.
+Unit tests for opusagent.local.realtime.handlers module.
 """
 
 import pytest
@@ -11,7 +11,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, Any
 
-from opusagent.mock.realtime.handlers import EventHandlerManager
+from opusagent.local.realtime.handlers import EventHandlerManager
 from opusagent.models.openai_api import (
     ClientEventType,
     ServerEventType,
@@ -643,7 +643,7 @@ class TestVADIntegration:
         handler._vad = mock_vad
         
         # Mock audio processing functions
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             mock_audio_array = np.array([0.1, 0.2, 0.3])
             mock_to_float32.return_value = mock_audio_array
@@ -677,7 +677,7 @@ class TestVADIntegration:
         handler._vad = mock_vad
         
         # Mock audio processing
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             mock_audio_array = np.array([0.1, 0.2, 0.3])
             mock_to_float32.return_value = mock_audio_array
@@ -722,7 +722,7 @@ class TestVADIntegration:
         handler._vad = mock_vad
         
         # Mock audio processing
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             mock_audio_array = np.array([0.1, 0.2, 0.3])
             mock_to_float32.return_value = mock_audio_array
@@ -758,7 +758,7 @@ class TestVADIntegration:
         handler._vad = mock_vad
         
         # Mock audio processing
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             mock_audio_array = np.array([0.1, 0.2, 0.3])
             mock_to_float32.return_value = mock_audio_array
@@ -805,7 +805,7 @@ class TestVADIntegration:
         """Test audio conversion for VAD with PCM16 format."""
         handler = EventHandlerManager()
         
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             expected_result = np.array([0.1, 0.2, 0.3])
             mock_to_float32.return_value = expected_result
@@ -820,7 +820,7 @@ class TestVADIntegration:
         """Test audio conversion for VAD with PCM24 format."""
         handler = EventHandlerManager()
         
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             expected_result = np.array([0.1, 0.2, 0.3])
             mock_to_float32.return_value = expected_result
@@ -844,7 +844,7 @@ class TestVADIntegration:
         """Test audio conversion for VAD with error handling."""
         handler = EventHandlerManager()
         
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             mock_to_float32.side_effect = Exception("Conversion failed")
             
             audio_bytes = b"test audio data"
@@ -1077,7 +1077,7 @@ class TestVADIntegration:
         handler._vad = mock_vad
         
         # Mock audio processing to return quickly
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             import numpy as np
             # Test with reasonably sized audio chunks
             audio_data = np.random.random(512).astype(np.float32)
@@ -1102,7 +1102,7 @@ class TestVADIntegration:
         import numpy as np
         
         # Test conversion error recovery
-        with patch('opusagent.mock.realtime.handlers.to_float32_mono') as mock_to_float32:
+        with patch('opusagent.local.realtime.handlers.to_float32_mono') as mock_to_float32:
             mock_to_float32.side_effect = Exception("Conversion error")
             
             result = handler._convert_audio_for_vad(b"test", "pcm16")

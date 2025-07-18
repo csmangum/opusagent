@@ -8,7 +8,7 @@ import os
 from unittest.mock import patch, MagicMock
 import tempfile
 
-from opusagent.mock.transcription import (
+from opusagent.local.transcription import (
     TranscriptionFactory,
     load_transcription_config,
     TranscriptionConfig,
@@ -338,7 +338,7 @@ class TestTranscriptionIntegration:
 
     def test_module_exports_integration(self):
         """Test that all expected exports are available from the main module."""
-        from opusagent.mock.transcription import (
+        from opusagent.local.transcription import (
             TranscriptionResult,
             TranscriptionConfig,
             TranscriptionFactory,

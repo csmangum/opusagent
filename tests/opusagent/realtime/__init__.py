@@ -1,3 +1,3 @@
 """
-Unit tests for the opusagent.mock.realtime module.
+Unit tests for the opusagent.local.realtime module.
 """ 

@@ -5,8 +5,8 @@ import os
 import pytest
 from unittest.mock import patch
 
-from opusagent.mock.transcription.config import load_transcription_config
-from opusagent.mock.transcription.models import TranscriptionConfig
+from opusagent.local.transcription.config import load_transcription_config
+from opusagent.local.transcription.models import TranscriptionConfig
 
 
 class TestTranscriptionConfig:

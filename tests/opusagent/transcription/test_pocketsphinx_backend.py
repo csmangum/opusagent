@@ -8,8 +8,8 @@ import asyncio
 import sys
 import logging
 
-from opusagent.mock.transcription.backends.pocketsphinx import PocketSphinxTranscriber
-from opusagent.mock.transcription.models import TranscriptionConfig, TranscriptionResult
+from opusagent.local.transcription.backends.pocketsphinx import PocketSphinxTranscriber
+from opusagent.local.transcription.models import TranscriptionConfig, TranscriptionResult
 
 
 class TestPocketSphinxTranscriber:

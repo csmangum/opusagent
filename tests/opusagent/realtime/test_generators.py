@@ -1,5 +1,5 @@
 """
-Unit tests for opusagent.mock.realtime.generators module.
+Unit tests for opusagent.local.realtime.generators module.
 """
 
 import pytest
@@ -11,8 +11,8 @@ from datetime import datetime
 from unittest.mock import Mock, patch, AsyncMock
 from typing import Dict, Any
 
-from opusagent.mock.realtime.generators import ResponseGenerator
-from opusagent.mock.realtime.models import LocalResponseConfig
+from opusagent.local.realtime.generators import ResponseGenerator
+from opusagent.local.realtime.models import LocalResponseConfig
 from opusagent.models.openai_api import ResponseCreateOptions, ServerEventType
 
 

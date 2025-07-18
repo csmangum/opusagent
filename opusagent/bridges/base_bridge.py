@@ -172,7 +172,7 @@ class BaseRealtimeBridge(ABC):
         #! Shouldn't this be handled in client? Yes, needs to work like websocket
         """Initialize the local realtime client for testing and development."""
         try:
-            from opusagent.mock.realtime import LocalRealtimeClient
+            from opusagent.local.realtime import LocalRealtimeClient
 
             # Create local realtime client with configuration
             self.local_realtime_client = LocalRealtimeClient(

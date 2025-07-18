@@ -31,7 +31,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from opusagent.mock.realtime import LocalRealtimeClient, LocalResponseConfig, ResponseSelectionCriteria
+from opusagent.local.realtime import LocalRealtimeClient, LocalResponseConfig, ResponseSelectionCriteria
 
 
 async def demo_local_realtime_bridge():

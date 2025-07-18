@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import websockets
 
-from opusagent.mock.realtime.client import LocalRealtimeClient
+from opusagent.local.realtime.client import LocalRealtimeClient
 from opusagent.models.openai_api import (
     ClientEventType,
     ResponseCreateOptions,
