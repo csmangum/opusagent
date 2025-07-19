@@ -410,4 +410,195 @@ class TestMessageHandler:
         
         # Non-existent type
         none_messages = message_handler.get_messages_by_type("nonexistent.type")
-        assert len(none_messages) == 0 
+        assert len(none_messages) == 0
+
+    # ===== AUDIO PLAYBACK INTEGRATION TESTS =====
+
+    def test_play_stream_chunk_with_audio_playback_handler(self, message_handler, session_manager):
+        """Test playStream.chunk handling with audio playback integration."""
+        session_manager.create_session("test-123")
+        session_manager.conversation_state.collecting_response = True
+        
+        # Mock audio playback handler
+        audio_handler_called = False
+        audio_chunk_received = None
+        
+        def mock_audio_handler(data):
+            nonlocal audio_handler_called, audio_chunk_received
+            audio_handler_called = True
+            audio_chunk_received = data.get("audioChunk")
+        
+        # Register the audio playback handler
+        message_handler.register_event_handler("playStream.chunk", mock_audio_handler)
+        
+        # Process playStream.chunk message using process_message
+        data = {
+            "type": "playStream.chunk",
+            "conversationId": "test-123",
+            "audioChunk": "dGVzdF9hdWRpb19kYXRh"
+        }
+        message_handler.process_message(json.dumps(data))
+        
+        # Verify audio handler was called
+        assert audio_handler_called is True
+        assert audio_chunk_received == "dGVzdF9hdWRpb19kYXRh"
+        
+        # Verify conversation state was updated
+        assert len(session_manager.conversation_state.response_chunks) == 1
+        assert session_manager.conversation_state.response_chunks[0] == "dGVzdF9hdWRpb19kYXRh"
+
+    def test_play_stream_chunk_multiple_handlers(self, message_handler, session_manager):
+        """Test playStream.chunk handling with multiple handlers."""
+        session_manager.create_session("test-123")
+        session_manager.conversation_state.collecting_response = True
+        
+        # Mock multiple handlers
+        handler1_called = False
+        handler2_called = False
+        
+        def handler1(data):
+            nonlocal handler1_called
+            handler1_called = True
+        
+        def handler2(data):
+            nonlocal handler2_called
+            handler2_called = True
+        
+        # Register multiple handlers
+        message_handler.register_event_handler("playStream.chunk", handler1)
+        message_handler.register_event_handler("playStream.chunk", handler2)
+        
+        # Process playStream.chunk message using process_message
+        data = {
+            "type": "playStream.chunk",
+            "conversationId": "test-123",
+            "audioChunk": "dGVzdF9hdWRpb19kYXRh"
+        }
+        message_handler.process_message(json.dumps(data))
+        
+        # Verify both handlers were called
+        assert handler1_called is True
+        assert handler2_called is True
+
+    def test_play_stream_chunk_handler_exception(self, message_handler, session_manager):
+        """Test playStream.chunk handling when handler raises exception."""
+        session_manager.create_session("test-123")
+        session_manager.conversation_state.collecting_response = True
+        
+        # Mock handler that raises exception
+        def failing_handler(data):
+            raise ValueError("Audio handler error")
+        
+        # Register the failing handler
+        message_handler.register_event_handler("playStream.chunk", failing_handler)
+        
+        # Process playStream.chunk message - should not raise exception
+        data = {
+            "type": "playStream.chunk",
+            "conversationId": "test-123",
+            "audioChunk": "dGVzdF9hdWRpb19kYXRh"
+        }
+        
+        # Should not raise exception, should log error
+        message_handler.process_message(json.dumps(data))
+        
+        # Verify conversation state was still updated despite handler error
+        assert len(session_manager.conversation_state.response_chunks) == 1
+
+    def test_play_stream_chunk_no_audio_playback_handler(self, message_handler, session_manager):
+        """Test playStream.chunk handling without audio playback handler."""
+        session_manager.create_session("test-123")
+        session_manager.conversation_state.collecting_response = True
+        
+        # Process playStream.chunk message without any custom handlers
+        data = {
+            "type": "playStream.chunk",
+            "conversationId": "test-123",
+            "audioChunk": "dGVzdF9hdWRpb19kYXRh"
+        }
+        message_handler.process_message(json.dumps(data))
+        
+        # Verify conversation state was updated (default behavior)
+        assert len(session_manager.conversation_state.response_chunks) == 1
+        assert session_manager.conversation_state.response_chunks[0] == "dGVzdF9hdWRpb19kYXRh"
+
+    def test_play_stream_chunk_with_metadata(self, message_handler, session_manager):
+        """Test playStream.chunk handling with additional metadata."""
+        session_manager.create_session("test-123")
+        session_manager.conversation_state.collecting_response = True
+        
+        # Mock audio playback handler
+        handler_called = False
+        received_data = None
+        
+        def mock_audio_handler(data):
+            nonlocal handler_called, received_data
+            handler_called = True
+            received_data = data
+        
+        # Register the audio playback handler
+        message_handler.register_event_handler("playStream.chunk", mock_audio_handler)
+        
+        # Process playStream.chunk message with metadata
+        data = {
+            "type": "playStream.chunk",
+            "conversationId": "test-123",
+            "audioChunk": "dGVzdF9hdWRpb19kYXRh",
+            "timestamp": 1234567890,
+            "sequenceNumber": 42,
+            "metadata": {"quality": "high", "format": "pcm16"}
+        }
+        message_handler.process_message(json.dumps(data))
+        
+        # Verify handler was called with full data
+        assert handler_called is True
+        assert received_data is not None
+        assert received_data["audioChunk"] == "dGVzdF9hdWRpb19kYXRh"
+        assert received_data["timestamp"] == 1234567890
+        assert received_data["sequenceNumber"] == 42
+        assert received_data["metadata"]["quality"] == "high"
+
+    def test_play_stream_chunk_handler_chain(self, message_handler, session_manager):
+        """Test playStream.chunk handling with handler chain."""
+        session_manager.create_session("test-123")
+        session_manager.conversation_state.collecting_response = True
+        
+        # Mock handler chain
+        handler_chain = []
+        
+        def handler1(data):
+            handler_chain.append("handler1")
+            data["processed_by_handler1"] = True
+        
+        def handler2(data):
+            handler_chain.append("handler2")
+            data["processed_by_handler2"] = True
+        
+        def handler3(data):
+            handler_chain.append("handler3")
+            data["processed_by_handler3"] = True
+        
+        # Register handlers in order
+        message_handler.register_event_handler("playStream.chunk", handler1)
+        message_handler.register_event_handler("playStream.chunk", handler2)
+        message_handler.register_event_handler("playStream.chunk", handler3)
+        
+        # Process playStream.chunk message
+        data = {
+            "type": "playStream.chunk",
+            "conversationId": "test-123",
+            "audioChunk": "dGVzdF9hdWRpb19kYXRh"
+        }
+        message_handler.process_message(json.dumps(data))
+        
+        # Verify handlers were called in order
+        assert handler_chain == ["handler1", "handler2", "handler3"]
+        
+        # Verify data was modified by handlers by checking the processed message
+        processed_messages = message_handler.get_received_messages()
+        assert len(processed_messages) == 1
+        
+        processed_data = processed_messages[0]
+        assert processed_data["processed_by_handler1"] is True
+        assert processed_data["processed_by_handler2"] is True
+        assert processed_data["processed_by_handler3"] is True 
