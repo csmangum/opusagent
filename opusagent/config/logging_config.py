@@ -32,6 +32,9 @@ def configure_logging(name: str = LOGGER_NAME, file_path: str = "logs/", log_fil
     Returns:
         logging.Logger: The configured logger instance
     """
+    global LOG_FILE
+    LOG_FILE = Path(file_path) / log_filename
+
     # Create logger
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, LOG_LEVEL))
