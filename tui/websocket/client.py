@@ -35,10 +35,10 @@ class WebSocketClient:
         self.connection_timeout = connection_timeout
         
         # Event handlers
-        self.on_message: Optional[Callable[[Dict[str, Any]], None]] = None
-        self.on_connect: Optional[Callable[[], None]] = None
-        self.on_disconnect: Optional[Callable[[], None]] = None
-        self.on_error: Optional[Callable[[Exception], None]] = None
+        self.on_message: Optional[Callable] = None
+        self.on_connect: Optional[Callable] = None
+        self.on_disconnect: Optional[Callable] = None
+        self.on_error: Optional[Callable] = None
         
         # Background tasks
         self._receive_task: Optional[asyncio.Task] = None
@@ -138,7 +138,18 @@ class WebSocketClient:
 
     async def send_message(self, message: Dict[str, Any]) -> bool:
         """Send a message to the WebSocket server."""
-        return await WebSocketUtils.safe_send_message(self.websocket, message, logger)
+        if not self.websocket:
+            logger.error("Cannot send message: Not connected")
+            return False
+        
+        try:
+            message_str = json.dumps(message)
+            await self.websocket.send(message_str)
+            logger.debug(f"Sent message: {message.get('type', 'unknown')}")
+            return True
+        except Exception as e:
+            logger.error(f"Error sending message: {e}")
+            return False
 
     async def _receive_loop(self) -> None:
         """Background task to receive and process messages."""

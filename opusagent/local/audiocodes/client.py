@@ -8,11 +8,14 @@ bridge server interactions.
 """
 
 import asyncio
+import base64
 import json
 import logging
+import threading
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+import queue
 
 import websockets
 
@@ -21,7 +24,15 @@ from .audio_playback import AudioPlaybackManager, AudioPlaybackConfig
 from .conversation_manager import ConversationManager
 from .live_audio_manager import LiveAudioManager
 from .message_handler import MessageHandler
-from .models import ConversationResult, SessionConfig
+from .models import (
+    AudioChunk,
+    ConversationResult,
+    MessageEvent,
+    MessageType,
+    SessionConfig,
+    SessionState,
+    StreamState,
+)
 from .session_manager import SessionManager
 from .vad_manager import VADManager
 
@@ -104,10 +115,16 @@ class MockAudioCodesClient:
         # WebSocket connection
         self._ws = None
         self._message_task = None
+        self.connected = False
         
         # Live audio capture
         self._live_audio_manager = None
         self._live_audio_enabled = False
+
+        # Thread-safe queues for audio and VAD events from live capture
+        self._audio_queue = queue.Queue(maxsize=100)
+        self._vad_queue = queue.Queue(maxsize=50)
+        self._queue_consumer_task = None
 
     async def __aenter__(self):
         """Connect to the bridge server."""
@@ -115,6 +132,7 @@ class MockAudioCodesClient:
             f"[CLIENT] Connecting to bridge at {self.config.bridge_url}..."
         )
         self._ws = await websockets.connect(self.config.bridge_url)
+        self.connected = True
         self.logger.info("[CLIENT] Connected to bridge server")
 
         # Start message handler
@@ -124,12 +142,19 @@ class MockAudioCodesClient:
         self.audio_playback.connect_to_message_handler(self.message_handler)
         self.audio_playback.start()
         
+        # Start queue consumer task for live audio/VAD events
+        self._queue_consumer_task = asyncio.create_task(self._consume_queues())
+        
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Disconnect from bridge server."""
+        self.connected = False
+        
         if self._message_task:
             self._message_task.cancel()
+        if self._queue_consumer_task:
+            self._queue_consumer_task.cancel()
         if self._ws:
             await self._ws.close()
         
@@ -147,6 +172,75 @@ class MockAudioCodesClient:
             self._live_audio_manager = None
         
         self.logger.info("[CLIENT] Disconnected from bridge server")
+
+
+
+    async def _consume_queues(self) -> None:
+        """Consume audio and VAD events from queues and send to bridge."""
+        while self._ws and self.connected:
+            try:
+                # Process audio chunks
+                try:
+                    while not self._audio_queue.empty():
+                        audio_chunk = self._audio_queue.get_nowait()
+                        await self._send_audio_chunk(audio_chunk)
+                except queue.Empty:
+                    pass
+
+                # Process VAD events
+                try:
+                    while not self._vad_queue.empty():
+                        vad_event = self._vad_queue.get_nowait()
+                        await self._send_vad_event(vad_event)
+                except queue.Empty:
+                    pass
+
+                await asyncio.sleep(0.01)  # Small delay to prevent busy waiting
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.logger.error(f"[CLIENT] Error in queue consumer: {e}")
+                await asyncio.sleep(0.1)
+
+    async def _send_audio_chunk(self, audio_chunk: str) -> None:
+        """Send audio chunk to bridge server."""
+        if not self._ws or not self.connected:
+            return
+
+        try:
+            message = {
+                "type": "userStream.chunk",
+                "conversationId": self.session_manager.get_conversation_id(),
+                "audioChunk": audio_chunk,
+            }
+            
+            await self._ws.send(json.dumps(message))
+            self.logger.debug(f"[CLIENT] Sent live audio chunk ({len(audio_chunk)} chars)")
+            
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error sending audio chunk: {e}")
+
+    async def _send_vad_event(self, vad_event: Dict[str, Any]) -> None:
+        """Send VAD event to bridge server."""
+        if not self._ws or not self.connected:
+            return
+
+        try:
+            event_type = vad_event["type"]
+            event_data = vad_event["data"]
+            
+            message = {
+                "type": event_type,
+                "conversationId": self.session_manager.get_conversation_id(),
+                **event_data
+            }
+            
+            await self._ws.send(json.dumps(message))
+            self.logger.debug(f"[CLIENT] Sent live VAD event: {event_type}")
+            
+        except Exception as e:
+            self.logger.error(f"[CLIENT] Error sending VAD event: {e}")
 
     def _handle_vad_event(self, event: Dict[str, Any]) -> None:
         """
@@ -729,35 +823,18 @@ class MockAudioCodesClient:
         Args:
             audio_chunk (str): Base64-encoded audio chunk
         """
-        if self._ws is None or not self._live_audio_enabled:
+        if not self._live_audio_enabled:
             return
 
         try:
-            # Send audio chunk to bridge
-            audio_chunk_msg = {
-                "type": "userStream.chunk",
-                "conversationId": self.session_manager.get_conversation_id(),
-                "audioChunk": audio_chunk,
-            }
-            
-            # Use asyncio.run_coroutine_threadsafe to send from different thread
-            import asyncio
+            # Queue audio chunk for sending (thread-safe)
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.run_coroutine_threadsafe(
-                        self._ws.send(json.dumps(audio_chunk_msg)), 
-                        loop
-                    )
-                else:
-                    # Fallback: try to send directly if no event loop
-                    self.logger.warning("[CLIENT] No running event loop for audio chunk")
-            except RuntimeError:
-                # No event loop in current thread, skip sending
-                pass
-            
+                self._audio_queue.put_nowait(audio_chunk)
+            except queue.Full:
+                self.logger.warning("[CLIENT] Audio queue full, dropping chunk")
+                
         except Exception as e:
-            self.logger.error(f"[CLIENT] Error sending live audio chunk: {e}")
+            self.logger.error(f"[CLIENT] Error handling live audio chunk: {e}")
 
     def _handle_live_vad_event(self, event: Dict[str, Any]) -> None:
         """
@@ -766,42 +843,18 @@ class MockAudioCodesClient:
         Args:
             event (Dict[str, Any]): VAD event data
         """
-        if self._ws is None or not self._live_audio_enabled:
+        if not self._live_audio_enabled:
             return
 
         try:
-            # Create message for the bridge
-            message = {
-                "type": event["type"],
-                "conversationId": self.session_manager.get_conversation_id(),
-                "timestamp": event.get("timestamp", time.time()),
-            }
-            
-            # Add event-specific data
-            if event["type"] == "userStream.speech.started":
-                message["speech_prob"] = event["data"].get("speech_prob", 0.0)
-            elif event["type"] == "userStream.speech.stopped":
-                message["speech_prob"] = event["data"].get("speech_prob", 0.0)
-                message["speech_duration_ms"] = event["data"].get("speech_duration_ms", 0)
-
-            # Send to bridge using thread-safe method
-            import asyncio
+            # Queue VAD event for sending (thread-safe)
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.run_coroutine_threadsafe(
-                        self._ws.send(json.dumps(message)), 
-                        loop
-                    )
-                    self.logger.debug(f"[CLIENT] Sent live VAD event: {event['type']}")
-                else:
-                    self.logger.warning("[CLIENT] No running event loop for VAD event")
-            except RuntimeError:
-                # No event loop in current thread, skip sending
-                pass
-
+                self._vad_queue.put_nowait(event)
+            except queue.Full:
+                self.logger.warning("[CLIENT] VAD queue full, dropping event")
+                
         except Exception as e:
-            self.logger.error(f"[CLIENT] Error sending live VAD event: {e}")
+            self.logger.error(f"[CLIENT] Error handling live VAD event: {e}")
 
     def get_available_audio_devices(self) -> List[Dict[str, Any]]:
         """

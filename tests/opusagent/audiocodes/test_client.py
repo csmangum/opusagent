@@ -891,17 +891,20 @@ class TestMockAudioCodesClient:
         with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
             async with MockAudioCodesClient(**client_config) as client:
                 client._live_audio_enabled = True
-                
+
                 # Ensure WebSocket is properly initialized
                 assert client._ws is not None
-                
+
                 # Mock WebSocket send
                 mock_send = Mock()
                 client._ws.send = mock_send
-                
+
                 test_chunk = "base64_encoded_audio_data"
                 client._handle_live_audio_chunk(test_chunk)
-                
+
+                # Wait for queue consumer to process the chunk
+                await asyncio.sleep(0.1)
+
                 # Verify message was sent
                 mock_send.assert_called_once()
                 call_args = mock_send.call_args[0][0]
@@ -953,6 +956,9 @@ class TestMockAudioCodesClient:
                 
                 client._handle_live_vad_event(test_event)
                 
+                # Wait for queue consumer to process the event
+                await asyncio.sleep(0.1)
+                
                 # Verify message was sent
                 mock_send.assert_called_once()
                 call_args = mock_send.call_args[0][0]
@@ -984,6 +990,9 @@ class TestMockAudioCodesClient:
                 }
                 
                 client._handle_live_vad_event(test_event)
+                
+                # Wait for queue consumer to process the event
+                await asyncio.sleep(0.1)
                 
                 # Verify message was sent
                 mock_send.assert_called_once()

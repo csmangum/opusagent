@@ -56,7 +56,7 @@ class LiveAudioManager:
         self.audio_callback = audio_callback
         self.vad_callback = vad_callback
 
-        # Default configuration
+        # Default configuration (lowered vad_threshold for better sensitivity)
         self._config = {
             "sample_rate": 16000,
             "channels": 1,
@@ -64,8 +64,8 @@ class LiveAudioManager:
             "format": pyaudio.paInt16,
             "device_index": None,  # Use default device
             "vad_enabled": True,
-            "vad_threshold": 0.5,
-            "vad_silence_threshold": 0.3,
+            "vad_threshold": 0.1,  # Lowered from 0.5 for better detection
+            "vad_silence_threshold": 0.05,  # Lowered accordingly
             "min_speech_duration_ms": 500,
             "min_silence_duration_ms": 300,
             "chunk_delay": 0.02,
@@ -252,6 +252,9 @@ class LiveAudioManager:
             # Simple energy-based VAD
             energy = np.mean(np.abs(audio_array))
             normalized_energy = energy / 32768.0  # Normalize to 0-1 range
+            
+            # Log energy for debugging
+            self.logger.debug(f"[LIVE_AUDIO] Audio energy level: {normalized_energy:.3f}")
             
             current_time = time.time()
             
