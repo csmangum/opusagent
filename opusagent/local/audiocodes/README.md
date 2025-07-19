@@ -15,11 +15,12 @@ The AudioCodes mock client is designed to test bridge server functionality by si
 - **Live microphone input** for realistic testing
 - **Real-time VAD** with configurable thresholds
 - **Audio device management** and selection
+- **Audio playback** for hearing incoming AI responses through speakers
 
 ## Module Structure
 
 ```
-opusagent/mock/audiocodes/
+opusagent/local/audiocodes/
 ├── __init__.py              # Main module exports
 ├── README.md               # This file
 ├── models.py               # Data models and enums
@@ -27,7 +28,9 @@ opusagent/mock/audiocodes/
 ├── session_manager.py      # Session state and lifecycle management
 ├── message_handler.py      # WebSocket message processing
 ├── audio_manager.py        # Audio file handling and caching
+├── audio_playback.py       # Audio playback for incoming AI responses
 ├── live_audio_manager.py   # Live microphone input and VAD
+├── vad_manager.py          # Voice Activity Detection management
 └── conversation_manager.py # Multi-turn conversation handling
 ```
 
@@ -99,7 +102,19 @@ Handles real-time microphone input and VAD:
 - Audio level monitoring and visualization
 - Thread-safe audio processing
 
-### 7. Main Client (`client.py`)
+### 7. Audio Playback (`audio_playback.py`)
+
+Handles real-time audio playback of incoming AI responses:
+
+- **Real-time audio playback** from base64-encoded chunks
+- **Automatic audio format conversion** and resampling
+- **Thread-safe audio queuing** and playback
+- **Volume control and mute** functionality
+- **Audio level monitoring** and visualization
+- **Integration with MessageHandler** for automatic playback
+- **Low-latency playback** through system speakers
+
+### 8. Main Client (`client.py`)
 
 Integrates all components into a cohesive client:
 
@@ -109,6 +124,7 @@ Integrates all components into a cohesive client:
 - Conversation testing utilities
 - **Live audio capture integration**
 - **Real-time VAD event handling**
+- **Audio playback integration** for hearing AI responses
 
 ## Usage
 
@@ -197,6 +213,54 @@ async def test_live_audio():
         
         # Initiate session
         await client.initiate_session()
+```
+
+### Audio Playback Testing
+
+```python
+async def test_audio_playback():
+    async with MockAudioCodesClient("ws://localhost:8080") as client:
+        # Audio playback is automatically enabled when connecting
+        # Check playback status
+        playback_status = client.get_audio_playback_status()
+        print(f"Audio playback: {playback_status}")
+        
+        # Initiate session
+        await client.initiate_session()
+        
+        # Send user audio
+        await client.send_user_audio("audio/user_input.wav")
+        
+        # Wait for AI response (you'll hear it through speakers)
+        response = await client.wait_for_llm_response()
+        print(f"Received {len(response)} audio chunks")
+        
+        # Control playback
+        client.set_playback_volume(0.8)  # Set volume to 80%
+        client.mute_playback()           # Mute audio
+        client.unmute_playback()         # Unmute audio
+        
+        # Get audio level for visualization
+        level = client.get_playback_audio_level()
+        print(f"Current audio level: {level}")
+```
+
+### Manual Audio Playback Control
+
+```python
+async def test_manual_playback():
+    async with MockAudioCodesClient("ws://localhost:8080") as client:
+        # Manually enable/disable audio playback
+        success = client.enable_audio_playback(volume=0.7)
+        if success:
+            print("Audio playback enabled")
+        
+        # ... conduct conversation ...
+        
+        # Disable playback
+        client.disable_audio_playback()
+        print("Audio playback disabled")
+```
         
         # Start live audio capture with VAD
         live_config = {
@@ -235,6 +299,30 @@ async def test_enhanced_features():
         
         print(f"Test completed: {'SUCCESS' if success else 'FAILED'}")
 ```
+
+## Requirements
+
+### Basic Requirements
+
+- Python 3.8+
+- WebSocket connection to bridge server
+- Audio files for testing (WAV format recommended)
+- Microphone access (for live audio testing)
+
+### Audio Playback Dependencies
+
+For audio playback functionality, install the following dependencies:
+
+```bash
+pip install sounddevice numpy scipy
+```
+
+**Note**: Audio playback requires:
+- **sounddevice**: For low-latency audio output
+- **numpy**: For audio data processing
+- **scipy**: For audio resampling (if needed)
+
+If these dependencies are not available, audio playback will be automatically disabled and the client will continue to work without audio output.
 
 ## Configuration
 

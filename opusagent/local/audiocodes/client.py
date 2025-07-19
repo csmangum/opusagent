@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 import websockets
 
 from .audio_manager import AudioManager
+from .audio_playback import AudioPlaybackManager, AudioPlaybackConfig
 from .conversation_manager import ConversationManager
 from .live_audio_manager import LiveAudioManager
 from .message_handler import MessageHandler
@@ -94,6 +95,12 @@ class MockAudioCodesClient:
             })
             self.vad_manager.initialize(vad_config)
 
+        # Initialize audio playback manager
+        self.audio_playback = AudioPlaybackManager(
+            config=AudioPlaybackConfig(enable_playback=True),
+            logger=self.logger
+        )
+
         # WebSocket connection
         self._ws = None
         self._message_task = None
@@ -112,6 +119,11 @@ class MockAudioCodesClient:
 
         # Start message handler
         self._message_task = asyncio.create_task(self._message_handler())
+        
+        # Connect audio playback to message handler and start playback
+        self.audio_playback.connect_to_message_handler(self.message_handler)
+        self.audio_playback.start()
+        
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -124,6 +136,10 @@ class MockAudioCodesClient:
         # Clean up VAD resources
         if hasattr(self, 'vad_manager'):
             self.vad_manager.cleanup()
+        
+        # Clean up audio playback resources
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.cleanup()
         
         # Clean up live audio resources
         if self._live_audio_manager:
@@ -858,6 +874,70 @@ class MockAudioCodesClient:
         """
         return self._live_audio_enabled
 
+    # ===== AUDIO PLAYBACK METHODS =====
+
+    def enable_audio_playback(self, volume: float = 1.0) -> bool:
+        """
+        Enable audio playback for incoming audio.
+
+        Args:
+            volume (float): Initial volume level (0.0 to 1.0)
+
+        Returns:
+            bool: True if enabled successfully, False otherwise
+        """
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.set_volume(volume)
+            return self.audio_playback.start()
+        return False
+
+    def disable_audio_playback(self) -> None:
+        """Disable audio playback."""
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.stop()
+
+    def set_playback_volume(self, volume: float) -> None:
+        """
+        Set audio playback volume.
+
+        Args:
+            volume (float): Volume level from 0.0 to 1.0
+        """
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.set_volume(volume)
+
+    def mute_playback(self) -> None:
+        """Mute audio playback."""
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.mute()
+
+    def unmute_playback(self) -> None:
+        """Unmute audio playback."""
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.unmute()
+
+    def get_playback_audio_level(self) -> float:
+        """
+        Get current audio playback level for visualization.
+
+        Returns:
+            float: Current audio level (0.0 to 1.0)
+        """
+        if hasattr(self, 'audio_playback'):
+            return self.audio_playback.get_audio_level()
+        return 0.0
+
+    def get_audio_playback_status(self) -> Dict[str, Any]:
+        """
+        Get audio playback status information.
+
+        Returns:
+            Dict[str, Any]: Audio playback status
+        """
+        if hasattr(self, 'audio_playback'):
+            return self.audio_playback.get_status()
+        return {"enabled": False, "connected": False, "manager_active": False}
+
     async def wait_for_llm_greeting(self, timeout: float = 20.0) -> List[str]:
         """
         Wait for and collect LLM greeting audio.
@@ -936,6 +1016,10 @@ class MockAudioCodesClient:
         if hasattr(self, 'vad_manager'):
             status["vad"] = self.get_vad_status()
         
+        # Add audio playback status
+        if hasattr(self, 'audio_playback'):
+            status["audio_playback"] = self.audio_playback.get_status()
+        
         # Add live audio status
         status["live_audio"] = self.get_live_audio_status()
         
@@ -950,6 +1034,10 @@ class MockAudioCodesClient:
         # Reset VAD state
         if hasattr(self, 'vad_manager'):
             self.vad_manager.reset()
+        
+        # Clean up audio playback
+        if hasattr(self, 'audio_playback'):
+            self.audio_playback.cleanup()
 
     def save_collected_audio(self, output_dir: str = "validation_output") -> None:
         """

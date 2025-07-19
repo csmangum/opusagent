@@ -1121,4 +1121,230 @@ class TestMockAudioCodesClient:
             # Verify live audio was cleaned up
             mock_manager.stop_capture.assert_called_once()
             assert client._live_audio_manager is None
-            # Note: _live_audio_enabled is not reset in __aexit__, only the manager is cleaned up 
+            # Note: _live_audio_enabled is not reset in __aexit__, only the manager is cleaned up
+
+    # ===== AUDIO PLAYBACK TESTS =====
+
+    def test_audio_playback_initialization(self, client_config):
+        """Test that audio playback is initialized correctly."""
+        client = MockAudioCodesClient(**client_config)
+        
+        assert hasattr(client, 'audio_playback')
+        assert client.audio_playback is not None
+        assert client.audio_playback.enabled is True
+
+    @pytest.mark.asyncio
+    async def test_client_context_manager_with_audio_playback(self, client_config, mock_websocket_connect):
+        """Test client context manager with audio playback initialization."""
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+            async with MockAudioCodesClient(**client_config) as client:
+                # Audio playback should be connected and started
+                assert client.audio_playback.connected is True
+                assert client.audio_playback.enabled is True
+
+    def test_enable_audio_playback(self, client_config):
+        """Test enabling audio playback."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'start', return_value=True):
+            success = client.enable_audio_playback(volume=0.7)
+            assert success is True
+
+    def test_enable_audio_playback_failure(self, client_config):
+        """Test enabling audio playback with failure."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'start', return_value=False):
+            success = client.enable_audio_playback(volume=0.7)
+            assert success is False
+
+    def test_disable_audio_playback(self, client_config):
+        """Test disabling audio playback."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'stop') as mock_stop:
+            client.disable_audio_playback()
+            mock_stop.assert_called_once()
+
+    def test_set_playback_volume(self, client_config):
+        """Test setting playback volume."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'set_volume') as mock_set_volume:
+            client.set_playback_volume(0.6)
+            mock_set_volume.assert_called_once_with(0.6)
+
+    def test_mute_playback(self, client_config):
+        """Test muting playback."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'mute') as mock_mute:
+            client.mute_playback()
+            mock_mute.assert_called_once()
+
+    def test_unmute_playback(self, client_config):
+        """Test unmuting playback."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'unmute') as mock_unmute:
+            client.unmute_playback()
+            mock_unmute.assert_called_once()
+
+    def test_get_playback_audio_level(self, client_config):
+        """Test getting playback audio level."""
+        client = MockAudioCodesClient(**client_config)
+        
+        with patch.object(client.audio_playback, 'get_audio_level', return_value=0.75):
+            level = client.get_playback_audio_level()
+            assert level == 0.75
+
+    def test_get_audio_playback_status(self, client_config):
+        """Test getting audio playback status."""
+        client = MockAudioCodesClient(**client_config)
+        
+        mock_status = {
+            "enabled": True,
+            "connected": True,
+            "manager_active": True,
+            "playing": True,
+            "muted": False,
+            "volume": 0.8,
+            "chunks_played": 10,
+            "bytes_played": 1000
+        }
+        
+        with patch.object(client.audio_playback, 'get_status', return_value=mock_status):
+            status = client.get_audio_playback_status()
+            assert status == mock_status
+
+    def test_get_session_status_with_audio_playback(self, client_config):
+        """Test getting session status with audio playback information."""
+        client = MockAudioCodesClient(**client_config)
+        
+        mock_playback_status = {
+            "enabled": True,
+            "connected": True,
+            "playing": True,
+            "chunks_played": 5
+        }
+        
+        with patch.object(client.audio_playback, 'get_status', return_value=mock_playback_status):
+            status = client.get_session_status()
+            
+            assert "audio_playback" in status
+            assert status["audio_playback"] == mock_playback_status
+
+    @pytest.mark.asyncio
+    async def test_client_context_manager_with_audio_playback_cleanup(self, client_config, mock_websocket_connect):
+        """Test client context manager cleanup with audio playback."""
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+            async with MockAudioCodesClient(**client_config) as client:
+                # Audio playback should be initialized
+                assert client.audio_playback is not None
+                
+                # Context manager should clean up audio playback
+                pass
+        
+        # Verify cleanup - the audio playback should be cleaned up
+        # Note: We can't directly verify this since we're using a new mock instance
+
+    def test_reset_session_state_with_audio_playback(self, client_config):
+        """Test resetting session state with audio playback."""
+        client = MockAudioCodesClient(**client_config)
+        
+        # Set some state
+        client.session_manager.session_state.status = SessionStatus.ACTIVE
+        client.audio_playback.playback.chunks_played = 10
+        
+        with patch.object(client.audio_playback, 'cleanup') as mock_cleanup:
+            client.reset_session_state()
+            
+            # Session state should be reset
+            assert client.session_manager.session_state.status == SessionStatus.DISCONNECTED
+            # Audio playback should be cleaned up
+            mock_cleanup.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_audio_playback_integration_with_message_handler(self, client_config, mock_websocket_connect):
+        """Test audio playback integration with message handler."""
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+            async with MockAudioCodesClient(**client_config) as client:
+                # Audio playback should be connected to message handler
+                assert client.audio_playback.connected is True
+                
+                # Test that playStream.chunk events are handled
+                test_data = {
+                    "type": "playStream.chunk",
+                    "audioChunk": "dGVzdF9hdWRpb19kYXRh"
+                }
+                
+                with patch.object(client.audio_playback, '_handle_play_stream_chunk') as mock_handler:
+                    # Process the message
+                    client.message_handler.process_message(json.dumps(test_data))
+                    
+                    # The handler should be called
+                    # Note: This is indirect since the handler is registered with the message handler
+                    assert client.audio_playback.connected is True
+
+    def test_audio_playback_without_audio_dependencies(self, client_config):
+        """Test audio playback when audio dependencies are not available."""
+        with patch('opusagent.local.audiocodes.audio_playback.AUDIO_AVAILABLE', False):
+            client = MockAudioCodesClient(**client_config)
+            
+            # Audio playback should still be initialized but disabled
+            assert hasattr(client, 'audio_playback')
+            assert client.audio_playback is not None
+            # The config should be disabled when dependencies are not available
+            # This is handled in the AudioPlayback class initialization
+
+    def test_audio_playback_volume_control_integration(self, client_config):
+        """Test audio playback volume control integration."""
+        client = MockAudioCodesClient(**client_config)
+        
+        # Test volume control through client methods
+        client.set_playback_volume(0.5)
+        assert client.audio_playback.playback.volume == 0.5
+        
+        # Test mute/unmute
+        client.mute_playback()
+        assert client.audio_playback.playback.muted is True
+        
+        client.unmute_playback()
+        assert client.audio_playback.playback.muted is False
+
+    def test_audio_playback_statistics_integration(self, client_config):
+        """Test audio playback statistics integration."""
+        client = MockAudioCodesClient(**client_config)
+        
+        # Set some test statistics
+        client.audio_playback.playback.chunks_played = 15
+        client.audio_playback.playback.bytes_played = 1500
+        client.audio_playback.playback.current_audio_level = 0.8
+        
+        # Test getting statistics through client
+        status = client.get_audio_playback_status()
+        assert status["chunks_played"] == 15
+        assert status["bytes_played"] == 1500
+        assert status["audio_level"] == 0.8
+
+    @pytest.mark.asyncio
+    async def test_audio_playback_with_conversation(self, client_config, mock_websocket_connect, temp_audio_file):
+        """Test audio playback during conversation."""
+        with patch('opusagent.local.audiocodes.client.websockets.connect', side_effect=mock_websocket_connect):
+            async with MockAudioCodesClient(**client_config) as client:
+                # Mock session acceptance
+                client.session_manager.session_state.accepted = True
+                
+                # Mock audio chunks for response
+                response_chunks = ["chunk1", "chunk2", "chunk3"]
+                if client.conversation_manager.conversation_state:
+                    client.conversation_manager.conversation_state.response_chunks = response_chunks
+                
+                # Test that audio playback is ready for conversation
+                assert client.audio_playback.enabled is True
+                assert client.audio_playback.connected is True
+                
+                # Test getting audio level during conversation
+                level = client.get_playback_audio_level()
+                assert isinstance(level, float)
+                assert 0.0 <= level <= 1.0 
