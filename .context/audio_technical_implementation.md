@@ -102,8 +102,8 @@ graph TD
     K --> L[Send to Twilio<br/>media event]
     
     E --> M[Base64 decode<br/>24kHz PCM16]
-    M --> N[Resample: 24kHz → 16kHz<br/>if needed]
-    N --> O[Format: raw/lpcm16<br/>16kHz PCM16]
+    M --> N[Direct pass to AudioCodes<br/>24kHz PCM16]
+    N --> O[Format: raw/lpcm16_24<br/>24kHz PCM16]
     O --> P[Chunk and send<br/>playStream.chunk]
     
     style A fill:#c8e6c9
@@ -113,7 +113,8 @@ graph TD
 ```
 
 **Optimizations Implemented:**
-- **Correct Resampling**: 24kHz → 8kHz/16kHz with high-quality algorithms
+- **Correct Resampling**: 24kHz → 8kHz for Twilio with high-quality algorithms
+- **Direct AudioCodes Pass**: 24kHz PCM16 passed directly to AudioCodes (no resampling)
 - **Proper Format Conversion**: PCM16 ↔ μ-law with correct silence values
 - **Timing Control**: 20ms chunk intervals for smooth playback
 - **Quality Validation**: Audio level monitoring and clipping detection
@@ -268,7 +269,38 @@ sequenceDiagram
 - **Line 12**: ✅ Consistent 20ms chunk timing
 - **Line 18**: ✅ Proper bot audio resampling for recording
 
-### 4. Audio Quality Monitoring and Recording Flow
+### 4. OpenAI Output Processing Flow (AudioCodes)
+
+```mermaid
+sequenceDiagram
+    participant OAI as OpenAI Realtime
+    participant AB as AudioCodesBridge
+    participant AC as AudioCodes
+    participant CR as CallRecorder
+    
+    OAI->>AB: response.audio.delta (24kHz PCM16, Base64)
+    Note over AB: handle_outgoing_audio_audiocodes()
+    AB->>AB: Decode Base64 → 24kHz PCM16 bytes
+    
+    AB->>AB: Direct pass to AudioCodes (no resampling)
+    Note over AB: AudioCodes supports 24kHz PCM16 natively
+    AB->>AB: Format as raw/lpcm16_24 (24kHz PCM16)
+    
+    AB->>AB: Chunk and send via playStream.chunk
+    AB->>AC: PlayStreamChunkMessage (24kHz PCM16)
+    
+    AB->>CR: record_bot_audio() (Base64)
+    CR->>CR: Decode, resample 24kHz → 16kHz
+    CR->>CR: Write to bot_audio.wav
+```
+
+**Optimizations Implemented:**
+- **Line 8**: ✅ Direct pass to AudioCodes (no resampling needed)
+- **Line 10**: ✅ AudioCodes natively supports 24kHz PCM16
+- **Line 12**: ✅ Efficient processing - no format conversion
+- **Line 18**: ✅ Proper bot audio resampling for recording
+
+### 5. Audio Quality Monitoring and Recording Flow
 
 ```mermaid
 sequenceDiagram
@@ -327,7 +359,7 @@ sequenceDiagram
 | Handler | PCM16 | 16kHz (internal) | Resample to internal rate, quality monitoring |
 | OpenAI Input | PCM16 | 24kHz | **RESOLVED: Properly resampled to 24kHz** |
 | OpenAI Output | PCM16 | 24kHz | Audio synthesis |
-| Bridge Output | PCM16/μ-law | 8kHz/16kHz | Resample 24kHz→target, convert formats |
+| Bridge Output | PCM16/μ-law | 8kHz/24kHz | Resample 24kHz→8kHz (Twilio), direct pass (AudioCodes) |
 | Recording | PCM16 | 16kHz | Resample all sources to 16kHz |
 
 ### Chunk Size Requirements
@@ -336,7 +368,7 @@ sequenceDiagram
 |-----------|--------------|----------|-------------|-------|
 | OpenAI Input | 4800 bytes | 100ms | 24kHz | **CORRECT: Dynamic calculation** |
 | Twilio Output | 160 bytes | 20ms | 8kHz | μ-law format |
-| AudioCodes Output | Variable | Variable | 16kHz | PCM16 format |
+| AudioCodes Output | Variable | Variable | 24kHz | PCM16 format |
 
 ## Data Transformation Matrix
 
@@ -353,13 +385,15 @@ sequenceDiagram
 | OpenAI Output | Bridge Processing | Platform Output | Quality |
 |---------------|------------------|-----------------|---------|
 | 24kHz PCM16 Base64 | 24kHz→8kHz resample, PCM16→μ-law | 8kHz μ-law Base64 | ✅ **Excellent** |
-| 24kHz PCM16 Base64 | 24kHz→16kHz resample | 16kHz PCM16 Base64 | ✅ **Excellent** |
+| 24kHz PCM16 Base64 | Direct pass (no resampling) | 24kHz PCM16 Base64 | ✅ **Excellent** |
 
 ## Implementation Status
 
 ### ✅ Resolved Issues
 
 #### 1. Sample Rate Mismatch (RESOLVED)
+
+**Note**: The documentation has been updated to reflect the current implementation where AudioCodes receives 24kHz PCM16 audio directly from OpenAI without resampling, as AudioCodes natively supports 24kHz audio formats.
 
 **Previous Issue**: OpenAI Realtime API expected 24kHz input, but received 8kHz (Twilio) or 16kHz (AudioCodes).
 
@@ -380,7 +414,23 @@ audio_chunk_b64 = base64.b64encode(openai_audio).decode("utf-8")
 - ✅ **Correct VAD timing** - accurate speech detection
 - ✅ **No audio artifacts** - high-quality resampling
 
-#### 2. Dynamic Chunk Size Calculation (IMPLEMENTED)
+#### 2. AudioCodes Outgoing Audio Processing (CORRECTED)
+
+**Previous Documentation Issue**: Documentation incorrectly stated that AudioCodes bridge resamples 24kHz → 16kHz for outgoing audio.
+
+**Current Implementation**: 
+```python
+# AudioCodes bridge passes 24kHz PCM16 directly to AudioCodes
+# No resampling needed as AudioCodes supports 24kHz natively
+```
+
+**Impact**: 
+- ✅ **More efficient processing** - no unnecessary resampling
+- ✅ **Better audio quality** - no quality loss from resampling
+- ✅ **Simplified implementation** - direct pass through
+- ✅ **Correct documentation** - now matches actual implementation
+
+#### 3. Dynamic Chunk Size Calculation (IMPLEMENTED)
 
 **Previous Issue**: Padding assumed 16kHz (3200 bytes), but should be 24kHz (4800 bytes) for optimal performance.
 
@@ -396,7 +446,7 @@ min_chunk_size = int(0.1 * self.internal_sample_rate * 2)  # 100ms
 - ✅ **Better performance** - no unnecessary padding or truncation
 - ✅ **Consistent timing** - proper audio chunk intervals
 
-#### 3. Bridge Type Detection (IMPLEMENTED)
+#### 4. Bridge Type Detection (IMPLEMENTED)
 
 **Previous Issue**: No automatic sample rate detection for unknown sources.
 
