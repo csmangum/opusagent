@@ -74,7 +74,7 @@ class ConnectionPanel(Widget):
         self.parent_app = None
         
         # Initialize components
-        self.websocket_client = WebSocketClient(
+        self.websocket_client: WebSocketClient = WebSocketClient(
             max_reconnect_attempts=5,
             reconnect_delay=2.0,
             ping_interval=20.0,
@@ -302,6 +302,10 @@ class ConnectionPanel(Widget):
         
         try:
             # Create session end message
+            if not self.session_state.conversation_id:
+                logger.warning("Cannot end session: No conversation ID")
+                return
+                
             message = SessionMessageBuilder.create_session_end(
                 conversation_id=self.session_state.conversation_id
             )
@@ -503,13 +507,15 @@ class ConnectionPanel(Widget):
             self.session_state.handle_bot_audio_chunk(chunk_data)
             
             # Route audio chunk to audio panel for playback
-            if self.parent_app and hasattr(self.parent_app, "audio_panel"):
+            if self.parent_app and hasattr(self.parent_app, "audio_panel") and self.parent_app.audio_panel:
                 try:
                     from tui.utils.audio_utils import AudioUtils
                     # Decode base64 audio data
                     audio_bytes = AudioUtils.convert_from_base64(chunk_data)
                     # Send to audio panel for playback
-                    await self.parent_app.audio_panel.handle_bot_audio_chunk(audio_bytes)
+                    audio_panel = self.parent_app.audio_panel
+                    if hasattr(audio_panel, 'handle_bot_audio_chunk'):
+                        await audio_panel.handle_bot_audio_chunk(audio_bytes)  # type: ignore
                 except Exception as e:
                     logger.error(f"Error routing audio chunk to audio panel: {e}")
         

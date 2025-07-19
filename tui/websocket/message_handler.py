@@ -6,7 +6,8 @@ based on message type and content.
 """
 
 import logging
-from typing import Dict, Any, Optional, Callable, List
+import asyncio
+from typing import Dict, Any, Optional, Callable, List, Union, Awaitable
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -16,10 +17,10 @@ class MessageHandler:
     
     def __init__(self):
         # Message type handlers
-        self._session_handlers: List[Callable[[str, Dict[str, Any]], None]] = []
-        self._audio_handlers: List[Callable[[str, Dict[str, Any]], None]] = []
-        self._error_handlers: List[Callable[[Dict[str, Any]], None]] = []
-        self._general_handlers: List[Callable[[Dict[str, Any]], None]] = []
+        self._session_handlers: List[Union[Callable[[str, Dict[str, Any]], None], Callable[[str, Dict[str, Any]], Awaitable[None]]]] = []
+        self._audio_handlers: List[Union[Callable[[str, Dict[str, Any]], None], Callable[[str, Dict[str, Any]], Awaitable[None]]]] = []
+        self._error_handlers: List[Union[Callable[[Dict[str, Any]], None], Callable[[Dict[str, Any]], Awaitable[None]]]] = []
+        self._general_handlers: List[Union[Callable[[Dict[str, Any]], None], Callable[[Dict[str, Any]], Awaitable[None]]]] = []
         
         # Message statistics
         self.message_count = 0
@@ -32,19 +33,19 @@ class MessageHandler:
         self.current_conversation_id: Optional[str] = None
         self.session_active = False
         
-    def add_session_handler(self, handler: Callable[[str, Dict[str, Any]], None]) -> None:
+    def add_session_handler(self, handler: Union[Callable[[str, Dict[str, Any]], None], Callable[[str, Dict[str, Any]], Awaitable[None]]]) -> None:
         """Add a handler for session events."""
         self._session_handlers.append(handler)
     
-    def add_audio_handler(self, handler: Callable[[str, Dict[str, Any]], None]) -> None:
+    def add_audio_handler(self, handler: Union[Callable[[str, Dict[str, Any]], None], Callable[[str, Dict[str, Any]], Awaitable[None]]]) -> None:
         """Add a handler for audio events."""
         self._audio_handlers.append(handler)
     
-    def add_error_handler(self, handler: Callable[[Dict[str, Any]], None]) -> None:
+    def add_error_handler(self, handler: Union[Callable[[Dict[str, Any]], None], Callable[[Dict[str, Any]], Awaitable[None]]]) -> None:
         """Add a handler for error events."""
         self._error_handlers.append(handler)
     
-    def add_general_handler(self, handler: Callable[[Dict[str, Any]], None]) -> None:
+    def add_general_handler(self, handler: Union[Callable[[Dict[str, Any]], None], Callable[[Dict[str, Any]], Awaitable[None]]]) -> None:
         """Add a general message handler."""
         self._general_handlers.append(handler)
     
@@ -186,7 +187,7 @@ class SessionMessageBuilder:
     @staticmethod
     def create_session_initiate(conversation_id: str, bot_name: str = "voice-bot", 
                               caller: str = "tui-validator", 
-                              media_formats: List[str] = None) -> Dict[str, Any]:
+                              media_formats: Optional[List[str]] = None) -> Dict[str, Any]:
         """Create a session.initiate message."""
         if media_formats is None:
             media_formats = ["raw/lpcm16"]

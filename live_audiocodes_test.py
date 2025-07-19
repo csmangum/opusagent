@@ -49,7 +49,8 @@ async def main():
             client.enable_audio_playback(volume=1.0)
             
             print("\n✅ Live capture and playback started")
-            print("Speak into your microphone to interact with the AI")
+            print("The AI will greet you. Then speak clearly into your microphone.")
+            print("If nothing happens after speaking, check mic volume or select a different device.")
             print("Press Ctrl+C to stop")
             
             try:
@@ -57,9 +58,9 @@ async def main():
                 while True:
                     await asyncio.sleep(1)
                     
-                    # Print status every 30 seconds
+                    # Print status every 5 seconds (increased frequency for better feedback)
                     current_time = time.time()
-                    if current_time - last_status_time >= 30:
+                    if current_time - last_status_time >= 5:
                         status = client.get_session_status()
                         input_level = client.get_audio_level()
                         output_level = client.get_playback_audio_level()
@@ -68,7 +69,7 @@ async def main():
                         print("\n📊 Call Status Update:")
                         print(f"   Session: {status.get('status', 'Unknown')}")
                         print(f"   Conversation ID: {status.get('conversation_id', 'N/A')}")
-                        print(f"   Input Audio Level: {input_level:.2f}")
+                        print(f"   Input Audio Level: {input_level:.2f} (speak louder if <0.10)")
                         print(f"   Output Audio Level: {output_level:.2f}")
                         print(f"   VAD Active: {vad_status.get('speech_active', False)}")
                         print(f"   Speech Probability: {vad_status.get('last_speech_prob', 0):.2f}")

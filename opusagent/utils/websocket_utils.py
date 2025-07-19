@@ -16,7 +16,7 @@ class WebSocketUtils:
     """Shared WebSocket utility functions."""
 
     @staticmethod
-    async def safe_send_event(websocket, event: Dict[str, Any], logger_instance: Optional[logging.Logger] = None) -> bool:
+    async def safe_send_event(websocket: Any, event: Dict[str, Any], logger_instance: Optional[logging.Logger] = None) -> bool:
         """
         Safely send an event to a WebSocket connection.
         
@@ -44,7 +44,7 @@ class WebSocketUtils:
             return False
 
     @staticmethod
-    async def safe_send_message(websocket, message: Dict[str, Any], logger_instance: Optional[logging.Logger] = None) -> bool:
+    async def safe_send_message(websocket: Any, message: Dict[str, Any], logger_instance: Optional[logging.Logger] = None) -> bool:
         """
         Safely send a message to a WebSocket connection.
         
@@ -73,7 +73,7 @@ class WebSocketUtils:
             return False
 
     @staticmethod
-    def is_websocket_closed(websocket) -> bool:
+    def is_websocket_closed(websocket: Any) -> bool:
         """
         Check if a WebSocket connection is closed.
         
