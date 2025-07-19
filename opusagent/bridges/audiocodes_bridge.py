@@ -16,6 +16,13 @@ from opusagent.models.audiocodes_api import (
     UserStreamStartedResponse,
     UserStreamStoppedResponse,
 )
+from opusagent.models.openai_api import ResponseAudioDeltaEvent
+from tui.utils.audio_utils import AudioUtils
+from opusagent.models.audiocodes_api import PlayStreamChunkMessage
+
+import base64
+import uuid
+from typing import Dict, Any
 
 logger = configure_logging("audiocodes_bridge")
 
@@ -33,6 +40,9 @@ class AudioCodesBridge(BaseRealtimeBridge):
         self.current_participant: str = (
             "caller"  # Default participant for single-party calls
         )
+
+        # Override the audio handler's outgoing audio method to use AudioCodes-specific sending
+        self.audio_handler.handle_outgoing_audio = self.handle_outgoing_audio_audiocodes
 
     def register_platform_event_handlers(self):
         """Register AudioCodes-specific event handlers with the event router."""
@@ -356,3 +366,54 @@ class AudioCodesBridge(BaseRealtimeBridge):
         }
         await self.send_platform_json(ConnectionValidatedResponse(**kwargs).model_dump())
         logger.info("✅ Connection validated response sent to AudioCodes")
+
+    async def handle_outgoing_audio_audiocodes(self, response_dict: Dict[str, Any]) -> None:
+        """AudioCodes-specific implementation of handle_outgoing_audio."""
+        try:
+            # Parse audio delta event
+            audio_delta = ResponseAudioDeltaEvent(**response_dict)
+
+            # Check if connections are still active
+            if self._closed or not self.conversation_id:
+                logger.debug(
+                    "Skipping audio delta - connection closed or no conversation ID"
+                )
+                return
+
+            # Check if platform websocket is available and not closed
+            if not self.platform_websocket:
+                logger.debug(
+                    "Skipping audio delta - platform websocket is unavailable"
+                )
+                return
+
+            # Record bot audio if recorder is available
+            if self.call_recorder:
+                await self.call_recorder.record_bot_audio(audio_delta.delta)
+
+            # Decode base64 to get raw audio bytes
+            pcm16_data = base64.b64decode(audio_delta.delta)
+
+            # Resample from 24kHz to 16kHz
+            resampled_pcm16 = AudioUtils.resample_audio(pcm16_data, 24000, 16000)
+
+            # Re-encode to base64
+            resampled_b64 = base64.b64encode(resampled_pcm16).decode("utf-8")
+
+            # Ensure we have an active stream
+            if not self.audio_handler.active_stream_id:
+                logger.debug("No active stream, creating new one")
+                self.audio_handler.active_stream_id = str(uuid.uuid4())
+
+            # Send audio chunk to platform client
+            stream_chunk = PlayStreamChunkMessage(
+                type=TelephonyEventType.PLAY_STREAM_CHUNK,
+                conversationId=self.conversation_id,
+                streamId=self.audio_handler.active_stream_id,
+                audioChunk=resampled_b64,
+                participant="caller",
+            )
+            await self.platform_websocket.send_json(stream_chunk.model_dump())
+
+        except Exception as e:
+            logger.error(f"Error in AudioCodes audio handler: {e}")
