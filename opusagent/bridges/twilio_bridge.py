@@ -8,7 +8,7 @@ import asyncio
 import base64
 import json
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from opusagent.bridges.base_bridge import BaseRealtimeBridge
 from opusagent.config.logging_config import configure_logging
@@ -379,7 +379,7 @@ class TwilioBridge(BaseRealtimeBridge):
             logger.error(f"Error in receive_from_platform: {e}")
             await self.close()
 
-    async def handle_outgoing_audio_twilio(self, response_dict):
+    async def handle_outgoing_audio_twilio(self, response_dict: Dict[str, Any]) -> None:
         """Twilio-specific implementation of handle_outgoing_audio.
         
         This method is used to override the AudioStreamHandler's handle_outgoing_audio
