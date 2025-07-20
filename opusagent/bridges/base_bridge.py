@@ -449,9 +449,8 @@ class BaseRealtimeBridge(ABC):
             return
         
         # Restore conversation history to transcript manager
-        # Note: TranscriptManager doesn't have add_conversation_item method
-        # We'll need to implement this or use a different approach
-        logger.info(f"Restoring {len(self.session_state.conversation_history)} conversation items")
+        self.transcript_manager.restore_conversation_context(self.session_state.conversation_history)
+        logger.info(f"Restored {len(self.session_state.conversation_history)} conversation items")
 
     async def _restore_function_state(self):
         """Restore function call state."""
@@ -459,9 +458,8 @@ class BaseRealtimeBridge(ABC):
             return
         
         # Restore function call history
-        # Note: FunctionHandler doesn't have restore_function_call method
-        # We'll need to implement this or use a different approach
-        logger.info(f"Restoring {len(self.session_state.function_calls)} function calls")
+        self.function_handler.restore_function_calls(self.session_state.function_calls)
+        logger.info(f"Restored {len(self.session_state.function_calls)} function calls")
 
     async def handle_audio_commit(self):
         """Handle committing audio buffer and triggering response."""
