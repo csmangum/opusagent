@@ -92,18 +92,52 @@ class SessionState:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SessionState":
-        """Create from dictionary."""
+        """Create from dictionary.
+        
+        Args:
+            data: Dictionary containing session state data
+            
+        Returns:
+            SessionState instance
+            
+        Raises:
+            ValueError: If conversation_id is missing or status is invalid
+        """
+        # Validate required conversation_id
+        conversation_id = data.get("conversation_id")
+        if not conversation_id:
+            raise ValueError("conversation_id is required but missing from session data")
+        
+        # Safely handle status with fallback to initiated
+        status_value = data.get("status", "initiated")
+        try:
+            status = SessionStatus(status_value)
+        except ValueError:
+            # Log warning and fallback to initiated status
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Invalid session status '{status_value}', falling back to 'initiated'")
+            status = SessionStatus.INITIATED
+        
         # Convert hex strings back to bytes for audio buffer
-        audio_buffer = [bytes.fromhex(chunk) for chunk in data.get("audio_buffer", [])]
+        audio_buffer = []
+        try:
+            audio_buffer = [bytes.fromhex(chunk) for chunk in data.get("audio_buffer", [])]
+        except (ValueError, TypeError) as e:
+            # Log warning and use empty buffer if hex conversion fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to convert audio buffer from hex: {e}, using empty buffer")
+            audio_buffer = []
         
         return cls(
-            conversation_id=data["conversation_id"],
+            conversation_id=conversation_id,
             session_id=data.get("session_id"),
             bridge_type=data.get("bridge_type", "audiocodes"),
             bot_name=data.get("bot_name", "voice-bot"),
             caller=data.get("caller", "unknown"),
             media_format=data.get("media_format", "raw/lpcm16"),
-            status=SessionStatus(data.get("status", "initiated")),
+            status=status,
             created_at=datetime.fromisoformat(data.get("created_at", datetime.now().isoformat())),
             last_activity=datetime.fromisoformat(data.get("last_activity", datetime.now().isoformat())),
             resumed_count=data.get("resumed_count", 0),
