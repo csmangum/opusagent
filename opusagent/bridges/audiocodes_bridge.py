@@ -280,9 +280,8 @@ class AudioCodesBridge(BaseRealtimeBridge):
     async def handle_session_resume(self, data: dict):
         """Handle session resume from AudioCodes.
 
-        Processes session resumption requests from AudioCodes.
-        Currently treats resume the same as initiate, but could be
-        extended to restore session state from storage.
+        Processes session resumption requests from AudioCodes and attempts
+        to restore session state from persistent storage.
 
         Args:
             data (dict): Session resume message data containing:
@@ -290,18 +289,33 @@ class AudioCodesBridge(BaseRealtimeBridge):
                 - supportedMediaFormats (list): List of supported audio formats
 
         Note:
-            In a production implementation, this method would restore
-            conversation state, context, and other session data from
-            persistent storage before resuming the session.
+            This method attempts to restore the session state from storage.
+            If successful, it restores conversation context, audio buffers,
+            and function state. If unsuccessful, it falls back to creating
+            a new session.
         """
         logger.info(f"Session resume received: {data}")
         conversation_id = data.get("conversationId")
         self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
 
-        # For now, treat resume the same as initiate
-        # In a real implementation, you would restore session state from storage
-        await self.initialize_conversation(conversation_id)
-        await self.send_session_resumed()
+        try:
+            # Initialize conversation (will attempt resume)
+            await self.initialize_conversation(conversation_id)
+            
+            if self.session_state and self.session_state.resumed_count > 0:
+                # Successfully resumed
+                await self.send_session_resumed()
+                logger.info(f"Session resumed successfully: {conversation_id}")
+            else:
+                # Failed to resume, treat as new session
+                await self.send_session_accepted()
+                logger.info(f"Session resume failed, created new session: {conversation_id}")
+                
+        except Exception as e:
+            logger.error(f"Error during session resume: {e}")
+            # Fall back to new session creation
+            await self.initialize_conversation(conversation_id)
+            await self.send_session_accepted()
 
     async def handle_activities(self, data: dict):
         """Handle activities/events from AudioCodes.

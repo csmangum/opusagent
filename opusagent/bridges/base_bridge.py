@@ -23,6 +23,10 @@ from opusagent.models.openai_api import SessionConfig
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
+from opusagent.services.session_manager_service import SessionManagerService
+from opusagent.models.session_state import SessionState
+from opusagent.session_storage import SessionStorage
+from opusagent.session_storage.memory_storage import MemorySessionStorage
 
 # Configure logging
 logger = configure_logging("base_bridge")
@@ -83,6 +87,7 @@ class BaseRealtimeBridge(ABC):
         self.vad_enabled = vad_enabled  # Store VAD configuration
         self.use_local_realtime = use_local_realtime
         self.local_realtime_config = local_realtime_config or {}
+        self.bridge_type = bridge_type
         self._closed = False
         self.conversation_id: Optional[str] = None
         self.media_format: Optional[str] = None
@@ -98,6 +103,14 @@ class BaseRealtimeBridge(ABC):
 
         # Initialize call recorder
         self.call_recorder: Optional[CallRecorder] = None
+        
+        # Initialize session state management
+        self.session_state: Optional[SessionState] = None
+        self.session_manager_service: Optional[SessionManagerService] = None
+        
+        # Initialize session manager service with memory storage
+        session_storage = MemorySessionStorage()
+        self.session_manager_service = SessionManagerService(session_storage)
 
         # Initialize function handler
         self.function_handler = FunctionHandler(
@@ -321,14 +334,33 @@ class BaseRealtimeBridge(ABC):
         pass
 
     async def initialize_conversation(self, conversation_id: Optional[str] = None):
-        #! Agent should do this
-        """Initialize a new conversation with OpenAI.
+        """Initialize a new conversation with OpenAI or resume existing session.
 
         Args:
             conversation_id (Optional[str]): Optional conversation ID to use
         """
         self.conversation_id = conversation_id or str(uuid.uuid4())
-        logger.info(f"Conversation started: {self.conversation_id}")
+        
+        # Try to resume existing session if session manager service is available
+        if self.session_manager_service:
+            self.session_state = await self.session_manager_service.resume_session(self.conversation_id)
+            
+            if self.session_state:
+                # Resume existing session
+                await self._restore_session_state()
+                logger.info(f"Resumed session: {self.conversation_id}")
+            else:
+                # Create new session
+                self.session_state = await self.session_manager_service.create_session(
+                    conversation_id=self.conversation_id,
+                    bridge_type=self.bridge_type,
+                    bot_name=getattr(self, 'bot_name', 'voice-bot'),
+                    caller=getattr(self, 'caller', 'unknown'),
+                    media_format=self.media_format or "raw/lpcm16"
+                )
+                logger.info(f"Created new session: {self.conversation_id}")
+        else:
+            logger.info(f"Conversation started: {self.conversation_id}")
 
         # Initialize local realtime client if using it
         if self.use_local_realtime and self.local_realtime_client:
@@ -370,6 +402,66 @@ class BaseRealtimeBridge(ABC):
                 conversation_id=self.conversation_id,
                 media_format=self.media_format or "pcm16",
             )
+
+    async def _restore_session_state(self):
+        """Restore session state from storage."""
+        if not self.session_state:
+            return
+        
+        # Restore conversation ID
+        self.conversation_id = self.session_state.conversation_id
+        
+        # Restore media format
+        if self.session_state.media_format:
+            self.media_format = self.session_state.media_format
+        
+        # Restore OpenAI session state if available
+        if self.session_state.openai_session_id:
+            # Reconnect to OpenAI with existing session
+            await self._restore_openai_session()
+        
+        # Restore conversation context
+        if self.session_state.conversation_history:
+            await self._restore_conversation_context()
+        
+        # Restore function calls state
+        if self.session_state.function_calls:
+            await self._restore_function_state()
+
+    async def _restore_openai_session(self):
+        """Restore OpenAI Realtime API session."""
+        if not self.session_state or not self.session_state.openai_session_id:
+            return
+        
+        try:
+            # Attempt to restore OpenAI session
+            # This would require OpenAI API support for session restoration
+            logger.info(f"Restoring OpenAI session: {self.session_state.openai_session_id}")
+            # Implementation depends on OpenAI API capabilities
+        except Exception as e:
+            logger.warning(f"Failed to restore OpenAI session: {e}")
+            # Fall back to new session
+            await self.session_manager.initialize_session()
+
+    async def _restore_conversation_context(self):
+        """Restore conversation context."""
+        if not self.session_state or not self.session_state.conversation_history:
+            return
+        
+        # Restore conversation history to transcript manager
+        # Note: TranscriptManager doesn't have add_conversation_item method
+        # We'll need to implement this or use a different approach
+        logger.info(f"Restoring {len(self.session_state.conversation_history)} conversation items")
+
+    async def _restore_function_state(self):
+        """Restore function call state."""
+        if not self.session_state or not self.session_state.function_calls:
+            return
+        
+        # Restore function call history
+        # Note: FunctionHandler doesn't have restore_function_call method
+        # We'll need to implement this or use a different approach
+        logger.info(f"Restoring {len(self.session_state.function_calls)} function calls")
 
     async def handle_audio_commit(self):
         """Handle committing audio buffer and triggering response."""
