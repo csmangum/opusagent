@@ -596,6 +596,344 @@ class TestFunctionHandlerRestoration:
         assert len(function_handler.active_function_calls) == 0
 
 
+class TestRedisSessionStorage:
+    """Test Redis-based session storage."""
+    
+    @pytest.fixture
+    def mock_redis_client(self):
+        """Create a mock Redis client."""
+        mock_client = AsyncMock()
+        mock_client.ping.return_value = True
+        mock_client.set.return_value = True
+        mock_client.get.return_value = None
+        mock_client.delete.return_value = 1
+        mock_client.keys.return_value = []
+        return mock_client
+    
+    @pytest.fixture
+    def mock_redis_pool(self):
+        """Create a mock Redis connection pool."""
+        mock_pool = MagicMock()
+        return mock_pool
+    
+    @pytest.mark.asyncio
+    @patch('opusagent.session_storage.redis_storage.redis')
+    async def test_redis_storage_initialization(self, mock_redis, mock_redis_pool):
+        """Test Redis storage initialization."""
+        from opusagent.session_storage.redis_storage import RedisSessionStorage
+        
+        mock_redis.ConnectionPool.from_url.return_value = mock_redis_pool
+        mock_redis.Redis.return_value = AsyncMock()
+        
+        storage = RedisSessionStorage(
+            redis_url="redis://localhost:6379",
+            session_prefix="test:session:",
+            default_ttl=3600,
+            max_connections=10
+        )
+        
+        assert storage.redis_url == "redis://localhost:6379"
+        assert storage.session_prefix == "test:session:"
+        assert storage.default_ttl == 3600
+        assert storage.max_connections == 10
+    
+    @pytest.mark.asyncio
+    @patch('opusagent.session_storage.redis_storage.redis')
+    async def test_redis_store_and_retrieve_session(self, mock_redis, mock_redis_client):
+        """Test storing and retrieving a session in Redis."""
+        from opusagent.session_storage.redis_storage import RedisSessionStorage
+        
+        mock_redis.ConnectionPool.from_url.return_value = MagicMock()
+        mock_redis.Redis.return_value = mock_redis_client
+        
+        storage = RedisSessionStorage()
+        
+        conversation_id = "test-123"
+        session_data = {
+            "conversation_id": conversation_id,
+            "status": "active",
+            "media_format": "pcm16"
+        }
+        
+        # Mock successful storage
+        mock_redis_client.set.return_value = True
+        
+        # Store session
+        success = await storage.store_session(conversation_id, session_data)
+        assert success
+        
+        # Mock successful retrieval
+        mock_redis_client.get.return_value = json.dumps(session_data)
+        
+        # Retrieve session
+        retrieved = await storage.retrieve_session(conversation_id)
+        assert retrieved is not None
+        assert retrieved["conversation_id"] == conversation_id
+        assert retrieved["status"] == "active"
+    
+    @pytest.mark.asyncio
+    @patch('opusagent.session_storage.redis_storage.redis')
+    async def test_redis_connection_failure(self, mock_redis):
+        """Test Redis storage with connection failure."""
+        from opusagent.session_storage.redis_storage import RedisSessionStorage
+        
+        mock_redis.ConnectionPool.from_url.side_effect = Exception("Connection failed")
+        
+        storage = RedisSessionStorage()
+        
+        # Test that operations fail gracefully
+        success = await storage.store_session("test-123", {"test": "data"})
+        assert not success
+        
+        retrieved = await storage.retrieve_session("test-123")
+        assert retrieved is None
+
+
+class TestBridgeSessionManagerIntegration:
+    """Test bridge integration with session manager service."""
+    
+    @pytest.fixture
+    def mock_websocket(self):
+        """Create a mock WebSocket."""
+        return AsyncMock()
+    
+    @pytest.fixture
+    def mock_realtime_websocket(self):
+        """Create a mock realtime WebSocket."""
+        return AsyncMock()
+    
+    @pytest.fixture
+    def test_session_config(self):
+        """Create a test session configuration."""
+        from opusagent.models.openai_api import SessionConfig
+        return SessionConfig(
+            input_audio_format="pcm16",
+            output_audio_format="pcm16",
+            voice="verse",
+            instructions="Test instructions",
+            modalities=["text", "audio"],
+            temperature=0.8,
+            model="gpt-4o-realtime-preview-2024-12-17"
+        )
+    
+    @pytest.mark.asyncio
+    async def test_bridge_initialization_with_session_manager(self, mock_websocket, mock_realtime_websocket, test_session_config):
+        """Test bridge initialization includes session manager service."""
+        from opusagent.bridges.base_bridge import BaseRealtimeBridge
+        from opusagent.session_storage.memory_storage import MemorySessionStorage
+        
+        # Create a mock bridge class that inherits from BaseRealtimeBridge
+        class MockBridge(BaseRealtimeBridge):
+            def register_platform_event_handlers(self):
+                pass
+            
+            async def send_platform_json(self, payload: dict):
+                pass
+            
+            async def handle_session_start(self, data: dict):
+                pass
+            
+            async def handle_audio_start(self, data: dict):
+                pass
+            
+            async def handle_audio_data(self, data: dict):
+                pass
+            
+            async def handle_audio_end(self, data: dict):
+                pass
+            
+            async def handle_session_end(self, data: dict):
+                pass
+        
+        bridge = MockBridge(
+            platform_websocket=mock_websocket,
+            realtime_websocket=mock_realtime_websocket,
+            session_config=test_session_config
+        )
+        
+        # Verify session manager service is initialized
+        assert bridge.session_manager_service is not None
+        assert isinstance(bridge.session_manager_service.storage, MemorySessionStorage)
+    
+    @pytest.mark.asyncio
+    async def test_bridge_initialize_conversation_with_resume(self, mock_websocket, mock_realtime_websocket, test_session_config):
+        """Test bridge conversation initialization with session resume."""
+        from opusagent.bridges.base_bridge import BaseRealtimeBridge
+        from opusagent.session_storage.memory_storage import MemorySessionStorage
+        
+        class MockBridge(BaseRealtimeBridge):
+            def register_platform_event_handlers(self):
+                pass
+            
+            async def send_platform_json(self, payload: dict):
+                pass
+            
+            async def handle_session_start(self, data: dict):
+                pass
+            
+            async def handle_audio_start(self, data: dict):
+                pass
+            
+            async def handle_audio_data(self, data: dict):
+                pass
+            
+            async def handle_audio_end(self, data: dict):
+                pass
+            
+            async def handle_session_end(self, data: dict):
+                pass
+        
+        bridge = MockBridge(
+            platform_websocket=mock_websocket,
+            realtime_websocket=mock_realtime_websocket,
+            session_config=test_session_config
+        )
+        
+        # Mock session manager service methods
+        if bridge.session_manager_service:
+            bridge.session_manager_service.resume_session = AsyncMock(return_value=None)
+            bridge.session_manager_service.create_session = AsyncMock()
+        bridge._restore_session_state = AsyncMock()
+        
+        # Test conversation initialization
+        await bridge.initialize_conversation("test-conv-123")
+        
+        # Verify resume was attempted
+        if bridge.session_manager_service:
+            bridge.session_manager_service.resume_session.assert_called_once_with("test-conv-123")
+            # Verify new session was created since resume returned None
+            bridge.session_manager_service.create_session.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_bridge_initialize_conversation_with_existing_session(self, mock_websocket, mock_realtime_websocket, test_session_config):
+        """Test bridge conversation initialization with existing session."""
+        from opusagent.bridges.base_bridge import BaseRealtimeBridge
+        
+        class MockBridge(BaseRealtimeBridge):
+            def register_platform_event_handlers(self):
+                pass
+            
+            async def send_platform_json(self, payload: dict):
+                pass
+            
+            async def handle_session_start(self, data: dict):
+                pass
+            
+            async def handle_audio_start(self, data: dict):
+                pass
+            
+            async def handle_audio_data(self, data: dict):
+                pass
+            
+            async def handle_audio_end(self, data: dict):
+                pass
+            
+            async def handle_session_end(self, data: dict):
+                pass
+        
+        bridge = MockBridge(
+            platform_websocket=mock_websocket,
+            realtime_websocket=mock_realtime_websocket,
+            session_config=test_session_config
+        )
+        
+        # Create a mock existing session
+        existing_session = SessionState(
+            conversation_id="test-conv-123",
+            status=SessionStatus.ACTIVE,
+            conversation_history=[{"type": "input", "text": "Hello"}]
+        )
+        
+        # Mock session manager service methods
+        if bridge.session_manager_service:
+            bridge.session_manager_service.resume_session = AsyncMock(return_value=existing_session)
+            bridge.session_manager_service.create_session = AsyncMock()
+        bridge._restore_session_state = AsyncMock()
+        
+        # Test conversation initialization
+        await bridge.initialize_conversation("test-conv-123")
+        
+        # Verify resume was attempted
+        if bridge.session_manager_service:
+            bridge.session_manager_service.resume_session.assert_called_once_with("test-conv-123")
+            # Verify new session was NOT created
+            bridge.session_manager_service.create_session.assert_not_called()
+        
+        # Verify session state was restored
+        bridge._restore_session_state.assert_called_once()
+
+
+class TestComponentRestoration:
+    """Test component restoration functionality."""
+    
+    @pytest.fixture
+    def transcript_manager(self):
+        """Create a transcript manager instance."""
+        return TranscriptManager()
+    
+    @pytest.fixture
+    def function_handler(self):
+        """Create a function handler instance."""
+        mock_websocket = AsyncMock()
+        return FunctionHandler(mock_websocket)
+    
+    def test_transcript_manager_restore_conversation_context(self, transcript_manager):
+        """Test transcript manager conversation context restoration."""
+        conversation_history = [
+            {"type": "input", "text": "Hello, I need help"},
+            {"type": "output", "text": "Hi! How can I assist you?"},
+            {"type": "input", "text": "I want to check my balance"}
+        ]
+        
+        # Restore conversation context
+        transcript_manager.restore_conversation_context(conversation_history)
+        
+        # Verify input transcripts
+        assert len(transcript_manager.input_transcript_buffer) == 2
+        assert transcript_manager.input_transcript_buffer[0] == "Hello, I need help"
+        assert transcript_manager.input_transcript_buffer[1] == "I want to check my balance"
+        
+        # Verify output transcripts
+        assert len(transcript_manager.output_transcript_buffer) == 1
+        assert transcript_manager.output_transcript_buffer[0] == "Hi! How can I assist you?"
+    
+    def test_function_handler_restore_function_calls(self, function_handler):
+        """Test function handler function call restoration."""
+        function_calls = [
+            {
+                "call_id": "func-1",
+                "function_name": "get_balance",
+                "arguments": {"account_id": "12345"},
+                "status": "completed",
+                "result": {"balance": 1500.00}
+            },
+            {
+                "call_id": "func-2",
+                "function_name": "transfer_funds",
+                "arguments": {"amount": 100, "to_account": "67890"},
+                "status": "pending"
+            }
+        ]
+        
+        # Restore function calls
+        function_handler.restore_function_calls(function_calls)
+        
+        # Verify function calls were restored
+        assert len(function_handler.active_function_calls) == 2
+        assert "func-1" in function_handler.active_function_calls
+        assert "func-2" in function_handler.active_function_calls
+        
+        # Verify call details
+        call_1 = function_handler.active_function_calls["func-1"]
+        assert call_1["function_name"] == "get_balance"
+        assert call_1["status"] == "completed"
+        assert call_1["result"] == {"balance": 1500.00}
+        
+        call_2 = function_handler.active_function_calls["func-2"]
+        assert call_2["function_name"] == "transfer_funds"
+        assert call_2["status"] == "pending"
+
+
 class TestSessionResumeIntegration:
     """Integration tests for session resume functionality."""
     
