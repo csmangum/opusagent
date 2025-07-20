@@ -164,11 +164,12 @@ class RedisSessionStorage(SessionStorage):
             logger.error(f"Error storing session in Redis: {e}")
             return False
     
-    async def retrieve_session(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+    async def retrieve_session(self, conversation_id: str, update_activity: bool = True) -> Optional[Dict[str, Any]]:
         """Retrieve session state from Redis.
         
         Args:
             conversation_id: Unique identifier for the conversation
+            update_activity: Whether to update the last activity timestamp
             
         Returns:
             Session state data if found, None otherwise
@@ -190,8 +191,9 @@ class RedisSessionStorage(SessionStorage):
             # Parse JSON data
             session_dict = json.loads(session_data)
             
-            # Update last activity
-            await self.update_session_activity(conversation_id)
+            # Update last activity only if requested
+            if update_activity:
+                await self.update_session_activity(conversation_id)
             
             logger.debug(f"Retrieved session from Redis: {conversation_id}")
             return session_dict

@@ -33,11 +33,12 @@ class SessionStorage(ABC):
         pass
     
     @abstractmethod
-    async def retrieve_session(self, conversation_id: str) -> Optional[Dict[str, Any]]:
+    async def retrieve_session(self, conversation_id: str, update_activity: bool = True) -> Optional[Dict[str, Any]]:
         """Retrieve session state.
         
         Args:
             conversation_id: Unique identifier for the conversation
+            update_activity: Whether to update the last activity timestamp
             
         Returns:
             Session state data if found, None otherwise
