@@ -14,6 +14,7 @@ import json
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
+import time
 
 from opusagent.session_storage.memory_storage import MemorySessionStorage
 from opusagent.models.session_state import SessionState, SessionStatus
@@ -73,6 +74,8 @@ class TestSessionState:
         session = SessionState(conversation_id="test-123")
         
         original_activity = session.last_activity
+        import time
+        time.sleep(0.001)  # Small delay to ensure timestamp difference
         session.update_activity()
         
         assert session.last_activity > original_activity
@@ -191,8 +194,8 @@ class TestMemorySessionStorage:
         await storage.store_session("recent", {"conversation_id": "recent"})
         await storage.store_session("old", {"conversation_id": "old"})
         
-        # Manually age the old session
-        storage._sessions["old"]["last_activity"] = datetime.now() - timedelta(hours=2)
+        # Manually age the old session by updating its timestamp
+        storage._session_timestamps["old"] = time.time() - 7200  # 2 hours ago
         
         # Clean up expired sessions (1 hour max age)
         cleaned = await storage.cleanup_expired_sessions(max_age_seconds=3600)
@@ -392,11 +395,14 @@ class TestSessionManagerService:
         await service.create_session("recent")
         await service.create_session("old")
         
-        # Manually age the old session
+        # Manually age the old session by updating its timestamp in storage
         old_session = await service.get_session("old")
         old_session.created_at = datetime.now() - timedelta(hours=2)
         old_session.last_activity = datetime.now() - timedelta(hours=1)
         await service.storage.store_session("old", old_session.to_dict())
+        
+        # Update the storage timestamp directly
+        service.storage._session_timestamps["old"] = time.time() - 7200  # 2 hours ago
         
         # Clean up expired sessions
         cleaned = await service.cleanup_expired_sessions(max_age_seconds=1800)
@@ -725,13 +731,17 @@ class TestSessionResumeIntegration:
         
         # Create session but make it expired
         await service.create_session("expired-session")
-        expired_session = await service.get_session("expired-session")
-        expired_session.created_at = datetime.now() - timedelta(hours=2)
-        expired_session.last_activity = datetime.now() - timedelta(hours=1)
-        await service.storage.store_session("expired-session", expired_session.to_dict())
+        
+        # Directly modify the session data in storage to make it expired
+        expired_session_data = service.storage._sessions["expired-session"]
+        expired_session_data["created_at"] = (datetime.now() - timedelta(hours=2)).isoformat()
+        expired_session_data["last_activity"] = (datetime.now() - timedelta(hours=1)).isoformat()
+        
+        # Update the storage timestamp to make it actually expired
+        service.storage._session_timestamps["expired-session"] = time.time() - 7200  # 2 hours ago
         
         # Try to resume expired session
-        resumed_session = await service.resume_session("expired-session")
+        resumed_session = await service.resume_session("expired-session", max_age_seconds=1800)
         assert resumed_session is None
 
 

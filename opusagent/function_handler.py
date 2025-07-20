@@ -601,12 +601,16 @@ class FunctionHandler:
         for call_data in function_calls:
             try:
                 call_id = call_data.get("call_id")
-                if not call_id:
+                function_name = call_data.get("function_name")
+                
+                # Validate required fields
+                if not call_id or not function_name:
+                    logger.warning(f"Skipping invalid function call: missing call_id or function_name")
                     continue
                     
                 # Restore function call state
                 self.active_function_calls[call_id] = {
-                    "function_name": call_data.get("function_name", ""),
+                    "function_name": function_name,
                     "arguments": call_data.get("arguments", {}),
                     "status": call_data.get("status", "completed"),
                     "result": call_data.get("result", {}),

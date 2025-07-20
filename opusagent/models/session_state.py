@@ -153,6 +153,21 @@ class SessionState:
         age = (datetime.now() - self.last_activity).total_seconds()
         return age > max_age_seconds
     
-    def can_resume(self) -> bool:
-        """Check if session can be resumed."""
-        return self.status not in [SessionStatus.ENDED, SessionStatus.ERROR] 
+    def can_resume(self, max_age_seconds: Optional[int] = None) -> bool:
+        """Check if session can be resumed.
+        
+        Args:
+            max_age_seconds: Optional maximum age in seconds before session is considered expired
+            
+        Returns:
+            True if session can be resumed, False otherwise
+        """
+        # Check status
+        if self.status in [SessionStatus.ENDED, SessionStatus.ERROR]:
+            return False
+            
+        # Check expiration if max_age_seconds is provided
+        if max_age_seconds is not None and self.is_expired(max_age_seconds):
+            return False
+            
+        return True 

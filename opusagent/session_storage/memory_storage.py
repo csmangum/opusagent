@@ -97,15 +97,24 @@ class MemorySessionStorage(SessionStorage):
                 logger.error(f"Error storing session {conversation_id}: {e}")
                 return False
     
-    async def retrieve_session(self, conversation_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve session state from memory."""
+    async def retrieve_session(self, conversation_id: str, update_activity: bool = True) -> Optional[Dict[str, Any]]:
+        """Retrieve session state from memory.
+        
+        Args:
+            conversation_id: Unique conversation identifier
+            update_activity: Whether to update the last activity timestamp
+            
+        Returns:
+            Session data if found, None otherwise
+        """
         async with self._lock:
             try:
                 session_data = self._sessions.get(conversation_id)
                 if session_data:
-                    # Update last activity
-                    session_data["last_activity"] = datetime.now().isoformat()
-                    self._session_timestamps[conversation_id] = time.time()
+                    # Update last activity only if requested
+                    if update_activity:
+                        session_data["last_activity"] = datetime.now().isoformat()
+                        self._session_timestamps[conversation_id] = time.time()
                     logger.debug(f"Retrieved session: {conversation_id}")
                     return session_data
                 return None

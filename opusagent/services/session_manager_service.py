@@ -65,21 +65,23 @@ class SessionManagerService:
         logger.info(f"Created session: {conversation_id}")
         return session_state
     
-    async def get_session(self, conversation_id: str) -> Optional[SessionState]:
+    async def get_session(self, conversation_id: str, update_activity: bool = True) -> Optional[SessionState]:
         """Retrieve a session by conversation ID.
         
         Args:
             conversation_id: Unique conversation identifier
+            update_activity: Whether to update the last activity timestamp
             
         Returns:
             Session state if found, None otherwise
         """
-        session_data = await self.storage.retrieve_session(conversation_id)
+        session_data = await self.storage.retrieve_session(conversation_id, update_activity=update_activity)
         if session_data:
             session_state = SessionState.from_dict(session_data)
-            # Update last activity
-            session_state.update_activity()
-            await self.storage.store_session(conversation_id, session_state.to_dict())
+            # Update last activity only if requested and not already updated by storage
+            if update_activity:
+                session_state.update_activity()
+                await self.storage.store_session(conversation_id, session_state.to_dict())
             return session_state
         return None
     
@@ -106,27 +108,24 @@ class SessionManagerService:
         await self.storage.store_session(conversation_id, session_state.to_dict())
         return True
     
-    async def resume_session(self, conversation_id: str) -> Optional[SessionState]:
+    async def resume_session(self, conversation_id: str, max_age_seconds: int = 3600) -> Optional[SessionState]:
         """Resume an existing session.
         
         Args:
             conversation_id: Unique conversation identifier
+            max_age_seconds: Maximum age in seconds before session is considered expired
             
         Returns:
             Resumed session state if successful, None otherwise
         """
-        session_state = await self.get_session(conversation_id)
+        # Get session without updating activity to check expiration
+        session_state = await self.get_session(conversation_id, update_activity=False)
         if not session_state:
             return None
         
-        # Validate session can be resumed
-        if not session_state.can_resume():
+        # Validate session can be resumed (includes expiration check)
+        if not session_state.can_resume(max_age_seconds):
             logger.warning(f"Cannot resume session {conversation_id}: status={session_state.status}")
-            return None
-        
-        # Check if session is expired
-        if session_state.is_expired():
-            logger.warning(f"Session {conversation_id} is expired, cannot resume")
             return None
         
         # Update resume count and status
@@ -176,9 +175,18 @@ class SessionManagerService:
         """List all active session IDs.
         
         Returns:
-            List of active conversation IDs
+            List of active conversation IDs (excluding ended sessions)
         """
-        return await self.storage.list_active_sessions()
+        all_sessions = await self.storage.list_active_sessions()
+        active_sessions = []
+        
+        for conversation_id in all_sessions:
+            # Get session without updating activity to check status
+            session_state = await self.get_session(conversation_id, update_activity=False)
+            if session_state and session_state.status != SessionStatus.ENDED:
+                active_sessions.append(conversation_id)
+        
+        return active_sessions
     
     async def cleanup_expired_sessions(self, max_age_seconds: int = 3600) -> int:
         """Clean up expired sessions.
