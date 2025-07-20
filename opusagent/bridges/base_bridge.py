@@ -11,8 +11,6 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 
-import websockets
-from fastapi import WebSocket
 from websockets.asyncio.client import ClientConnection
 
 from opusagent.audio_quality_monitor import QualityThresholds
