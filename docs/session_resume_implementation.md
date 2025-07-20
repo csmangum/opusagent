@@ -8,25 +8,74 @@ The session resume functionality enables persistent conversation state across se
 
 ### Core Components
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Session Resume System                    │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
-│  │ Session Storage │  │ Session Manager │  │ Bridge Layer │ │
-│  │   Interface     │  │    Service      │  │ Integration  │ │
-│  └─────────────────┘  └─────────────────┘  └──────────────┘ │
-│           │                     │                    │       │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
-│  │ Memory Storage  │  │ Session State   │  │ AudioCodes   │ │
-│  │   (Dev/Test)    │  │    Models       │  │   Bridge     │ │
-│  └─────────────────┘  └─────────────────┘  └──────────────┘ │
-│           │                     │                    │       │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
-│  │ Redis Storage   │  │ Transcript      │  │ Function     │ │
-│  │  (Production)   │  │   Manager       │  │  Handler     │ │
-│  └─────────────────┘  └─────────────────┘  └──────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Session Resume System"
+        subgraph "Storage Layer"
+            SSI[Session Storage Interface]
+            MS[Memory Storage<br/>Dev/Test]
+            RS[Redis Storage<br/>Production]
+        end
+        
+        subgraph "Service Layer"
+            SMS[Session Manager Service]
+            SSM[Session State Models]
+        end
+        
+        subgraph "Bridge Layer"
+            BB[Base Bridge]
+            ACB[AudioCodes Bridge]
+            TWB[Twilio Bridge]
+        end
+        
+        subgraph "Component Layer"
+            TM[Transcript Manager]
+            FH[Function Handler]
+            VAD[VAD Manager]
+        end
+        
+        subgraph "Data Flow"
+            CF[Conversation Flow]
+            SF[Session Flow]
+            AF[Audio Flow]
+        end
+    end
+    
+    %% Storage connections
+    SSI --> MS
+    SSI --> RS
+    
+    %% Service connections
+    SMS --> SSI
+    SMS --> SSM
+    
+    %% Bridge connections
+    BB --> SMS
+    ACB --> BB
+    TWB --> BB
+    
+    %% Component connections
+    TM --> SMS
+    FH --> SMS
+    VAD --> SMS
+    
+    %% Data flow connections
+    CF --> SMS
+    SF --> SSI
+    AF --> VAD
+    
+    %% Styling
+    classDef storageClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef serviceClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef bridgeClass fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef componentClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef flowClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class SSI,MS,RS storageClass
+    class SMS,SSM serviceClass
+    class BB,ACB,TWB bridgeClass
+    class TM,FH,VAD componentClass
+    class CF,SF,AF flowClass
 ```
 
 ### Data Flow
