@@ -148,6 +148,8 @@ class BaseRealtimeBridge(ABC):
 
         # Initialize session manager
         self.session_manager = SessionManager(realtime_websocket, session_config)
+        if self.session_manager is None:
+            raise RuntimeError("Failed to initialize SessionManager")
 
         # Initialize event router
         self.event_router = EventRouter()
@@ -377,8 +379,12 @@ class BaseRealtimeBridge(ABC):
                 raise
 
         # Initialize session with OpenAI Realtime API (or local client)
-        await self.session_manager.initialize_session()
-        await self.session_manager.send_initial_conversation_item()
+        if hasattr(self, 'session_manager') and self.session_manager is not None:
+            await self.session_manager.initialize_session()
+            await self.session_manager.send_initial_conversation_item()
+        else:
+            logger.error("SessionManager not available for session initialization")
+            raise RuntimeError("SessionManager not properly initialized")
 
         # Initialize call recorder
         if self.conversation_id:
@@ -441,7 +447,11 @@ class BaseRealtimeBridge(ABC):
         except Exception as e:
             logger.warning(f"Failed to restore OpenAI session: {e}")
             # Fall back to new session
-            await self.session_manager.initialize_session()
+            if hasattr(self, 'session_manager') and self.session_manager is not None:
+                await self.session_manager.initialize_session()
+            else:
+                logger.error("SessionManager not available for session restoration")
+                raise RuntimeError("SessionManager not properly initialized")
 
     async def _restore_conversation_context(self):
         """Restore conversation context."""
@@ -477,7 +487,11 @@ class BaseRealtimeBridge(ABC):
         # Only trigger response if no active response
         if not self.realtime_handler.response_active:
             logger.info("No active response - creating new response immediately")
-            await self.session_manager.create_response()
+            if hasattr(self, 'session_manager') and self.session_manager is not None:
+                await self.session_manager.create_response()
+            else:
+                logger.error("SessionManager not available for response creation")
+                raise RuntimeError("SessionManager not properly initialized")
         else:
             # Queue the user input for processing after current response completes
             self.realtime_handler.pending_user_input = {
@@ -493,7 +507,11 @@ class BaseRealtimeBridge(ABC):
                 logger.info(
                     "Response became inactive while queuing - processing immediately"
                 )
-                await self.session_manager.create_response()
+                if hasattr(self, 'session_manager') and self.session_manager is not None:
+                    await self.session_manager.create_response()
+                else:
+                    logger.error("SessionManager not available for response creation")
+                    raise RuntimeError("SessionManager not properly initialized")
                 self.realtime_handler.pending_user_input = None
 
     async def receive_from_platform(self):
