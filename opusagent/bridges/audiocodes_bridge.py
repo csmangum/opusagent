@@ -7,7 +7,7 @@ The AudioCodesBridge class extends BaseRealtimeBridge to provide:
 - AudioCodes-specific event handling (session management, audio streams, activities)
 - Proper message formatting for AudioCodes WebSocket protocol
 - Voice Activity Detection (VAD) event forwarding
-- Audio resampling from OpenAI's 24kHz to AudioCodes' 16kHz format
+- Direct audio streaming (AudioCodes natively supports 24kHz PCM16)
 - Participant tracking for multi-party calls
 
 Example:
@@ -39,7 +39,6 @@ from opusagent.models.audiocodes_api import (
     UserStreamStoppedResponse,
 )
 from opusagent.models.openai_api import ResponseAudioDeltaEvent
-from tui.utils.audio_utils import AudioUtils
 
 logger = configure_logging("audiocodes_bridge")
 
@@ -82,7 +81,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         Note:
             Sets bridge_type to "audiocodes" and initializes participant tracking.
             Overrides the audio handler's outgoing audio method to use AudioCodes-specific
-            audio processing including resampling from 24kHz to 16kHz.
+            audio processing with direct 24kHz PCM16 streaming (no resampling needed).
         """
         super().__init__(*args, bridge_type="audiocodes", **kwargs)
         self.current_participant: str = (
@@ -182,7 +181,15 @@ class AudioCodesBridge(BaseRealtimeBridge):
         """
         logger.info(f"Session initiate received: {data}")
         conversation_id = data.get("conversationId")
-        self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
+        supported_formats = data.get("supportedMediaFormats", ["raw/lpcm16"])
+        
+        # Prefer 24kHz format if available (AudioCodes supports it natively)
+        if "raw/lpcm16_24" in supported_formats:
+            self.media_format = "raw/lpcm16_24"
+            logger.info("Using 24kHz PCM16 format for optimal audio quality")
+        else:
+            self.media_format = supported_formats[0]
+            logger.info(f"Using media format: {self.media_format}")
 
         await self.initialize_conversation(conversation_id)
         await self.send_session_accepted()
@@ -296,7 +303,15 @@ class AudioCodesBridge(BaseRealtimeBridge):
         """
         logger.info(f"Session resume received: {data}")
         conversation_id = data.get("conversationId")
-        self.media_format = data.get("supportedMediaFormats", ["raw/lpcm16"])[0]
+        supported_formats = data.get("supportedMediaFormats", ["raw/lpcm16"])
+        
+        # Prefer 24kHz format if available (AudioCodes supports it natively)
+        if "raw/lpcm16_24" in supported_formats:
+            self.media_format = "raw/lpcm16_24"
+            logger.info("Using 24kHz PCM16 format for optimal audio quality")
+        else:
+            self.media_format = supported_formats[0]
+            logger.info(f"Using media format: {self.media_format}")
 
         try:
             # Initialize conversation (will attempt resume)
@@ -627,7 +642,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         """AudioCodes-specific implementation of handle_outgoing_audio.
 
         Processes outgoing audio from OpenAI Realtime API and sends it to AudioCodes.
-        Performs audio resampling from OpenAI's 24kHz format to AudioCodes' 16kHz format.
+        AudioCodes natively supports 24kHz PCM16, so no resampling is needed.
 
         Args:
             response_dict (Dict[str, Any]): Audio delta event from OpenAI containing:
@@ -637,11 +652,8 @@ class AudioCodesBridge(BaseRealtimeBridge):
             This method:
             1. Parses the audio delta event from OpenAI
             2. Records bot audio if call recording is enabled
-            3. Decodes base64 audio data
-            4. Resamples from 24kHz to 16kHz using AudioUtils
-            5. Re-encodes to base64
-            6. Sends as a play stream chunk to AudioCodes
-            7. Creates a new stream ID if none exists
+            3. Sends audio directly to AudioCodes without resampling (24kHz PCM16)
+            4. Creates a new stream ID if none exists
 
         Raises:
             Exception: Logs errors but doesn't raise to prevent audio pipeline disruption
@@ -666,26 +678,17 @@ class AudioCodesBridge(BaseRealtimeBridge):
             if self.call_recorder:
                 await self.call_recorder.record_bot_audio(audio_delta.delta)
 
-            # Decode base64 to get raw audio bytes
-            pcm16_data = base64.b64decode(audio_delta.delta)
-
-            # Resample from 24kHz to 16kHz
-            resampled_pcm16 = AudioUtils.resample_audio(pcm16_data, 24000, 16000)
-
-            # Re-encode to base64
-            resampled_b64 = base64.b64encode(resampled_pcm16).decode("utf-8")
-
             # Ensure we have an active stream
             if not self.audio_handler.active_stream_id:
                 logger.debug("No active stream, creating new one")
                 self.audio_handler.active_stream_id = str(uuid.uuid4())
 
-            # Send audio chunk to platform client
+            # Send audio chunk to platform client (no resampling needed - AudioCodes supports 24kHz)
             stream_chunk = PlayStreamChunkMessage(
                 type=TelephonyEventType.PLAY_STREAM_CHUNK,
                 conversationId=self.conversation_id,
                 streamId=self.audio_handler.active_stream_id,
-                audioChunk=resampled_b64,
+                audioChunk=audio_delta.delta,  # Send original 24kHz audio directly
                 participant="caller",
             )
             await self.platform_websocket.send_json(stream_chunk.model_dump())
