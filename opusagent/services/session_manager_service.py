@@ -78,10 +78,6 @@ class SessionManagerService:
         session_data = await self.storage.retrieve_session(conversation_id, update_activity=update_activity)
         if session_data:
             session_state = SessionState.from_dict(session_data)
-            # Update last activity only if requested and not already updated by storage
-            if update_activity:
-                session_state.update_activity()
-                await self.storage.store_session(conversation_id, session_state.to_dict())
             return session_state
         return None
     
@@ -95,7 +91,7 @@ class SessionManagerService:
         Returns:
             True if update was successful, False otherwise
         """
-        session_state = await self.get_session(conversation_id)
+        session_state = await self.get_session(conversation_id, update_activity=False)
         if not session_state:
             return False
         
@@ -145,7 +141,7 @@ class SessionManagerService:
         Returns:
             True if session was ended successfully, False otherwise
         """
-        session_state = await self.get_session(conversation_id)
+        session_state = await self.get_session(conversation_id, update_activity=False)
         if not session_state:
             return False
         
@@ -223,7 +219,7 @@ class SessionManagerService:
         Returns:
             Validation result dictionary
         """
-        session_state = await self.get_session(conversation_id)
+        session_state = await self.get_session(conversation_id, update_activity=False)
         
         if not session_state:
             return {
