@@ -86,6 +86,21 @@ For more examples, see the `scripts/` directory and subpackage READMEs.
 
 For detailed design, see docs/DESIGN.md and subpackage READMEs.
 
+## Roadmap / Future Features
+
+Planned enhancements:
+- Voice fingerprinting for user identification
+- Cross-session user memory for persistent context
+- Multi-language support with automatic detection
+- Integration with additional AI models (e.g., Grok, Claude)
+- Advanced conversation analytics and reporting
+- Web-based monitoring dashboard
+- Multimodal support (e.g., video calls)
+- Enhanced security features (audio encryption, compliance tools)
+- And more based on community feedback
+
+Contributions to these features are welcome! 
+
 ## Contributing
 
 Contributions welcome! See LICENSE for details.
