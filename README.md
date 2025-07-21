@@ -1,54 +1,95 @@
 # OpusAgent
-![Status](https://img.shields.io/badge/status-In%20Development%20–%20Experimental%20%26%20Aspirational-blue)
 
-OpusAgent is a powerful, enterprise-grade conversational AI platform that combines the natural language understanding of GPT-4o with a robust Finite State Agent (FSA) framework. It enables the creation of rational voice and chat agents that can handle complex, multi-step workflows while maintaining natural conversation flow. The platform is particularly well-suited for customer support, banking, healthcare, and enterprise applications where reliable, auditable, and context-aware interactions are crucial.
+## Overview
 
-At its core, OpusAgent bridges the gap between natural language processing and deterministic task execution. It leverages GPT-4o's advanced language understanding capabilities while maintaining strict control over business logic through its FSA framework. This unique combination allows for:
+OpusAgent is an open-source Python framework for building real-time voice agents. It provides a FastAPI-based server that bridges telephony platforms like AudioCodes VoiceAI Connect and Twilio with AI backends such as OpenAI's Realtime API. The package enables developers to create intelligent, conversational AI systems for voice interactions, with support for audio streaming, voice activity detection, transcription, and function calling.
 
-- **Natural Conversations**: The system maintains fluid, context-aware dialogues that feel natural to users
-- **Deterministic Execution**: Every action and state transition is controlled and auditable
-- **Complex Workflow Support**: Handles multi-step processes like account management, payment processing, and service requests
-- **Real-time Processing**: Ultra-low latency audio processing for voice interactions
-- **Enterprise Integration**: Seamless connection with existing business systems and APIs
-- **Compliance & Security**: Built-in support for audit trails and secure data handling
+Key components include bridges for different platforms, models for API schemas, utilities for audio and WebSocket handling, and tools for testing and simulation.
 
-The platform's architecture is designed to scale from simple Q&A bots to complex, multi-domain enterprise assistants, making it ideal for organizations that need both conversational flexibility and process reliability.
+## Features
 
-## Key Features
+- **Real-Time Audio Streaming**: Bidirectional audio between telephony platforms and AI.
+- **Voice Activity Detection (VAD)**: Local VAD using Silero or other backends.
+- **Transcription**: Local transcription with PocketSphinx and Whisper.
+- **Function Calling**: Integration with OpenAI's function tools for structured interactions.
+- **Mock Clients**: For testing without real telephony, including live microphone input.
+- **Dual Agent Simulation**: Test conversations between AI caller and customer service agents.
+- **Session Management**: Stateful sessions with resume capabilities.
+- **Audio Playback**: Local playback of AI responses.
+- **Extensible Architecture**: Modular design for adding new bridges and features.
 
-- **Dynamic Dialogue**: OpenAI's AI drives fluid, multi-turn conversations without rigid states.
-- **Structured Tasks**: FSA agents ensure reliable, step-by-step task handling.
-- **Ultra-Low Latency**: FastAPI-powered audio passthrough and real-time processing.
-- **Call Continuity**: Automatic handling of disconnections with context preservation.
-- **Modular Design**: Easily add new FSA-based tasks (e.g., payments, queries).
-- **Transparent Reasoning**: Track agent decision-making processes through FSA architecture.
-- **Model Context Protocol (MCP)**: Orchestrates tool/function calls, manages conversational context, and ensures reliable, auditable execution between the LLM and backend services.
+## Installation
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/your-org/fastagent.git
+cd fastagent
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+1. Set your OpenAI API key:
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+
+2. Start the server:
+   ```bash
+   python -m opusagent.main
+   ```
+
+3. Test with a mock client or connect via telephony platform.
+
+For local testing:
+- Use `python scripts/test_local_vad.py` for live microphone testing.
+- Run agent-to-agent conversations: `python scripts/test_agent_conversation.py`.
+
+## Configuration
+
+Configure via environment variables:
+- `OPENAI_API_KEY`: Required for OpenAI integration.
+- `VAD_ENABLED`: Enable/disable VAD (default: true).
+- `USE_LOCAL_REALTIME`: Use local mock instead of OpenAI (default: false).
+- `LOCAL_REALTIME_ENABLE_TRANSCRIPTION`: Enable local transcription (default: true).
+- And more (see docs for full list).
+
+## Usage Examples
+
+### Basic Server Start
+```bash
+python -m opusagent.main
+```
+
+### Agent Conversation
+```bash
+python scripts/test_agent_conversation.py
+```
+
+### Local Realtime Mode
+```bash
+USE_LOCAL_REALTIME=true python -m opusagent.main
+```
+
+For more examples, see the `scripts/` directory and subpackage READMEs.
 
 ## Architecture
 
-OpusAgent's architecture combines three key layers:
+- **main.py**: FastAPI server with WebSocket endpoints for bridges.
+- **bridges/**: Platform-specific bridges (e.g., audiocodes_bridge.py, twilio_bridge.py).
+- **models/**: Pydantic models for API schemas.
+- **local/**: Mock clients and local realtime simulation.
+- **vad/**: Voice Activity Detection module.
+- **transcription/**: Local transcription backends.
+- **utils/**: Audio and WebSocket utilities.
 
-- **Conversation Layer**: Powered by GPT-4o, handles natural language understanding and dialogue management
-- **Control Layer**: FSA framework manages state transitions and workflow execution
-- **Integration Layer**: MCP connects the conversation and control layers with backend services
+For detailed design, see docs/DESIGN.md and subpackage READMEs.
 
-This layered approach enables natural conversations while maintaining strict control over business logic and ensuring reliable execution of complex workflows.
+## Contributing
 
-## Documentation
+Contributions welcome! See LICENSE for details.
 
-For detailed documentation on OpusAgent concepts and implementation:
+## License
 
-- [Architecture Overview](docs/OVERVIEW.md)
-- [Design Details](docs/DESIGN.md)
-- [Finite State Agents (FSA)](docs/finite_state_agent.md)
-
-## Use Cases
-
-- **Banking**: Secure, real-time account inquiries and transfers
-- **Healthcare**: Patient appointment scheduling and triage
-- **Retail**: Intelligent order management and support
-- **Enterprise**: Internal hotline assistants with compliance-driven behavior
-
----
-
-*"Fast, natural conversations with seamless task completion."*
+MIT License 
