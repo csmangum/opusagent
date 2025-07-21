@@ -12,6 +12,8 @@ The Local Realtime Bridge integration allows you to:
 - **Reduce latency**: Local responses are faster than API calls
 - **Customize behavior**: Configure VAD, transcription, and response selection
 
+> **Note**: The Local Realtime module is located at `opusagent/local/realtime/` and provides imports from `opusagent.local.realtime`.
+
 ## Architecture
 
 ```
@@ -25,6 +27,24 @@ The Local Realtime Bridge integration allows you to:
 The bridge can connect to either:
 - **OpenAI Realtime API**: Real AI responses (requires API key)
 - **Local Realtime Client**: Mock responses (no API key needed)
+
+### Module Structure
+
+The Local Realtime module is located at `opusagent/local/realtime/` with the following structure:
+
+```
+opusagent/local/realtime/
+├── __init__.py              # Public API exports
+├── README.md                # Usage and feature overview
+├── DESIGN.md                # Design documentation
+├── models.py                # Data models and configuration classes
+├── client.py                # Main LocalRealtimeClient implementation
+├── handlers.py              # Event handler manager and event logic
+├── audio.py                 # Audio file management and caching
+├── generators.py            # Response generation logic
+├── utils.py                 # Utility functions and constants
+└── websocket_mock.py        # Mock WebSocket interface
+```
 
 ## Configuration
 
@@ -55,7 +75,31 @@ export LOCAL_REALTIME_SETUP_SMART_RESPONSES=true
 python opusagent/main.py
 ```
 
+**Import Example:**
+```python
+from opusagent.local.realtime import LocalRealtimeClient, LocalResponseConfig, ResponseSelectionCriteria
+```
+
 ## Usage
+
+### Importing the Module
+
+```python
+# Main client and models
+from opusagent.local.realtime import (
+    LocalRealtimeClient,
+    LocalResponseConfig,
+    ResponseSelectionCriteria,
+    ConversationContext
+)
+
+# Mock WebSocket interface
+from opusagent.local.realtime import (
+    MockWebSocketConnection,
+    MockWebSocketConnectionManager,
+    create_mock_websocket_connection
+)
+```
 
 ### Starting the Server
 
@@ -134,7 +178,7 @@ Track response performance:
 ### Custom Response Configurations
 
 ```python
-from opusagent.mock.realtime import LocalResponseConfig, ResponseSelectionCriteria
+from opusagent.local.realtime import LocalResponseConfig, ResponseSelectionCriteria
 
 # Create custom responses
 custom_responses = {
@@ -255,14 +299,22 @@ python scripts/validate_telephony_mock.py
 pytest tests/opusagent/bridges/ -v
 
 # Run local realtime tests
-pytest tests/opusagent/mock/realtime/ -v
+pytest tests/opusagent/realtime/ -v
 ```
+
+**Available Test Files:**
+- `tests/opusagent/realtime/test_client.py` - Main client tests
+- `tests/opusagent/realtime/test_models.py` - Data model tests
+- `tests/opusagent/realtime/test_handlers.py` - Event handler tests
+- `tests/opusagent/realtime/test_generators.py` - Response generation tests
+- `tests/opusagent/realtime/test_audio.py` - Audio management tests
+- `tests/opusagent/realtime/test_transcription.py` - Transcription tests
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Import Error**: Ensure `opusagent.mock.realtime` is available
+1. **Import Error**: Ensure `opusagent.local.realtime` is available
 2. **VAD Initialization**: Check VAD dependencies (torch, silero)
 3. **Transcription**: Verify transcription backend installation
 4. **Response Selection**: Check response configuration syntax
@@ -339,6 +391,6 @@ timings = client.get_response_timings()
 The Local Realtime Bridge integration provides a powerful alternative to the OpenAI Realtime API for testing, development, and cost-sensitive deployments. It maintains full compatibility with existing bridge functionality while offering extensive customization options.
 
 For more information, see:
-- [Local Realtime Client Documentation](mock_realtime_client.md)
+- [Local Realtime Client Documentation](../opusagent/local/realtime/README.md)
 - [Bridge Architecture](base_bridge.md)
 - [Testing Guide](testing_guide.md) 
