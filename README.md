@@ -1,22 +1,20 @@
 # OpusAgent
 
-## Overview
-
 OpusAgent is an open-source Python framework for building real-time voice agents. It provides a FastAPI-based server that bridges telephony platforms like AudioCodes VoiceAI Connect and Twilio with AI backends such as OpenAI's Realtime API. The package enables developers to create intelligent, conversational AI systems for voice interactions, with support for audio streaming, voice activity detection, transcription, and function calling.
 
 Key components include bridges for different platforms, models for API schemas, utilities for audio and WebSocket handling, and tools for testing and simulation.
 
 ## Features
 
-- **Real-Time Audio Streaming**: Bidirectional audio between telephony platforms and AI.
-- **Voice Activity Detection (VAD)**: Local VAD using Silero or other backends.
-- **Transcription**: Local transcription with PocketSphinx and Whisper.
-- **Function Calling**: Integration with OpenAI's function tools for structured interactions.
-- **Mock Clients**: For testing without real telephony, including live microphone input.
-- **Dual Agent Simulation**: Test conversations between AI caller and customer service agents.
-- **Session Management**: Stateful sessions with resume capabilities.
-- **Audio Playback**: Local playback of AI responses.
-- **Extensible Architecture**: Modular design for adding new bridges and features.
+- **[Real-Time Audio Streaming](docs/realtime_audio_streaming.md)**: Bidirectional audio between telephony platforms and AI.
+- **[Voice Activity Detection (VAD)](docs/vad_implementation.md)**: Local VAD using Silero or other backends.
+- **[Transcription](docs/transcription_implementation.md)**: Local transcription with PocketSphinx and Whisper.
+- **[Function Calling](docs/function_calling_implementation.md)**: Integration with OpenAI's function tools for structured interactions.
+- **[Mock Clients](docs/mock_clients_implementation.md)**: For testing without real telephony, including live microphone input.
+- **[Dual Agent Simulation](docs/dual_agent_simulation_implementation.md)**: Test conversations between AI caller and customer service agents.
+- **[Session Management](docs/session_management_implementation.md)**: Stateful sessions with resume capabilities.
+- **[Audio Playback](docs/audio_playback_implementation.md)**: Local playback of AI responses.
+- **[Extensible Architecture](docs/extensible_architecture_implementation.md)**: Modular design for adding new bridges and features.
 
 ## Installation
 
@@ -76,13 +74,13 @@ For more examples, see the `scripts/` directory and subpackage READMEs.
 
 ## Architecture
 
-- **main.py**: FastAPI server with WebSocket endpoints for bridges.
-- **bridges/**: Platform-specific bridges (e.g., audiocodes_bridge.py, twilio_bridge.py).
-- **models/**: Pydantic models for API schemas.
-- **local/**: Mock clients and local realtime simulation.
-- **vad/**: Voice Activity Detection module.
-- **transcription/**: Local transcription backends.
-- **utils/**: Audio and WebSocket utilities.
+- [**main.py**](./main.py): FastAPI server with WebSocket endpoints for bridges.
+- [**bridges/**](./bridges/): Platform-specific bridges (e.g., audiocodes_bridge.py, twilio_bridge.py).
+- [**models/**](./models/): Pydantic models for API schemas.
+- [**local/**](./local/): Mock clients and local realtime simulation.
+- [**vad/**](./vad/): Voice Activity Detection module.
+- [**transcription/**](./transcription/): Local transcription backends.
+- [**utils/**](./utils/): Audio and WebSocket utilities.
 
 For detailed design, see docs/DESIGN.md and subpackage READMEs.
 
@@ -95,6 +93,7 @@ Planned enhancements:
 - Integration with additional AI models (e.g., Grok, Claude)
 - Advanced conversation analytics and reporting
 - Web-based monitoring dashboard
+- Fully featured call review interface with audio playback, transcript analysis, quality metrics, and AI-powered call reviewing
 - Multimodal support (e.g., video calls)
 - Enhanced security features (audio encryption, compliance tools)
 - And more based on community feedback
@@ -103,7 +102,36 @@ Contributions to these features are welcome!
 
 ## Contributing
 
-Contributions welcome! See LICENSE for details.
+We welcome contributions! Here's how to get started:
+
+1. **Create an Issue**: Before making changes, please create an issue to discuss the feature, bug fix, or improvement you'd like to contribute.
+
+2. **Fork the Repository**: Fork the repository to your GitHub account.
+
+3. **Create a Feature Branch**: Create a new branch from `main` for your changes:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+4. **Make Your Changes**: Implement your changes with appropriate tests and documentation.
+
+5. **Submit a Pull Request**: Push your branch and create a pull request against the main repository.
+
+### Guidelines
+
+- Follow the existing code style and conventions
+- Add tests for new functionality
+- Update documentation as needed
+- Ensure all tests pass before submitting
+- Provide clear commit messages and PR descriptions
+
+### Getting Help
+
+- Check existing issues and discussions
+- Join our community discussions
+- Reach out if you need help getting started
+
+For more information, see the [LICENSE](LICENSE) file.
 
 ## License
 
