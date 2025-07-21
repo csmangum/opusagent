@@ -1,5 +1,7 @@
 # Finite State Agents (FSA)
 
+*This is a future feature, not implemented yet
+
 ## Overview
 
 Finite State Agents (FSA) represent an extension of traditional Finite State Machines (FSMs) designed specifically for conversational AI agents. FSA provide structured, controllable, and dynamic conversational flows while maintaining the intelligence and flexibility of modern language models.
