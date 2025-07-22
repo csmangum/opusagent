@@ -107,7 +107,7 @@ class TUIConfig:
             self.vad_enabled = centralized_config.vad_enabled
             self.show_vad_events = centralized_config.show_vad_events
             self.sample_rate = getattr(centralized_config, "sample_rate", DEFAULT_SAMPLE_RATE)
-            self.audio_format = "raw/lpcm16"  # Use default
+            self.audio_format = getattr(centralized_config, "audio_format", DEFAULT_AUDIO_FORMAT)
             self.enable_audio_recording = centralized_config.enable_audio_recording
             self.recordings_dir = centralized_config.recordings_dir
             self.max_recording_duration = centralized_config.max_recording_duration
