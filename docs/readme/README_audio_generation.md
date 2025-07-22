@@ -55,24 +55,7 @@ python scripts/generate_mock_audio.py --list-scenarios
 - `nova`
 - `shimmer`
 
-### 2. `example_mock_audio_usage.py`
-
-Example script demonstrating how to use generated audio files with the LocalRealtimeClient.
-
-**Features:**
-- Basic usage examples
-- Factory function examples
-- Audio file loading examples
-- Function call examples
-- WebSocket simulation examples
-- Audio file validation
-
-**Usage:**
-```bash
-python scripts/example_mock_audio_usage.py
-```
-
-### 3. `synthesize_phrases.py`
+### 2. `synthesize_phrases.py`
 
 Original script for generating specific phrases (legacy).
 
@@ -86,7 +69,7 @@ python scripts/synthesize_phrases.py
 After running `generate_mock_audio.py`, you'll have this structure:
 
 ```
-demo/audio/mock/
+opusagent/mock/audio/
 ├── customer_service/
 │   ├── customer_service_01.wav
 │   ├── customer_service_02.wav
@@ -108,7 +91,7 @@ demo/audio/mock/
 ### Basic Usage
 
 ```python
-from opusagent.mock.mock_realtime_client import LocalRealtimeClient, LocalResponseConfig
+from opusagent.local.realtime import LocalRealtimeClient, LocalResponseConfig
 
 # Create mock client
 mock_client = LocalRealtimeClient()
@@ -118,7 +101,7 @@ mock_client.add_response_config(
     "greeting",
     LocalResponseConfig(
         text="Hello! Welcome to our service.",
-        audio_file="demo/audio/mock/greetings/greetings_01.wav",
+        audio_file="opusagent/mock/audio/greetings/greetings_01.wav",
         delay_seconds=0.03,
         audio_chunk_delay=0.15
     )
@@ -128,24 +111,22 @@ mock_client.add_response_config(
 ### Using Factory Functions
 
 ```python
-from opusagent.mock.mock_factory import create_customer_service_mock
+from opusagent.local.mock_factory import create_customer_service_mock
 
 # Create customer service mock with audio files
 mock_client = create_customer_service_mock(
-    audio_dir="demo/audio/mock"
+    audio_dir="opusagent/mock/audio"
 )
 ```
 
-### WebSocket Manager Integration
+### Example Usage
 
-```python
-from opusagent.websocket_manager import create_mock_websocket_manager
-
-# Create WebSocket manager with mock client
-websocket_manager = create_mock_websocket_manager(
-    mock_server_url="ws://localhost:8080"
-)
-```
+See `opusagent/local/example_usage.py` for comprehensive examples of:
+- Basic LocalRealtimeClient usage
+- Factory function usage
+- Audio file loading and caching
+- Function call simulation
+- WebSocket integration
 
 ## Configuration
 
@@ -207,7 +188,7 @@ Audio files are typically 50-200KB each, depending on the phrase length. A compl
 
 2. **Audio Files Not Found**
    ```
-   Warning: Audio file not found: demo/audio/mock/greetings/greetings_01.wav
+   Warning: Audio file not found: opusagent/mock/audio/greetings/greetings_01.wav
    ```
    **Solution**: Run `generate_mock_audio.py` first to create the audio files.
 
@@ -246,7 +227,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## Examples
 
-See `example_mock_audio_usage.py` for comprehensive examples of:
+See `opusagent/local/example_usage.py` for comprehensive examples of:
 - Basic LocalRealtimeClient usage
 - Factory function usage
 - Audio file loading and caching
@@ -256,9 +237,9 @@ See `example_mock_audio_usage.py` for comprehensive examples of:
 ## Next Steps
 
 1. Generate audio files: `python scripts/generate_mock_audio.py`
-2. Test with examples: `python scripts/example_mock_audio_usage.py`
+2. Test with examples: `python opusagent/local/example_usage.py`
 3. Integrate with your tests
 4. Customize scenarios as needed
 5. Use with your WebSocket manager
 
-For more information about the LocalRealtimeClient, see the main documentation in `opusagent/mock/CHANGELOG.md`. 
+For more information about the LocalRealtimeClient, see the main documentation in `opusagent/local/README.md`. 

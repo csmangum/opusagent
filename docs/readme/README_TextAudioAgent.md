@@ -10,6 +10,8 @@ A specialized agent that connects to the real OpenAI Realtime API using **text m
 - **Real-time Response**: Maintains conversational flow while controlling audio output
 - **Flexible Audio Library**: Supports any audio files in the configured directory
 - **Function Call Integration**: Uses OpenAI's function calling to control audio playback
+- **Audio Streaming**: Implements chunked audio streaming for smooth playback
+- **Categorized Audio Files**: Organized audio files by category with numbered variants
 
 ## 🏗️ Architecture
 
@@ -24,7 +26,8 @@ The TextAudioAgent:
 2. Configures the session for text-only communication  
 3. Provides a `play_audio` function tool that the AI can call
 4. Handles function calls to play specified audio files locally
-5. Manages audio file discovery and playback
+5. Manages audio file discovery and playback with streaming support
+6. Uses categorized audio files with numbered variants for better organization
 
 ## 📋 Requirements
 
@@ -38,16 +41,46 @@ export OPENAI_API_KEY="your-openai-api-key-here"
 pip install sounddevice scipy librosa numpy
 ```
 
+The implementation also requires the TUI audio utilities:
+- `tui.utils.audio_utils.AudioUtils`
+- `tui.models.audio_manager.AudioManager`
+
 ### Audio Files
-Place audio files in a directory (default: `demo/audio/`):
+Place audio files in organized categories (default: `opusagent/local/audio/`):
 ```
-demo/audio/
-├── greeting.wav
-├── goodbye.wav
-├── thank_you.wav
-├── error.wav
-├── default.wav
-└── ... (any other audio files)
+opusagent/local/audio/
+├── greetings/
+│   ├── greetings_01.wav
+│   ├── greetings_02.wav
+│   └── ... (up to greetings_10.wav)
+├── farewells/
+│   ├── farewells_01.wav
+│   ├── farewells_02.wav
+│   └── ... (up to farewells_10.wav)
+├── thank_you/
+│   ├── thank_you_01.wav
+│   └── ... (up to thank_you_10.wav)
+├── errors/
+│   ├── errors_01.wav
+│   └── ... (up to errors_10.wav)
+├── default/
+│   ├── default_01.wav
+│   └── ... (up to default_10.wav)
+├── confirmations/
+│   ├── confirmations_01.wav
+│   └── ... (up to confirmations_10.wav)
+├── sales/
+│   ├── sales_01.wav
+│   └── ... (up to sales_10.wav)
+├── customer_service/
+│   ├── customer_service_01.wav
+│   └── ... (up to customer_service_10.wav)
+├── technical_support/
+│   ├── technical_support_01.wav
+│   └── ... (up to technical_support_10.wav)
+└── card_replacement/
+    ├── card_replacement_01.wav
+    └── ... (up to card_replacement_10.wav)
 ```
 
 ## 🚀 Quick Start
@@ -61,7 +94,7 @@ from opusagent.text_audio_agent import TextAudioAgent
 async def main():
     # Initialize the agent
     agent = TextAudioAgent(
-        audio_directory="demo/audio/",
+        audio_directory="opusagent/local/audio/",
         system_prompt="You are a helpful assistant that can play audio files.",
         temperature=0.7
     )
@@ -73,7 +106,7 @@ async def main():
         # Send a message
         await agent.send_text_message("Hello, can you greet me?")
         
-        # The AI will respond with text and may call play_audio("greeting.wav")
+        # The AI will respond with text and may call play_audio("greetings/greetings_01.wav")
         await asyncio.sleep(3)  # Wait for response
         
         # Disconnect
@@ -82,17 +115,11 @@ async def main():
 asyncio.run(main())
 ```
 
-### Interactive Test Script
+### Interactive Example
 
-```bash
-# Check requirements
-python test_text_audio_agent.py --check
-
-# Run interactive session
-python test_text_audio_agent.py --interactive
-
-# Run automated tests
-python test_text_audio_agent.py --automated
+```python
+# Run the built-in example
+python opusagent/text_audio_agent.py
 ```
 
 ## 🛠️ Configuration
@@ -101,9 +128,9 @@ python test_text_audio_agent.py --automated
 
 ```python
 agent = TextAudioAgent(
-    audio_directory="demo/audio/",     # Directory containing audio files
-    system_prompt="Custom prompt...",  # AI system prompt
-    temperature=0.7                    # AI response temperature (0.0-1.0)
+    audio_directory="opusagent/local/audio/",  # Directory containing audio files
+    system_prompt="Custom prompt...",          # AI system prompt
+    temperature=0.7                            # AI response temperature (0.0-1.0)
 )
 ```
 
@@ -115,6 +142,39 @@ The agent automatically configures the OpenAI session with:
 - **Model**: `gpt-4o-realtime-preview-2025-06-03`
 - **Tool Choice**: `auto` (AI decides when to use functions)
 
+### Default System Prompt
+
+The agent uses a comprehensive system prompt that includes:
+
+```
+You are a helpful voice assistant that communicates through text but can play audio files for responses.
+
+You have access to a play_audio function that allows you to play audio files to respond to the user.
+When you want to "speak" to the user, call the play_audio function with an appropriate filename.
+
+Available audio files are organized in categories with numbered files:
+- greetings/greetings_01.wav through greetings_10.wav - for welcoming users
+- farewells/farewells_01.wav through farewells_10.wav - for farewells  
+- thank_you/thank_you_01.wav through thank_you_10.wav - for expressing gratitude
+- errors/errors_01.wav through errors_10.wav - for error situations
+- default/default_01.wav through default_10.wav - for general responses
+- confirmations/confirmations_01.wav through confirmations_10.wav - for confirmations
+- sales/sales_01.wav through sales_10.wav - for sales interactions
+- customer_service/customer_service_01.wav through customer_service_10.wav - for customer service
+- technical_support/technical_support_01.wav through technical_support_10.wav - for technical support
+- card_replacement/card_replacement_01.wav through card_replacement_10.wav - for card replacement
+
+IMPORTANT: Use the exact filename including the category folder and number, for example:
+- play_audio("greetings/greetings_01.wav") for a greeting
+- play_audio("farewells/farewells_03.wav") for a farewell
+- play_audio("default/default_05.wav") for a general response
+
+Choose the most appropriate audio file based on the context of the conversation.
+You should use text responses to provide detailed information and audio files to add personality and engagement.
+
+Always be helpful, friendly, and engaging in your responses.
+```
+
 ### play_audio Function
 
 The AI has access to a `play_audio` function with this schema:
@@ -122,13 +182,13 @@ The AI has access to a `play_audio` function with this schema:
 ```json
 {
   "name": "play_audio",
-  "description": "Play a specified audio file to respond to the user",
+  "description": "Play a specified audio file to respond to the user. Use this to 'speak' by selecting appropriate audio files.",
   "parameters": {
     "type": "object",
     "properties": {
       "filename": {
         "type": "string",
-        "description": "Name of the audio file to play (e.g., 'greeting.wav')"
+        "description": "Name of the audio file to play (e.g., 'greetings/greetings_01.wav'). Should include the file extension."
       },
       "context": {
         "type": "string", 
@@ -145,25 +205,25 @@ The AI has access to a `play_audio` function with this schema:
 ### Greeting Interaction
 ```
 User: "Hello there!"
-AI: *calls play_audio("greeting.wav")* 
+AI: *calls play_audio("greetings/greetings_01.wav")* 
 AI: "Hello! I just played a warm greeting for you. How can I help you today?"
-🔊 [greeting.wav plays locally]
+🔊 [greetings_01.wav plays locally]
 ```
 
 ### Gratitude Response  
 ```
 User: "Thank you for your help!"
-AI: *calls play_audio("thank_you.wav")*
+AI: *calls play_audio("thank_you/thank_you_03.wav")*
 AI: "You're very welcome! I played a thank you message to express my appreciation."
-🔊 [thank_you.wav plays locally]
+🔊 [thank_you_03.wav plays locally]
 ```
 
 ### Error Handling
 ```
 User: "I'm having trouble with something complicated"
-AI: *calls play_audio("error.wav")*
+AI: *calls play_audio("errors/errors_02.wav")*
 AI: "I understand you're facing difficulties. Let me help you work through this step by step."
-🔊 [error.wav plays locally]
+🔊 [errors_02.wav plays locally]
 ```
 
 ## 🎵 Audio File Management
@@ -178,14 +238,24 @@ AI: "I understand you're facing difficulties. Let me help you work through this 
 - **Sample Rate**: Files are automatically converted to 16kHz
 - **Channels**: Converted to mono
 - **Bit Depth**: Converted to 16-bit PCM
+- **Streaming**: Audio is chunked into 200ms segments for smooth playback
 
 ### File Discovery
 The agent automatically scans the audio directory and updates the AI's system prompt with available files:
 
 ```python
-agent = TextAudioAgent(audio_directory="demo/audio/")
-# AI will know about all .wav, .mp3, .flac files in demo/audio/
+agent = TextAudioAgent(audio_directory="opusagent/local/audio/")
+# AI will know about all categorized audio files in the directory
 ```
+
+### Audio Streaming Implementation
+
+The implementation includes sophisticated audio handling:
+- **Chunked Playback**: Audio files are split into 200ms chunks
+- **Streaming Queue**: Chunks are queued for smooth playback
+- **Error Recovery**: Automatic retry and restart mechanisms
+- **Format Conversion**: Automatic sample rate and channel conversion
+- **Statistics Monitoring**: Real-time playback statistics
 
 ## 📊 Monitoring & Debugging
 
@@ -195,9 +265,9 @@ status = agent.get_status()
 print(status)
 # {
 #     "connected": True,
-#     "audio_directory": "demo/audio",
-#     "available_files": ["greeting.wav", "goodbye.wav", ...],
-#     "file_count": 5
+#     "audio_directory": "opusagent/local/audio",
+#     "available_files": ["greetings/greetings_01.wav", "farewells/farewells_01.wav", ...],
+#     "file_count": 50
 # }
 ```
 
@@ -211,8 +281,9 @@ logging.basicConfig(level=logging.INFO)
 # - Connection status
 # - Audio file discovery  
 # - Function call execution
-# - Audio playback status
-# - Error handling
+# - Audio playback status with chunk information
+# - Error handling and recovery
+# - Audio manager statistics
 ```
 
 ## 🔧 Advanced Usage
@@ -223,16 +294,16 @@ logging.basicConfig(level=logging.INFO)
 custom_prompt = """
 You are a bank customer service agent that can play audio responses.
 
-When greeting customers, use greeting.wav
-When apologizing, use apologetic.wav  
-When explaining policies, use informative.wav
-When ending calls, use goodbye.wav
+When greeting customers, use greetings/greetings_01.wav through greetings_10.wav
+When apologizing, use errors/errors_01.wav through errors_10.wav  
+When explaining policies, use confirmations/confirmations_01.wav through confirmations_10.wav
+When ending calls, use farewells/farewells_01.wav through farewells_10.wav
 
 Be professional and use audio files to enhance the customer experience.
 """
 
 agent = TextAudioAgent(
-    audio_directory="bank_audio/",
+    audio_directory="opusagent/local/audio/",
     system_prompt=custom_prompt
 )
 ```
@@ -241,17 +312,17 @@ agent = TextAudioAgent(
 
 ```python
 # Business hours agent
-day_agent = TextAudioAgent(audio_directory="audio/business_hours/")
+day_agent = TextAudioAgent(audio_directory="opusagent/local/audio/")
 
 # After hours agent  
-night_agent = TextAudioAgent(audio_directory="audio/after_hours/")
+night_agent = TextAudioAgent(audio_directory="opusagent/local/audio/")
 ```
 
 ### Error Handling
 
 ```python
 async def robust_agent():
-    agent = TextAudioAgent(audio_directory="demo/audio/")
+    agent = TextAudioAgent(audio_directory="opusagent/local/audio/")
     
     try:
         if not await agent.connect():
@@ -276,21 +347,15 @@ python -m pytest tests/test_text_audio_agent.py
 ### Integration Tests
 ```bash
 # Test with real OpenAI API
-python test_text_audio_agent.py --automated
-
-# Interactive testing
-python test_text_audio_agent.py --interactive
+python opusagent/text_audio_agent.py
 ```
 
 ### Audio System Tests
 ```bash
 # Check audio dependencies
-python test_text_audio_agent.py --check
-
-# Test audio playback directly
 python -c "
 from opusagent.text_audio_agent import func_play_audio
-result = func_play_audio({'filename': 'greeting.wav'})
+result = func_play_audio({'filename': 'greetings/greetings_01.wav'})
 print(result)
 "
 ```
@@ -302,15 +367,17 @@ print(result)
 **"Audio playback not available"**
 ```bash
 pip install sounddevice scipy librosa numpy
+# Also ensure TUI audio utilities are available
 ```
 
 **"No audio files found"**
 ```bash
 # Check directory exists
-ls demo/audio/
+ls opusagent/local/audio/
 
-# Add some audio files
-cp your_audio_files/*.wav demo/audio/
+# Add some audio files in the correct structure
+mkdir -p opusagent/local/audio/greetings
+cp your_audio_files/*.wav opusagent/local/audio/greetings/
 ```
 
 **"OpenAI connection failed"**
@@ -326,14 +393,15 @@ curl -I https://api.openai.com
 - Ensure `tool_choice: "auto"` is set
 - Check that the AI's system prompt mentions the play_audio function
 - Verify function is registered correctly
+- Ensure audio files exist in the expected directory structure
 
 ### Debug Mode
 ```python
 import logging
 logging.getLogger("text_audio_agent").setLevel(logging.DEBUG)
 
-agent = TextAudioAgent(audio_directory="demo/audio/")
-# Will show detailed debug information
+agent = TextAudioAgent(audio_directory="opusagent/local/audio/")
+# Will show detailed debug information including audio chunking
 ```
 
 ## 🔮 Future Enhancements
