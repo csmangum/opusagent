@@ -168,7 +168,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.websocket("/caller-agent")
 async def handle_caller_call(caller_websocket: WebSocket):
-    """Handle WebSocket connections from a *caller* agent (MockAudioCodesClient).
+    """Handle WebSocket connections from a *caller* agent (LocalAudioCodesClient).
 
     The caller-agent shares the same AudioCodes VAIC message schema as the
     inbound /ws/telephony endpoint, but is used by our test harness / synthetic

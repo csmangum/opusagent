@@ -10,14 +10,14 @@ import asyncio
 import logging
 from pathlib import Path
 
-from opusagent.local.audiocodes import MockAudioCodesClient
+from opusagent.local.audiocodes import LocalAudioCodesClient
 
 
 async def basic_conversation_example():
     """Basic conversation example."""
     print("\n=== Basic Conversation Example ===")
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Initiate session
         print("Initiating session...")
         success = await client.initiate_session()
@@ -60,7 +60,7 @@ async def multi_turn_conversation_example():
         print("❌ No audio files found for testing")
         return
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         print(f"Running multi-turn conversation with {len(existing_files)} audio files...")
         
         # Run multi-turn conversation
@@ -88,7 +88,7 @@ async def session_management_example():
     """Session management example."""
     print("\n=== Session Management Example ===")
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Initiate session
         print("Initiating session...")
         success = await client.initiate_session()
@@ -153,7 +153,7 @@ async def simple_test_example():
         print("⚠️  No audio files found, using empty list for demonstration")
         existing_files = []
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         print("Running simple conversation test...")
         
         # Use the simple test wrapper
@@ -172,7 +172,7 @@ async def component_inspection_example():
     """Example showing how to inspect individual components."""
     print("\n=== Component Inspection Example ===")
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         print("Inspecting client components...")
         
         # Session manager

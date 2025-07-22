@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Live Audio Capture Example for MockAudioCodesClient.
+Live Audio Capture Example for LocalAudioCodesClient.
 
 This script demonstrates how to use the live microphone input functionality
 for realistic testing of the AudioCodes bridge server.
 """
 
 import asyncio
+import json
 import logging
 import signal
 import sys
@@ -16,7 +17,7 @@ from pathlib import Path
 # Add the project root to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from opusagent.local.audiocodes import MockAudioCodesClient
+from opusagent.local.audiocodes import LocalAudioCodesClient
 
 
 class LiveAudioExample:
@@ -46,7 +47,7 @@ class LiveAudioExample:
         print("=" * 50)
         
         try:
-            async with MockAudioCodesClient(self.bridge_url) as client:
+            async with LocalAudioCodesClient(self.bridge_url) as client:
                 self.client = client
                 
                 # Get available audio devices
@@ -95,7 +96,11 @@ class LiveAudioExample:
                     "type": "userStream.start",
                     "conversationId": client.session_manager.get_conversation_id(),
                 }
-                await client._ws.send(user_stream_start)
+                if client._ws:
+                    await client._ws.send(json.dumps(user_stream_start))
+                else:
+                    print("❌ WebSocket connection not available")
+                    return
                 
                 # Monitor audio levels and VAD events
                 self.running = True
@@ -116,7 +121,7 @@ class LiveAudioExample:
         print("=" * 50)
         
         try:
-            async with MockAudioCodesClient(self.bridge_url) as client:
+            async with LocalAudioCodesClient(self.bridge_url) as client:
                 self.client = client
                 
                 # Get available devices
@@ -186,7 +191,11 @@ class LiveAudioExample:
                     "type": "userStream.start",
                     "conversationId": client.session_manager.get_conversation_id(),
                 }
-                await client._ws.send(user_stream_start)
+                if client._ws:
+                    await client._ws.send(json.dumps(user_stream_start))
+                else:
+                    print("❌ WebSocket connection not available")
+                    return
                 
                 # Interactive loop
                 await self._interactive_loop()
@@ -206,6 +215,9 @@ class LiveAudioExample:
         
         while self.running:
             try:
+                if not self.client:
+                    break
+                    
                 # Get audio level
                 audio_level = self.client.get_audio_level()
                 
@@ -272,6 +284,9 @@ class LiveAudioExample:
                 except queue.Empty:
                     pass
                 
+                if not self.client:
+                    break
+                    
                 # Display audio level
                 audio_level = self.client.get_audio_level()
                 level_bars = int(audio_level * 20)
@@ -297,6 +312,10 @@ class LiveAudioExample:
         print("📊 CURRENT STATUS")
         print("=" * 50)
         
+        if not self.client:
+            print("❌ Client not available")
+            return
+            
         # Session status
         session_status = self.client.get_session_status()
         print(f"Session: {session_status.get('status', 'Unknown')}")
@@ -320,6 +339,10 @@ class LiveAudioExample:
         print("📱 AVAILABLE AUDIO DEVICES")
         print("=" * 50)
         
+        if not self.client:
+            print("❌ Client not available")
+            return
+            
         devices = self.client.get_available_audio_devices()
         for i, device in enumerate(devices):
             default_marker = " (DEFAULT)" if device.get("is_default", False) else ""
@@ -331,7 +354,7 @@ class LiveAudioExample:
 
 async def main():
     """Main function to run the live audio examples."""
-    print("🎤 MockAudioCodesClient - Live Audio Capture Examples")
+    print("🎤 LocalAudioCodesClient - Live Audio Capture Examples")
     print("=" * 60)
     
     # Get bridge URL from command line or use default

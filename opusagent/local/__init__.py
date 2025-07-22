@@ -7,11 +7,11 @@ and development purposes.
 
 # Import the modular audiocodes client
 try:
-    from .audiocodes import MockAudioCodesClient
+    from .audiocodes import LocalAudioCodesClient
     AUDIOCODES_AVAILABLE = True
 except ImportError:
     AUDIOCODES_AVAILABLE = False
-    MockAudioCodesClient = None
+    LocalAudioCodesClient = None
 
 try:
     from .mock_twilio_client import MockTwilioClient
@@ -31,7 +31,7 @@ except ImportError:
 __all__ = []
 
 if AUDIOCODES_AVAILABLE:
-    __all__.append("MockAudioCodesClient")
+    __all__.append("LocalAudioCodesClient")
 
 if TWILIO_AVAILABLE:
     __all__.append("MockTwilioClient")

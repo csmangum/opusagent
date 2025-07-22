@@ -48,7 +48,7 @@ python batch_caller_test.py --config difficult_customers
 
 ### Core Components
 
-1. **CallerAgent**: Main class that combines MockAudioCodesClient with OpenAI Realtime API
+1. **CallerAgent**: Main class that combines LocalAudioCodesClient with OpenAI Realtime API
 2. **PersonalityType**: Defines behavioral characteristics (patience, tech comfort, communication style)
 3. **ScenarioType**: Defines what the caller wants to accomplish
 4. **CallerGoal**: Specific objectives and success criteria
@@ -57,13 +57,13 @@ python batch_caller_test.py --config difficult_customers
 ### Audio Flow
 
 ```
-OpenAI Realtime API → CallerAgent → MockAudioCodesClient → Bridge → Your Agent
+OpenAI Realtime API → CallerAgent → LocalAudioCodesClient → Bridge → Your Agent
                   ←              ←                    ←        ←
 ```
 
 Each caller:
 1. Connects to OpenAI Realtime API with personality-specific system prompt
-2. Uses MockAudioCodesClient to simulate telephony connection to your bridge
+2. Uses LocalAudioCodesClient to simulate telephony connection to your bridge
 3. Receives audio from your agent and converts to text for processing
 4. Generates contextually appropriate responses via OpenAI
 5. Converts responses back to audio and sends to bridge

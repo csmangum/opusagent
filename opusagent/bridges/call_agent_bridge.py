@@ -13,7 +13,7 @@ class CallAgentBridge(AudioCodesBridge):
 
     It intentionally re-uses the AudioCodes VAIC message structure (``session.*``,
     ``userStream.*``, ``playStream.*``), because the existing
-    :class:`validate.mock_audiocodes_client.MockAudioCodesClient` already speaks that
+    :class:`validate.mock_audiocodes_client.LocalAudioCodesClient` already speaks that
     dialect.  By subclassing :class:`~opusagent.bridges.audiocodes_bridge.AudioCodesBridge`
     we inherit all of the necessary plumbing: event routing, audio handling and
     response generation.
