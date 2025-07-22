@@ -47,7 +47,7 @@ logger = configure_logging("main")
 # Server configuration from centralized config
 PORT = config.server.port
 HOST = config.server.host
-SERVER_URL = "wss://grand-collie-complete.ngrok-free.app/twilio-agent"
+SERVER_URL = config.server.url
 
 # VAD configuration from centralized config
 VAD_ENABLED = config.vad.enabled
