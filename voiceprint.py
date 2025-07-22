@@ -7,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from openai import OpenAI
 from resemblyzer import VoiceEncoder, preprocess_wav
 from scipy.spatial.distance import cosine
+import umap
 
 load_dotenv()
 
@@ -18,7 +19,6 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 voices = [
     "alloy",
     "ash",
-    "ballad",
     "coral",
     "echo",
     "fable",
@@ -78,27 +78,70 @@ def pca(data, n_components=3):
     return np.real(projected)  # Ensure real output
 
 
-# Reduce embeddings to 3D space
-reduced_embeddings = pca(embedding_array, 3)
+# Reduce embeddings to 3D space using PCA
+reduced_embeddings_pca = pca(embedding_array, 3)
 print("\n3D Reduced Embeddings (PCA):")
-for voice, coords in zip(voices, reduced_embeddings):
+for voice, coords in zip(voices, reduced_embeddings_pca):
     print(f"{voice}: {coords}")
 
-# Visualize in 3D space
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection="3d")
-scatter = ax.scatter(
-    reduced_embeddings[:, 0], reduced_embeddings[:, 1], reduced_embeddings[:, 2]
+# Visualize PCA in 3D space
+fig = plt.figure(figsize=(12, 5))
+ax1 = fig.add_subplot(121, projection="3d")
+scatter1 = ax1.scatter(
+    reduced_embeddings_pca[:, 0], reduced_embeddings_pca[:, 1], reduced_embeddings_pca[:, 2]
 )
 
 # Label each point with the voice name
 for i, voice in enumerate(voices):
-    ax.text(reduced_embeddings[i, 0], reduced_embeddings[i, 1], reduced_embeddings[i, 2], voice, fontsize=12)  # type: ignore
+    ax1.text(reduced_embeddings_pca[i, 0], reduced_embeddings_pca[i, 1], reduced_embeddings_pca[i, 2], voice, fontsize=10)  # type: ignore
 
-ax.set_title("3D Visualization of Voice Embeddings (Resemblyzer + PCA)")
-ax.set_xlabel("PC1")
-ax.set_ylabel("PC2")
-ax.set_zlabel("PC3")  # type: ignore
+ax1.set_title("PCA 3D Visualization")
+ax1.set_xlabel("PC1")
+ax1.set_ylabel("PC2")
+ax1.set_zlabel("PC3")  # type: ignore
+
+# UMAP dimensionality reduction
+print("\nPerforming UMAP dimensionality reduction...")
+reducer = umap.UMAP(n_components=3, random_state=42, n_neighbors=3, min_dist=0.1)
+reduced_embeddings_umap = reducer.fit_transform(embedding_array)
+
+print("\n3D Reduced Embeddings (UMAP):")
+for voice, coords in zip(voices, reduced_embeddings_umap):
+    print(f"{voice}: {coords}")
+
+# Visualize UMAP in 3D space
+ax2 = fig.add_subplot(122, projection="3d")
+scatter2 = ax2.scatter(
+    reduced_embeddings_umap[:, 0], reduced_embeddings_umap[:, 1], reduced_embeddings_umap[:, 2]
+)
+
+# Label each point with the voice name
+for i, voice in enumerate(voices):
+    ax2.text(reduced_embeddings_umap[i, 0], reduced_embeddings_umap[i, 1], reduced_embeddings_umap[i, 2], voice, fontsize=10)  # type: ignore
+
+ax2.set_title("UMAP 3D Visualization")
+ax2.set_xlabel("UMAP1")
+ax2.set_ylabel("UMAP2")
+ax2.set_zlabel("UMAP3")  # type: ignore
+
+plt.tight_layout()
+plt.show()
+
+# Also create 2D UMAP visualization for better clustering view
+print("\nCreating 2D UMAP visualization...")
+reducer_2d = umap.UMAP(n_components=2, random_state=42, n_neighbors=3, min_dist=0.1)
+reduced_embeddings_umap_2d = reducer_2d.fit_transform(embedding_array)
+
+fig2, ax3 = plt.subplots(figsize=(10, 8))
+scatter3 = ax3.scatter(reduced_embeddings_umap_2d[:, 0], reduced_embeddings_umap_2d[:, 1])
+
+# Label each point with the voice name
+for i, voice in enumerate(voices):
+    ax3.text(reduced_embeddings_umap_2d[i, 0], reduced_embeddings_umap_2d[i, 1], voice, fontsize=12)
+
+ax3.set_title("2D UMAP Visualization of Voice Embeddings")
+ax3.set_xlabel("UMAP1")
+ax3.set_ylabel("UMAP2")
 plt.show()
 
 # Compare original embeddings using cosine similarity (matching the implementation)
