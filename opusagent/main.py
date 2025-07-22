@@ -11,14 +11,8 @@ handlers, and maintains conversation state throughout the call session.
 """
 
 import asyncio
-import base64
-import json
-import logging
 import os
-import sys
-import wave
 from pathlib import Path
-from typing import Optional
 
 import dotenv
 import websockets
@@ -27,26 +21,24 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
-from websockets.exceptions import ConnectionClosed
 
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
-from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.bridges.dual_agent_bridge import DualAgentBridge
-from opusagent.config.logging_config import configure_logging
-from opusagent.customer_service_agent import session_config
-from opusagent.session_manager import SessionManager
-from opusagent.config.websocket_config import WebSocketConfig
-from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
+from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.callers import get_available_caller_types, get_caller_description
+from opusagent.config.logging_config import configure_logging
+from opusagent.config.websocket_config import WebSocketConfig
+from opusagent.customer_service_agent import session_config
 from opusagent.local.realtime import create_mock_websocket_connection
+from opusagent.websocket_manager import get_websocket_manager
 
 load_dotenv()
 
 # Configuration
 #! Move these?
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SERVER_URL = "wss://grand-collie-complete.ngrok-free.app/twilio-agent"
+SERVER_URL = os.getenv("SERVER_URL")
 # Load environment variables from .env file if it exists
 env_path = Path(".") / ".env"
 if env_path.exists():
@@ -62,10 +54,21 @@ HOST = os.getenv("HOST", "0.0.0.0")
 VAD_ENABLED = os.getenv("VAD_ENABLED", "true").lower() in ("true", "1", "yes", "on")
 
 # Local realtime configuration
-USE_LOCAL_REALTIME = os.getenv("USE_LOCAL_REALTIME", "false").lower() in ("true", "1", "yes", "on")
+USE_LOCAL_REALTIME = os.getenv("USE_LOCAL_REALTIME", "false").lower() in (
+    "true",
+    "1",
+    "yes",
+    "on",
+)
 LOCAL_REALTIME_CONFIG = {
-    "enable_transcription": os.getenv("LOCAL_REALTIME_ENABLE_TRANSCRIPTION", "true").lower() in ("true", "1", "yes", "on"),
-    "setup_smart_responses": os.getenv("LOCAL_REALTIME_SETUP_SMART_RESPONSES", "true").lower() in ("true", "1", "yes", "on"),
+    "enable_transcription": os.getenv(
+        "LOCAL_REALTIME_ENABLE_TRANSCRIPTION", "true"
+    ).lower()
+    in ("true", "1", "yes", "on"),
+    "setup_smart_responses": os.getenv(
+        "LOCAL_REALTIME_SETUP_SMART_RESPONSES", "true"
+    ).lower()
+    in ("true", "1", "yes", "on"),
     "vad_config": {
         "backend": os.getenv("LOCAL_REALTIME_VAD_BACKEND", "silero"),
         "threshold": float(os.getenv("LOCAL_REALTIME_VAD_THRESHOLD", "0.5")),
@@ -75,7 +78,7 @@ LOCAL_REALTIME_CONFIG = {
         "backend": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_BACKEND", "pocketsphinx"),
         "language": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_LANGUAGE", "en"),
         "model_size": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_MODEL_SIZE", "base"),
-    }
+    },
 }
 
 # Log configuration
@@ -120,22 +123,26 @@ async def websocket_endpoint(websocket: WebSocket):
         if USE_LOCAL_REALTIME:
             # Use mock WebSocket connection with local realtime client
             logger.info("Using mock WebSocket connection with local realtime client")
-            
+
             # Create mock WebSocket connection that wraps LocalRealtimeClient
             mock_connection = await create_mock_websocket_connection(
                 session_config=session_config,
                 local_realtime_config=LOCAL_REALTIME_CONFIG,
-                setup_smart_responses=LOCAL_REALTIME_CONFIG.get("setup_smart_responses", True),
+                setup_smart_responses=LOCAL_REALTIME_CONFIG.get(
+                    "setup_smart_responses", True
+                ),
                 enable_vad=VAD_ENABLED,
-                enable_transcription=LOCAL_REALTIME_CONFIG.get("enable_transcription", False)
+                enable_transcription=LOCAL_REALTIME_CONFIG.get(
+                    "enable_transcription", False
+                ),
             )
-            
+
             # Create AudioCodes bridge with mock connection
             bridge = AudioCodesBridge(
-                websocket, 
+                websocket,
                 mock_connection,  # Use mock connection instead of None
-                session_config, 
-                vad_enabled=VAD_ENABLED
+                session_config,
+                vad_enabled=VAD_ENABLED,
             )
         else:
             # Get a managed connection to OpenAI Realtime API
@@ -144,10 +151,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # Create AudioCodes bridge instance
                 bridge = AudioCodesBridge(
-                    websocket, 
-                    connection.websocket, 
-                    session_config, 
-                    vad_enabled=VAD_ENABLED
+                    websocket,
+                    connection.websocket,
+                    session_config,
+                    vad_enabled=VAD_ENABLED,
                 )
 
         # Start receiving from both WebSockets
@@ -184,23 +191,29 @@ async def handle_caller_call(caller_websocket: WebSocket):
     try:
         if USE_LOCAL_REALTIME:
             # Use mock WebSocket connection with local realtime client
-            logger.info("Using mock WebSocket connection with local realtime client for caller agent")
-            
+            logger.info(
+                "Using mock WebSocket connection with local realtime client for caller agent"
+            )
+
             # Create mock WebSocket connection that wraps LocalRealtimeClient
             mock_connection = await create_mock_websocket_connection(
                 session_config=session_config,
                 local_realtime_config=LOCAL_REALTIME_CONFIG,
-                setup_smart_responses=LOCAL_REALTIME_CONFIG.get("setup_smart_responses", True),
+                setup_smart_responses=LOCAL_REALTIME_CONFIG.get(
+                    "setup_smart_responses", True
+                ),
                 enable_vad=VAD_ENABLED,
-                enable_transcription=LOCAL_REALTIME_CONFIG.get("enable_transcription", False)
+                enable_transcription=LOCAL_REALTIME_CONFIG.get(
+                    "enable_transcription", False
+                ),
             )
-            
+
             # Instantiate our caller side bridge with mock connection
             bridge = CallAgentBridge(
-                caller_websocket, 
+                caller_websocket,
                 mock_connection,  # Use mock connection instead of None
-                session_config, 
-                vad_enabled=VAD_ENABLED
+                session_config,
+                vad_enabled=VAD_ENABLED,
             )
             logger.info("Caller-Realtime bridge created with mock connection")
         else:
@@ -214,10 +227,10 @@ async def handle_caller_call(caller_websocket: WebSocket):
 
                 # Instantiate our caller side bridge
                 bridge = CallAgentBridge(
-                    caller_websocket, 
-                    connection.websocket, 
-                    session_config, 
-                    vad_enabled=VAD_ENABLED
+                    caller_websocket,
+                    connection.websocket,
+                    session_config,
+                    vad_enabled=VAD_ENABLED,
                 )
                 logger.info("Caller-Realtime bridge created")
 
@@ -255,22 +268,28 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
     try:
         if USE_LOCAL_REALTIME:
             # Use mock WebSocket connection with local realtime client
-            logger.info("Using mock WebSocket connection with local realtime client for Twilio")
-            
+            logger.info(
+                "Using mock WebSocket connection with local realtime client for Twilio"
+            )
+
             # Create mock WebSocket connection that wraps LocalRealtimeClient
             mock_connection = await create_mock_websocket_connection(
                 session_config=session_config,
                 local_realtime_config=LOCAL_REALTIME_CONFIG,
-                setup_smart_responses=LOCAL_REALTIME_CONFIG.get("setup_smart_responses", True),
+                setup_smart_responses=LOCAL_REALTIME_CONFIG.get(
+                    "setup_smart_responses", True
+                ),
                 enable_vad=VAD_ENABLED,
-                enable_transcription=LOCAL_REALTIME_CONFIG.get("enable_transcription", False)
+                enable_transcription=LOCAL_REALTIME_CONFIG.get(
+                    "enable_transcription", False
+                ),
             )
-            
+
             # Create Twilio bridge with mock connection
             bridge = TwilioBridge(
-                twilio_websocket, 
+                twilio_websocket,
                 mock_connection,  # Use mock connection instead of None
-                session_config
+                session_config,
             )
             logger.info("Twilio-Realtime bridge created with mock connection")
         else:
@@ -282,9 +301,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
                     f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
                 )
                 bridge = TwilioBridge(
-                    twilio_websocket, 
-                    connection.websocket, 
-                    session_config
+                    twilio_websocket, connection.websocket, session_config
                 )
                 logger.info("Twilio-Realtime bridge created")
 
@@ -312,31 +329,35 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 
 
 @app.websocket("/agent-conversation")
-async def agent_conversation_endpoint(websocket: WebSocket, caller_type: str = "typical"):
+async def agent_conversation_endpoint(
+    websocket: WebSocket, caller_type: str = "typical"
+):
     """WebSocket endpoint for caller agent to CS agent conversations.
-    
+
     This endpoint enables direct conversations between a caller agent and
     customer service agent without external telephony platforms.
-    
+
     Args:
         websocket: The WebSocket connection
         caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
     """
     await websocket.accept()
     client_address = websocket.client
-    logger.info(f"------ Agent conversation request from {client_address} with {caller_type} caller ------")
-    
+    logger.info(
+        f"------ Agent conversation request from {client_address} with {caller_type} caller ------"
+    )
+
     try:
         # Create and initialize dual agent bridge with specified caller type
         bridge = DualAgentBridge(caller_type=caller_type)
         logger.info(f"Created dual agent bridge: {bridge.conversation_id}")
-        
+
         # Initialize both OpenAI connections and start conversation
         await bridge.initialize_connections()
-        
+
     except Exception as e:
         logger.error(f"Error in agent conversation: {e}")
-        if 'bridge' in locals():
+        if "bridge" in locals():
             await bridge.close()
     finally:
         logger.info("Agent conversation ended")
@@ -358,7 +379,7 @@ async def twilio_voice(request: Request):
     connect = response.connect()
     logger.info(f"------ Connecting call to WebSocket endpoint ------")
     logger.info(f"------ {SERVER_URL} ------")
-    connect.stream(url=SERVER_URL) # type: ignore
+    connect.stream(url=SERVER_URL)  # type: ignore
     logger.info(f"------ Connected call to WebSocket endpoint ------")
 
     # Return XML response with proper Content-Type header
@@ -379,7 +400,9 @@ async def root():
         "configuration": {
             "vad_enabled": VAD_ENABLED,
             "use_local_realtime": USE_LOCAL_REALTIME,
-            "local_realtime_config": LOCAL_REALTIME_CONFIG if USE_LOCAL_REALTIME else None,
+            "local_realtime_config": (
+                LOCAL_REALTIME_CONFIG if USE_LOCAL_REALTIME else None
+            ),
         },
         "endpoints": {
             "/ws/telephony": "WebSocket endpoint for AudioCodes VoiceAI Connect",
@@ -394,9 +417,9 @@ async def root():
         },
         "caller_types": {
             "typical": "Cooperative, patient caller",
-            "frustrated": "Impatient, demanding caller", 
+            "frustrated": "Impatient, demanding caller",
             "elderly": "Patient, polite caller needing guidance",
-            "hurried": "Caller in a rush wanting quick service"
+            "hurried": "Caller in a rush wanting quick service",
         },
         "environment_variables": {
             "VAD_ENABLED": "Enable/disable Voice Activity Detection (default: true)",
@@ -414,8 +437,8 @@ async def root():
             "agent_conversation": "/agent-conversation?caller_type=frustrated",
             "caller_types": "/caller-types",
             "local_realtime": "Set USE_LOCAL_REALTIME=true to use local client",
-            "custom_responses": "Configure LOCAL_REALTIME_CONFIG for custom responses"
-        }
+            "custom_responses": "Configure LOCAL_REALTIME_CONFIG for custom responses",
+        },
     }
 
 
@@ -470,18 +493,18 @@ async def get_config():
 @app.get("/caller-types")
 async def get_caller_types():
     """Get available caller types and their descriptions.
-    
+
     Returns:
         dict: Available caller types with descriptions
     """
     caller_types = {}
     for caller_type in get_available_caller_types():
         caller_types[caller_type] = get_caller_description(caller_type)
-    
+
     return {
         "available_caller_types": caller_types,
         "usage": "Use ?caller_type=<type> query parameter with /agent-conversation endpoint",
-        "example": "/agent-conversation?caller_type=frustrated"
+        "example": "/agent-conversation?caller_type=frustrated",
     }
 
 
