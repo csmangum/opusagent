@@ -2,8 +2,11 @@ import logging
 import uuid
 from typing import Any, Dict
 
-from opusagent.config.constants import VOICE
+from opusagent.config import get_legacy_constants
 from opusagent.config.logging_config import configure_logging
+
+# Get voice constant from centralized config for backward compatibility
+VOICE = get_legacy_constants()["VOICE"]
 from opusagent.models.openai_api import SessionConfig
 from opusagent.models.tool_models import (
     HumanHandoffTool,

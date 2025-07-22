@@ -33,48 +33,44 @@ from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
 from opusagent.bridges.dual_agent_bridge import DualAgentBridge
+from opusagent.config import get_config, server_config, mock_config, vad_config, transcription_config
 from opusagent.config.logging_config import configure_logging
 from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
-from opusagent.config.websocket_config import WebSocketConfig
 from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
 from opusagent.callers import get_available_caller_types, get_caller_description
 from opusagent.local.realtime import create_mock_websocket_connection
 
 load_dotenv()
 
-# Configuration
-#! Move these?
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SERVER_URL = "wss://grand-collie-complete.ngrok-free.app/twilio-agent"
-# Load environment variables from .env file if it exists
-env_path = Path(".") / ".env"
-if env_path.exists():
-    dotenv.load_dotenv(env_path)
+# Get centralized configuration
+config = get_config()
 
-# Configure logging
+# Configure logging using centralized config
 logger = configure_logging("main")
-# Get configuration from environment variables
-PORT = int(os.getenv("PORT", "8000"))
-HOST = os.getenv("HOST", "0.0.0.0")
 
-# VAD configuration - enable by default, can be disabled via environment variable
-VAD_ENABLED = os.getenv("VAD_ENABLED", "true").lower() in ("true", "1", "yes", "on")
+# Server configuration from centralized config
+PORT = config.server.port
+HOST = config.server.host
+SERVER_URL = "wss://grand-collie-complete.ngrok-free.app/twilio-agent"
 
-# Local realtime configuration
-USE_LOCAL_REALTIME = os.getenv("USE_LOCAL_REALTIME", "false").lower() in ("true", "1", "yes", "on")
+# VAD configuration from centralized config
+VAD_ENABLED = config.vad.enabled
+
+# Mock/Local realtime configuration from centralized config
+USE_LOCAL_REALTIME = config.mock.use_local_realtime
 LOCAL_REALTIME_CONFIG = {
-    "enable_transcription": os.getenv("LOCAL_REALTIME_ENABLE_TRANSCRIPTION", "true").lower() in ("true", "1", "yes", "on"),
-    "setup_smart_responses": os.getenv("LOCAL_REALTIME_SETUP_SMART_RESPONSES", "true").lower() in ("true", "1", "yes", "on"),
+    "enable_transcription": config.mock.enable_transcription,
+    "setup_smart_responses": config.mock.setup_smart_responses,
     "vad_config": {
-        "backend": os.getenv("LOCAL_REALTIME_VAD_BACKEND", "silero"),
-        "threshold": float(os.getenv("LOCAL_REALTIME_VAD_THRESHOLD", "0.5")),
-        "sample_rate": int(os.getenv("LOCAL_REALTIME_VAD_SAMPLE_RATE", "16000")),
+        "backend": config.vad.backend,
+        "threshold": config.vad.confidence_threshold,
+        "sample_rate": config.vad.sample_rate,
     },
     "transcription_config": {
-        "backend": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_BACKEND", "pocketsphinx"),
-        "language": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_LANGUAGE", "en"),
-        "model_size": os.getenv("LOCAL_REALTIME_TRANSCRIPTION_MODEL_SIZE", "base"),
+        "backend": config.transcription.backend,
+        "language": config.transcription.language,
+        "model_size": config.transcription.model_size,
     }
 }
 
@@ -377,9 +373,13 @@ async def root():
         "description": "Integration between AudioCodes VoiceAI Connect and OpenAI Realtime API",
         "version": "1.0.0",
         "configuration": {
-            "vad_enabled": VAD_ENABLED,
-            "use_local_realtime": USE_LOCAL_REALTIME,
-            "local_realtime_config": LOCAL_REALTIME_CONFIG if USE_LOCAL_REALTIME else None,
+            "vad_enabled": config.vad.enabled,
+            "use_local_realtime": config.mock.use_local_realtime,
+            "local_realtime_config": LOCAL_REALTIME_CONFIG if config.mock.use_local_realtime else None,
+            "environment": config.server.environment.value,
+            "openai_model": config.openai.model,
+            "audio_format": config.audio.format,
+            "sample_rate": config.audio.sample_rate,
         },
         "endpoints": {
             "/ws/telephony": "WebSocket endpoint for AudioCodes VoiceAI Connect",
@@ -399,16 +399,17 @@ async def root():
             "hurried": "Caller in a rush wanting quick service"
         },
         "environment_variables": {
-            "VAD_ENABLED": "Enable/disable Voice Activity Detection (default: true)",
-            "USE_LOCAL_REALTIME": "Use local realtime client instead of OpenAI API (default: false)",
-            "LOCAL_REALTIME_ENABLE_TRANSCRIPTION": "Enable local transcription (default: false)",
-            "LOCAL_REALTIME_SETUP_SMART_RESPONSES": "Setup smart response examples (default: true)",
-            "LOCAL_REALTIME_VAD_BACKEND": "VAD backend (silero/pocketsphinx, default: silero)",
-            "LOCAL_REALTIME_VAD_THRESHOLD": "VAD threshold (0.0-1.0, default: 0.5)",
-            "LOCAL_REALTIME_VAD_SAMPLE_RATE": "VAD sample rate (default: 16000)",
-            "LOCAL_REALTIME_TRANSCRIPTION_BACKEND": "Transcription backend (pocketsphinx/whisper, default: pocketsphinx)",
-            "LOCAL_REALTIME_TRANSCRIPTION_LANGUAGE": "Transcription language (default: en)",
-            "LOCAL_REALTIME_TRANSCRIPTION_MODEL_SIZE": "Whisper model size (default: base)",
+            "OPENAI_API_KEY": "OpenAI API key (required for real mode)",
+            "HOST": f"Server host (current: {config.server.host})",
+            "PORT": f"Server port (current: {config.server.port})",
+            "ENV": f"Environment (current: {config.server.environment.value})",
+            "LOG_LEVEL": f"Log level (current: {config.logging.level.value})",
+            "VAD_ENABLED": f"Enable/disable VAD (current: {config.vad.enabled})",
+            "VAD_BACKEND": f"VAD backend (current: {config.vad.backend})",
+            "USE_LOCAL_REALTIME": f"Use local realtime client (current: {config.mock.use_local_realtime})",
+            "OPUSAGENT_USE_MOCK": f"Enable mock mode (current: {config.mock.enabled})",
+            "TRANSCRIPTION_BACKEND": f"Transcription backend (current: {config.transcription.backend})",
+            "AUDIO_SAMPLE_RATE": f"Audio sample rate (current: {config.audio.sample_rate})",
         },
         "example_usage": {
             "agent_conversation": "/agent-conversation?caller_type=frustrated",
@@ -455,15 +456,53 @@ async def health_check():
 
 
 @app.get("/config")
-async def get_config():
-    """Get current WebSocket manager configuration.
+async def get_app_config():
+    """Get current application configuration.
 
     Returns:
-        dict: Current configuration settings
+        dict: Current configuration settings from centralized config system
     """
     return {
-        "websocket_manager": WebSocketConfig.to_dict(),
-        "note": "Configuration is read from environment variables at startup",
+        "server": {
+            "host": config.server.host,
+            "port": config.server.port,
+            "environment": config.server.environment.value,
+            "debug": config.server.debug,
+        },
+        "openai": {
+            "model": config.openai.model,
+            "base_url": config.openai.base_url,
+            "api_key_configured": bool(config.openai.api_key),
+        },
+        "audio": {
+            "sample_rate": config.audio.sample_rate,
+            "format": config.audio.format,
+            "channels": config.audio.channels,
+            "chunk_size": config.audio.chunk_size,
+        },
+        "vad": {
+            "enabled": config.vad.enabled,
+            "backend": config.vad.backend,
+            "confidence_threshold": config.vad.confidence_threshold,
+            "sample_rate": config.vad.sample_rate,
+        },
+        "transcription": {
+            "enabled": config.transcription.enabled,
+            "backend": config.transcription.backend,
+            "language": config.transcription.language,
+            "model_size": config.transcription.model_size,
+        },
+        "websocket": {
+            "max_connections": config.websocket.max_connections,
+            "ping_interval": config.websocket.ping_interval,
+            "ping_timeout": config.websocket.ping_timeout,
+        },
+        "mock": {
+            "enabled": config.mock.enabled,
+            "server_url": config.mock.server_url,
+            "use_local_realtime": config.mock.use_local_realtime,
+        },
+        "note": "Configuration loaded from centralized config system with environment variable overrides",
     }
 
 
