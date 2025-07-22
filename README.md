@@ -87,15 +87,14 @@ For detailed design, see docs/DESIGN.md and subpackage READMEs.
 ## Roadmap / Future Features
 
 Planned enhancements:
-- Voice fingerprinting for user identification
-- Cross-session user memory for persistent context
+- [Voice fingerprinting for user identification](docs/voice_fingerprinting_implementation.md)
+- [Cross-session user memory for persistent context](docs/cross_session_user_memory_implementation.md)
+- [Web-based monitoring dashboard](docs/web_based_monitoring_dashboard_implementation.md)
+- [Multimodal support (e.g., video calls)](docs/multimodal_support_implementation.md)
+- [Enhanced security features (audio encryption, compliance tools)](docs/enhanced_security_features_implementation.md)
+- [Call review interface](docs/call_review_interface_implementation.md)
 - Multi-language support with automatic detection
-- Integration with additional AI models (e.g., Grok, Claude)
-- Advanced conversation analytics and reporting
-- Web-based monitoring dashboard
-- Fully featured call review interface with audio playback, transcript analysis, quality metrics, and AI-powered call reviewing
-- Multimodal support (e.g., video calls)
-- Enhanced security features (audio encryption, compliance tools)
+- Integration with additional AI models
 - And more based on community feedback
 
 Contributions to these features are welcome! 
