@@ -26,8 +26,16 @@ server = server_config()
 openai = openai_config()
 
 # Legacy constants (backward compatibility)
-from opusagent.config import get_legacy_constants
-constants = get_legacy_constants()
+from opusagent.config import audio_config
+constants = {
+    "LOGGER_NAME": "opusagent",
+    "VOICE": "verse",
+    "DEFAULT_SAMPLE_RATE": audio_config().sample_rate,
+    "DEFAULT_CHANNELS": audio_config().channels,
+    "DEFAULT_BITS_PER_SAMPLE": audio_config().bits_per_sample,
+    "DEFAULT_AUDIO_CHUNK_SIZE": audio_config().chunk_size,
+    "DEFAULT_AUDIO_CHUNK_SIZE_LARGE": audio_config().chunk_size_large,
+}
 sample_rate = constants["DEFAULT_SAMPLE_RATE"]
 
 # Set up logging for your module
@@ -85,10 +93,7 @@ from .settings import (
     is_development,
     is_production,
     
-    # Legacy compatibility
-    get_legacy_constants,
-    get_legacy_vad_config,
-    get_legacy_websocket_config,
+
 )
 
 # Import configuration models for advanced usage
@@ -149,10 +154,7 @@ __all__ = [
     "is_development",
     "is_production",
     
-    # Legacy compatibility
-    "get_legacy_constants",
-    "get_legacy_vad_config",
-    "get_legacy_websocket_config",
+
     
     # Models
     "ApplicationConfig",

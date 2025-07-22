@@ -2,11 +2,11 @@ import logging
 import uuid
 from typing import Any, Dict
 
-from opusagent.config import get_legacy_constants
+from opusagent.config import get_config
 from opusagent.config.logging_config import configure_logging
 
-# Get voice constant from centralized config for backward compatibility
-VOICE = get_legacy_constants()["VOICE"]
+# Get voice constant from centralized config
+VOICE = "verse"  # This is the default voice setting
 from opusagent.models.openai_api import SessionConfig
 from opusagent.models.tool_models import (
     HumanHandoffTool,
