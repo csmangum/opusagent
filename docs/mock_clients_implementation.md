@@ -12,7 +12,7 @@ The mock clients system in OpusAgent provides comprehensive testing and developm
 graph TD
     A[Test Environment] --> B[Mock Client Factory]
     B --> C[LocalRealtimeClient]
-    B --> D[MockAudioCodesClient]
+    B --> D[LocalAudioCodesClient]
     B --> E[MockTwilioClient]
     
     C --> F[OpenAI Realtime API Simulation]
@@ -36,7 +36,7 @@ graph TD
 
 1. **Mock Client Factory** - Factory functions for creating pre-configured mock clients
 2. **LocalRealtimeClient** - Complete OpenAI Realtime API simulation
-3. **MockAudioCodesClient** - AudioCodes VAIC protocol simulation
+3. **LocalAudioCodesClient** - AudioCodes VAIC protocol simulation
 4. **MockTwilioClient** - Twilio Media Streams protocol simulation
 5. **WebSocket Mock** - WebSocket interface compatibility layer
 
@@ -90,12 +90,12 @@ def _determine_response_key(self, options: ResponseCreateOptions) -> Optional[st
     return None
 ```
 
-### MockAudioCodesClient
+### LocalAudioCodesClient
 
-The `MockAudioCodesClient` simulates AudioCodes VAIC protocol behavior:
+The `LocalAudioCodesClient` simulates AudioCodes VAIC protocol behavior:
 
 ```python
-class MockAudioCodesClient:
+class LocalAudioCodesClient:
     def __init__(
         self,
         bridge_url: str,
@@ -332,7 +332,7 @@ for timing in timings:
 
 ```python
 # Basic session management
-async with MockAudioCodesClient("ws://localhost:8080") as client:
+async with LocalAudioCodesClient("ws://localhost:8080") as client:
     # Initiate session
     success = await client.initiate_session()
     if success:
@@ -345,13 +345,13 @@ async with MockAudioCodesClient("ws://localhost:8080") as client:
 
 # Multi-turn conversation testing
 audio_files = ["audio/turn1.wav", "audio/turn2.wav", "audio/turn3.wav"]
-async with MockAudioCodesClient("ws://localhost:8080") as client:
+async with LocalAudioCodesClient("ws://localhost:8080") as client:
     result = await client.multi_turn_conversation(audio_files)
     print(f"Success rate: {result.success_rate:.1f}%")
     client.save_collected_audio("output/")
 
 # Live audio capture
-async with MockAudioCodesClient("ws://localhost:8080") as client:
+async with LocalAudioCodesClient("ws://localhost:8080") as client:
     # Start live audio capture
     client.start_live_audio_capture()
     # Enable VAD for speech detection
@@ -510,7 +510,7 @@ python scripts/validate_realtime_transcription.py --verbose
 
 ```python
 try:
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         await client.initiate_session()
 except ConnectionError as e:
     print(f"Connection failed: {e}")

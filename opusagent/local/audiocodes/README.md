@@ -24,7 +24,7 @@ opusagent/local/audiocodes/
 ├── __init__.py              # Main module exports
 ├── README.md               # This file
 ├── models.py               # Data models and enums
-├── client.py               # Main MockAudioCodesClient class
+├── client.py               # Main LocalAudioCodesClient class
 ├── session_manager.py      # Session state and lifecycle management
 ├── message_handler.py      # WebSocket message processing
 ├── audio_manager.py        # Audio file handling and caching
@@ -131,10 +131,10 @@ Integrates all components into a cohesive client:
 ### Basic Usage
 
 ```python
-from opusagent.mock.audiocodes import MockAudioCodesClient
+from opusagent.mock.audiocodes import LocalAudioCodesClient
 
 async def test_basic_conversation():
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Initiate session
         success = await client.initiate_session()
         if not success:
@@ -162,7 +162,7 @@ async def test_multi_turn_conversation():
         "audio/turn3.wav"
     ]
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Run multi-turn conversation
         result = await client.multi_turn_conversation(audio_files)
         
@@ -179,7 +179,7 @@ async def test_multi_turn_conversation():
 
 ```python
 async def test_session_features():
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Initiate session
         await client.initiate_session()
         
@@ -206,7 +206,7 @@ async def test_session_features():
 
 ```python
 async def test_live_audio():
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Get available audio devices
         devices = client.get_available_audio_devices()
         print(f"Available devices: {len(devices)}")
@@ -219,7 +219,7 @@ async def test_live_audio():
 
 ```python
 async def test_audio_playback():
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Audio playback is automatically enabled when connecting
         # Check playback status
         playback_status = client.get_audio_playback_status()
@@ -249,7 +249,7 @@ async def test_audio_playback():
 
 ```python
 async def test_manual_playback():
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Manually enable/disable audio playback
         success = client.enable_audio_playback(volume=0.7)
         if success:
@@ -289,7 +289,7 @@ async def test_manual_playback():
 
 ```python
 async def test_enhanced_features():
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Simple conversation test with automatic setup/teardown
         success = await client.simple_conversation_test([
             "audio/greeting.wav",
@@ -329,7 +329,7 @@ If these dependencies are not available, audio playback will be automatically di
 The client can be configured with various parameters:
 
 ```python
-client = MockAudioCodesClient(
+client = LocalAudioCodesClient(
     bridge_url="ws://localhost:8080",
     bot_name="MyTestBot",
     caller="+15551234567"

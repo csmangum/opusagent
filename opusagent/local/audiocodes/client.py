@@ -1,7 +1,7 @@
 """
-Main AudioCodes mock client.
+Main AudioCodes local client.
 
-This module provides the main MockAudioCodesClient class that integrates all
+This module provides the main LocalAudioCodesClient class that integrates all
 the modular components (session management, message handling, audio management,
 and conversation management) into a cohesive client for testing AudioCodes
 bridge server interactions.
@@ -37,12 +37,12 @@ from .session_manager import SessionManager
 from .vad_manager import VADManager
 
 
-class MockAudioCodesClient:
+class LocalAudioCodesClient:
     """
-    MockAudioCodes client that connects to the bridge server.
+    LocalAudioCodes client that connects to the bridge server.
 
     This class integrates all the modular components to provide a comprehensive
-    mock implementation of the AudioCodes VAIC client for testing and development.
+    local implementation of the AudioCodes VAIC client for testing and development.
 
     Attributes:
         logger (logging.Logger): Logger instance for debugging
@@ -64,7 +64,7 @@ class MockAudioCodesClient:
         vad_config: Optional[Dict[str, Any]] = None,
     ):
         """
-        Initialize the MockAudioCodesClient.
+        Initialize the LocalAudioCodesClient.
 
         Args:
             bridge_url (str): WebSocket URL for bridge server

@@ -2,7 +2,7 @@ import asyncio
 import time
 
 from opusagent.config.logging_config import configure_logging
-from opusagent.local.audiocodes import MockAudioCodesClient
+from opusagent.local.audiocodes.client import LocalAudioCodesClient
 
 
 # Configure logging
@@ -14,7 +14,7 @@ async def main():
     bridge_url = "ws://localhost:8000/ws/telephony"
     
     # Create client instance without connecting
-    client = MockAudioCodesClient(bridge_url, logger=logger)
+    client = LocalAudioCodesClient(bridge_url, logger=logger)
     
     # List available audio devices before connecting
     devices = client.get_available_audio_devices()

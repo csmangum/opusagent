@@ -9,7 +9,7 @@ The module is designed with a modular architecture that separates concerns into
 specialized components:
 
 Core Components:
-- MockAudioCodesClient: Main client class that orchestrates all components
+- LocalAudioCodesClient: Main client class that orchestrates all components
 - SessionManager: Handles session lifecycle, state tracking, and WebSocket communication
 - MessageHandler: Processes incoming WebSocket messages and manages event handlers
 - AudioManager: Manages audio file operations, caching, and format conversion
@@ -39,7 +39,7 @@ Architecture Overview:
 The mock client follows a layered architecture where each component has a specific
 responsibility:
 
-1. MockAudioCodesClient (Orchestrator Layer)
+1. LocalAudioCodesClient (Orchestrator Layer)
    - Coordinates all components and provides high-level interface
    - Manages WebSocket connection and message routing
    - Handles client lifecycle and resource management
@@ -72,9 +72,9 @@ responsibility:
 Usage Examples:
 
 Basic Session Management:
-    from opusagent.local.audiocodes import MockAudioCodesClient
+    from opusagent.local.audiocodes import LocalAudioCodesClient
     
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Initiate session
         success = await client.initiate_session()
         if success:
@@ -87,13 +87,13 @@ Basic Session Management:
 
 Multi-turn Conversation Testing:
     audio_files = ["audio/turn1.wav", "audio/turn2.wav", "audio/turn3.wav"]
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         result = await client.multi_turn_conversation(audio_files)
         print(f"Success rate: {result.success_rate:.1f}%")
         client.save_collected_audio("output/")
 
 Live Audio Capture:
-    async with MockAudioCodesClient("ws://localhost:8080") as client:
+    async with LocalAudioCodesClient("ws://localhost:8080") as client:
         # Start live audio capture
         client.start_live_audio_capture()
         # Enable VAD for speech detection
@@ -102,7 +102,7 @@ Live Audio Capture:
         client.stop_live_audio_capture()
 
 Advanced Configuration:
-    client = MockAudioCodesClient(
+    client = LocalAudioCodesClient(
         bridge_url="ws://localhost:8080",
         bot_name="MyTestBot",
         caller="+15551234567"
@@ -125,7 +125,7 @@ Advanced Configuration:
 
 Error Handling and Recovery:
     try:
-        async with MockAudioCodesClient("ws://localhost:8080") as client:
+        async with LocalAudioCodesClient("ws://localhost:8080") as client:
             await client.initiate_session()
             # ... perform operations ...
     except ConnectionError as e:
@@ -152,7 +152,7 @@ Integration with Testing Frameworks:
 The mock client is designed to integrate seamlessly with testing frameworks:
 
 - pytest: Use async fixtures for session management
-- unittest: Extend MockAudioCodesClient for custom test cases
+- unittest: Extend LocalAudioCodesClient for custom test cases
 - Custom frameworks: Register event handlers for specific test scenarios
 
 Logging and Debugging:
@@ -166,7 +166,7 @@ The module uses structured logging with component prefixes for easy debugging:
 - [CONVERSATION]: Multi-turn conversation management
 """
 
-from .client import MockAudioCodesClient
+from .client import LocalAudioCodesClient
 from .audio_manager import AudioManager
 from .session_manager import SessionManager
 from .message_handler import MessageHandler
@@ -180,7 +180,7 @@ from .models import (
 )
 
 __all__ = [
-    "MockAudioCodesClient",
+    "LocalAudioCodesClient",
     "AudioManager", 
     "SessionManager",
     "MessageHandler",
