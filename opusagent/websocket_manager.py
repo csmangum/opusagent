@@ -157,8 +157,10 @@ class WebSocketManager:
         self._shutdown = False
 
         # Connection parameters from centralized config
+        if not config.openai.api_key:
+            raise ValueError("OpenAI API key is not set. Please configure 'config.openai.api_key' before initializing WebSocketManager.")
         self._url = config.openai.get_websocket_url()
-        self._headers = config.openai.get_headers() if config.openai.api_key else {}
+        self._headers = config.openai.get_headers()
 
         logger.info(
             f"WebSocket manager initialized with centralized config - "
