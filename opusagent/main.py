@@ -38,6 +38,7 @@ load_dotenv()
 # Configuration
 #! Move these?
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+SERVER_URL = os.getenv("SERVER_URL")
 # Load environment variables from .env file if it exists
 env_path = Path(".") / ".env"
 if env_path.exists():
