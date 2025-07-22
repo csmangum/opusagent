@@ -42,7 +42,7 @@ def safe_convert(value: Optional[str], target_type: Type[T], default: T) -> T:
             return Path(value)
         elif hasattr(target_type, '__origin__') and target_type.__origin__ == list:
             # Handle List[str] type
-            return value.split(',') if value else default
+            return [item.strip() for item in value.split(',') if item.strip()] if value else default
         else:
             return target_type(value)
     except (ValueError, TypeError):
