@@ -1,11 +1,12 @@
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
+from dotenv import load_dotenv
+from mpl_toolkits.mplot3d import Axes3D
+from openai import OpenAI
 from resemblyzer import VoiceEncoder, preprocess_wav
 from scipy.spatial.distance import cosine
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -14,7 +15,18 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # List of available OpenAI TTS voices (as of 2025; confirmed to be these based on documentation)
-voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+voices = [
+    "alloy",
+    "ash",
+    "ballad",
+    "coral",
+    "echo",
+    "fable",
+    "nova",
+    "onyx",
+    "sage",
+    "shimmer",
+]
 
 # Sample text to synthesize
 text = "Hello, this is a test sentence for voice fingerprinting. Let's see how different voices sound."
@@ -26,7 +38,7 @@ for voice in voices:
         model="tts-1",  # You can change to "tts-1-hd" for higher quality
         voice=voice,
         input=text,
-        response_format="mp3"  # MP3 format for compatibility
+        response_format="mp3",  # MP3 format for compatibility
     )
     file_path = f"{voice}.mp3"
     with open(file_path, "wb") as f:
@@ -45,11 +57,14 @@ for file in audio_files:
     # Load and preprocess audio for Resemblyzer
     wav = preprocess_wav(file)
     embedding = encoder.embed_utterance(wav)
-    embeddings[file.split('.')[0]] = embedding  # Key by voice name
+    embeddings[file.split(".")[0]] = embedding  # Key by voice name
     embedding_array.append(embedding)
-    print(f"Extracted Resemblyzer embedding for {file} (shape: {embedding.shape})")
+    print(
+        f"Extracted Resemblyzer embedding for {file} (shape: {np.array(embedding).shape})"
+    )
 
 embedding_array = np.array(embedding_array)  # Shape: (num_voices, 256)
+
 
 # Function to perform PCA with NumPy
 def pca(data, n_components=3):
@@ -62,6 +77,7 @@ def pca(data, n_components=3):
     projected = np.dot(centered, eigenvectors[:, :n_components])
     return np.real(projected)  # Ensure real output
 
+
 # Reduce embeddings to 3D space
 reduced_embeddings = pca(embedding_array, 3)
 print("\n3D Reduced Embeddings (PCA):")
@@ -70,17 +86,19 @@ for voice, coords in zip(voices, reduced_embeddings):
 
 # Visualize in 3D space
 fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection='3d')
-scatter = ax.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], reduced_embeddings[:, 2])
+ax = fig.add_subplot(111, projection="3d")
+scatter = ax.scatter(
+    reduced_embeddings[:, 0], reduced_embeddings[:, 1], reduced_embeddings[:, 2]
+)
 
 # Label each point with the voice name
 for i, voice in enumerate(voices):
-    ax.text(reduced_embeddings[i, 0], reduced_embeddings[i, 1], reduced_embeddings[i, 2], voice, fontsize=12)
+    ax.text(reduced_embeddings[i, 0], reduced_embeddings[i, 1], reduced_embeddings[i, 2], voice, fontsize=12)  # type: ignore
 
 ax.set_title("3D Visualization of Voice Embeddings (Resemblyzer + PCA)")
 ax.set_xlabel("PC1")
 ax.set_ylabel("PC2")
-ax.set_zlabel("PC3")
+ax.set_zlabel("PC3")  # type: ignore
 plt.show()
 
 # Compare original embeddings using cosine similarity (matching the implementation)
@@ -91,9 +109,9 @@ for i in range(len(voices)):
         # Calculate cosine distance (1 - cosine similarity)
         distance = cosine(embedding_array[i], embedding_array[j])
         similarity = 1 - distance  # Convert to similarity score
-        
+
         print(f"Similarity between {voices[i]} and {voices[j]}: {similarity:.4f}")
-        
+
         # Check if above threshold (as in the implementation)
         if similarity > similarity_threshold:
             print(f"  -> MATCH: Above threshold ({similarity_threshold})")
