@@ -74,13 +74,13 @@ For more examples, see the `scripts/` directory and subpackage READMEs.
 
 ## Architecture
 
-- [**main.py**](./main.py): FastAPI server with WebSocket endpoints for bridges.
-- [**bridges/**](./bridges/): Platform-specific bridges (e.g., audiocodes_bridge.py, twilio_bridge.py).
-- [**models/**](./models/): Pydantic models for API schemas.
-- [**local/**](./local/): Mock clients and local realtime simulation.
-- [**vad/**](./vad/): Voice Activity Detection module.
-- [**transcription/**](./transcription/): Local transcription backends.
-- [**utils/**](./utils/): Audio and WebSocket utilities.
+- [**main.py**](./opusagent/main.py): FastAPI server with WebSocket endpoints for bridges.
+- [**bridges/**](./opusagent/bridges/): Platform-specific bridges (e.g., audiocodes_bridge.py, twilio_bridge.py).
+- [**models/**](./opusagent/models/): Pydantic models for API schemas.
+- [**local/**](./opusagent/local/): Mock clients and local realtime simulation.
+- [**vad/**](./opusagent/vad/): Voice Activity Detection module.
+- [**transcription/**](./opusagent/local/transcription/): Local transcription backends.
+- [**utils/**](./opusagent/utils/): Audio and WebSocket utilities.
 
 For detailed design, see docs/DESIGN.md and subpackage READMEs.
 
