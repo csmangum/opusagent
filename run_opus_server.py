@@ -238,7 +238,7 @@ def main():
             port=args.port,
             log_level=args.log_level.lower(),
             # Use HTTP/1.1 for lower overhead than HTTP/2
-            http=config.server.http_protocol,
+            http="h11" if config.server.http_protocol == "h11" else "auto",
             # Disable access logs for lower overhead, we have our own logging
             access_log=config.server.access_log,
             # Reload on code changes during development
