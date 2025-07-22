@@ -4,30 +4,173 @@ Configuration module for the real-time voice agent application.
 This module provides centralized configuration management for the entire application,
 including constants, logging setup, and environment-based configuration.
 
-Key components:
-- constants: Defines application-wide constants used across modules, including
-  message types, audio formats, and default model settings.
-- logging_config: Provides a consistent logging infrastructure with support for
-  console and file-based logging with rotation capabilities.
+## New Centralized Configuration System
 
-The configuration module serves as the foundation for consistent behavior
-across the application, enabling easy maintenance and configuration changes.
+The new system provides:
+- Type-safe configuration models organized by domain
+- Environment variable loading with validation
+- Singleton configuration access
+- Static data loading (scenarios, phrases)
+- Backward compatibility with legacy config
 
-Usage examples:
+### Usage Examples:
+
 ```python
-# Import and use constants
-from opusagent.config.constants import LOGGER_NAME, DEFAULT_REALTIME_MODEL
-from opusagent.config.constants import MESSAGE_TYPE_USER_STREAM_CHUNK
+# Modern configuration access
+from opusagent.config import get_config, server_config, openai_config
+config = get_config()
+print(f"Server: {config.server.host}:{config.server.port}")
+
+# Domain-specific config access
+server = server_config()
+openai = openai_config()
+
+# Legacy constants (backward compatibility)
+from opusagent.config import get_legacy_constants
+constants = get_legacy_constants()
+sample_rate = constants["DEFAULT_SAMPLE_RATE"]
 
 # Set up logging for your module
 from opusagent.config.logging_config import configure_logging
 logger = configure_logging()
 logger.info("Application started")
 
-# Access audio format constants
-from opusagent.config.constants import AUDIO_FORMAT_RAW_LPCM16
-audio_format = AUDIO_FORMAT_RAW_LPCM16
+# Static data access
+from opusagent.config import load_scenarios, get_phrases_by_scenario
+scenarios = load_scenarios()
+phrases = get_phrases_by_scenario("customer_service")
+```
+
+## Legacy Support
+
+For backward compatibility, you can still use:
+```python
+from opusagent.config.constants import DEFAULT_SAMPLE_RATE
+from opusagent.config.websocket_config import WebSocketConfig
 ```
 """
 
-# Config module initialization 
+# Import centralized configuration system
+from .settings import (
+    # Core configuration access
+    get_config,
+    reload_config,
+    set_config,
+    
+    # Domain-specific config access
+    server_config,
+    openai_config,
+    audio_config,
+    vad_config,
+    transcription_config,
+    websocket_config,
+    logging_config,
+    tui_config,
+    quality_config,
+    mock_config,
+    
+    # Static data loading
+    load_scenarios,
+    load_phrases_mapping,
+    get_scenarios_list,
+    get_scenario_by_name,
+    get_test_configurations,
+    get_phrases_by_scenario,
+    get_audio_file_path,
+    
+    # Utility functions
+    validate_configuration,
+    print_configuration_summary,
+    is_mock_mode,
+    is_development,
+    is_production,
+    
+    # Legacy compatibility
+    get_legacy_constants,
+    get_legacy_vad_config,
+    get_legacy_websocket_config,
+)
+
+# Import configuration models for advanced usage
+from .models import (
+    ApplicationConfig,
+    ServerConfig,
+    OpenAIConfig,
+    AudioConfig,
+    VADConfig,
+    TranscriptionConfig,
+    WebSocketConfig,
+    QualityMonitoringConfig,
+    LoggingConfig,
+    MockConfig,
+    TUIConfig,
+    StaticDataConfig,
+    SecurityConfig,
+    Environment,
+    LogLevel,
+)
+
+# Keep legacy imports available for backward compatibility
+from .constants import *
+from .logging_config import configure_logging
+
+# Export all public API
+__all__ = [
+    # Core configuration
+    "get_config",
+    "reload_config", 
+    "set_config",
+    
+    # Domain configs
+    "server_config",
+    "openai_config",
+    "audio_config",
+    "vad_config",
+    "transcription_config",
+    "websocket_config",
+    "logging_config",
+    "tui_config", 
+    "quality_config",
+    "mock_config",
+    
+    # Static data
+    "load_scenarios",
+    "load_phrases_mapping",
+    "get_scenarios_list",
+    "get_scenario_by_name", 
+    "get_test_configurations",
+    "get_phrases_by_scenario",
+    "get_audio_file_path",
+    
+    # Utilities
+    "validate_configuration",
+    "print_configuration_summary",
+    "is_mock_mode",
+    "is_development",
+    "is_production",
+    
+    # Legacy compatibility
+    "get_legacy_constants",
+    "get_legacy_vad_config",
+    "get_legacy_websocket_config",
+    
+    # Models
+    "ApplicationConfig",
+    "ServerConfig",
+    "OpenAIConfig",
+    "AudioConfig",
+    "VADConfig", 
+    "TranscriptionConfig",
+    "WebSocketConfig",
+    "QualityMonitoringConfig",
+    "LoggingConfig",
+    "MockConfig",
+    "TUIConfig",
+    "StaticDataConfig",
+    "SecurityConfig",
+    "Environment",
+    "LogLevel",
+    
+    # Legacy
+    "configure_logging",
+] 
