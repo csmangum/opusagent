@@ -20,15 +20,8 @@ def reset_logging():
     logging.basicConfig(level=logging.NOTSET)
     yield 
 
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()
-    asyncio.set_event_loop(None)
+# Removed custom event_loop fixture to avoid conflicts with pytest-asyncio
+# pytest-asyncio will provide its own event_loop fixture
 
 @pytest.fixture(autouse=True)
 def skip_integration_when_no_api_key(request):

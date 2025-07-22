@@ -18,9 +18,12 @@ load_dotenv()
 # Import centralized configuration
 try:
     from opusagent.config import tui_config as get_centralized_tui_config
+    from opusagent.config.constants import DEFAULT_SAMPLE_RATE
     _has_centralized_config = True
 except ImportError:
     _has_centralized_config = False
+    # Fallback constant if centralized config is not available
+    DEFAULT_SAMPLE_RATE = 16000
 
 
 @dataclass
@@ -107,7 +110,7 @@ class TUIConfig:
             self.vad_enabled = centralized_config.vad_enabled
             self.show_vad_events = centralized_config.show_vad_events
             self.sample_rate = getattr(centralized_config, "sample_rate", DEFAULT_SAMPLE_RATE)
-            self.audio_format = getattr(centralized_config, "audio_format", DEFAULT_AUDIO_FORMAT)
+            self.audio_format = getattr(centralized_config, "audio_format", "raw/lpcm16")
             self.enable_audio_recording = centralized_config.enable_audio_recording
             self.recordings_dir = centralized_config.recordings_dir
             self.max_recording_duration = centralized_config.max_recording_duration

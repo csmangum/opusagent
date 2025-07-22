@@ -25,9 +25,11 @@ from twilio.twiml.voice_response import VoiceResponse
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.dual_agent_bridge import DualAgentBridge
+from opusagent.bridges.twilio_bridge import TwilioBridge
 
 from opusagent.config import get_config, server_config, mock_config, vad_config, transcription_config
 from opusagent.config.logging_config import configure_logging
+from opusagent.config.models import WebSocketConfig
 from opusagent.customer_service_agent import session_config
 from opusagent.session_manager import SessionManager
 from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
@@ -47,7 +49,7 @@ logger = configure_logging("main")
 # Server configuration from centralized config
 PORT = config.server.port
 HOST = config.server.host
-SERVER_URL = config.server.url
+SERVER_URL = f"http://{HOST}:{PORT}"
 
 # VAD configuration from centralized config
 VAD_ENABLED = config.vad.enabled
@@ -506,10 +508,17 @@ async def get_app_config():
             "language": config.transcription.language,
             "model_size": config.transcription.model_size,
         },
-        "websocket": {
+        "websocket_manager": {
             "max_connections": config.websocket.max_connections,
+            "max_connection_age": config.websocket.max_connection_age,
+            "max_idle_time": config.websocket.max_idle_time,
+            "health_check_interval": config.websocket.health_check_interval,
+            "max_sessions_per_connection": config.websocket.max_sessions_per_connection,
             "ping_interval": config.websocket.ping_interval,
             "ping_timeout": config.websocket.ping_timeout,
+            "close_timeout": config.websocket.close_timeout,
+            "openai_model": config.openai.model,
+            "websocket_url": config.openai.get_websocket_url(),
         },
         "mock": {
             "enabled": config.mock.enabled,

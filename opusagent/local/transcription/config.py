@@ -15,6 +15,7 @@ Usage:
 """
 from .models import TranscriptionConfig
 from opusagent.config import transcription_config as get_transcription_config
+from opusagent.config.settings import reload_config
 
 def load_transcription_config() -> TranscriptionConfig:
     """Load transcription configuration using centralized configuration system.
@@ -22,6 +23,8 @@ def load_transcription_config() -> TranscriptionConfig:
     This function is maintained for backward compatibility.
     New code should use: from opusagent.config import transcription_config
     """
+    # Force reload to pick up any environment variable changes
+    reload_config()
     config = get_transcription_config()
     
     return TranscriptionConfig(
