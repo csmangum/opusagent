@@ -20,11 +20,12 @@ call_recordings/
 
 ## 🎵 Audio Format
 
-- **Sample Rate**: 16kHz
-- **Bit Depth**: 16-bit
-- **Caller Audio**: Left channel in stereo files
-- **Bot Audio**: Right channel in stereo files
+- **Sample Rate**: 16kHz (target rate for all recordings)
+- **Bit Depth**: 16-bit PCM
+- **Caller Audio**: Left channel in stereo files (typically 16kHz input)
+- **Bot Audio**: Right channel in stereo files (24kHz input resampled to 16kHz)
 - **Format**: WAV (uncompressed)
+- **Processing**: Bot audio is resampled from 24kHz (OpenAI Realtime API) to 16kHz for consistency
 
 ## 📝 Transcript Format
 
@@ -89,46 +90,42 @@ The `call_metadata.json` includes comprehensive statistics:
 
 ## 🛠️ Viewing Recordings
 
-Use the built-in viewer script to explore recordings:
+Recordings can be analyzed by examining the files directly:
 
-### List All Recordings
-```bash
-python scripts/view_call_recording.py --list
-```
+### Audio Playback
+- Use any audio player that supports WAV files
+- `caller_audio.wav` and `bot_audio.wav` for individual channels
+- `stereo_recording.wav` or `final_stereo_recording.wav` for combined audio
 
-### View Latest Recording
-```bash
-python scripts/view_call_recording.py --latest
-```
+### Transcript Analysis
+- Open `transcript.json` in any text editor or JSON viewer
+- Entries are chronologically ordered with timestamps
+- Channel and type information helps distinguish caller vs bot speech
 
-### Interactive Viewer
-```bash
-python scripts/view_call_recording.py
-```
+### Metadata Review
+- `call_metadata.json` contains call statistics and function call history
+- `session_events.json` provides detailed event timeline
+- Both files are in JSON format for easy parsing
 
-The interactive viewer provides options to:
-- 📊 Show call summary
-- 📝 Display transcript  
-- ⚙️ View function calls
-- 🎵 Play caller audio
-- 🎵 Play bot audio
-- 🎵 Play stereo recording
-- 📄 Export transcript as text
-- 📁 Open recording directory
+### Programmatic Access
+```python
+import json
+from pathlib import Path
 
-### View Specific Recording
-```bash
-python scripts/view_call_recording.py call_recordings/session_123_20241201_143022
-```
+# Load recording data
+recording_dir = Path("call_recordings/session_123_20241201_143022")
 
-### Quick Summary (Non-interactive)
-```bash
-python scripts/view_call_recording.py --summary call_recordings/session_123_20241201_143022
-```
+# Load metadata
+with open(recording_dir / "call_metadata.json") as f:
+    metadata = json.load(f)
 
-### Export Transcript
-```bash
-python scripts/view_call_recording.py --export transcript.txt call_recordings/session_123_20241201_143022
+# Load transcript
+with open(recording_dir / "transcript.json") as f:
+    transcript = json.load(f)
+
+# Load session events
+with open(recording_dir / "session_events.json") as f:
+    events = json.load(f)
 ```
 
 ## 🎧 Audio Playback

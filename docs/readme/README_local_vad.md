@@ -26,25 +26,25 @@ python opusagent/main.py
 
 ```bash
 # Basic test (30 seconds)
-python scripts/test_local_vad.py
+python opusagent/local/local_vad_client.py
 
 # Custom duration and sensitivity
-python scripts/test_local_vad.py --duration 60 --sensitivity 0.03
+python opusagent/local/local_vad_client.py --duration 60 --vad-sensitivity 0.03
 
 # Test different sensitivity levels
-python scripts/test_local_vad.py --test-sensitivity
+python opusagent/local/local_vad_client.py --vad-sensitivity 0.05
 ```
 
 ### 3. Use Programmatically
 
 ```python
 import asyncio
-from opusagent.mock.local_vad_client import LocalVADClient
+from opusagent.local.local_vad_client import LocalVADClient
 
 async def main():
     async with LocalVADClient(
         bridge_url="ws://localhost:8000/caller-agent",
-        vad_sensitivity=0.05,
+        vad_sensitivity=0.1,
         vad_silence_duration=1.5
     ) as client:
         await client.run_conversation(duration=30.0)
@@ -58,8 +58,8 @@ asyncio.run(main())
 
 - **`vad_sensitivity`** (0.0-1.0): Energy threshold for speech detection
   - `0.02`: Very sensitive (detects quiet speech)
-  - `0.05`: Normal sensitivity (default)
-  - `0.1`: Less sensitive (ignores background noise)
+  - `0.05`: More sensitive than default
+  - `0.1`: Normal sensitivity (default)
   - `0.2`: Low sensitivity (only loud speech)
 
 - **`vad_silence_duration`** (seconds): How long to wait before ending speech
@@ -118,7 +118,7 @@ LocalVADClient(
 ### For Noisy Environments
 ```python
 LocalVADClient(
-    vad_sensitivity=0.1,       # Less sensitive
+    vad_sensitivity=0.2,       # Less sensitive
     vad_silence_duration=1.5   # Longer silence
 )
 ```
@@ -126,7 +126,7 @@ LocalVADClient(
 ### For Fast Conversations
 ```python
 LocalVADClient(
-    vad_sensitivity=0.05,      # Normal sensitivity
+    vad_sensitivity=0.05,      # More sensitive than default
     vad_silence_duration=0.5   # Quick cutoff
 )
 ```
@@ -136,12 +136,12 @@ LocalVADClient(
 ### No Audio Input
 1. **Check microphone permissions**
 2. **Verify audio device selection**
-3. **Test with lower sensitivity**: `--sensitivity 0.01`
+3. **Test with lower sensitivity**: `--vad-sensitivity 0.01`
 
 ### Too Much Background Noise
-1. **Increase sensitivity**: `--sensitivity 0.1`
+1. **Increase sensitivity**: `--vad-sensitivity 0.2`
 2. **Use noise-canceling microphone**
-3. **Adjust silence duration**: `--silence 2.0`
+3. **Adjust silence duration**: `--vad-silence 2.0`
 
 ### Audio Not Playing
 1. **Check speaker/headphone connection**
@@ -227,8 +227,7 @@ class HybridVADClient(LocalVADClient):
 
 ## 🔗 Related Files
 
-- `opusagent/mock/local_vad_client.py` - Main VAD client implementation
-- `scripts/test_local_vad.py` - Test script
-- `opusagent/mock/mock_audiocodes_client.py` - Original file-based client
+- `opusagent/local/local_vad_client.py` - Main VAD client implementation
+- `opusagent/local/mock_twilio_client.py` - Original file-based client
 - `opusagent/main.py` - Bridge server
 - `requirements.txt` - Dependencies (SoundDevice, NumPy, etc.) 
