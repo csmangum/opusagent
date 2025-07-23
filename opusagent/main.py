@@ -105,6 +105,7 @@ async def websocket_endpoint(websocket: WebSocket):
     Args:
         websocket (WebSocket): The WebSocket connection from the telephony client
     """
+    bridge = None
     await websocket.accept()
     logger.info("Telephony WebSocket connection accepted")
 
@@ -154,12 +155,24 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         logger.info("Telephony client disconnected")
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.error(f"WebSocket connection closed: {e}")
+        logger.error(f"Close code: {e.code}")
+        logger.error(f"Close reason: {e.reason}")
+    except asyncio.TimeoutError:
+        logger.error("WebSocket operation timed out")
+    except asyncio.CancelledError:
+        logger.info("WebSocket operation was cancelled")
     except Exception as e:
-        logger.error(f"Error in websocket_endpoint: {e}")
+        logger.error(f"Unexpected error in websocket_endpoint: {e}")
+        logger.exception("Full traceback:")
     finally:
         # Ensure bridge is closed
-        if "bridge" in locals():
-            await bridge.close()
+        if bridge is not None:
+            try:
+                await bridge.close()
+            except Exception as e:
+                logger.error(f"Error closing bridge: {e}")
 
 
 @app.websocket("/caller-agent")
@@ -172,7 +185,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
     route to avoid interfering with production traffic and so that we can apply
     separate security rules in the future.
     """
-
+    bridge = None
     await caller_websocket.accept()
     client_address = caller_websocket.client
     logger.info(f"------ Caller connection accepted from {client_address} ------")
@@ -229,26 +242,51 @@ async def handle_caller_call(caller_websocket: WebSocket):
             await asyncio.gather(
                 bridge.receive_from_platform(), bridge.receive_from_realtime()
             )
+        except WebSocketDisconnect:
+            logger.info("Caller client disconnected")
+        except websockets.exceptions.ConnectionClosed as e:
+            logger.error(f"WebSocket connection closed (Caller): {e}")
+            logger.error(f"Close code: {e.code}")
+            logger.error(f"Close reason: {e.reason}")
+        except asyncio.TimeoutError:
+            logger.error("WebSocket operation timed out (Caller)")
+        except asyncio.CancelledError:
+            logger.info("WebSocket operation was cancelled (Caller)")
         except Exception as e:
-            logger.error(f"Error in Caller connection loop: {e}")
+            logger.error(f"Unexpected error in Caller connection loop: {e}")
+            logger.exception("Full traceback:")
             raise
         finally:
             logger.info("Closing Caller bridge...")
-            await bridge.close()
+            if bridge is not None:
+                try:
+                    await bridge.close()
+                except Exception as e:
+                    logger.error(f"Error closing Caller bridge: {e}")
 
+    except WebSocketDisconnect:
+        logger.info("Caller client disconnected during setup")
     except websockets.exceptions.ConnectionClosed as e:
-        logger.error(f"OpenAI connection closed (Caller): {e}")
+        logger.error(f"OpenAI connection closed during setup (Caller): {e}")
         logger.error(f"Close code: {e.code}")
         logger.error(f"Close reason: {e.reason}")
         await caller_websocket.close()
+    except asyncio.TimeoutError:
+        logger.error("Connection setup timed out (Caller)")
+        await caller_websocket.close()
+    except asyncio.CancelledError:
+        logger.info("Connection setup was cancelled (Caller)")
+        await caller_websocket.close()
     except Exception as e:
         logger.error(f"Error establishing connection (Caller): {e}")
+        logger.exception("Full traceback:")
         await caller_websocket.close()
 
 
 @app.websocket("/twilio-agent")
 async def handle_twilio_call(twilio_websocket: WebSocket):
     """Handle WebSocket connections between Twilio Media Streams and OpenAI."""
+    bridge = None
     client_address = twilio_websocket.client
     logger.info(f"------ Incoming Twilio connection from {client_address} ------")
     await twilio_websocket.accept()
@@ -300,20 +338,44 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
             await asyncio.gather(
                 bridge.receive_from_platform(), bridge.receive_from_realtime()
             )
+        except WebSocketDisconnect:
+            logger.info("Twilio client disconnected")
+        except websockets.exceptions.ConnectionClosed as e:
+            logger.error(f"WebSocket connection closed (Twilio): {e}")
+            logger.error(f"Close code: {e.code}")
+            logger.error(f"Close reason: {e.reason}")
+        except asyncio.TimeoutError:
+            logger.error("WebSocket operation timed out (Twilio)")
+        except asyncio.CancelledError:
+            logger.info("WebSocket operation was cancelled (Twilio)")
         except Exception as e:
-            logger.error(f"Error in Twilio main connection loop: {e}")
+            logger.error(f"Unexpected error in Twilio main connection loop: {e}")
+            logger.exception("Full traceback:")
             raise
         finally:
             logger.info("Closing Twilio bridge...")
-            await bridge.close()
+            if bridge is not None:
+                try:
+                    await bridge.close()
+                except Exception as e:
+                    logger.error(f"Error closing Twilio bridge: {e}")
 
+    except WebSocketDisconnect:
+        logger.info("Twilio client disconnected during setup")
     except websockets.exceptions.ConnectionClosed as e:
-        logger.error(f"OpenAI connection closed (Twilio): {e}")
+        logger.error(f"OpenAI connection closed during setup (Twilio): {e}")
         logger.error(f"Close code: {e.code}")
         logger.error(f"Close reason: {e.reason}")
         await twilio_websocket.close()
+    except asyncio.TimeoutError:
+        logger.error("Connection setup timed out (Twilio)")
+        await twilio_websocket.close()
+    except asyncio.CancelledError:
+        logger.info("Connection setup was cancelled (Twilio)")
+        await twilio_websocket.close()
     except Exception as e:
         logger.error(f"Error establishing connection (Twilio): {e}")
+        logger.exception("Full traceback:")
         await twilio_websocket.close()
 
 
@@ -330,6 +392,7 @@ async def agent_conversation_endpoint(
         websocket: The WebSocket connection
         caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
     """
+    bridge = None
     await websocket.accept()
     client_address = websocket.client
     logger.info(
@@ -344,13 +407,32 @@ async def agent_conversation_endpoint(
         # Initialize both OpenAI connections and start conversation
         await bridge.initialize_connections()
 
+    except WebSocketDisconnect:
+        logger.info("Agent conversation client disconnected")
+    except websockets.exceptions.ConnectionClosed as e:
+        logger.error(f"WebSocket connection closed (Agent conversation): {e}")
+        logger.error(f"Close code: {e.code}")
+        logger.error(f"Close reason: {e.reason}")
+    except asyncio.TimeoutError:
+        logger.error("Agent conversation operation timed out")
+    except asyncio.CancelledError:
+        logger.info("Agent conversation operation was cancelled")
     except Exception as e:
-        logger.error(f"Error in agent conversation: {e}")
-        if "bridge" in locals():
-            await bridge.close()
+        logger.error(f"Unexpected error in agent conversation: {e}")
+        logger.exception("Full traceback:")
     finally:
+        # Ensure bridge is closed
+        if bridge is not None:
+            try:
+                await bridge.close()
+            except Exception as e:
+                logger.error(f"Error closing agent conversation bridge: {e}")
+        
         logger.info("Agent conversation ended")
-        await websocket.close()
+        try:
+            await websocket.close()
+        except Exception as e:
+            logger.error(f"Error closing agent conversation websocket: {e}")
 
 
 @app.post("/twilio/voice")
