@@ -46,6 +46,11 @@ sys.path.append(str(Path(__file__).parent))
 from opusagent.config import get_config, server_config, mock_config, openai_config, print_configuration_summary
 from opusagent.config.logging_config import configure_logging
 
+from opusagent.config.env_loader import load_env_file
+
+# Load environment variables first
+load_env_file()
+
 # Get centralized configuration
 config = get_config()
 
