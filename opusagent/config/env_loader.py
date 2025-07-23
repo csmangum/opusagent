@@ -98,6 +98,13 @@ def safe_convert(value: Optional[str], target_type: Type[T], default: T) -> T:
         return default
 
 
+def safe_string_or_none(value: Optional[str]) -> Optional[str]:
+    """Convert environment variable to string or None if empty."""
+    if value is None or value.strip() == "":
+        return None
+    return value.strip()
+
+
 def load_server_config() -> ServerConfig:
     """Load server configuration from environment variables."""
     _check_env_loaded()
@@ -207,9 +214,9 @@ def load_transcription_config() -> TranscriptionConfig:
         sample_rate=safe_convert(os.getenv("TRANSCRIPTION_SAMPLE_RATE"), int, 16000),
         enable_vad=safe_convert(os.getenv("TRANSCRIPTION_ENABLE_VAD"), bool, True),
         device=os.getenv("WHISPER_DEVICE", "cpu"),
-        pocketsphinx_hmm=os.getenv("POCKETSPHINX_HMM"),
-        pocketsphinx_lm=os.getenv("POCKETSPHINX_LM"),
-        pocketsphinx_dict=os.getenv("POCKETSPHINX_DICT"),
+        pocketsphinx_hmm=safe_string_or_none(os.getenv("POCKETSPHINX_HMM")),
+        pocketsphinx_lm=safe_string_or_none(os.getenv("POCKETSPHINX_LM")),
+        pocketsphinx_dict=safe_string_or_none(os.getenv("POCKETSPHINX_DICT")),
         pocketsphinx_audio_preprocessing=os.getenv(
             "POCKETSPHINX_AUDIO_PREPROCESSING", "normalize"
         ),
@@ -222,7 +229,7 @@ def load_transcription_config() -> TranscriptionConfig:
         pocketsphinx_input_sample_rate=safe_convert(
             os.getenv("POCKETSPHINX_INPUT_SAMPLE_RATE"), int, 24000
         ),
-        whisper_model_dir=os.getenv("WHISPER_MODEL_DIR"),
+        whisper_model_dir=safe_string_or_none(os.getenv("WHISPER_MODEL_DIR")),
         whisper_temperature=safe_convert(os.getenv("WHISPER_TEMPERATURE"), float, 0.0),
     )
 

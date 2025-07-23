@@ -91,43 +91,47 @@ class TUIConfig:
     def __post_init__(self):
         """Initialize configuration from centralized config or environment variables."""
         if _has_centralized_config:
-            # Use centralized configuration system
-            centralized_config = get_centralized_tui_config()
-            
-            # Map centralized config to TUI config fields
-            self.host = centralized_config.host
-            self.port = centralized_config.port
-            self.ws_path = centralized_config.ws_path
-            self.timeout_seconds = centralized_config.timeout_seconds
-            self.ping_interval = centralized_config.ping_interval
-            self.ping_timeout = centralized_config.ping_timeout
-            self.reconnect_attempts = centralized_config.reconnect_attempts
-            self.reconnect_delay = centralized_config.reconnect_delay
-            self.bot_name = centralized_config.bot_name
-            self.caller_id = centralized_config.caller_id
-            self.session_timeout = centralized_config.session_timeout
-            self.auto_reconnect = centralized_config.auto_reconnect
-            self.vad_enabled = centralized_config.vad_enabled
-            self.show_vad_events = centralized_config.show_vad_events
-            self.sample_rate = getattr(centralized_config, "sample_rate", DEFAULT_SAMPLE_RATE)
-            self.audio_format = getattr(centralized_config, "audio_format", "raw/lpcm16")
-            self.enable_audio_recording = centralized_config.enable_audio_recording
-            self.recordings_dir = centralized_config.recordings_dir
-            self.max_recording_duration = centralized_config.max_recording_duration
-            self.refresh_rate = centralized_config.refresh_rate
-            self.log_max_lines = centralized_config.log_max_lines
-            self.transcript_max_lines = centralized_config.transcript_max_lines
-            self.events_max_lines = centralized_config.events_max_lines
-            self.show_audio_chunks = centralized_config.show_audio_chunks
-            self.show_debug_messages = centralized_config.show_debug_messages
-            self.filter_heartbeat_messages = centralized_config.filter_heartbeat_messages
-            self.max_events = centralized_config.max_events
-            self.log_level = centralized_config.log_level
-            self.export_format = centralized_config.export_format
-            self.auto_export_on_session_end = centralized_config.auto_export_on_session_end
-            self.theme = centralized_config.theme
-            self.show_timestamps = centralized_config.show_timestamps
-            self.show_latency = centralized_config.show_latency
+            try:
+                # Use centralized configuration system
+                centralized_config = tui_config()
+                
+                # Map centralized config to TUI config fields
+                self.host = centralized_config.host
+                self.port = centralized_config.port
+                self.ws_path = centralized_config.ws_path
+                self.timeout_seconds = centralized_config.timeout_seconds
+                self.ping_interval = centralized_config.ping_interval
+                self.ping_timeout = centralized_config.ping_timeout
+                self.reconnect_attempts = centralized_config.reconnect_attempts
+                self.reconnect_delay = centralized_config.reconnect_delay
+                self.bot_name = centralized_config.bot_name
+                self.caller_id = centralized_config.caller_id
+                self.session_timeout = centralized_config.session_timeout
+                self.auto_reconnect = centralized_config.auto_reconnect
+                self.vad_enabled = centralized_config.vad_enabled
+                self.show_vad_events = centralized_config.show_vad_events
+                self.sample_rate = getattr(centralized_config, "sample_rate", DEFAULT_SAMPLE_RATE)
+                self.audio_format = getattr(centralized_config, "audio_format", "raw/lpcm16")
+                self.enable_audio_recording = centralized_config.enable_audio_recording
+                self.recordings_dir = centralized_config.recordings_dir
+                self.max_recording_duration = centralized_config.max_recording_duration
+                self.refresh_rate = centralized_config.refresh_rate
+                self.log_max_lines = centralized_config.log_max_lines
+                self.transcript_max_lines = centralized_config.transcript_max_lines
+                self.events_max_lines = centralized_config.events_max_lines
+                self.show_audio_chunks = centralized_config.show_audio_chunks
+                self.show_debug_messages = centralized_config.show_debug_messages
+                self.filter_heartbeat_messages = centralized_config.filter_heartbeat_messages
+                self.max_events = centralized_config.max_events
+                self.log_level = centralized_config.log_level
+                self.export_format = centralized_config.export_format
+                self.auto_export_on_session_end = centralized_config.auto_export_on_session_end
+                self.theme = centralized_config.theme
+                self.show_timestamps = centralized_config.show_timestamps
+                self.show_latency = centralized_config.show_latency
+            except RuntimeError:
+                # If centralized config fails (e.g., env not loaded), fall back to environment variables
+                self._load_from_environment()
         else:
             # Fallback to environment variables (legacy mode)
             self._load_from_environment()

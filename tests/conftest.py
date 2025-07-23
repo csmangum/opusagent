@@ -11,6 +11,15 @@ Pytest configuration file for the OpusAgent framework test suite.
 This file contains fixtures that are shared across multiple test files.
 """
 
+# Load environment variables for tests
+try:
+    from opusagent.config.env_loader import load_env_file
+    load_env_file()
+except ImportError:
+    # If opusagent is not available, try to load .env file directly
+    from dotenv import load_dotenv
+    load_dotenv()
+
 @pytest.fixture(autouse=True)
 def reset_logging():
     """Reset logging configuration before each test"""

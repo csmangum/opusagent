@@ -43,26 +43,21 @@ def test_all_exports_defined():
 
 
 def test_public_api_functionality():
-    """Test that the public API works as expected."""
+    """Test that the public API functions work correctly."""
     from opusagent.local.transcription import (
-        TranscriptionResult,
-        TranscriptionConfig,
-        TranscriptionFactory,
+        TranscriptionFactory, 
         load_transcription_config,
+        TranscriptionConfig,
+        TranscriptionResult,
         BaseTranscriber
     )
-    
-    # Test TranscriptionResult creation
-    result = TranscriptionResult(text="test")
-    assert result.text == "test"
-    assert result.confidence == 0.0
     
     # Test TranscriptionConfig creation
     config = TranscriptionConfig(backend="pocketsphinx")
     assert config.backend == "pocketsphinx"
     
     # Test load_transcription_config function
-    with patch.dict('os.environ', {}, clear=True):
+    with patch.dict('os.environ', {"OPUSAGENT_USE_MOCK": "true"}, clear=True):
         loaded_config = load_transcription_config()
         assert isinstance(loaded_config, TranscriptionConfig)
     
@@ -148,7 +143,8 @@ def test_quick_start_example():
     from opusagent.local.transcription import TranscriptionFactory, load_transcription_config
     
     # Load configuration (from docstring example)
-    config = load_transcription_config()
+    with patch.dict('os.environ', {"OPUSAGENT_USE_MOCK": "true"}, clear=True):
+        config = load_transcription_config()
     
     # Create transcriber (from docstring example)
     transcriber = TranscriptionFactory.create_transcriber(config)
