@@ -177,10 +177,14 @@ class TestWebSocketManagerWebSocketEndpoints:
     @pytest.mark.asyncio
     async def test_telephony_websocket_with_manager(self, mock_connection, mock_bridge_classes):
         """Test telephony WebSocket endpoint uses websocket manager."""
-        from opusagent.main import websocket_endpoint
+        from opusagent.main import websocket_endpoint, app
         
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
+        
+        # Mock the app state voice_recognizer
+        mock_voice_recognizer = Mock()
+        app.state.voice_recognizer = mock_voice_recognizer
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
@@ -207,17 +211,23 @@ class TestWebSocketManagerWebSocketEndpoints:
                 assert len(call_args[0]) == 3  # Should have 3 positional arguments
                 assert call_args[0][0] == mock_websocket  # First arg: websocket
                 assert call_args[0][1] == mock_connection.websocket  # Second arg: managed websocket
-                # Third arg should be session_config (we can't easily mock it, so just check it exists)
-                assert call_args[0][2] is not None
+                assert call_args[0][2] is not None  # Third arg: session_config
+                # Check keyword arguments
+                assert call_args[1]['vad_enabled'] == True  # vad_enabled keyword arg
+                assert call_args[1]['voice_recognizer'] == mock_voice_recognizer  # voice_recognizer keyword arg
 
     @pytest.mark.asyncio
     async def test_twilio_websocket_with_manager(self, mock_connection, mock_bridge_classes):
         """Test Twilio WebSocket endpoint uses websocket manager."""
-        from opusagent.main import handle_twilio_call
+        from opusagent.main import handle_twilio_call, app
         
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         mock_websocket.client = "test_client"
+        
+        # Mock the app state voice_recognizer
+        mock_voice_recognizer = Mock()
+        app.state.voice_recognizer = mock_voice_recognizer
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
@@ -244,16 +254,21 @@ class TestWebSocketManagerWebSocketEndpoints:
                 assert len(call_args[0]) == 3  # Should have 3 positional arguments
                 assert call_args[0][0] == mock_websocket  # First arg: websocket
                 assert call_args[0][1] == mock_connection.websocket  # Second arg: managed websocket
-                # Third arg should be session_config (we can't easily mock it, so just check it exists)
-                assert call_args[0][2] is not None
+                assert call_args[0][2] is not None  # Third arg: session_config
+                # Check keyword arguments
+                assert call_args[1]['voice_recognizer'] == mock_voice_recognizer  # voice_recognizer keyword arg
 
     @pytest.mark.asyncio
     async def test_websocket_endpoint_exception_handling(self, mock_connection, mock_bridge_classes):
         """Test WebSocket endpoint handles exceptions properly."""
-        from opusagent.main import websocket_endpoint
+        from opusagent.main import websocket_endpoint, app
         
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
+        
+        # Mock the app state voice_recognizer
+        mock_voice_recognizer = Mock()
+        app.state.voice_recognizer = mock_voice_recognizer
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
@@ -273,11 +288,15 @@ class TestWebSocketManagerWebSocketEndpoints:
     @pytest.mark.asyncio
     async def test_websocket_disconnect_handling(self, mock_connection, mock_bridge_classes):
         """Test WebSocket disconnect is handled properly."""
-        from opusagent.main import websocket_endpoint
+        from opusagent.main import websocket_endpoint, app
         from fastapi import WebSocketDisconnect
         
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
+        
+        # Mock the app state voice_recognizer
+        mock_voice_recognizer = Mock()
+        app.state.voice_recognizer = mock_voice_recognizer
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
