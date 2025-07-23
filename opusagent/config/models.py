@@ -158,17 +158,7 @@ class QualityMonitoringConfig:
     summary_interval_seconds: int = 60
 
 
-@dataclass
-class LoggingConfig:
-    """Logging configuration."""
-    level: LogLevel = LogLevel.INFO
-    format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    log_dir: Path = field(default_factory=lambda: Path("logs"))
-    log_filename: str = "opusagent.log"
-    max_log_size: int = 10 * 1024 * 1024  # 10 MB
-    backup_count: int = 5
-    console_output: bool = True
-    file_output: bool = True
+# Removed LoggingConfig class to consolidate logging configuration into the logging_config module.
 
 
 @dataclass
