@@ -163,11 +163,11 @@ class WebSocketManager:
 
         # Connection parameters from centralized config
         if not self.use_mock:
-            self._url = config.openai.get_websocket_url()
+            self._url: Optional[str] = config.openai.get_websocket_url()
             self._headers = config.openai.get_headers()
         else:
             # Mock mode - set dummy values for OpenAI config (these won't be used in mock mode)
-            self._url = ""  # Empty string instead of None to satisfy type checker
+            self._url: Optional[str] = None  # Use None to represent the absence of a value in mock mode
             self._headers = {}
 
         logger.info(
@@ -255,6 +255,8 @@ class WebSocketManager:
                 websocket = await self._create_mock_connection()
                 logger.info(f"Created new mock connection: {connection_id}")
             else:
+                # We know _url is not None here because we only reach this code when use_mock is False
+                assert self._url is not None, "URL should not be None in non-mock mode"
                 websocket = await websockets.connect(
                     self._url,
                     subprotocols=[Subprotocol("realtime")],
