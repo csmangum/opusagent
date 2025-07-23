@@ -9,10 +9,8 @@ import json
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
-import websockets
-from fastapi import WebSocket
 from websockets.asyncio.client import ClientConnection
 
 from opusagent.audio_quality_monitor import QualityThresholds
@@ -25,6 +23,10 @@ from opusagent.models.openai_api import SessionConfig
 from opusagent.realtime_handler import RealtimeHandler
 from opusagent.session_manager import SessionManager
 from opusagent.transcript_manager import TranscriptManager
+from opusagent.services.session_manager_service import SessionManagerService
+from opusagent.models.session_state import SessionState
+from opusagent.session_storage import SessionStorage
+from opusagent.session_storage.memory_storage import MemorySessionStorage
 
 # Configure logging
 logger = configure_logging("base_bridge")
@@ -38,7 +40,7 @@ class BaseRealtimeBridge(ABC):
 
     Attributes:
         platform_websocket: Platform-specific WebSocket connection (e.g. FastAPI WebSocket)
-        realtime_websocket (ClientConnection): WebSocket connection to OpenAI Realtime API
+        realtime_websocket (Union[ClientConnection, Any]): WebSocket connection to OpenAI Realtime API or LocalRealtimeClient
         conversation_id (Optional[str]): Unique identifier for the current conversation
         media_format (Optional[str]): Audio format being used for the session
         speech_detected (bool): Whether speech is currently being detected
@@ -54,24 +56,38 @@ class BaseRealtimeBridge(ABC):
         transcript_manager (TranscriptManager): Manager for handling transcripts
         realtime_handler (RealtimeHandler): Handler for OpenAI Realtime API communication
         session_config (SessionConfig): Predefined session configuration for the OpenAI Realtime API
+        use_local_realtime (bool): Whether to use local realtime client instead of OpenAI API
+        local_realtime_client (Optional[Any]): Local realtime client instance when use_local_realtime is True
     """
 
     def __init__(
         self,
         platform_websocket,
-        realtime_websocket: ClientConnection,
+        realtime_websocket: Union[ClientConnection, Any],
         session_config: SessionConfig,
+        vad_enabled: bool = True,  # Enable VAD by default
+        bridge_type: str = "unknown",
+        use_local_realtime: bool = False,
+        local_realtime_config: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the base realtime bridge.
 
         Args:
             platform_websocket: WebSocket connection to the platform (Twilio, AudioCodes, etc.)
-            realtime_websocket: WebSocket connection to OpenAI Realtime API
+            realtime_websocket: WebSocket connection to OpenAI Realtime API or LocalRealtimeClient
             session_config: Predefined session configuration for the OpenAI Realtime API
+            vad_enabled: Whether to enable Voice Activity Detection handling
+            bridge_type: Type of bridge for logging and configuration
+            use_local_realtime: Whether to use local realtime client instead of OpenAI API
+            local_realtime_config: Configuration for local realtime client (if use_local_realtime is True)
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
         self.session_config = session_config
+        self.vad_enabled = vad_enabled  # Store VAD configuration
+        self.use_local_realtime = use_local_realtime
+        self.local_realtime_config = local_realtime_config or {}
+        self.bridge_type = bridge_type
         self._closed = False
         self.conversation_id: Optional[str] = None
         self.media_format: Optional[str] = None
@@ -87,6 +103,14 @@ class BaseRealtimeBridge(ABC):
 
         # Initialize call recorder
         self.call_recorder: Optional[CallRecorder] = None
+        
+        # Initialize session state management
+        self.session_state: Optional[SessionState] = None
+        self.session_manager_service: Optional[SessionManagerService] = None
+        
+        # Initialize session manager service with memory storage
+        session_storage = MemorySessionStorage()
+        self.session_manager_service = SessionManagerService(session_storage)
 
         # Initialize function handler
         self.function_handler = FunctionHandler(
@@ -106,10 +130,10 @@ class BaseRealtimeBridge(ABC):
 
         # Configure quality monitoring thresholds
         quality_thresholds = QualityThresholds(
-            min_snr_db=20.0,           # Minimum signal-to-noise ratio
-            max_thd_percent=1.0,       # Maximum total harmonic distortion  
+            min_snr_db=20.0,  # Minimum signal-to-noise ratio
+            max_thd_percent=1.0,  # Maximum total harmonic distortion
             max_clipping_percent=0.1,  # Maximum acceptable clipping
-            min_quality_score=60.0,    # Minimum overall quality score
+            min_quality_score=60.0,  # Minimum overall quality score
         )
 
         # Initialize audio handler with quality monitoring enabled
@@ -119,10 +143,13 @@ class BaseRealtimeBridge(ABC):
             call_recorder=self.call_recorder,
             enable_quality_monitoring=True,  # Enable monitoring
             quality_thresholds=quality_thresholds,
+            bridge_type=bridge_type,
         )
 
         # Initialize session manager
         self.session_manager = SessionManager(realtime_websocket, session_config)
+        if self.session_manager is None:
+            raise RuntimeError("Failed to initialize SessionManager")
 
         # Initialize event router
         self.event_router = EventRouter()
@@ -137,8 +164,59 @@ class BaseRealtimeBridge(ABC):
             transcript_manager=self.transcript_manager,
         )
 
+        # Initialize local realtime client if requested
+        self.local_realtime_client = None
+        if self.use_local_realtime:
+            self._initialize_local_realtime_client()
+
         # Register platform-specific event handlers
         self.register_platform_event_handlers()
+
+        # Log configuration
+        connection_type = (
+            "Local Realtime Client"
+            if self.use_local_realtime
+            else "OpenAI Realtime API"
+        )
+        logger.info(f"Bridge initialized with {connection_type}")
+        logger.info(f"VAD handling {'enabled' if self.vad_enabled else 'disabled'}")
+
+    def _initialize_local_realtime_client(self):
+        #! Shouldn't this be handled in client? Yes, needs to work like websocket
+        """Initialize the local realtime client for testing and development."""
+        try:
+            from opusagent.local.realtime import LocalRealtimeClient
+
+            # Create local realtime client with configuration
+            self.local_realtime_client = LocalRealtimeClient(
+                logger=logger,
+                session_config=self.session_config,
+                enable_vad=self.vad_enabled,
+                vad_config=self.local_realtime_config.get("vad_config", {}),
+                enable_transcription=self.local_realtime_config.get(
+                    "enable_transcription", False
+                ),
+                transcription_config=self.local_realtime_config.get(
+                    "transcription_config", {}
+                ),
+                response_configs=self.local_realtime_config.get("response_configs", {}),
+                default_response_config=self.local_realtime_config.get(
+                    "default_response_config"
+                ),
+            )
+
+            # Set up smart response examples if requested
+            if self.local_realtime_config.get("setup_smart_responses", True):
+                self.local_realtime_client.setup_smart_response_examples()
+
+            logger.info("Local realtime client initialized successfully")
+
+        except ImportError as e:
+            logger.error(f"Failed to import LocalRealtimeClient: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to initialize local realtime client: {e}")
+            raise
 
     @abstractmethod
     def register_platform_event_handlers(self):
@@ -175,6 +253,14 @@ class BaseRealtimeBridge(ABC):
                     logger.info(f"Call recording finalized: {summary}")
                 except Exception as e:
                     logger.error(f"Error finalizing call recording: {e}")
+
+            # Close local realtime client if used
+            if self.local_realtime_client:
+                try:
+                    await self.local_realtime_client.disconnect()
+                    logger.info("Local realtime client disconnected")
+                except Exception as e:
+                    logger.error(f"Error disconnecting local realtime client: {e}")
 
             # Close realtime handler
             await self.realtime_handler.close()
@@ -250,18 +336,55 @@ class BaseRealtimeBridge(ABC):
         pass
 
     async def initialize_conversation(self, conversation_id: Optional[str] = None):
-        #! Agent should do this
-        """Initialize a new conversation with OpenAI.
+        """Initialize a new conversation with OpenAI or resume existing session.
 
         Args:
             conversation_id (Optional[str]): Optional conversation ID to use
         """
         self.conversation_id = conversation_id or str(uuid.uuid4())
-        logger.info(f"Conversation started: {self.conversation_id}")
+        
+        # Try to resume existing session if session manager service is available
+        if self.session_manager_service:
+            self.session_state = await self.session_manager_service.resume_session(self.conversation_id)
+            
+            if self.session_state:
+                # Resume existing session
+                await self._restore_session_state()
+                logger.info(f"Resumed session: {self.conversation_id}")
+            else:
+                # Create new session
+                self.session_state = await self.session_manager_service.create_session(
+                    conversation_id=self.conversation_id,
+                    bridge_type=self.bridge_type,
+                    bot_name=getattr(self, 'bot_name', 'voice-bot'),
+                    caller=getattr(self, 'caller', 'unknown'),
+                    media_format=self.media_format or "raw/lpcm16"
+                )
+                logger.info(f"Created new session: {self.conversation_id}")
+        else:
+            logger.info(f"Conversation started: {self.conversation_id}")
 
-        # Initialize session with OpenAI Realtime API
-        await self.session_manager.initialize_session()
-        await self.session_manager.send_initial_conversation_item()
+        # Initialize local realtime client if using it
+        if self.use_local_realtime and self.local_realtime_client:
+            try:
+                # Connect to local realtime client
+                await self.local_realtime_client.connect()
+                logger.info("Connected to local realtime client")
+
+                # Update conversation context
+                self.local_realtime_client.update_conversation_context()
+
+            except Exception as e:
+                logger.error(f"Failed to connect to local realtime client: {e}")
+                raise
+
+        # Initialize session with OpenAI Realtime API (or local client)
+        if hasattr(self, 'session_manager') and self.session_manager is not None:
+            await self.session_manager.initialize_session()
+            await self.session_manager.send_initial_conversation_item()
+        else:
+            logger.error("SessionManager not available for session initialization")
+            raise RuntimeError("SessionManager not properly initialized")
 
         # Initialize call recorder
         if self.conversation_id:
@@ -286,15 +409,89 @@ class BaseRealtimeBridge(ABC):
                 media_format=self.media_format or "pcm16",
             )
 
+    async def _restore_session_state(self):
+        """Restore session state from storage."""
+        if not self.session_state:
+            return
+        
+        # Restore conversation ID
+        self.conversation_id = self.session_state.conversation_id
+        
+        # Restore media format
+        if self.session_state.media_format:
+            self.media_format = self.session_state.media_format
+        
+        # Restore OpenAI session state if available
+        if self.session_state.openai_session_id:
+            # Reconnect to OpenAI with existing session
+            await self._restore_openai_session()
+        
+        # Restore conversation context
+        if self.session_state.conversation_history:
+            await self._restore_conversation_context()
+        
+        # Restore function calls state
+        if self.session_state.function_calls:
+            await self._restore_function_state()
+
+    async def _restore_openai_session(self):
+        """Restore OpenAI Realtime API session."""
+        if not self.session_state or not self.session_state.openai_session_id:
+            return
+        
+        try:
+            # Attempt to restore OpenAI session
+            # This would require OpenAI API support for session restoration
+            logger.info(f"Restoring OpenAI session: {self.session_state.openai_session_id}")
+            # Implementation depends on OpenAI API capabilities
+        except Exception as e:
+            logger.warning(f"Failed to restore OpenAI session: {e}")
+            # Fall back to new session
+            if hasattr(self, 'session_manager') and self.session_manager is not None:
+                await self.session_manager.initialize_session()
+            else:
+                logger.error("SessionManager not available for session restoration")
+                raise RuntimeError("SessionManager not properly initialized")
+
+    async def _restore_conversation_context(self):
+        """Restore conversation context."""
+        if not self.session_state or not self.session_state.conversation_history:
+            return
+        
+        # Restore conversation history to transcript manager
+        self.transcript_manager.restore_conversation_context(self.session_state.conversation_history)
+        logger.info(f"Restored {len(self.session_state.conversation_history)} conversation items")
+
+    async def _restore_function_state(self):
+        """Restore function call state."""
+        if not self.session_state or not self.session_state.function_calls:
+            return
+        
+        # Restore function call history
+        self.function_handler.restore_function_calls(self.session_state.function_calls)
+        logger.info(f"Restored {len(self.session_state.function_calls)} function calls")
+
     async def handle_audio_commit(self):
         """Handle committing audio buffer and triggering response."""
         # Commit the audio buffer
         await self.audio_handler.commit_audio_buffer()
 
+        # Update local realtime client conversation context if using it
+        if self.use_local_realtime and self.local_realtime_client:
+            # Get the last user input from the audio buffer or transcript
+            # This is a simplified approach - in practice, you might want to
+            # extract the actual transcript from the audio buffer
+            user_input = "User audio input"  # Placeholder
+            self.local_realtime_client.update_conversation_context(user_input)
+
         # Only trigger response if no active response
         if not self.realtime_handler.response_active:
             logger.info("No active response - creating new response immediately")
-            await self.session_manager.create_response()
+            if hasattr(self, 'session_manager') and self.session_manager is not None:
+                await self.session_manager.create_response()
+            else:
+                logger.error("SessionManager not available for response creation")
+                raise RuntimeError("SessionManager not properly initialized")
         else:
             # Queue the user input for processing after current response completes
             self.realtime_handler.pending_user_input = {
@@ -310,7 +507,11 @@ class BaseRealtimeBridge(ABC):
                 logger.info(
                     "Response became inactive while queuing - processing immediately"
                 )
-                await self.session_manager.create_response()
+                if hasattr(self, 'session_manager') and self.session_manager is not None:
+                    await self.session_manager.create_response()
+                else:
+                    logger.error("SessionManager not available for response creation")
+                    raise RuntimeError("SessionManager not properly initialized")
                 self.realtime_handler.pending_user_input = None
 
     async def receive_from_platform(self):
@@ -389,3 +590,19 @@ class BaseRealtimeBridge(ABC):
         logger.info(f"Base bridge send_session_end called with reason: {reason}")
         # Subclasses should override this to send platform-specific session end messages
         pass
+
+    def get_local_realtime_client(self):
+        """Get the local realtime client instance if available.
+
+        Returns:
+            Optional[LocalRealtimeClient]: The local realtime client instance or None
+        """
+        return self.local_realtime_client
+
+    def is_using_local_realtime(self) -> bool:
+        """Check if the bridge is using local realtime client.
+
+        Returns:
+            bool: True if using local realtime client, False if using OpenAI API
+        """
+        return self.use_local_realtime

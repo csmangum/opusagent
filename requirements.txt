@@ -21,6 +21,7 @@ numpy>=1.24.0
 # TUI and visualization
 textual>=0.41.0
 rich>=13.0.0
+matplotlib>=3.7.0
 
 # Optional audio backends
 pyaudio==0.2.13
@@ -34,3 +35,7 @@ soundfile>=0.12.1  # For advanced audio file format support
 
 # Function calling and AI integration
 anthropic>=0.35.0  # For Claude integration if needed 
+
+# Speech Recognition and Transcription
+pocketsphinx==0.1.18
+openai-whisper>=20231117  # Local Whisper for transcription

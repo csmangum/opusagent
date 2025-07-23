@@ -109,7 +109,8 @@ class DualAgentBridge:
             await asyncio.gather(
                 self._handle_caller_messages(),
                 self._handle_cs_messages(),
-                self._manage_conversation_flow()
+                self._manage_conversation_flow(),
+                return_exceptions=True
             )
                     
         except Exception as e:
@@ -146,6 +147,8 @@ class DualAgentBridge:
             self.call_recorder = None
             self.caller_transcript_manager = None
             self.cs_transcript_manager = None
+        
+        return True
     
     async def _initialize_caller_session(self):
         """Initialize the caller agent OpenAI session."""

@@ -68,6 +68,7 @@ def audio_handler(mock_telephony_websocket, mock_realtime_websocket, mock_call_r
         platform_websocket=mock_telephony_websocket,
         realtime_websocket=mock_realtime_websocket,
         call_recorder=mock_call_recorder,
+        bridge_type='audiocodes',  # Use audiocodes bridge type for 16kHz sample rate
     )
 
 @pytest.mark.asyncio
@@ -93,13 +94,13 @@ async def test_handle_incoming_audio_success(audio_handler):
     
     # Verify the audio was processed and sent
     assert audio_handler.audio_chunks_sent == 1
-    assert audio_handler.total_audio_bytes_sent == 3200  # Should be exactly 3200 bytes
+    assert audio_handler.total_audio_bytes_sent == 4800  # Should be 4800 bytes (resampled to 24kHz for OpenAI)
     
     # Verify the audio was sent to OpenAI
     audio_handler.realtime_websocket.send.assert_called_once()
     sent_data = json.loads(audio_handler.realtime_websocket.send.call_args[0][0])
     assert sent_data["type"] == "input_audio_buffer.append"
-    assert len(base64.b64decode(sent_data["audio"])) == 3200  # Verify size after decoding
+    assert len(base64.b64decode(sent_data["audio"])) == 4800  # Verify size after decoding (24kHz)
     
     # Verify the audio was recorded - should be the padded version
     audio_handler.call_recorder.record_caller_audio.assert_called_once()
@@ -121,13 +122,13 @@ async def test_handle_incoming_audio_small_chunk(audio_handler):
     
     # Verify the audio was padded and sent
     assert audio_handler.audio_chunks_sent == 1
-    assert audio_handler.total_audio_bytes_sent == 3200  # Should be padded to minimum size
+    assert audio_handler.total_audio_bytes_sent == 4800  # Should be 4800 bytes (resampled to 24kHz for OpenAI)
     
     # Verify the padded audio was sent to OpenAI
     audio_handler.realtime_websocket.send.assert_called_once()
     sent_data = json.loads(audio_handler.realtime_websocket.send.call_args[0][0])
     assert sent_data["type"] == "input_audio_buffer.append"
-    assert len(base64.b64decode(sent_data["audio"])) == 3200
+    assert len(base64.b64decode(sent_data["audio"])) == 4800  # Verify size after decoding (24kHz)
 
 @pytest.mark.asyncio
 async def test_handle_outgoing_audio_success(audio_handler):
@@ -298,8 +299,8 @@ async def test_get_audio_stats(audio_handler):
     
     # Verify stats
     assert stats["audio_chunks_sent"] == 1
-    assert stats["total_audio_bytes_sent"] == 3200
-    assert stats["total_duration_ms"] == 100.0  # 3200 bytes = 100ms at 16kHz 16-bit
+    assert stats["total_audio_bytes_sent"] == 4800
+    assert stats["total_duration_ms"] == 100.0  # 4800 bytes = 100ms at 24kHz 16-bit
 
 @pytest.mark.asyncio
 async def test_websocket_closed_detection(audio_handler):

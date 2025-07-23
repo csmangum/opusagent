@@ -4,7 +4,7 @@ This module provides functionality to manage transcripts for both input (user) a
 audio streams, including buffering, logging, and recording transcripts.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
 from opusagent.config.logging_config import configure_logging
@@ -93,3 +93,68 @@ class TranscriptManager:
             call_recorder (CallRecorder): The call recorder instance to use
         """
         self.call_recorder = call_recorder
+
+    def restore_conversation_context(self, conversation_history: List[Dict[str, Any]]) -> None:
+        """Restore conversation context from session state.
+        
+        Args:
+            conversation_history: List of conversation items from session state
+        """
+        if not conversation_history:
+            return
+            
+        logger.info(f"Restoring conversation context with {len(conversation_history)} items")
+        
+        for item in conversation_history:
+            try:
+                # Restore based on item type
+                if item.get("type") == "input":
+                    # Restore input transcript
+                    text = item.get("text", "")
+                    if text:
+                        self.input_transcript_buffer.append(text)
+                        logger.debug(f"Restored input transcript: {text}")
+                        
+                elif item.get("type") == "output":
+                    # Restore output transcript
+                    text = item.get("text", "")
+                    if text:
+                        self.output_transcript_buffer.append(text)
+                        logger.debug(f"Restored output transcript: {text}")
+                        
+            except Exception as e:
+                logger.error(f"Error restoring conversation item: {e}")
+                
+        logger.info(f"Restored {len(self.input_transcript_buffer)} input and {len(self.output_transcript_buffer)} output transcript items")
+
+    def get_conversation_context(self) -> List[Dict[str, Any]]:
+        """Get current conversation context for session state storage.
+        
+        Returns:
+            List of conversation items representing current context
+        """
+        conversation_items = []
+        
+        # Add input transcript items
+        for text in self.input_transcript_buffer:
+            conversation_items.append({
+                "type": "input",
+                "text": text,
+                "timestamp": None  # Could add timestamp tracking if needed
+            })
+            
+        # Add output transcript items
+        for text in self.output_transcript_buffer:
+            conversation_items.append({
+                "type": "output", 
+                "text": text,
+                "timestamp": None  # Could add timestamp tracking if needed
+            })
+            
+        return conversation_items
+
+    def clear_conversation_context(self) -> None:
+        """Clear all conversation context buffers."""
+        self.input_transcript_buffer.clear()
+        self.output_transcript_buffer.clear()
+        logger.info("Cleared conversation context buffers")

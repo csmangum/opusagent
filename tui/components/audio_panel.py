@@ -355,7 +355,7 @@ class AudioPanel(Widget):
             if self.parent_app and hasattr(self.parent_app, "events_panel"):
                 self.parent_app.events_panel.add_event(
                     "audio_file_send_started", status="info", 
-                    details=f"Sending audio file: {Path(self.audio_file).name}"
+                    details=f"Sending audio file: {Path(self.audio_file or '').name}"
                 )
             
         except Exception as e:
@@ -382,7 +382,10 @@ class AudioPanel(Widget):
                                 message = SessionMessageBuilder.create_user_stream_chunk(
                                     session_state.conversation_id, chunk_b64
                                 )
-                                await connection_panel.websocket_client.send_message(message)
+                                # Type: ignore to handle linter issue with async method
+                                success = await connection_panel.websocket_client.send_message(message)  # type: ignore
+                                if not success:
+                                    logger.warning("Failed to send audio chunk")
                 
                 await asyncio.sleep(0.01)  # Small delay to prevent busy waiting
                 
@@ -415,7 +418,10 @@ class AudioPanel(Widget):
                             message = SessionMessageBuilder.create_user_stream_chunk(
                                 session_state.conversation_id, chunk_b64
                             )
-                            await connection_panel.websocket_client.send_message(message)
+                            # Type: ignore to handle linter issue with async method
+                            success = await connection_panel.websocket_client.send_message(message)  # type: ignore
+                            if not success:
+                                logger.warning("Failed to send audio chunk")
                 
                 # Wait before sending next chunk (simulate real-time)
                 await asyncio.sleep(1.0)  # 1 second per chunk
@@ -530,7 +536,7 @@ class AudioPanel(Widget):
         progress = self.query_one("#audio-progress", ProgressBar)
         progress.progress = percentage
     
-    def _update_format_info(self, format_str: str = None, latency: float = None, status: str = None) -> None:
+    def _update_format_info(self, format_str: Optional[str] = None, latency: Optional[float] = None, status: Optional[str] = None) -> None:
         """Update audio format information."""
         format_info = self.query_one("#audio-format-info", Static)
         
