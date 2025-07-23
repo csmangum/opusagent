@@ -17,7 +17,7 @@ load_dotenv()
 
 # Import centralized configuration
 try:
-    from opusagent.config import tui_config as get_centralized_tui_config
+    from opusagent.config import tui_config
     from opusagent.config.constants import DEFAULT_SAMPLE_RATE
     _has_centralized_config = True
 except ImportError:
