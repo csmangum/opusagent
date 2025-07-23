@@ -141,7 +141,7 @@ class WebSocketManager:
     - Mock mode for testing
     """
 
-    def __init__(self, use_mock: bool = False, mock_server_url: Optional[str] = None):
+    def __init__(self, use_mock: Optional[bool] = None, mock_server_url: Optional[str] = None):
         # Get centralized configuration dynamically
         from opusagent.config import get_config
         config = get_config()
