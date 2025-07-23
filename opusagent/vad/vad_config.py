@@ -1,26 +1,26 @@
-import os
-from opusagent.config.constants import DEFAULT_SAMPLE_RATE, DEFAULT_VAD_CHUNK_SIZE
+# Legacy VAD config module - now uses centralized configuration
+# This module is maintained for backward compatibility
+
+from opusagent.config import vad_config
 
 def load_vad_config():
     """
-    Load VAD configuration from environment variables or use defaults.
+    Load VAD configuration using centralized configuration system.
     
-    Enhanced configuration includes:
-    - silence_threshold: Minimum confidence threshold for silence detection
-    - min_speech_duration_ms: Minimum duration for valid speech segments
-    - speech_start_threshold: Number of consecutive speech detections to start
-    - speech_stop_threshold: Number of consecutive silence detections to stop
+    This function is maintained for backward compatibility.
+    New code should use: from opusagent.config import vad_config
     """
+    config = vad_config()
     return {
-        'backend': os.getenv('VAD_BACKEND', 'silero'),
-        'sample_rate': int(os.getenv('VAD_SAMPLE_RATE', DEFAULT_SAMPLE_RATE)),
-        'threshold': float(os.getenv('VAD_CONFIDENCE_THRESHOLD', 0.5)),
-        'silence_threshold': float(os.getenv('VAD_SILENCE_THRESHOLD', 0.6)),  # Increased from 0.4
-        'min_speech_duration_ms': int(os.getenv('VAD_MIN_SPEECH_DURATION_MS', 500)),  # New parameter
-        'speech_start_threshold': int(os.getenv('VAD_SPEECH_START_THRESHOLD', 2)),  # Hysteresis
-        'speech_stop_threshold': int(os.getenv('VAD_SPEECH_STOP_THRESHOLD', 3)),   # Hysteresis
-        'device': os.getenv('VAD_DEVICE', 'cpu'),
-        'chunk_size': int(os.getenv('VAD_CHUNK_SIZE', DEFAULT_VAD_CHUNK_SIZE)),
-        'confidence_history_size': int(os.getenv('VAD_CONFIDENCE_HISTORY_SIZE', 5)),
-        'force_stop_timeout_ms': int(os.getenv('VAD_FORCE_STOP_TIMEOUT_MS', 2000)),  # Force stop after timeout
+        'backend': config.backend,
+        'sample_rate': config.sample_rate,
+        'threshold': config.confidence_threshold,
+        'silence_threshold': config.silence_threshold,
+        'min_speech_duration_ms': config.min_speech_duration_ms,
+        'speech_start_threshold': config.speech_start_threshold,
+        'speech_stop_threshold': config.speech_stop_threshold,
+        'device': config.device,
+        'chunk_size': config.chunk_size,
+        'confidence_history_size': config.confidence_history_size,
+        'force_stop_timeout_ms': config.force_stop_timeout_ms,
     } 

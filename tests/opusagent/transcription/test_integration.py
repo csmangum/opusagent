@@ -134,6 +134,7 @@ class TestTranscriptionIntegration:
         """Test integration between config loading and factory."""
         # Test environment-based configuration
         env_vars = {
+            "OPUSAGENT_USE_MOCK": "true",
             "TRANSCRIPTION_BACKEND": "whisper",
             "WHISPER_MODEL_SIZE": "large",
             "TRANSCRIPTION_CHUNK_DURATION": "3.0",
