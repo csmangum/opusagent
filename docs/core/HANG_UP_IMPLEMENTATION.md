@@ -101,7 +101,7 @@ reason = function_handler._get_hang_up_reason(result)
 arguments = {
     "reason": "Card replacement completed",
     "satisfaction_level": "satisfied",
-    "context": {"card_type": "gold", "delivery_confirmed": True}
+    "context": {"card_type": "debit", "delivery_confirmed": True}
 }
 
 # Function returns structured response
