@@ -3,9 +3,9 @@ import numpy as np
 import tempfile
 import os
 from unittest.mock import Mock, patch
-from opusagent.voice_fingerprinting.models import Voiceprint, VoiceFingerprintConfig
-from opusagent.voice_fingerprinting.storage import JSONStorage, SQLiteStorage
-from opusagent.voice_fingerprinting.recognizer import OpusAgentVoiceRecognizer
+from opusagent.voiceprint.models import Voiceprint, VoiceFingerprintConfig
+from opusagent.voiceprint.storage import JSONStorage, SQLiteStorage
+from opusagent.voiceprint.recognizer import OpusAgentVoiceRecognizer
 
 
 @pytest.fixture

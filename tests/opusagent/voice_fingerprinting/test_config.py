@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch
-from opusagent.voice_fingerprinting.config import VoiceFingerprintConfig
+from opusagent.voiceprint.config import VoiceFingerprintConfig
 
 
 class TestVoiceFingerprintConfig:

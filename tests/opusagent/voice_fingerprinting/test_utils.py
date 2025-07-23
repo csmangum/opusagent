@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from unittest.mock import patch, Mock
-from opusagent.voice_fingerprinting.utils import preprocess_audio, normalize_embedding
+from opusagent.voiceprint.utils import preprocess_audio, normalize_embedding
 
 
 class TestPreprocessAudio:

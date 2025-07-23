@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from datetime import datetime
-from opusagent.voice_fingerprinting.models import Voiceprint, VoiceFingerprintConfig
+from opusagent.voiceprint.models import Voiceprint, VoiceFingerprintConfig
 
 
 class TestVoiceprint:

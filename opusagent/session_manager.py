@@ -10,7 +10,7 @@ from typing import Optional
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.openai_api import SessionConfig, SessionUpdateEvent
-from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 # Configure logging
 logger = configure_logging("session_manager")

@@ -2,11 +2,11 @@ import pytest
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
 from scipy.spatial.distance import cosine
-from opusagent.voice_fingerprinting.recognizer import OpusAgentVoiceRecognizer
-from opusagent.voice_fingerprinting.models import Voiceprint
+from opusagent.voiceprint.recognizer import OpusAgentVoiceRecognizer
+from opusagent.voiceprint.models import Voiceprint
 import tempfile
 import os
-from opusagent.voice_fingerprinting.storage import JSONStorage
+from opusagent.voiceprint.storage import JSONStorage
 
 
 class TestOpusAgentVoiceRecognizer:

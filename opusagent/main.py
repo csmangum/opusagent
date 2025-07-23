@@ -32,7 +32,7 @@ from opusagent.config.websocket_config import WebSocketConfig
 from opusagent.customer_service_agent import session_config
 from opusagent.local.realtime import create_mock_websocket_connection
 from opusagent.websocket_manager import get_websocket_manager
-from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 load_dotenv()
 

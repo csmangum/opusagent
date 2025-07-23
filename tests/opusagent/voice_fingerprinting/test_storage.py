@@ -5,8 +5,8 @@ import tempfile
 import os
 from unittest.mock import Mock, patch
 import numpy as np
-from opusagent.voice_fingerprinting.storage import JSONStorage, RedisStorage, SQLiteStorage
-from opusagent.voice_fingerprinting.models import Voiceprint
+from opusagent.voiceprint.storage import JSONStorage, RedisStorage, SQLiteStorage
+from opusagent.voiceprint.models import Voiceprint
 
 
 class TestJSONStorage:

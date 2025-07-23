@@ -27,7 +27,7 @@ from opusagent.session_manager import SessionManager
 from opusagent.session_storage import SessionStorage
 from opusagent.session_storage.memory_storage import MemorySessionStorage
 from opusagent.transcript_manager import TranscriptManager
-from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 # Configure logging
 logger = configure_logging("base_bridge")

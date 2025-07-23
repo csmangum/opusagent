@@ -58,7 +58,7 @@ from opusagent.audio_stream_handler import AudioStreamHandler
 from opusagent.session_manager import SessionManager
 from opusagent.event_router import EventRouter
 from opusagent.transcript_manager import TranscriptManager
-from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 logger = configure_logging("text_audio_agent")
 
