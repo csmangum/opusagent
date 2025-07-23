@@ -115,7 +115,8 @@ class TestOpusAgentVoiceRecognizer:
             temp_json_storage.save(sample_voiceprint)
             
             # Mock embedding generation to return very different embedding
-            different_embedding = sample_voiceprint.embedding + 0.5  # Very different
+            # Create a completely different embedding by negating the original
+            different_embedding = -sample_voiceprint.embedding
             mock_voice_encoder.embed_utterance.return_value = different_embedding
             
             result = recognizer.match_caller(sample_audio_buffer)

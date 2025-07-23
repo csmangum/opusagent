@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from pydantic import BaseModel, ConfigDict, field_validator
+from typing import Dict, Any, Optional, Union
 import numpy as np
 
 class Voiceprint(BaseModel):
@@ -9,8 +9,18 @@ class Voiceprint(BaseModel):
     created_at: Optional[str] = None
     last_seen: Optional[str] = None
     
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    @field_validator('embedding', mode='before')
+    @classmethod
+    def validate_embedding(cls, v):
+        """Convert list to numpy array if needed."""
+        if isinstance(v, list):
+            return np.array(v, dtype=np.float32)
+        elif isinstance(v, np.ndarray):
+            return v
+        else:
+            raise ValueError(f"Embedding must be a list or numpy array, got {type(v)}")
 
 class VoiceFingerprintConfig(BaseModel):
     similarity_threshold: float = 0.75

@@ -123,10 +123,19 @@ class TestVoiceFingerprintingIntegration:
                 assert sqlite_voiceprints[0].caller_id == "test_caller"
         
         finally:
+            # Close SQLite storage to release file handle
+            sqlite_storage.close()
+            
+            # Add a small delay to allow file handles to be released on Windows
+            import time
+            time.sleep(0.1)
+            
             try:
                 os.unlink(json_file)
                 os.unlink(sqlite_file)
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
+                # On Windows, sometimes files can't be deleted immediately
+                # This is acceptable for a test environment
                 pass
     
     def test_configuration_integration(self, sample_audio_buffer, temp_json_storage):

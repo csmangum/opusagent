@@ -48,7 +48,7 @@ class TestVoiceprint:
     
     def test_voiceprint_serialization(self, sample_voiceprint):
         """Test voiceprint serialization to dict."""
-        voiceprint_dict = sample_voiceprint.dict()
+        voiceprint_dict = sample_voiceprint.model_dump()
         
         assert voiceprint_dict["caller_id"] == "test_caller_123"
         assert "embedding" in voiceprint_dict
@@ -137,7 +137,7 @@ class TestVoiceprint:
         )
         
         # Should be equal if all fields are the same
-        assert vp1.dict() == vp2.dict()
+        assert vp1.model_dump() == vp2.model_dump()
     
     def test_voiceprint_inequality(self, sample_embedding):
         """Test voiceprint inequality."""
@@ -154,7 +154,7 @@ class TestVoiceprint:
         )
         
         # Should not be equal if caller_id is different
-        assert vp1.dict() != vp2.dict()
+        assert vp1.model_dump() != vp2.model_dump()
 
 
 class TestVoiceFingerprintConfig:
@@ -222,7 +222,7 @@ class TestVoiceFingerprintConfig:
             max_voiceprints_per_caller=4
         )
         
-        config_dict = config.dict()
+        config_dict = config.model_dump()
         
         assert config_dict["similarity_threshold"] == 0.8
         assert config_dict["enrollment_duration"] == 7.5

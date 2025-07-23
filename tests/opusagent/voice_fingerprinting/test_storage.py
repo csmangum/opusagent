@@ -218,14 +218,18 @@ class TestSQLiteStorage:
     
     def test_sqlite_storage_table_creation(self):
         """Test that table is created on initialization."""
+        import time
+        
         with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
             temp_db = f.name
         
         try:
             storage = SQLiteStorage(temp_db)
             
-            # Check that table exists
-            with sqlite3.connect(temp_db) as conn:
+            # Check that table exists by using the storage's own connection
+            # This avoids creating additional connections that might hold the file
+            conn = sqlite3.connect(temp_db)
+            try:
                 cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='voiceprints'")
                 assert cursor.fetchone() is not None
                 
@@ -237,10 +241,19 @@ class TestSQLiteStorage:
                 assert "caller_id" in column_names
                 assert "embedding" in column_names
                 assert "metadata" in column_names
+            finally:
+                conn.close()
+            
+            # Close the storage to release file handles
+            storage.close()
+            
+            # Give the OS time to release the file handle
+            time.sleep(0.1)
         finally:
             try:
                 os.unlink(temp_db)
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
+                # On Windows, file might still be locked - this is acceptable
                 pass
     
     def test_sqlite_storage_metadata_serialization(self, temp_sqlite_storage, sample_voiceprint):
