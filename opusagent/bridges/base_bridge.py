@@ -20,13 +20,13 @@ from opusagent.config.logging_config import configure_logging
 from opusagent.event_router import EventRouter
 from opusagent.function_handler import FunctionHandler
 from opusagent.models.openai_api import SessionConfig
-from opusagent.realtime_handler import RealtimeHandler
-from opusagent.session_manager import SessionManager
-from opusagent.transcript_manager import TranscriptManager
-from opusagent.services.session_manager_service import SessionManagerService
 from opusagent.models.session_state import SessionState
+from opusagent.realtime_handler import RealtimeHandler
+from opusagent.services.session_manager_service import SessionManagerService
+from opusagent.session_manager import SessionManager
 from opusagent.session_storage import SessionStorage
 from opusagent.session_storage.memory_storage import MemorySessionStorage
+from opusagent.transcript_manager import TranscriptManager
 from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
 
 # Configure logging
@@ -104,11 +104,11 @@ class BaseRealtimeBridge(ABC):
 
         # Initialize call recorder
         self.call_recorder: Optional[CallRecorder] = None
-        
+
         # Initialize session state management
         self.session_state: Optional[SessionState] = None
         self.session_manager_service: Optional[SessionManagerService] = None
-        
+
         # Initialize session manager service with memory storage
         session_storage = MemorySessionStorage()
         self.session_manager_service = SessionManagerService(session_storage)
@@ -346,11 +346,13 @@ class BaseRealtimeBridge(ABC):
             conversation_id (Optional[str]): Optional conversation ID to use
         """
         self.conversation_id = conversation_id or str(uuid.uuid4())
-        
+
         # Try to resume existing session if session manager service is available
         if self.session_manager_service:
-            self.session_state = await self.session_manager_service.resume_session(self.conversation_id)
-            
+            self.session_state = await self.session_manager_service.resume_session(
+                self.conversation_id
+            )
+
             if self.session_state:
                 # Resume existing session
                 await self._restore_session_state()
@@ -360,9 +362,9 @@ class BaseRealtimeBridge(ABC):
                 self.session_state = await self.session_manager_service.create_session(
                     conversation_id=self.conversation_id,
                     bridge_type=self.bridge_type,
-                    bot_name=getattr(self, 'bot_name', 'voice-bot'),
-                    caller=getattr(self, 'caller', 'unknown'),
-                    media_format=self.media_format or "raw/lpcm16"
+                    bot_name=getattr(self, "bot_name", "voice-bot"),
+                    caller=getattr(self, "caller", "unknown"),
+                    media_format=self.media_format or "raw/lpcm16",
                 )
                 logger.info(f"Created new session: {self.conversation_id}")
         else:
@@ -383,7 +385,7 @@ class BaseRealtimeBridge(ABC):
                 raise
 
         # Initialize session with OpenAI Realtime API (or local client)
-        if hasattr(self, 'session_manager') and self.session_manager is not None:
+        if hasattr(self, "session_manager") and self.session_manager is not None:
             await self.session_manager.initialize_session()
             await self.session_manager.send_initial_conversation_item()
         else:
@@ -417,23 +419,23 @@ class BaseRealtimeBridge(ABC):
         """Restore session state from storage."""
         if not self.session_state:
             return
-        
+
         # Restore conversation ID
         self.conversation_id = self.session_state.conversation_id
-        
+
         # Restore media format
         if self.session_state.media_format:
             self.media_format = self.session_state.media_format
-        
+
         # Restore OpenAI session state if available
         if self.session_state.openai_session_id:
             # Reconnect to OpenAI with existing session
             await self._restore_openai_session()
-        
+
         # Restore conversation context
         if self.session_state.conversation_history:
             await self._restore_conversation_context()
-        
+
         # Restore function calls state
         if self.session_state.function_calls:
             await self._restore_function_state()
@@ -442,16 +444,18 @@ class BaseRealtimeBridge(ABC):
         """Restore OpenAI Realtime API session."""
         if not self.session_state or not self.session_state.openai_session_id:
             return
-        
+
         try:
             # Attempt to restore OpenAI session
             # This would require OpenAI API support for session restoration
-            logger.info(f"Restoring OpenAI session: {self.session_state.openai_session_id}")
+            logger.info(
+                f"Restoring OpenAI session: {self.session_state.openai_session_id}"
+            )
             # Implementation depends on OpenAI API capabilities
         except Exception as e:
             logger.warning(f"Failed to restore OpenAI session: {e}")
             # Fall back to new session
-            if hasattr(self, 'session_manager') and self.session_manager is not None:
+            if hasattr(self, "session_manager") and self.session_manager is not None:
                 await self.session_manager.initialize_session()
             else:
                 logger.error("SessionManager not available for session restoration")
@@ -461,16 +465,20 @@ class BaseRealtimeBridge(ABC):
         """Restore conversation context."""
         if not self.session_state or not self.session_state.conversation_history:
             return
-        
+
         # Restore conversation history to transcript manager
-        self.transcript_manager.restore_conversation_context(self.session_state.conversation_history)
-        logger.info(f"Restored {len(self.session_state.conversation_history)} conversation items")
+        self.transcript_manager.restore_conversation_context(
+            self.session_state.conversation_history
+        )
+        logger.info(
+            f"Restored {len(self.session_state.conversation_history)} conversation items"
+        )
 
     async def _restore_function_state(self):
         """Restore function call state."""
         if not self.session_state or not self.session_state.function_calls:
             return
-        
+
         # Restore function call history
         self.function_handler.restore_function_calls(self.session_state.function_calls)
         logger.info(f"Restored {len(self.session_state.function_calls)} function calls")
@@ -491,7 +499,7 @@ class BaseRealtimeBridge(ABC):
         # Only trigger response if no active response
         if not self.realtime_handler.response_active:
             logger.info("No active response - creating new response immediately")
-            if hasattr(self, 'session_manager') and self.session_manager is not None:
+            if hasattr(self, "session_manager") and self.session_manager is not None:
                 await self.session_manager.create_response()
             else:
                 logger.error("SessionManager not available for response creation")
@@ -511,7 +519,10 @@ class BaseRealtimeBridge(ABC):
                 logger.info(
                     "Response became inactive while queuing - processing immediately"
                 )
-                if hasattr(self, 'session_manager') and self.session_manager is not None:
+                if (
+                    hasattr(self, "session_manager")
+                    and self.session_manager is not None
+                ):
                     await self.session_manager.create_response()
                 else:
                     logger.error("SessionManager not available for response creation")
@@ -595,19 +606,22 @@ class BaseRealtimeBridge(ABC):
         # Subclasses should override this to send platform-specific session end messages
         pass
 
+    #! Not implemented
     async def handle_call_start(self, audio_stream):
         match = self.voice_recognizer.match_caller(audio_stream)
-        
+
         if match:
             caller_id, similarity, metadata = match
             await self.load_caller_context(caller_id)
             return f"Welcome back, {metadata.get('name', 'caller')}!"
         else:
             return "Hello! I don't recognize your voice. Would you like me to remember you for future calls?"
-    
+
     async def load_caller_context(self, caller_id):
         # TODO: Implement caller context loading when SessionManagerService supports it
-        logger.info(f"Voice fingerprinting: caller {caller_id} identified, but context loading not yet implemented")
+        logger.info(
+            f"Voice fingerprinting: caller {caller_id} identified, but context loading not yet implemented"
+        )
         pass
 
     def get_local_realtime_client(self):
