@@ -39,3 +39,11 @@ anthropic>=0.35.0  # For Claude integration if needed
 # Speech Recognition and Transcription
 pocketsphinx==0.1.18
 openai-whisper>=20231117  # Local Whisper for transcription
+
+resemblyzer
+scipy
+numpy
+pydantic
+redis
+cryptography
+faiss-cpu

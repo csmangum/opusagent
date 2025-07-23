@@ -1,10 +1,10 @@
-# Voice Fingerprinting Implementation
+# Voiceprint Implementation
 
-Voice fingerprinting enables OpusAgent to identify returning callers and provide personalized experiences based on their voice characteristics. This feature uses speaker recognition technology to create unique voice embeddings and match them against stored profiles.
+Voiceprint enables OpusAgent to identify returning callers and provide personalized experiences based on their voice characteristics. This feature uses speaker recognition technology to create unique voice embeddings and match them against stored profiles.
 
 ## Overview
 
-Voice fingerprinting provides:
+Voiceprint provides:
 - **Caller Identification**: Automatically recognize returning callers
 - **Personalization**: Load caller-specific context and preferences
 - **Cross-Session Memory**: Maintain conversation history across multiple calls
@@ -16,7 +16,7 @@ Voice fingerprinting provides:
 
 ```
 opusagent/
-├── voice_fingerprinting/
+├── voiceprint/
 │   ├── __init__.py
 │   ├── recognizer.py          # Main voice recognition engine
 │   ├── storage.py             # Voiceprint storage backends
@@ -230,7 +230,7 @@ class TextAudioAgent:
         self.caller_memory = {}
     
     async def handle_audio_input(self, audio_buffer, session):
-        # Voice fingerprinting
+        # Voiceprint
         if not session.caller_id:
             match = self.voice_recognizer.match_caller(audio_buffer)
             if match:
@@ -258,7 +258,7 @@ class TextAudioAgent:
 ### Environment Variables
 
 ```bash
-# Voice Fingerprinting Configuration
+# Voiceprint Configuration
 VOICE_FINGERPRINTING_ENABLED=true
 VOICE_SIMILARITY_THRESHOLD=0.75
 VOICE_ENROLLMENT_DURATION=5.0
@@ -271,7 +271,7 @@ VOICE_MAX_VOICEPRINTS_PER_CALLER=3
 ### Configuration Class
 
 ```python
-# In opusagent/voice_fingerprinting/config.py
+# In opusagent/voiceprint/config.py
 class VoiceFingerprintConfig:
     def __init__(self):
         self.enabled = os.getenv('VOICE_FINGERPRINTING_ENABLED', 'true').lower() == 'true'
@@ -289,7 +289,7 @@ class VoiceFingerprintConfig:
 
 ```python
 # In opusagent/main.py
-from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 app = FastAPI()
 
@@ -401,10 +401,10 @@ class SecureVoiceRecognizer(OpusAgentVoiceRecognizer):
 ### Unit Tests
 
 ```python
-# tests/opusagent/voice_fingerprinting/test_recognizer.py
+# tests/opusagent/voiceprint/test_recognizer.py
 import pytest
 import numpy as np
-from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 class TestVoiceRecognizer:
     def test_enrollment_and_matching(self):
@@ -439,10 +439,10 @@ class TestVoiceRecognizer:
 ### Integration Tests
 
 ```python
-# tests/opusagent/test_voice_fingerprinting_integration.py
-class TestVoiceFingerprintingIntegration:
+# tests/opusagent/test_voiceprint_integration.py
+class TestVoiceprintIntegration:
     async def test_call_with_voice_recognition(self):
-        """Test full call flow with voice fingerprinting."""
+        """Test full call flow with voiceprint."""
         agent = CustomerServiceAgent()
         session = Session(session_id='test_session')
         
@@ -489,7 +489,7 @@ class FAISSVoiceStorage:
 
 1. **Multi-Voice Enrollment**: Store multiple voice samples per caller for better accuracy
 2. **Voice Drift Adaptation**: Update voiceprints over time to handle aging
-3. **Emotion Detection**: Combine voice fingerprinting with emotion analysis
+3. **Emotion Detection**: Combine voiceprint with emotion analysis
 4. **Language-Specific Models**: Use language-specific voice recognition models
 5. **Real-time Adaptation**: Continuously improve voiceprint accuracy during calls
 
@@ -498,7 +498,7 @@ class FAISSVoiceStorage:
 1. **Family Voice Recognition**: Identify family members calling from same number
 2. **Voice Cloning Detection**: Detect and flag potential voice cloning attempts
 3. **Health Monitoring**: Detect voice changes that might indicate health issues
-4. **Access Control**: Use voice fingerprinting for secure access to sensitive information
+4. **Access Control**: Use voiceprint for secure access to sensitive information
 
 ## Dependencies
 
@@ -535,7 +535,7 @@ pip install cryptography
 ```python
 # Enable debug logging
 import logging
-logging.getLogger('opusagent.voice_fingerprinting').setLevel(logging.DEBUG)
+logging.getLogger('opusagent.voiceprint').setLevel(logging.DEBUG)
 
 # Test voiceprint quality
 recognizer = OpusAgentVoiceRecognizer(debug=True)
@@ -543,7 +543,7 @@ recognizer = OpusAgentVoiceRecognizer(debug=True)
 
 ## Conclusion
 
-Voice fingerprinting significantly enhances OpusAgent's personalization capabilities by enabling caller identification and context preservation across sessions. The implementation provides a solid foundation for building more sophisticated voice-based user experiences while maintaining privacy and security standards.
+Voiceprint significantly enhances OpusAgent's personalization capabilities by enabling caller identification and context preservation across sessions. The implementation provides a solid foundation for building more sophisticated voice-based user experiences while maintaining privacy and security standards.
 
 For production deployments, consider:
 - Using Redis or database storage for scalability

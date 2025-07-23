@@ -87,7 +87,7 @@ For detailed design, see docs/DESIGN.md and subpackage READMEs.
 ## Roadmap / Future Features
 
 Planned enhancements:
-- [Voice fingerprinting for user identification](docs/voice_fingerprinting_implementation.md)
+- [Voice fingerprinting for user identification](docs/voiceprint_implementation.md)
 - [Cross-session user memory for persistent context](docs/cross_session_user_memory_implementation.md)
 - [Web-based monitoring dashboard](docs/web_based_monitoring_dashboard_implementation.md)
 - [Multimodal support (e.g., video calls)](docs/multimodal_support_implementation.md)
