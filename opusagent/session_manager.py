@@ -10,6 +10,7 @@ from typing import Optional
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.openai_api import SessionConfig, SessionUpdateEvent
+from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
 
 # Configure logging
 logger = configure_logging("session_manager")
@@ -49,6 +50,7 @@ class SessionManager:
         self.session_config = session_config
         self.session_initialized = False
         self.conversation_id: Optional[str] = None
+        self.voice_recognizer = OpusAgentVoiceRecognizer()
 
     async def initialize_session(self):
         """Initialize the OpenAI Realtime API session with configuration.

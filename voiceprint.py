@@ -103,7 +103,7 @@ ax1.set_zlabel("PC3")  # type: ignore
 # UMAP dimensionality reduction
 print("\nPerforming UMAP dimensionality reduction...")
 reducer = umap.UMAP(n_components=3, random_state=42, n_neighbors=3, min_dist=0.1)
-reduced_embeddings_umap = reducer.fit_transform(embedding_array)
+reduced_embeddings_umap = np.array(reducer.fit_transform(embedding_array))
 
 print("\n3D Reduced Embeddings (UMAP):")
 for voice, coords in zip(voices, reduced_embeddings_umap):
@@ -130,7 +130,7 @@ plt.show()
 # Also create 2D UMAP visualization for better clustering view
 print("\nCreating 2D UMAP visualization...")
 reducer_2d = umap.UMAP(n_components=2, random_state=42, n_neighbors=3, min_dist=0.1)
-reduced_embeddings_umap_2d = reducer_2d.fit_transform(embedding_array)
+reduced_embeddings_umap_2d = np.array(reducer_2d.fit_transform(embedding_array))
 
 fig2, ax3 = plt.subplots(figsize=(10, 8))
 scatter3 = ax3.scatter(reduced_embeddings_umap_2d[:, 0], reduced_embeddings_umap_2d[:, 1])

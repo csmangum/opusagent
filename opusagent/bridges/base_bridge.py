@@ -27,6 +27,7 @@ from opusagent.services.session_manager_service import SessionManagerService
 from opusagent.models.session_state import SessionState
 from opusagent.session_storage import SessionStorage
 from opusagent.session_storage.memory_storage import MemorySessionStorage
+from opusagent.voice_fingerprinting import OpusAgentVoiceRecognizer
 
 # Configure logging
 logger = configure_logging("base_bridge")
@@ -84,7 +85,7 @@ class BaseRealtimeBridge(ABC):
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
         self.session_config = session_config
-        self.vad_enabled = vad_enabled  # Store VAD configuration
+        self.vad_enabled = vad_enabled
         self.use_local_realtime = use_local_realtime
         self.local_realtime_config = local_realtime_config or {}
         self.bridge_type = bridge_type
@@ -180,6 +181,9 @@ class BaseRealtimeBridge(ABC):
         )
         logger.info(f"Bridge initialized with {connection_type}")
         logger.info(f"VAD handling {'enabled' if self.vad_enabled else 'disabled'}")
+
+        # Initialize voice recognizer
+        self.voice_recognizer = OpusAgentVoiceRecognizer()
 
     def _initialize_local_realtime_client(self):
         #! Shouldn't this be handled in client? Yes, needs to work like websocket
@@ -589,6 +593,21 @@ class BaseRealtimeBridge(ABC):
         """
         logger.info(f"Base bridge send_session_end called with reason: {reason}")
         # Subclasses should override this to send platform-specific session end messages
+        pass
+
+    async def handle_call_start(self, audio_stream):
+        match = self.voice_recognizer.match_caller(audio_stream)
+        
+        if match:
+            caller_id, similarity, metadata = match
+            await self.load_caller_context(caller_id)
+            return f"Welcome back, {metadata.get('name', 'caller')}!"
+        else:
+            return "Hello! I don't recognize your voice. Would you like me to remember you for future calls?"
+    
+    async def load_caller_context(self, caller_id):
+        # TODO: Implement caller context loading when SessionManagerService supports it
+        logger.info(f"Voice fingerprinting: caller {caller_id} identified, but context loading not yet implemented")
         pass
 
     def get_local_realtime_client(self):
