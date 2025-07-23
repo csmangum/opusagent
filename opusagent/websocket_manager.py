@@ -18,9 +18,13 @@ from websockets.exceptions import ConnectionClosed
 from websockets.typing import Subprotocol
 
 from opusagent.config import get_config, websocket_config, mock_config, openai_config
+from opusagent.config.env_loader import load_env_file
 from opusagent.config.models import WebSocketConfig
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables before accessing configuration
+load_env_file()
 
 # Get centralized configuration
 config = get_config()
@@ -144,6 +148,10 @@ class WebSocketManager:
     def __init__(self, use_mock: Optional[bool] = None, mock_server_url: Optional[str] = None):
         # Get centralized configuration dynamically
         from opusagent.config import get_config
+        from opusagent.config.env_loader import load_env_file
+        
+        # Ensure environment variables are loaded
+        load_env_file()
         config = get_config()
         
         # Use centralized configuration
@@ -424,12 +432,20 @@ _websocket_manager_instance = None
 def _get_use_mock_from_config() -> bool:
     """Get the use_mock setting from centralized configuration."""
     from opusagent.config import get_config
+    from opusagent.config.env_loader import load_env_file
+    
+    # Ensure environment variables are loaded
+    load_env_file()
     return get_config().mock.enabled
 
 
 def _get_mock_server_url_from_config() -> str:
     """Get the mock server URL from centralized configuration."""
     from opusagent.config import get_config
+    from opusagent.config.env_loader import load_env_file
+    
+    # Ensure environment variables are loaded
+    load_env_file()
     return get_config().mock.server_url
 
 

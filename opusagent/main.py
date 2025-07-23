@@ -14,9 +14,7 @@ import asyncio
 import os
 from pathlib import Path
 
-import dotenv
 import websockets
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -28,6 +26,7 @@ from opusagent.bridges.dual_agent_bridge import DualAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
 
 from opusagent.config import get_config, server_config, mock_config, vad_config, transcription_config
+from opusagent.config.env_loader import load_env_file
 from opusagent.config.logging_config import configure_logging
 from opusagent.config.models import WebSocketConfig
 from opusagent.customer_service_agent import session_config
@@ -37,7 +36,8 @@ from opusagent.callers import get_available_caller_types, get_caller_description
 from opusagent.local.realtime import create_mock_websocket_connection
 from opusagent.websocket_manager import get_websocket_manager
 
-load_dotenv()
+# Load environment variables before accessing configuration
+load_env_file()
 
 # Get centralized configuration
 config = get_config()
