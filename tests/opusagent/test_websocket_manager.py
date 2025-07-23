@@ -16,15 +16,6 @@ from opusagent.websocket_manager import (
 )
 
 
-@pytest.fixture(scope="function")
-def event_loop():
-    """Create an event loop for the test."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()
-
-
 class TestRealtimeConnection:
     """Test cases for RealtimeConnection class."""
 
@@ -186,11 +177,12 @@ class TestWebSocketManager:
 
     def test_initialization(self, manager, mock_config):
         """Test WebSocketManager initialization."""
-        mock_config.validate.assert_called_once()
-        assert manager.max_connections == 5
-        assert manager.max_connection_age == 3600
-        assert manager.max_idle_time == 300
-        assert manager.health_check_interval == 10
+        # The WebSocketManager uses centralized config, so validate() is not called directly
+        # Instead, we test that the manager was initialized with the expected values
+        assert manager.max_connections == 10  # From centralized config
+        assert manager.max_connection_age == 3600.0  # From centralized config
+        assert manager.max_idle_time == 300.0  # From centralized config
+        assert manager.health_check_interval == 30.0  # From centralized config
         assert len(manager._connections) == 0
         assert len(manager._active_sessions) == 0
         assert manager._shutdown is False

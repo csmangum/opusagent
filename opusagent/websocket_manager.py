@@ -17,9 +17,13 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 from websockets.typing import Subprotocol
 
-from opusagent.config.websocket_config import WebSocketConfig
+from opusagent.config import get_config, websocket_config, mock_config, openai_config
+from opusagent.config.models import WebSocketConfig
 
 logger = logging.getLogger(__name__)
+
+# Get centralized configuration
+config = get_config()
 
 
 class MockWebSocketWrapper:
@@ -75,7 +79,7 @@ class RealtimeConnection:
         self.last_used = time.time()
         self.is_healthy = True
         self.session_count = 0
-        self.max_sessions = WebSocketConfig.MAX_SESSIONS_PER_CONNECTION
+        self.max_sessions = config.websocket.max_sessions_per_connection
 
     @property
     def age_seconds(self) -> float:
@@ -137,31 +141,39 @@ class WebSocketManager:
     - Mock mode for testing
     """
 
-    def __init__(self, use_mock: bool = False, mock_server_url: Optional[str] = None):
-        # Validate configuration first
-        WebSocketConfig.validate()
+    def __init__(self, use_mock: Optional[bool] = None, mock_server_url: Optional[str] = None):
+        # Get centralized configuration dynamically
+        from opusagent.config import get_config
+        config = get_config()
+        
+        # Use centralized configuration
+        self.max_connections = config.websocket.max_connections
+        self.max_connection_age = config.websocket.max_connection_age
+        self.max_idle_time = config.websocket.max_idle_time
+        self.health_check_interval = config.websocket.health_check_interval
 
-        self.max_connections = WebSocketConfig.MAX_CONNECTIONS
-        self.max_connection_age = WebSocketConfig.MAX_CONNECTION_AGE
-        self.max_idle_time = WebSocketConfig.MAX_IDLE_TIME
-        self.health_check_interval = WebSocketConfig.HEALTH_CHECK_INTERVAL
-
-        # Mock configuration
-        self.use_mock = use_mock
-        self.mock_server_url = mock_server_url or "ws://localhost:8080"
+        # Mock configuration from centralized config
+        self.use_mock = use_mock if use_mock is not None else config.mock.enabled
+        self.mock_server_url = mock_server_url or config.mock.server_url
 
         self._connections: Dict[str, RealtimeConnection] = {}
         self._active_sessions: Set[str] = set()
         self._health_check_task: Optional[asyncio.Task] = None
         self._shutdown = False
 
-        # Connection parameters from config
-        self._url = WebSocketConfig.get_websocket_url()
-        self._headers = WebSocketConfig.get_headers()
+        # Connection parameters from centralized config
+        if not self.use_mock:
+            self._url: Optional[str] = config.openai.get_websocket_url()
+            self._headers = config.openai.get_headers()
+        else:
+            # Mock mode - set dummy values for OpenAI config (these won't be used in mock mode)
+            self._url: Optional[str] = None  # Use None to represent the absence of a value in mock mode
+            self._headers = {}
 
         logger.info(
-            f"WebSocket manager initialized with config: {WebSocketConfig.to_dict()}, "
-            f"use_mock={use_mock}"
+            f"WebSocket manager initialized with centralized config - "
+            f"max_connections={self.max_connections}, use_mock={self.use_mock}"
+            + (f", openai_model={config.openai.model}" if not self.use_mock else "")
         )
 
         # Start health monitoring
@@ -243,13 +255,15 @@ class WebSocketManager:
                 websocket = await self._create_mock_connection()
                 logger.info(f"Created new mock connection: {connection_id}")
             else:
+                # We know _url is not None here because we only reach this code when use_mock is False
+                assert self._url is not None, "URL should not be None in non-mock mode"
                 websocket = await websockets.connect(
                     self._url,
                     subprotocols=[Subprotocol("realtime")],
                     additional_headers=self._headers,
-                    ping_interval=WebSocketConfig.PING_INTERVAL,
-                    ping_timeout=WebSocketConfig.PING_TIMEOUT,
-                    close_timeout=WebSocketConfig.CLOSE_TIMEOUT,
+                    ping_interval=config.websocket.ping_interval,
+                    ping_timeout=config.websocket.ping_timeout,
+                    close_timeout=config.websocket.close_timeout,
                 )
                 logger.info(f"Created new OpenAI connection: {connection_id}")
 
@@ -407,20 +421,22 @@ class WebSocketManager:
 _websocket_manager_instance = None
 
 
-def _get_use_mock_from_env() -> bool:
-    """Get the use_mock setting from environment variables."""
-    return os.getenv("OPUSAGENT_USE_MOCK", "false").lower() == "true"
+def _get_use_mock_from_config() -> bool:
+    """Get the use_mock setting from centralized configuration."""
+    from opusagent.config import get_config
+    return get_config().mock.enabled
 
 
-def _get_mock_server_url_from_env() -> str:
-    """Get the mock server URL from environment variables."""
-    return os.getenv("OPUSAGENT_MOCK_SERVER_URL", "ws://localhost:8080")
+def _get_mock_server_url_from_config() -> str:
+    """Get the mock server URL from centralized configuration."""
+    from opusagent.config import get_config
+    return get_config().mock.server_url
 
 
 def _create_global_websocket_manager() -> WebSocketManager:
-    """Create the global WebSocket manager instance."""
-    use_mock = _get_use_mock_from_env()
-    mock_server_url = _get_mock_server_url_from_env()
+    """Create the global WebSocket manager instance using centralized config."""
+    use_mock = _get_use_mock_from_config()
+    mock_server_url = _get_mock_server_url_from_config()
     return WebSocketManager(use_mock=use_mock, mock_server_url=mock_server_url)
 
 

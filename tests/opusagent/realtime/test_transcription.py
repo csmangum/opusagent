@@ -184,6 +184,10 @@ class TestLoadTranscriptionConfig:
     })
     def test_load_config_from_env(self):
         """Test loading configuration from environment variables."""
+        # Reload config to pick up environment variables
+        from opusagent.config.settings import reload_config
+        reload_config()
+        
         config = load_transcription_config()
         assert config.backend == "whisper"
         assert config.language == "es"
@@ -203,6 +207,10 @@ class TestLoadTranscriptionConfig:
     })
     def test_load_custom_model_paths(self):
         """Test loading custom model paths from environment."""
+        # Reload config to pick up environment variables
+        from opusagent.config.settings import reload_config
+        reload_config()
+        
         config = load_transcription_config()
         assert config.pocketsphinx_hmm == "/custom/hmm"
         assert config.pocketsphinx_lm == "/custom/lm"
