@@ -14,7 +14,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_recognizer_initialization(self, temp_json_storage):
         """Test recognizer initialization."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder = Mock()
             mock_encoder_class.return_value = mock_encoder
             
@@ -26,7 +26,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_recognizer_initialization_default_storage(self):
         """Test recognizer initialization with default storage."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder = Mock()
             mock_encoder_class.return_value = mock_encoder
             
@@ -35,14 +35,14 @@ class TestOpusAgentVoiceRecognizer:
             assert recognizer.storage is not None
             assert recognizer.encoder == mock_encoder
     
-    @patch('opusagent.voice_fingerprinting.recognizer.preprocess_wav')
+    @patch('opusagent.voiceprint.recognizer.preprocess_wav')
     def test_get_embedding(self, mock_preprocess, sample_audio_buffer, mock_voice_encoder):
         """Test embedding generation from audio buffer."""
         # Setup mocks
         mock_preprocess.return_value = sample_audio_buffer
         mock_voice_encoder.embed_utterance.return_value = np.random.rand(256).astype(np.float32)
         
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer()
@@ -60,7 +60,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_get_embedding_error_handling(self, sample_audio_buffer):
         """Test embedding generation error handling."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder = Mock()
             mock_encoder.embed_utterance.side_effect = Exception("Embedding error")
             mock_encoder_class.return_value = mock_encoder
@@ -72,7 +72,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_match_caller_no_matches(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder):
         """Test caller matching when no matches found."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -84,7 +84,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_match_caller_with_matches(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder, multiple_voiceprints):
         """Test caller matching when matches are found."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -106,7 +106,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_match_caller_below_threshold(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder, sample_voiceprint):
         """Test caller matching when similarity is below threshold."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -127,7 +127,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_match_caller_multiple_matches_ordering(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder, multiple_voiceprints):
         """Test that multiple matches are ordered by similarity."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -148,7 +148,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_enroll_caller(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder):
         """Test caller enrollment."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -173,7 +173,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_enroll_caller_default_metadata(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder):
         """Test caller enrollment with default metadata."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -190,7 +190,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_enroll_caller_error_handling(self, sample_audio_buffer, temp_json_storage):
         """Test caller enrollment error handling."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder = Mock()
             mock_encoder.embed_utterance.side_effect = Exception("Enrollment error")
             mock_encoder_class.return_value = mock_encoder
@@ -202,7 +202,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_similarity_calculation(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder):
         """Test similarity calculation accuracy."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -238,7 +238,7 @@ class TestOpusAgentVoiceRecognizer:
     
     def test_config_integration(self, sample_audio_buffer, temp_json_storage, mock_voice_encoder, sample_voiceprint):
         """Test that configuration affects matching behavior."""
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
@@ -272,7 +272,7 @@ class TestOpusAgentVoiceRecognizer:
         try:
             json_storage = JSONStorage(temp_json_file)
             
-            with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+            with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
                 mock_encoder_class.return_value = mock_voice_encoder
                 
                 recognizer = OpusAgentVoiceRecognizer(storage_backend=json_storage)
@@ -301,7 +301,7 @@ class TestRecognizerPerformance:
         """Test embedding generation performance."""
         import time
         
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer()
@@ -319,7 +319,7 @@ class TestRecognizerPerformance:
         """Test matching performance with many voiceprints."""
         import time
         
-        with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+        with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
             mock_encoder_class.return_value = mock_voice_encoder
             
             recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)

@@ -9,7 +9,7 @@ class TestPreprocessAudio:
     
     def test_preprocess_audio_basic(self, sample_audio_buffer):
         """Test basic audio preprocessing."""
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.return_value = sample_audio_buffer
             
             result = preprocess_audio(sample_audio_buffer)
@@ -25,7 +25,7 @@ class TestPreprocessAudio:
         # Test with different audio buffer
         audio_buffer = np.random.rand(8000).astype(np.float32)
         
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.return_value = audio_buffer
             
             result = preprocess_audio(audio_buffer)
@@ -35,7 +35,7 @@ class TestPreprocessAudio:
     
     def test_preprocess_audio_error_handling(self, sample_audio_buffer):
         """Test preprocessing error handling."""
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.side_effect = Exception("Preprocessing error")
             
             with pytest.raises(Exception):
@@ -45,7 +45,7 @@ class TestPreprocessAudio:
         """Test preprocessing with empty audio buffer."""
         empty_buffer = np.array([], dtype=np.float32)
         
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.return_value = empty_buffer
             
             result = preprocess_audio(empty_buffer)
@@ -57,7 +57,7 @@ class TestPreprocessAudio:
         """Test preprocessing with large audio buffer."""
         large_buffer = np.random.rand(48000).astype(np.float32)  # 3 seconds at 16kHz
         
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.return_value = large_buffer
             
             result = preprocess_audio(large_buffer)
@@ -70,7 +70,7 @@ class TestPreprocessAudio:
         # Test with int16
         int16_buffer = np.random.randint(-32768, 32767, 16000, dtype=np.int16)
         
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.return_value = int16_buffer.astype(np.float32)
             
             result = preprocess_audio(int16_buffer)
@@ -200,7 +200,7 @@ class TestUtilsIntegration:
     
     def test_preprocess_and_normalize_workflow(self, sample_audio_buffer):
         """Test the complete workflow of preprocessing and normalization."""
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             # Mock preprocessing to return a realistic embedding
             mock_preprocess.return_value = sample_audio_buffer
             
@@ -239,7 +239,7 @@ class TestUtilsIntegration:
     
     def test_utils_error_propagation(self):
         """Test that errors in preprocessing propagate correctly."""
-        with patch('opusagent.voice_fingerprinting.utils.preprocess_wav') as mock_preprocess:
+        with patch('opusagent.voiceprint.utils.preprocess_wav') as mock_preprocess:
             mock_preprocess.side_effect = Exception("Preprocessing failed")
             
             with pytest.raises(Exception):

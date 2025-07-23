@@ -1,4 +1,4 @@
-# __init__.py for voice_fingerprinting module
+# __init__.py for voiceprint module
 from .recognizer import OpusAgentVoiceRecognizer
 from .models import Voiceprint, VoiceFingerprintConfig
 from .storage import JSONStorage, RedisStorage, SQLiteStorage

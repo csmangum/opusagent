@@ -86,7 +86,7 @@ def mock_voice_encoder():
 @pytest.fixture
 def mock_recognizer(mock_voice_encoder, temp_json_storage):
     """Create a mock voice recognizer."""
-    with patch('opusagent.voice_fingerprinting.recognizer.VoiceEncoder') as mock_encoder_class:
+    with patch('opusagent.voiceprint.recognizer.VoiceEncoder') as mock_encoder_class:
         mock_encoder_class.return_value = mock_voice_encoder
         
         recognizer = OpusAgentVoiceRecognizer(storage_backend=temp_json_storage)
