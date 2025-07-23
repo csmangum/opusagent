@@ -36,17 +36,13 @@ import sys
 from pathlib import Path
 
 import uvicorn
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Import centralized configuration system
 sys.path.append(str(Path(__file__).parent))
 
-from opusagent.config import get_config, server_config, mock_config, openai_config, print_configuration_summary
-from opusagent.config.logging_config import configure_logging
-
+from opusagent.config import get_config
 from opusagent.config.env_loader import load_env_file
+from opusagent.config.logging_config import configure_logging
 
 # Load environment variables first
 load_env_file()
@@ -176,9 +172,7 @@ def main():
         # Verify OpenAI API key is set for real mode
         if not config.openai.api_key:
             logger.error("OpenAI API key not configured")
-            print(
-                "\nError: OpenAI API key is required for real mode"
-            )
+            print("\nError: OpenAI API key is required for real mode")
             print("\nTo set the API key in PowerShell:")
             print("$env:OPENAI_API_KEY = 'your-api-key'")
             print("\nTo set the API key in Command Prompt:")
@@ -247,7 +241,8 @@ def main():
             # Disable access logs for lower overhead, we have our own logging
             access_log=config.server.access_log,
             # Reload on code changes during development
-            reload=config.server.reload or config.server.environment.value == "development",
+            reload=config.server.reload
+            or config.server.environment.value == "development",
             # WebSocket settings from centralized config
             ws_ping_interval=config.server.ws_ping_interval,
             ws_ping_timeout=config.server.ws_ping_timeout,
