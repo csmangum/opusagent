@@ -335,25 +335,25 @@ class SoundboardPanel(Widget):
                 "text": "Hello, how are you doing today?",
                 "file": "static/hello.wav"
             },
-            "Bank Info": {
-                "text": "Can you tell me about your bank services?",
-                "file": "static/tell_me_about_your_bank.wav"
+            "Policy Info": {
+                "text": "Can you tell me about my insurance policy?",
+                "file": "static/policy_info.wav"
             },
-            "Card Lost": {
-                "text": "I need to report a lost credit card",
-                "file": "static/card_lost.wav"
+            "File Claim": {
+                "text": "I need to file an insurance claim",
+                "file": "static/file_claim.wav"
             },
-            "Balance": {
-                "text": "What is my account balance?",
-                "file": "static/balance_inquiry.wav"
+            "Coverage": {
+                "text": "What does my policy cover?",
+                "file": "static/coverage_question.wav"
             },
-            "Transfer": {
-                "text": "I want to transfer money to another account",
-                "file": "static/transfer_request.wav"
+            "Billing": {
+                "text": "I have a question about my premium",
+                "file": "static/billing_question.wav"
             },
-            "Loan": {
-                "text": "I'm interested in applying for a loan",
-                "file": "static/loan_inquiry.wav"
+            "Update Policy": {
+                "text": "I need to update my policy information",
+                "file": "static/update_policy.wav"
             },
             "Thank You": {
                 "text": "Thank you for your help today",
@@ -372,7 +372,7 @@ class SoundboardPanel(Widget):
                 "file": "static/no.wav"
             },
             "Help": {
-                "text": "I need help with my account",
+                "text": "I need help with my insurance",
                 "file": "static/help.wav"
             },
             "Repeat": {

@@ -113,9 +113,9 @@ class InteractiveTUIValidator(App):
         Binding("h", "help", "Help"),
         # Soundboard shortcuts
         Binding("1", "send_phrase_1", "Hello"),
-        Binding("2", "send_phrase_2", "Bank Info"),  
-        Binding("3", "send_phrase_3", "Card Lost"),
-        Binding("4", "send_phrase_4", "Balance"),
+                Binding("2", "send_phrase_2", "Policy Info"),
+        Binding("3", "send_phrase_3", "File Claim"),
+        Binding("4", "send_phrase_4", "Coverage"),
         # System shortcuts
         ("ctrl+r", "restart", "Restart"),
         ("ctrl+l", "clear_logs", "Clear Logs"),
@@ -430,9 +430,9 @@ Keyboard Shortcuts:
   
 Soundboard (during active session):
   1 - Send "Hello" phrase
-  2 - Send "Bank Info" phrase  
-  3 - Send "Card Lost" phrase
-  4 - Send "Balance" phrase
+          2 - Send "Policy Info" phrase
+        3 - Send "File Claim" phrase
+        4 - Send "Coverage" phrase
   
 System:
   Ctrl+L - Clear all logs
