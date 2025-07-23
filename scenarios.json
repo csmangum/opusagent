@@ -3,18 +3,18 @@
   "version": "1.0",
   "scenarios": [
     {
-      "name": "Difficult Card Replacement - Lost Gold Card",
+      "name": "Difficult Card Replacement - Lost Debit Card",
       "type": "predefined",
       "scenario": "difficult_card_replacement",
       "timeout": 90.0,
-      "description": "Stubborn customer who lost their gold card and is difficult about providing verification information"
+      "description": "Stubborn customer who lost their debit card and is difficult about providing verification information"
     },
     {
-      "name": "Confused Elderly Customer - Lost Silver Card",
+      "name": "Confused Elderly Customer - Lost Credit Card",
       "type": "predefined", 
       "scenario": "confused_elderly",
       "timeout": 120.0,
-      "description": "Elderly customer who lost their silver card and is confused about the process"
+      "description": "Elderly customer who lost their credit card and is confused about the process"
     },
     {
       "name": "Angry Customer - Unauthorized Charges",

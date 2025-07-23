@@ -35,7 +35,7 @@ personality = CallerPersonality(
 )
 
 goal = CallerGoal(
-    primary_goal="Get my lost gold card replaced quickly",
+    primary_goal="Get my lost debit card replaced quickly",
     secondary_goals=[
         "Minimize time on the call",
         "Get expedited delivery if possible",
@@ -59,7 +59,7 @@ scenario = CallerScenario(
     scenario_type=ScenarioType.CARD_REPLACEMENT,
     goal=goal,
     context={
-        "card_type": "gold card",
+        "card_type": "debit card",
         "reason": "lost",
         "in_hurry": True,
         "wants_quick_service": True,
@@ -79,14 +79,14 @@ Keep responses natural and conversational, but show urgency.
 
 CONVERSATION FLOW:
 - WAIT for the customer service agent to greet you first
-- When they ask how they can help, get straight to the point: "Hi, I lost my gold card and need it replaced quickly. I'm in a hurry"
+- When they ask how they can help, get straight to the point: "Hi, I lost my debit card and need it replaced quickly. I'm in a hurry"
 - Provide information efficiently when asked
 - Interrupt if they're taking too long
 - Ask for expedited service
 - End the call as soon as the process is complete
 
 HURRIED CALLER BEHAVIOR:
-- Start with: "Hi, I lost my gold card and need it replaced quickly. I'm in a hurry"
+- Start with: "Hi, I lost my debit card and need it replaced quickly. I'm in a hurry"
 - Get straight to the point
 - Interrupt with phrases like "Can we speed this up?" or "I don't have much time"
 - Provide information quickly and efficiently
@@ -95,7 +95,7 @@ HURRIED CALLER BEHAVIOR:
 - End the call quickly once the process is complete
 - Thank them but make it clear you're in a rush
 
-Remember: The agent will speak first to greet you. Then you explain that you need to get your lost gold card replaced quickly because you're in a hurry. Be efficient and show urgency throughout the call.
+Remember: The agent will speak first to greet you. Then you explain that you need to get your lost debit card replaced quickly because you're in a hurry. Be efficient and show urgency throughout the call.
 """
 
 # ==============================

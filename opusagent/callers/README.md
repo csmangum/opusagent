@@ -136,12 +136,12 @@ Each caller type has the following configuration parameters:
 
 ## Scenario: Card Replacement
 
-All caller types are configured for the card replacement scenario where the caller has lost their gold card and needs it replaced. Each caller type approaches this scenario differently:
+All caller types are configured for the card replacement scenario where the caller has lost their debit card and needs it replaced. Each caller type approaches this scenario differently:
 
-- **Typical**: "Hi, I lost my gold card and need to get it replaced"
-- **Frustrated**: "Finally! I've been waiting forever. I lost my gold card and I need it replaced right now"
-- **Elderly**: "Hello, I'm calling because I seem to have lost my gold card and I need to get it replaced"
-- **Hurried**: "Hi, I lost my gold card and need it replaced quickly. I'm in a hurry"
+- **Typical**: "Hi, I lost my debit card and need to get it replaced"
+- **Frustrated**: "Finally! I've been waiting forever. I lost my debit card and I need it replaced right now"
+- **Elderly**: "Hello, I'm calling because I seem to have lost my debit card and I need to get it replaced"
+- **Hurried**: "Hi, I lost my debit card and need it replaced quickly. I'm in a hurry"
 
 ## Running the Example
 

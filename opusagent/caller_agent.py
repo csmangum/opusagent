@@ -109,7 +109,7 @@ class CallerScenario:
         return prompts.get(self.type, "You are calling for general assistance.")
 
     def _card_replacement_prompt(self) -> str:
-        card_type = self.context.get("card_type", "gold card")
+        card_type = self.context.get("card_type", "debit card")
         reason = self.context.get("reason", "lost")
 
         # Check if this is a perfect caller
@@ -125,7 +125,7 @@ CONTEXT:
 - You are a PERFECT caller with all information ready
 
 IMPORTANT: In your FIRST message, provide ALL necessary information:
-"Hi, I need to replace my lost gold card. Can you send it to the address on file?"
+"Hi, I need to replace my lost debit card. Can you send it to the address on file?"
 
 Be direct, efficient, and provide complete information upfront. Don't wait for the agent to ask questions.
 """
@@ -218,7 +218,7 @@ personality = CallerPersonality(
 )
 
 goal = CallerGoal(
-    primary_goal="Get my lost gold card replaced",
+    primary_goal="Get my lost debit card replaced",
     secondary_goals=["Confirm delivery timeline", "Verify security measures"],
     success_criteria=["card replacement confirmed", "delivery address confirmed"],
     failure_conditions=["transferred to human", "call terminated"],
@@ -229,7 +229,7 @@ scenario = CallerScenario(
     scenario_type=ScenarioType.CARD_REPLACEMENT,
     goal=goal,
     context={
-        "card_type": "gold card",
+        "card_type": "debit card",
         "reason": "lost",
         "cooperative": True,
         "concerned_about_security": True,
@@ -249,13 +249,13 @@ Keep responses natural and conversational. Don't be overly helpful or profession
 
 CONVERSATION FLOW:
 - WAIT for the customer service agent to greet you first
-- When they ask how they can help, explain your problem: "I've lost my gold card and need to get it replaced"
+- When they ask how they can help, explain your problem: "I've lost my debit card and need to get it replaced"
 - Answer their questions clearly and provide any information they request
 - Continue the conversation until your problem is fully resolved
 - Ask follow-up questions if you need clarification
 - Don't end the call until you have a complete solution
 
-Remember: The agent will speak first to greet you. Then you explain that you need to get your lost gold card replaced. Be persistent but polite in getting this done.
+Remember: The agent will speak first to greet you. Then you explain that you need to get your lost debit card replaced. Be persistent but polite in getting this done.
 """
 
 # ==============================

@@ -14,11 +14,11 @@ openai.api_key = OPENAI_API_KEY
 # List of phrases to synthesize
 phrases = [
     "I need to replace my card.",
-    "It's my gold card.",
+    "It's my debit card.",
     "Yeah, I lost it.",
     "Yes, send it to the address on file.",
     "Thanks, that's all I need.",
-    "I lost my gold card and need a new one",
+    "I lost my debit card and need a new one",
     "I'm not supposed to be here",
     "Hello, welcome to our bank",
     "I am still being developed. Be sure to come back soon.",

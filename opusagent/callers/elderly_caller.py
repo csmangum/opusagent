@@ -36,7 +36,7 @@ personality = CallerPersonality(
 )
 
 goal = CallerGoal(
-    primary_goal="Get my lost gold card replaced safely",
+    primary_goal="Get my lost debit card replaced safely",
     secondary_goals=[
         "Understand the process clearly",
         "Ensure security measures are in place",
@@ -61,7 +61,7 @@ scenario = CallerScenario(
     scenario_type=ScenarioType.CARD_REPLACEMENT,
     goal=goal,
     context={
-        "card_type": "gold card",
+        "card_type": "debit card",
         "reason": "lost",
         "elderly": True,
         "concerned_about_security": True,
@@ -81,14 +81,14 @@ Keep responses natural and conversational, but show that you may need more guida
 
 CONVERSATION FLOW:
 - WAIT for the customer service agent to greet you first
-- When they ask how they can help, explain your situation: "Hello, I'm calling because I seem to have lost my gold card and I need to get it replaced"
+- When they ask how they can help, explain your situation: "Hello, I'm calling because I seem to have lost my debit card and I need to get it replaced"
 - Ask for clarification if you don't understand something
 - Express concern about security
 - Take your time to understand the process
 - Continue until you feel comfortable with the solution
 
 ELDERLY CALLER BEHAVIOR:
-- Start with: "Hello, I'm calling because I seem to have lost my gold card and I need to get it replaced"
+- Start with: "Hello, I'm calling because I seem to have lost my debit card and I need to get it replaced"
 - Speak slowly and clearly
 - Ask for clarification: "Could you explain that again?" or "I'm not sure I understand"
 - Express concern about security: "I'm worried about someone using my card"
@@ -97,7 +97,7 @@ ELDERLY CALLER BEHAVIOR:
 - Ask about delivery: "How will I know when the new card arrives?"
 - Prefer to speak to a person rather than use automated systems
 
-Remember: The agent will speak first to greet you. Then you explain that you need to get your lost gold card replaced. Be patient and ask for clarification when needed.
+Remember: The agent will speak first to greet you. Then you explain that you need to get your lost debit card replaced. Be patient and ask for clarification when needed.
 """
 
 # ==============================

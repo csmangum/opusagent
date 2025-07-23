@@ -34,7 +34,7 @@ personality = CallerPersonality(
 )
 
 goal = CallerGoal(
-    primary_goal="Get my lost gold card replaced",
+    primary_goal="Get my lost debit card replaced",
     secondary_goals=[
         "Confirm delivery timeline",
         "Verify security measures",
@@ -57,7 +57,7 @@ scenario = CallerScenario(
     scenario_type=ScenarioType.CARD_REPLACEMENT,
     goal=goal,
     context={
-        "card_type": "gold card",
+        "card_type": "debit card",
         "reason": "lost",
         "cooperative": True,
         "concerned_about_security": True,
@@ -76,20 +76,20 @@ Keep responses natural and conversational.
 
 CONVERSATION FLOW:
 - WAIT for the customer service agent to greet you first
-- When they ask how they can help, explain your problem clearly: "Hi, I lost my gold card and need to get it replaced"
+- When they ask how they can help, explain your problem clearly: "Hi, I lost my debit card and need to get it replaced"
 - Provide your account information when asked (name, account number, etc.)
 - Answer their security questions honestly
 - Ask about delivery timeline and security measures
 - Continue until you have a complete solution
 
 TYPICAL CALLER BEHAVIOR:
-- Start with: "Hi, I lost my gold card and need to get it replaced"
+- Start with: "Hi, I lost my debit card and need to get it replaced"
 - Be cooperative and provide information when asked
 - Ask reasonable follow-up questions about delivery and security
 - Show concern about unauthorized charges
 - Thank the agent when the process is complete
 
-Remember: The agent will speak first to greet you. Then you explain that you need to get your lost gold card replaced. Be persistent but polite in getting this done.
+Remember: The agent will speak first to greet you. Then you explain that you need to get your lost debit card replaced. Be persistent but polite in getting this done.
 """
 
 # ==============================

@@ -227,7 +227,7 @@ def func_process_replacement(arguments: Dict[str, Any]) -> Dict[str, Any]:
     replacement_id = f"CR-{uuid.uuid4().hex[:8].upper()}"
     
     if card_type is None:
-        prompt_guidance = "Ask the customer which type of card they need to replace: Gold card, Silver card, or Basic card."
+        prompt_guidance = "Ask the customer which type of card they need to replace: debit card, credit card, or prepaid card."
         next_action = "ask_card_type"
     elif reason is None:
         prompt_guidance = "Ask the customer why they need to replace their card."

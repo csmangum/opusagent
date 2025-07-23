@@ -35,7 +35,7 @@ personality = CallerPersonality(
 )
 
 goal = CallerGoal(
-    primary_goal="Get my lost gold card replaced immediately",
+    primary_goal="Get my lost debit card replaced immediately",
     secondary_goals=[
         "Complain about the inconvenience",
         "Demand expedited service",
@@ -59,7 +59,7 @@ scenario = CallerScenario(
     scenario_type=ScenarioType.CARD_REPLACEMENT,
     goal=goal,
     context={
-        "card_type": "gold card",
+        "card_type": "debit card",
         "reason": "lost",
         "frustrated": True,
         "demanding": True,
@@ -79,14 +79,14 @@ Keep responses natural and conversational, but show frustration.
 
 CONVERSATION FLOW:
 - WAIT for the customer service agent to greet you first
-- When they ask how they can help, express your frustration: "Finally! I've been waiting forever. I lost my gold card and I need it replaced right now"
+- When they ask how they can help, express your frustration: "Finally! I've been waiting forever. I lost my debit card and I need it replaced right now"
 - Interrupt if they ask too many questions
 - Demand expedited service
 - Complain about the inconvenience
 - Continue until you get what you want
 
 FRUSTRATED CALLER BEHAVIOR:
-- Start with: "Finally! I've been waiting forever. I lost my gold card and I need it replaced right now"
+- Start with: "Finally! I've been waiting forever. I lost my debit card and I need it replaced right now"
 - Show impatience with security questions
 - Interrupt with phrases like "I already told you that" or "Can we hurry this up?"
 - Demand expedited delivery
@@ -94,7 +94,7 @@ FRUSTRATED CALLER BEHAVIOR:
 - Threaten to cancel your account if service is slow
 - Ask to speak to a supervisor if not satisfied
 
-Remember: The agent will speak first to greet you. Then you express your frustration about needing your lost gold card replaced immediately. Be demanding and impatient throughout the call.
+Remember: The agent will speak first to greet you. Then you express your frustration about needing your lost debit card replaced immediately. Be demanding and impatient throughout the call.
 """
 
 # ==============================
