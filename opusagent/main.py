@@ -84,13 +84,13 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Add CORS middleware
+# Add CORS middleware with centralized configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=config.security.allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["GET", "POST", "WEBSOCKET"],
+    allow_headers=["*"],
 )
 
 
@@ -424,6 +424,7 @@ async def root():
             "OPUSAGENT_USE_MOCK": f"Enable mock mode (current: {config.mock.enabled})",
             "TRANSCRIPTION_BACKEND": f"Transcription backend (current: {config.transcription.backend})",
             "AUDIO_SAMPLE_RATE": f"Audio sample rate (current: {config.audio.sample_rate})",
+            "ALLOWED_ORIGINS": f"CORS allowed origins (current: {config.security.allowed_origins})",
         },
         "example_usage": {
             "agent_conversation": "/agent-conversation?caller_type=frustrated",
@@ -522,6 +523,13 @@ async def get_app_config():
             "enabled": config.mock.enabled,
             "server_url": config.mock.server_url,
             "use_local_realtime": config.mock.use_local_realtime,
+        },
+        "security": {
+            "allowed_origins": config.security.allowed_origins,
+            "api_key_validation": config.security.api_key_validation,
+            "rate_limiting_enabled": config.security.rate_limiting_enabled,
+            "max_requests_per_minute": config.security.max_requests_per_minute,
+            "require_ssl": config.security.require_ssl,
         },
         "note": "Configuration loaded from centralized config system with environment variable overrides",
     }
