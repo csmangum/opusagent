@@ -132,7 +132,7 @@ personality = CallerPersonality(
 )
 
 goal = CallerGoal(
-    primary_goal="Get my lost gold card replaced",
+    primary_goal="Get my lost debit card replaced",
     secondary_goals=[
         "Confirm delivery timeline",
         "Verify security measures", 

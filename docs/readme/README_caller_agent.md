@@ -150,7 +150,7 @@ Defines predefined test scenarios:
 {
   "scenarios": [
     {
-      "name": "Difficult Card Replacement - Lost Gold Card",
+      "name": "Difficult Card Replacement - Lost Debit Card",
       "type": "predefined",
       "scenario": "difficult_card_replacement",
       "timeout": 90.0
