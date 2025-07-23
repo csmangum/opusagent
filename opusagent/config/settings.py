@@ -9,7 +9,6 @@ import json
 import yaml
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-from functools import lru_cache
 
 from .models import ApplicationConfig
 from .env_loader import load_application_config, get_environment_info
@@ -17,6 +16,11 @@ from .env_loader import load_application_config, get_environment_info
 
 # Global configuration instance
 _config: Optional[ApplicationConfig] = None
+
+# Cache for static data
+_scenarios_cache: Optional[Dict[str, Any]] = None
+_phrases_cache: Optional[Dict[str, Any]] = None
+_cache_config_hash: Optional[int] = None
 
 
 def get_config() -> ApplicationConfig:
@@ -29,48 +33,104 @@ def get_config() -> ApplicationConfig:
 
 def reload_config() -> ApplicationConfig:
     """Reload configuration from environment variables."""
-    global _config
+    global _config, _scenarios_cache, _phrases_cache, _cache_config_hash
     _config = load_application_config()
+    # Clear caches when configuration is reloaded
+    _scenarios_cache = None
+    _phrases_cache = None
+    _cache_config_hash = None
     return _config
 
 
 def set_config(config: ApplicationConfig) -> None:
     """Set a custom configuration instance (useful for testing)."""
-    global _config
+    global _config, _scenarios_cache, _phrases_cache, _cache_config_hash
     _config = config
+    # Clear caches when configuration is set
+    _scenarios_cache = None
+    _phrases_cache = None
+    _cache_config_hash = None
 
 
-@lru_cache(maxsize=1)
+def _get_config_hash() -> int:
+    """Get a hash of the current configuration for cache invalidation."""
+    config = get_config()
+    # Create a hash based on the file paths that affect the cached data
+    config_str = f"{config.static_data.scenarios_file}:{config.static_data.phrases_mapping_file}"
+    return hash(config_str)
+
+
+def _is_cache_valid() -> bool:
+    """Check if the current cache is valid based on configuration."""
+    global _cache_config_hash
+    current_hash = _get_config_hash()
+    return _cache_config_hash == current_hash
+
+
+def _update_cache_hash():
+    """Update the cache hash to mark cache as valid."""
+    global _cache_config_hash
+    _cache_config_hash = _get_config_hash()
+
+
+def clear_static_data_cache():
+    """Clear the static data cache (useful for testing or manual invalidation)."""
+    global _scenarios_cache, _phrases_cache, _cache_config_hash
+    _scenarios_cache = None
+    _phrases_cache = None
+    _cache_config_hash = None
+
+
 def load_scenarios() -> Dict[str, Any]:
     """Load test scenarios from JSON file."""
+    global _scenarios_cache
+    
+    # Check if cache is valid
+    if _scenarios_cache is not None and _is_cache_valid():
+        return _scenarios_cache
+    
     config = get_config()
     scenarios_file = config.static_data.scenarios_file
     
     try:
         with open(scenarios_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            result = json.load(f)
+            _scenarios_cache = result
+            _update_cache_hash()
+            return result
     except FileNotFoundError:
-        return {
+        result = {
             "description": "Default scenarios",
             "version": "1.0",
             "scenarios": [],
             "test_configurations": {}
         }
+        _scenarios_cache = result
+        _update_cache_hash()
+        return result
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in scenarios file {scenarios_file}: {e}")
 
 
-@lru_cache(maxsize=1)
 def load_phrases_mapping() -> Dict[str, Any]:
     """Load audio phrases mapping from YAML file."""
+    global _phrases_cache
+    
+    # Check if cache is valid
+    if _phrases_cache is not None and _is_cache_valid():
+        return _phrases_cache
+    
     config = get_config()
     phrases_file = config.static_data.phrases_mapping_file
     
     try:
         with open(phrases_file, 'r', encoding='utf-8') as f:
-            return yaml.safe_load(f)
+            result = yaml.safe_load(f)
+            _phrases_cache = result
+            _update_cache_hash()
+            return result
     except FileNotFoundError:
-        return {
+        result = {
             "scenarios": {},
             "metadata": {
                 "total_scenarios": 0,
@@ -78,6 +138,9 @@ def load_phrases_mapping() -> Dict[str, Any]:
                 "generated_by": "manual",
             }
         }
+        _phrases_cache = result
+        _update_cache_hash()
+        return result
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in phrases file {phrases_file}: {e}")
 
