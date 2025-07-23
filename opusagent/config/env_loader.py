@@ -3,6 +3,9 @@ Environment variable loader for OpusAgent configuration.
 
 This module handles loading configuration from environment variables,
 with type conversion, validation, and fallback to defaults.
+
+Environment variables must be explicitly loaded using load_env_file() before
+accessing any configuration functions.
 """
 
 import os
@@ -30,8 +33,33 @@ from .models import (
 )
 
 
-# Load environment variables from .env file
-load_dotenv()
+# Track if environment variables have been loaded
+_env_loaded = False
+
+
+def load_env_file(env_file: Optional[str] = None) -> None:
+    """Load environment variables from a .env file.
+    
+    This function must be called before accessing any configuration functions.
+    
+    Args:
+        env_file: Path to the .env file. If None, uses default behavior.
+    """
+    global _env_loaded
+    if env_file:
+        load_dotenv(env_file)
+    else:
+        load_dotenv()
+    _env_loaded = True
+
+
+def _check_env_loaded() -> None:
+    """Check if environment variables have been loaded, raise error if not."""
+    if not _env_loaded:
+        raise RuntimeError(
+            "Environment variables not loaded. Call load_env_file() before accessing configuration."
+        )
+
 
 T = TypeVar("T")
 
@@ -72,6 +100,8 @@ def safe_convert(value: Optional[str], target_type: Type[T], default: T) -> T:
 
 def load_server_config() -> ServerConfig:
     """Load server configuration from environment variables."""
+    _check_env_loaded()
+    
     env_str = os.getenv("ENV", "production").lower()
     environment = (
         Environment.DEVELOPMENT if env_str == "development" else Environment.PRODUCTION
@@ -97,6 +127,8 @@ def load_server_config() -> ServerConfig:
 
 def load_openai_config() -> OpenAIConfig:
     """Load OpenAI configuration from environment variables."""
+    _check_env_loaded()
+    
     return OpenAIConfig(
         api_key=os.getenv("OPENAI_API_KEY"),
         model=os.getenv("OPENAI_MODEL", "gpt-4o-realtime-preview-2024-12-17"),
@@ -108,6 +140,8 @@ def load_openai_config() -> OpenAIConfig:
 
 def load_audio_config() -> AudioConfig:
     """Load audio configuration from environment variables."""
+    _check_env_loaded()
+    
     return AudioConfig(
         sample_rate=safe_convert(os.getenv("AUDIO_SAMPLE_RATE"), int, 16000),
         channels=safe_convert(os.getenv("AUDIO_CHANNELS"), int, 1),
@@ -125,6 +159,8 @@ def load_audio_config() -> AudioConfig:
 
 def load_vad_config() -> VADConfig:
     """Load VAD configuration from environment variables."""
+    _check_env_loaded()
+    
     return VADConfig(
         enabled=safe_convert(os.getenv("VAD_ENABLED"), bool, True),
         backend=os.getenv("VAD_BACKEND", "silero"),
@@ -155,6 +191,8 @@ def load_vad_config() -> VADConfig:
 
 def load_transcription_config() -> TranscriptionConfig:
     """Load transcription configuration from environment variables."""
+    _check_env_loaded()
+    
     return TranscriptionConfig(
         enabled=safe_convert(os.getenv("TRANSCRIPTION_ENABLED"), bool, True),
         backend=os.getenv("TRANSCRIPTION_BACKEND", "pocketsphinx"),
@@ -191,6 +229,8 @@ def load_transcription_config() -> TranscriptionConfig:
 
 def load_websocket_config() -> WebSocketConfig:
     """Load WebSocket configuration from environment variables."""
+    _check_env_loaded()
+    
     return WebSocketConfig(
         max_connections=safe_convert(os.getenv("WEBSOCKET_MAX_CONNECTIONS"), int, 10),
         max_connection_age=safe_convert(
@@ -211,6 +251,8 @@ def load_websocket_config() -> WebSocketConfig:
 
 def load_quality_config() -> QualityMonitoringConfig:
     """Load quality monitoring configuration from environment variables."""
+    _check_env_loaded()
+    
     return QualityMonitoringConfig(
         enabled=safe_convert(os.getenv("QUALITY_MONITORING_ENABLED"), bool, True),
         min_snr_db=safe_convert(os.getenv("QUALITY_MIN_SNR_DB"), float, 15.0),
@@ -239,6 +281,8 @@ def load_quality_config() -> QualityMonitoringConfig:
 
 def load_logging_config() -> LoggingConfig:
     """Load logging configuration from environment variables."""
+    _check_env_loaded()
+    
     log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
     log_level = LogLevel.INFO
     try:
@@ -262,6 +306,8 @@ def load_logging_config() -> LoggingConfig:
 
 def load_mock_config() -> MockConfig:
     """Load mock/testing configuration from environment variables."""
+    _check_env_loaded()
+    
     return MockConfig(
         enabled=safe_convert(os.getenv("OPUSAGENT_USE_MOCK"), bool, False),
         server_url=os.getenv("OPUSAGENT_MOCK_SERVER_URL", "ws://localhost:8080"),
@@ -277,6 +323,8 @@ def load_mock_config() -> MockConfig:
 
 def load_tui_config() -> TUIConfig:
     """Load TUI configuration from environment variables."""
+    _check_env_loaded()
+    
     return TUIConfig(
         host=os.getenv("TUI_HOST", "localhost"),
         port=safe_convert(os.getenv("TUI_PORT"), int, 8000),
@@ -324,6 +372,8 @@ def load_tui_config() -> TUIConfig:
 
 def load_static_data_config() -> StaticDataConfig:
     """Load static data configuration from environment variables."""
+    _check_env_loaded()
+    
     return StaticDataConfig(
         scenarios_file=Path(os.getenv("SCENARIOS_FILE", "scenarios.json")),
         phrases_mapping_file=Path(
@@ -337,6 +387,8 @@ def load_static_data_config() -> StaticDataConfig:
 
 def load_security_config() -> SecurityConfig:
     """Load security configuration from environment variables."""
+    _check_env_loaded()
+    
     allowed_origins = os.getenv("ALLOWED_ORIGINS", "*")
     origins_list = [origin.strip() for origin in allowed_origins.split(",")]
 
@@ -355,6 +407,8 @@ def load_security_config() -> SecurityConfig:
 
 def load_application_config() -> ApplicationConfig:
     """Load complete application configuration from environment variables."""
+    _check_env_loaded()
+    
     config = ApplicationConfig(
         server=load_server_config(),
         openai=load_openai_config(),
@@ -382,6 +436,8 @@ def load_application_config() -> ApplicationConfig:
 
 def get_environment_info() -> Dict[str, Any]:
     """Get information about current environment variables for debugging."""
+    _check_env_loaded()
+    
     return {
         "environment_variables_loaded": len(
             [
