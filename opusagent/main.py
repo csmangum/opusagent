@@ -42,7 +42,6 @@ load_env_file()
 # Get centralized configuration
 config = get_config()
 
-
 # Configure logging using centralized config
 logger = configure_logging("main")
 
@@ -59,7 +58,6 @@ USE_LOCAL_REALTIME = config.mock.use_local_realtime
 LOCAL_REALTIME_CONFIG = {
     "enable_transcription": config.mock.enable_transcription,
     "setup_smart_responses": config.mock.setup_smart_responses,
-
     "vad_config": {
         "backend": config.vad.backend,
         "threshold": config.vad.confidence_threshold,
