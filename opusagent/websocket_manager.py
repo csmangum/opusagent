@@ -161,10 +161,8 @@ class WebSocketManager:
         self._health_check_task: Optional[asyncio.Task] = None
         self._shutdown = False
 
-        # Connection parameters from centralized config - only validate OpenAI config if not using mock
+        # Connection parameters from centralized config
         if not self.use_mock:
-            if not config.openai.api_key:
-                raise ValueError("OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable or configure 'config.openai.api_key' before initializing WebSocketManager.")
             self._url = config.openai.get_websocket_url()
             self._headers = config.openai.get_headers()
         else:

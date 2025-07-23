@@ -269,7 +269,7 @@ class ApplicationConfig:
         
         # Validate OpenAI config if not in mock mode
         if not self.mock.enabled and not self.openai.api_key:
-            errors.append("OpenAI API key is required when not in mock mode")
+            errors.append("OpenAI API key is required when not in mock mode. Please set the OPENAI_API_KEY environment variable or enable mock mode by setting OPUSAGENT_USE_MOCK=true")
         
         # Validate server config
         if self.server.port <= 0 or self.server.port > 65535:

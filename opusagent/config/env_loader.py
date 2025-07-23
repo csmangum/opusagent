@@ -355,7 +355,7 @@ def load_security_config() -> SecurityConfig:
 
 def load_application_config() -> ApplicationConfig:
     """Load complete application configuration from environment variables."""
-    return ApplicationConfig(
+    config = ApplicationConfig(
         server=load_server_config(),
         openai=load_openai_config(),
         audio=load_audio_config(),
@@ -369,6 +369,15 @@ def load_application_config() -> ApplicationConfig:
         static_data=load_static_data_config(),
         security=load_security_config(),
     )
+    
+    # Validate configuration and raise exceptions for critical errors
+    validation_errors = config.validate()
+    if validation_errors:
+        # Format error message
+        error_msg = "Configuration validation failed:\n" + "\n".join(f"  - {error}" for error in validation_errors)
+        raise ValueError(error_msg)
+    
+    return config
 
 
 def get_environment_info() -> Dict[str, Any]:
