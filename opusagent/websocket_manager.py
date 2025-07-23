@@ -161,16 +161,21 @@ class WebSocketManager:
         self._health_check_task: Optional[asyncio.Task] = None
         self._shutdown = False
 
-        # Connection parameters from centralized config
-        if not config.openai.api_key:
-            raise ValueError("OpenAI API key is not set. Please configure 'config.openai.api_key' before initializing WebSocketManager.")
-        self._url = config.openai.get_websocket_url()
-        self._headers = config.openai.get_headers()
+        # Connection parameters from centralized config - only validate OpenAI config if not using mock
+        if not self.use_mock:
+            if not config.openai.api_key:
+                raise ValueError("OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable or configure 'config.openai.api_key' before initializing WebSocketManager.")
+            self._url = config.openai.get_websocket_url()
+            self._headers = config.openai.get_headers()
+        else:
+            # Mock mode - set dummy values for OpenAI config (these won't be used in mock mode)
+            self._url = ""  # Empty string instead of None to satisfy type checker
+            self._headers = {}
 
         logger.info(
             f"WebSocket manager initialized with centralized config - "
-            f"max_connections={self.max_connections}, use_mock={self.use_mock}, "
-            f"openai_model={config.openai.model}"
+            f"max_connections={self.max_connections}, use_mock={self.use_mock}"
+            + (f", openai_model={config.openai.model}" if not self.use_mock else "")
         )
 
         # Start health monitoring
