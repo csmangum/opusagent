@@ -314,7 +314,7 @@ Remember: The agent will speak first to greet you. Then explain your issue. Be p
     if "tools" not in scen_dict:
         raise KeyError(f"Scenario '{scenario}' is missing required 'tools' field")
 
-    tools_func = scen_dict["tools"]
+    tools_func: ToolsFunction = scen_dict["tools"]
     if not callable(tools_func):
         raise TypeError(
             f"The 'tools' entry in scenario '{scenario}' is not callable: {type(tools_func)}"
