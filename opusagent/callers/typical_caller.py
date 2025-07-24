@@ -9,9 +9,9 @@ from opusagent.agents.caller_agent import (
     ScenarioType,
     SessionConfig,
     get_caller_tools,
-    register_caller_functions,
     func_hang_up,
 )
+from opusagent.callers.caller_factory import register_caller_functions
 
 # ==============================
 # Typical Caller Configuration
@@ -123,4 +123,4 @@ def get_typical_caller_config() -> SessionConfig:
 
 def register_typical_caller_functions(function_handler) -> None:
     """Register typical caller functions with the function handler."""
-    register_caller_functions(function_handler) 
+    register_caller_functions("typical", "banking_card_replacement", function_handler) 

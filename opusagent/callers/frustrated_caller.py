@@ -9,9 +9,9 @@ from opusagent.agents.caller_agent import (
     ScenarioType,
     SessionConfig,
     get_caller_tools,
-    register_caller_functions,
     func_hang_up,
 )
+from opusagent.callers.caller_factory import register_caller_functions
 
 # ==============================
 # Frustrated Caller Configuration
@@ -128,4 +128,4 @@ def get_frustrated_caller_config() -> SessionConfig:
 
 def register_frustrated_caller_functions(function_handler) -> None:
     """Register frustrated caller functions with the function handler."""
-    register_caller_functions(function_handler) 
+    register_caller_functions("frustrated", "banking_card_replacement", function_handler) 

@@ -2,11 +2,7 @@ from typing import Dict, Any, Optional
 from opusagent.models.openai_api import SessionConfig
 from opusagent.agents.caller_agent import PersonalityType, ScenarioType, CallerPersonality, CallerGoal, CallerScenario
 
-# Import existing caller configurations and tools
-from .typical_caller import get_typical_caller_config, register_typical_caller_functions
-from .frustrated_caller import get_frustrated_caller_config, register_frustrated_caller_functions
-from .elderly_caller import get_elderly_caller_config, register_elderly_caller_functions
-from .hurried_caller import get_hurried_caller_config, register_hurried_caller_functions
+# Import insurance caller tools
 from .insurance_caller import get_insurance_caller_tools
 
 class CallerType:
