@@ -12,6 +12,7 @@ from opusagent.agents.caller_agent import (
     func_hang_up,
 )
 from opusagent.callers.caller_factory import register_caller_functions
+from opusagent.callers.constants import FailureConditions
 
 # ==============================
 # Hurried Caller Configuration
@@ -47,8 +48,8 @@ goal = CallerGoal(
         "expedited delivery offered"
     ],
     failure_conditions=[
-        "transferred to human",
-        "call terminated",
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
         "process takes too long",
         "too many questions asked"
     ],

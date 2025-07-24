@@ -4,6 +4,7 @@ from opusagent.agents.caller_agent import PersonalityType, ScenarioType, CallerP
 
 # Import insurance caller tools
 from .insurance_caller import get_insurance_caller_tools
+from .constants import FailureConditions
 
 class CallerType:
     """Enumeration of available caller types."""
@@ -127,7 +128,11 @@ SCENARIOS = {
             "primary_goal": "Get my lost debit card replaced",
             "secondary_goals": ["Confirm delivery timeline", "Verify security measures", "Ensure no unauthorized charges"],
             "success_criteria": ["card replacement confirmed", "delivery address confirmed", "security concerns addressed"],
-            "failure_conditions": ["transferred to human", "call terminated", "unable to verify identity"],
+            "failure_conditions": [
+                FailureConditions.TRANSFERRED_TO_HUMAN.value,
+                FailureConditions.CALL_TERMINATED.value,
+                FailureConditions.UNABLE_TO_VERIFY_IDENTITY.value,
+            ],
             "max_conversation_turns": 15,
         },
         "context": {
@@ -154,7 +159,10 @@ CONVERSATION FLOW:
             "primary_goal": "File a claim for my car accident",
             "secondary_goals": ["Understand the claims process", "Get timeline for resolution"],
             "success_criteria": ["claim filed successfully", "claim number received", "next steps explained"],
-            "failure_conditions": ["transferred to human", "call terminated"],
+            "failure_conditions": [
+                FailureConditions.TRANSFERRED_TO_HUMAN.value,
+                FailureConditions.CALL_TERMINATED.value,
+            ],
             "max_conversation_turns": 15,
         },
         "context": {

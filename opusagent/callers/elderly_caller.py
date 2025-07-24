@@ -12,6 +12,7 @@ from opusagent.agents.caller_agent import (
     func_hang_up,
 )
 from opusagent.callers.caller_factory import register_caller_functions
+from opusagent.callers.constants import FailureConditions
 
 # ==============================
 # Elderly Caller Configuration
@@ -49,8 +50,8 @@ goal = CallerGoal(
         "delivery timeline understood"
     ],
     failure_conditions=[
-        "transferred to human",
-        "call terminated",
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
         "process not understood",
         "security concerns not addressed"
     ],

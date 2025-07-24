@@ -12,6 +12,7 @@ from opusagent.agents.caller_agent import (
     func_hang_up,
 )
 from opusagent.callers.caller_factory import register_caller_functions
+from opusagent.callers.constants import FailureConditions
 
 # ==============================
 # Typical Caller Configuration
@@ -46,9 +47,9 @@ goal = CallerGoal(
         "security concerns addressed"
     ],
     failure_conditions=[
-        "transferred to human",
-        "call terminated",
-        "unable to verify identity"
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
+        FailureConditions.UNABLE_TO_VERIFY_IDENTITY.value,
     ],
     max_conversation_turns=15,
 )

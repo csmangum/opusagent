@@ -15,6 +15,7 @@ from opusagent.models.tool_models import (
     ToolParameter,
     ToolParameters,
 )
+from opusagent.callers.constants import FailureConditions
 
 logger = configure_logging("caller_agent")
 
@@ -222,7 +223,10 @@ goal = CallerGoal(
     primary_goal="Get my lost debit card replaced",
     secondary_goals=["Confirm delivery timeline", "Verify security measures"],
     success_criteria=["card replacement confirmed", "delivery address confirmed"],
-    failure_conditions=["transferred to human", "call terminated"],
+    failure_conditions=[
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
+    ],
     max_conversation_turns=15,
 )
 
