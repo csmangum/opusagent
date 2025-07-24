@@ -177,7 +177,7 @@ def test_get_active_function_calls(function_handler):
 
 def test_customer_service_functions_registration(function_handler):
     """Test that customer service functions can be registered and work correctly."""
-    from opusagent.customer_service_agent import register_customer_service_functions
+    from opusagent.agents.banking_agent import register_customer_service_functions
 
     # Register customer service functions
     register_customer_service_functions(function_handler)

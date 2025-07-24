@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from opusagent.caller_agent import (
+from opusagent.agents.caller_agent import (
     CallerPersonality,
     CallerGoal,
     CallerScenario,

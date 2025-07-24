@@ -57,7 +57,7 @@ class CallAgentBridge(AudioCodesBridge):
         # Register the caller-side functions (e.g. ``hang_up``)
         #! Make function registration be outside of the class
         try:
-            from opusagent.caller_agent import register_caller_functions
+            from opusagent.agents.caller_agent import register_caller_functions
 
             register_caller_functions(self.function_handler)
             logger.info("Caller functions registered with function handler")

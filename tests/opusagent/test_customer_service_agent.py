@@ -6,7 +6,7 @@ Tests the customer service agent's tool definitions and configuration.
 
 import pytest
 
-from opusagent.customer_service_agent import (
+from opusagent.agents.banking_agent import (
     GetBalanceParameters,
     GetBalanceTool,
     ProcessReplacementParameters,

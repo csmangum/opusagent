@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.websocket_manager import get_websocket_manager, RealtimeConnection
-from opusagent.customer_service_agent import session_config as cs_session_config
+from opusagent.agents.banking_agent import session_config as cs_session_config
 from opusagent.call_recorder import CallRecorder, AudioChannel, TranscriptType
 from opusagent.callers import get_caller_config, register_caller_functions, CallerType
 from opusagent.transcript_manager import TranscriptManager
