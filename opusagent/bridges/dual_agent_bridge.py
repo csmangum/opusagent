@@ -117,9 +117,18 @@ class DualAgentBridge:
             logger.info(f"Scenario: {self.scenario}")
             logger.info(f"Agent type: {self.agent_type}")
             
-            # Initialize function handlers
-            self.caller_function_handler = FunctionHandler(self.caller_connection.websocket)
-            self.cs_function_handler = FunctionHandler(self.cs_connection.websocket)
+            # Initialize call recording first
+            await self._initialize_call_recording()
+            
+            # Initialize function handlers with call recorder
+            self.caller_function_handler = FunctionHandler(
+                self.caller_connection.websocket,
+                call_recorder=self.call_recorder
+            )
+            self.cs_function_handler = FunctionHandler(
+                self.cs_connection.websocket,
+                call_recorder=self.call_recorder
+            )
             
             # Register functions for both agents
             register_caller_functions(self.caller_type, self.scenario, self.caller_function_handler)
@@ -130,9 +139,6 @@ class DualAgentBridge:
                 register_insurance_functions(self.cs_function_handler)
             
             logger.info("Function handlers initialized and functions registered")
-            
-            # Initialize call recording
-            await self._initialize_call_recording()
             
             # Initialize sessions for both agents
             await self._initialize_caller_session()
@@ -372,6 +378,30 @@ class DualAgentBridge:
             if self.caller_function_handler:
                 await self.caller_function_handler.handle_function_call_arguments_done(data)
                 
+        elif message_type == "response.output_item.added":
+            # Handle output item added events (including function calls)
+            item = data.get("item", {})
+            if item.get("type") == "function_call":
+                call_id = item.get("call_id")
+                function_name = item.get("name")
+                item_id = item.get("id")
+                
+                if call_id and function_name and self.caller_function_handler:
+                    # Initialize the function call state with the function name
+                    if call_id not in self.caller_function_handler.active_function_calls:
+                        self.caller_function_handler.active_function_calls[call_id] = {
+                            "arguments_buffer": "",
+                            "item_id": item_id,
+                            "output_index": data.get("output_index", 0),
+                            "response_id": data.get("response_id"),
+                            "function_name": function_name,
+                        }
+                    else:
+                        # Update existing entry with function name
+                        self.caller_function_handler.active_function_calls[call_id]["function_name"] = function_name
+                    
+                    logger.info(f"Caller function call captured: {function_name} with call_id: {call_id}")
+                
         elif message_type == "error":
             # Handle error messages from caller agent
             error_code = data.get("error", {}).get("code", "unknown")
@@ -457,6 +487,30 @@ class DualAgentBridge:
             # Handle function call arguments done for CS agent
             if self.cs_function_handler:
                 await self.cs_function_handler.handle_function_call_arguments_done(data)
+                
+        elif message_type == "response.output_item.added":
+            # Handle output item added events (including function calls)
+            item = data.get("item", {})
+            if item.get("type") == "function_call":
+                call_id = item.get("call_id")
+                function_name = item.get("name")
+                item_id = item.get("id")
+                
+                if call_id and function_name and self.cs_function_handler:
+                    # Initialize the function call state with the function name
+                    if call_id not in self.cs_function_handler.active_function_calls:
+                        self.cs_function_handler.active_function_calls[call_id] = {
+                            "arguments_buffer": "",
+                            "item_id": item_id,
+                            "output_index": data.get("output_index", 0),
+                            "response_id": data.get("response_id"),
+                            "function_name": function_name,
+                        }
+                    else:
+                        # Update existing entry with function name
+                        self.cs_function_handler.active_function_calls[call_id]["function_name"] = function_name
+                    
+                    logger.info(f"CS function call captured: {function_name} with call_id: {call_id}")
                 
         logger.debug(f"CS message: {message_type}")
     
