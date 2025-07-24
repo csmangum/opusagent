@@ -121,7 +121,7 @@ class BaseRealtimeBridge(ABC):
         )
 
         # Register customer service functions
-        from opusagent.customer_service_agent import register_customer_service_functions
+        from opusagent.agents.banking_agent import register_customer_service_functions
 
         register_customer_service_functions(self.function_handler)
 

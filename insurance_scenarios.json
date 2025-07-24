@@ -1,0 +1,301 @@
+{
+  "description": "Insurance Caller Agent Test Scenarios",
+  "version": "1.0",
+  "scenarios": [
+    {
+      "name": "Auto Accident Claim - Typical Customer",
+      "type": "predefined",
+      "scenario": "auto_accident_claim",
+      "timeout": 90.0,
+      "description": "Cooperative customer filing a claim for a recent car accident"
+    },
+    {
+      "name": "Home Damage Claim - Elderly Customer",
+      "type": "predefined", 
+      "scenario": "elderly_home_claim",
+      "timeout": 120.0,
+      "description": "Elderly customer filing a claim for home damage, needs patient guidance"
+    },
+    {
+      "name": "Frustrated Customer - Denied Claim",
+      "type": "predefined",
+      "scenario": "frustrated_denied_claim", 
+      "timeout": 60.0,
+      "description": "Very frustrated customer disputing a denied insurance claim"
+    },
+    {
+      "name": "Policy Inquiry - Business Owner",
+      "type": "custom",
+      "personality": "business_minded",
+      "scenario_type": "policy_inquiry",
+      "goal": "Get information about business insurance coverage and rates",
+      "caller_name": "BusinessBetty",
+      "caller_phone": "+15559998888",
+      "timeout": 75.0,
+      "description": "Business owner who wants detailed information about commercial insurance options"
+    },
+    {
+      "name": "Coverage Question - Tech-Savvy Customer",
+      "type": "custom",
+      "personality": "tech_savvy",
+      "scenario_type": "coverage_question",
+      "goal": "Understand specific coverage details for a unique situation",
+      "caller_name": "TechTim",
+      "caller_phone": "+15557776666",
+      "timeout": 60.0,
+      "description": "Tech-savvy customer with complex coverage questions about a specific incident"
+    },
+    {
+      "name": "Suspicious Customer - Premium Increase",
+      "type": "custom",
+      "personality": "suspicious",
+      "scenario_type": "billing_issue",
+      "goal": "Dispute unexpected premium increase and understand the reason",
+      "caller_name": "SuspiciousSue",
+      "caller_phone": "+15555554444",
+      "timeout": 90.0,
+      "description": "Customer who received a premium increase and is suspicious of the insurance company"
+    },
+    {
+      "name": "Normal Customer - Policy Information",
+      "type": "custom",
+      "personality": "normal",
+      "scenario_type": "policy_inquiry",
+      "goal": "Get basic policy information and coverage details",
+      "caller_name": "NormalNancy",
+      "caller_phone": "+15553332222",
+      "timeout": 45.0,
+      "description": "Regular customer with simple policy information request - baseline test"
+    },
+    {
+      "name": "Confused Customer - First Time Claim",
+      "type": "custom",
+      "personality": "confused",
+      "scenario_type": "claim_filing",
+      "goal": "File first insurance claim and understand the process",
+      "caller_name": "ConfusedCarl",
+      "caller_phone": "+15551119999",
+      "timeout": 100.0,
+      "description": "Customer filing their first insurance claim, needs lots of explanation"
+    },
+    {
+      "name": "Elderly Customer - Health Claim",
+      "type": "custom",
+      "personality": "elderly",
+      "scenario_type": "health_claim",
+      "goal": "File health insurance claim for medical procedure",
+      "caller_name": "ElderlyEd",
+      "caller_phone": "+15558887777",
+      "timeout": 120.0,
+      "description": "Elderly customer filing health insurance claim, needs patient help through process"
+    },
+    {
+      "name": "Angry Customer - Delayed Claim",
+      "type": "custom",
+      "personality": "angry",
+      "scenario_type": "claim_dispute",
+      "goal": "Complain about delayed claim processing and demand resolution",
+      "caller_name": "AngryAl",
+      "caller_phone": "+15556665555",
+      "timeout": 80.0,
+      "description": "Very angry customer whose claim has been delayed for weeks"
+    },
+    {
+      "name": "Hurried Customer - Quick Policy Update",
+      "type": "custom",
+      "personality": "hurried",
+      "scenario_type": "policy_update",
+      "goal": "Quickly update address and vehicle information on policy",
+      "caller_name": "HurriedHarry",
+      "caller_phone": "+15554443333",
+      "timeout": 50.0,
+      "description": "Customer in a hurry who needs to update policy information quickly"
+    },
+    {
+      "name": "Anxious Customer - Major Accident",
+      "type": "custom",
+      "personality": "anxious",
+      "scenario_type": "major_claim",
+      "goal": "File claim for major accident and get immediate assistance",
+      "caller_name": "AnxiousAmy",
+      "caller_phone": "+15552221111",
+      "timeout": 110.0,
+      "description": "Anxious customer who was in a major accident and needs immediate help"
+    },
+    {
+      "name": "Informed Customer - Coverage Optimization",
+      "type": "custom",
+      "personality": "informed",
+      "scenario_type": "coverage_review",
+      "goal": "Review current coverage and optimize policy for better rates",
+      "caller_name": "InformedIvy",
+      "caller_phone": "+15551110000",
+      "timeout": 85.0,
+      "description": "Well-informed customer who wants to review and optimize their coverage"
+    },
+    {
+      "name": "New Customer - Policy Comparison",
+      "type": "custom",
+      "personality": "shopping",
+      "scenario_type": "policy_comparison",
+      "goal": "Compare insurance policies and get quotes for new coverage",
+      "caller_name": "ShoppingSam",
+      "caller_phone": "+15550009999",
+      "timeout": 95.0,
+      "description": "New customer shopping for insurance and comparing different policies"
+    },
+    {
+      "name": "Loyal Customer - Renewal Question",
+      "type": "custom",
+      "personality": "loyal",
+      "scenario_type": "renewal_inquiry",
+      "goal": "Ask about policy renewal and any changes to coverage",
+      "caller_name": "LoyalLarry",
+      "caller_phone": "+15559990000",
+      "timeout": 70.0,
+      "description": "Long-time customer with questions about policy renewal and loyalty benefits"
+    }
+  ],
+  "personality_types": {
+    "typical": {
+      "description": "Cooperative, patient customer",
+      "traits": ["cooperative", "patient", "clear communicator"],
+      "patience_level": 8,
+      "tech_comfort": 6
+    },
+    "elderly": {
+      "description": "Patient, polite elderly customer",
+      "traits": ["patient", "polite", "needs guidance"],
+      "patience_level": 9,
+      "tech_comfort": 2
+    },
+    "frustrated": {
+      "description": "Impatient, easily frustrated customer",
+      "traits": ["impatient", "frustrated", "demanding"],
+      "patience_level": 3,
+      "tech_comfort": 4
+    },
+    "hurried": {
+      "description": "Customer in a hurry",
+      "traits": ["hurried", "efficient", "interrupts"],
+      "patience_level": 4,
+      "tech_comfort": 8
+    },
+    "anxious": {
+      "description": "Worried, anxious customer",
+      "traits": ["anxious", "worried", "needs reassurance"],
+      "patience_level": 5,
+      "tech_comfort": 5
+    },
+    "informed": {
+      "description": "Well-informed, knowledgeable customer",
+      "traits": ["knowledgeable", "informed", "asks detailed questions"],
+      "patience_level": 7,
+      "tech_comfort": 8
+    },
+    "suspicious": {
+      "description": "Suspicious, distrustful customer",
+      "traits": ["suspicious", "distrustful", "questions everything"],
+      "patience_level": 4,
+      "tech_comfort": 5
+    },
+    "business_minded": {
+      "description": "Business-focused, efficiency-oriented customer",
+      "traits": ["business-focused", "efficient", "cost-conscious"],
+      "patience_level": 6,
+      "tech_comfort": 8
+    },
+    "tech_savvy": {
+      "description": "Technology-savvy customer",
+      "traits": ["tech-savvy", "informed", "prefers digital solutions"],
+      "patience_level": 6,
+      "tech_comfort": 9
+    },
+    "confused": {
+      "description": "Confused, needs guidance customer",
+      "traits": ["confused", "needs guidance", "asks many questions"],
+      "patience_level": 7,
+      "tech_comfort": 3
+    },
+    "angry": {
+      "description": "Very angry, upset customer",
+      "traits": ["angry", "upset", "demanding"],
+      "patience_level": 2,
+      "tech_comfort": 4
+    },
+    "loyal": {
+      "description": "Loyal, long-time customer",
+      "traits": ["loyal", "appreciative", "trusting"],
+      "patience_level": 8,
+      "tech_comfort": 6
+    },
+    "shopping": {
+      "description": "Shopping, comparing options customer",
+      "traits": ["shopping", "comparing", "price-conscious"],
+      "patience_level": 7,
+      "tech_comfort": 7
+    }
+  },
+  "scenario_types": {
+    "auto_claim": {
+      "description": "Filing a claim for auto insurance",
+      "common_issues": ["accident details", "damage assessment", "liability questions"],
+      "required_info": ["policy number", "accident date", "damage description"]
+    },
+    "home_claim": {
+      "description": "Filing a claim for home insurance",
+      "common_issues": ["damage assessment", "repair estimates", "temporary housing"],
+      "required_info": ["policy number", "damage date", "damage description"]
+    },
+    "health_claim": {
+      "description": "Filing a claim for health insurance",
+      "common_issues": ["medical procedures", "billing questions", "coverage verification"],
+      "required_info": ["policy number", "procedure date", "medical provider"]
+    },
+    "policy_inquiry": {
+      "description": "General policy information questions",
+      "common_issues": ["coverage details", "policy terms", "premium questions"],
+      "required_info": ["policy number", "specific questions"]
+    },
+    "coverage_question": {
+      "description": "Specific coverage questions",
+      "common_issues": ["coverage limits", "deductibles", "exclusions"],
+      "required_info": ["policy number", "specific situation"]
+    },
+    "policy_update": {
+      "description": "Updating policy information",
+      "common_issues": ["address changes", "vehicle updates", "beneficiary changes"],
+      "required_info": ["policy number", "change type", "new information"]
+    },
+    "billing_issue": {
+      "description": "Billing and payment issues",
+      "common_issues": ["premium increases", "payment problems", "billing errors"],
+      "required_info": ["policy number", "billing issue", "amount"]
+    },
+    "claim_dispute": {
+      "description": "Disputing claim decisions",
+      "common_issues": ["denied claims", "low settlements", "delayed processing"],
+      "required_info": ["claim number", "dispute reason", "desired outcome"]
+    },
+    "major_claim": {
+      "description": "Major accident or incident claims",
+      "common_issues": ["severe damage", "injury claims", "emergency assistance"],
+      "required_info": ["policy number", "incident details", "emergency needs"]
+    },
+    "coverage_review": {
+      "description": "Reviewing and optimizing coverage",
+      "common_issues": ["coverage gaps", "cost optimization", "policy comparison"],
+      "required_info": ["current policy", "review goals", "budget constraints"]
+    },
+    "policy_comparison": {
+      "description": "Comparing different insurance options",
+      "common_issues": ["coverage differences", "price comparison", "feature analysis"],
+      "required_info": ["current coverage", "comparison criteria", "budget"]
+    },
+    "renewal_inquiry": {
+      "description": "Policy renewal questions",
+      "common_issues": ["renewal terms", "rate changes", "loyalty benefits"],
+      "required_info": ["policy number", "renewal date", "questions"]
+    }
+  }
+} 

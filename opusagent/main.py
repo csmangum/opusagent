@@ -29,10 +29,10 @@ from opusagent.config import get_config, server_config, mock_config, vad_config,
 from opusagent.config.env_loader import load_env_file
 from opusagent.config.logging_config import configure_logging
 from opusagent.config.models import WebSocketConfig
-from opusagent.customer_service_agent import session_config
+from opusagent.agents.banking_agent import session_config
 from opusagent.session_manager import SessionManager
 from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
-from opusagent.callers import get_available_caller_types, get_caller_description
+from opusagent.callers import get_available_caller_types, get_caller_description, get_available_scenarios, get_scenario_description
 from opusagent.local.realtime import create_mock_websocket_connection
 from opusagent.websocket_manager import get_websocket_manager
 
@@ -381,7 +381,10 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 
 @app.websocket("/agent-conversation")
 async def agent_conversation_endpoint(
-    websocket: WebSocket, caller_type: str = "typical"
+    websocket: WebSocket, 
+    caller_type: str = "typical",
+    scenario: str = "banking_card_replacement",
+    agent_type: str = "banking"
 ):
     """WebSocket endpoint for caller agent to CS agent conversations.
 
@@ -390,18 +393,20 @@ async def agent_conversation_endpoint(
 
     Args:
         websocket: The WebSocket connection
-        caller_type: Type of caller to use (typical, frustrated, elderly, hurried)
+        caller_type: Type of caller personality to use (typical, frustrated, elderly, hurried)
+        scenario: Scenario context (banking_card_replacement, insurance_file_claim, etc.)
+        agent_type: CS agent type (banking, insurance)
     """
     bridge = None
     await websocket.accept()
     client_address = websocket.client
     logger.info(
-        f"------ Agent conversation request from {client_address} with {caller_type} caller ------"
+        f"------ Agent conversation request from {client_address} with {caller_type} caller, {scenario} scenario, {agent_type} agent ------"
     )
 
     try:
-        # Create and initialize dual agent bridge with specified caller type
-        bridge = DualAgentBridge(caller_type=caller_type)
+        # Create and initialize dual agent bridge with specified parameters
+        bridge = DualAgentBridge(caller_type=caller_type, scenario=scenario, agent_type=agent_type)
         logger.info(f"Created dual agent bridge: {bridge.conversation_id}")
 
         # Initialize both OpenAI connections and start conversation
@@ -619,19 +624,28 @@ async def get_app_config():
 
 @app.get("/caller-types")
 async def get_caller_types():
-    """Get available caller types and their descriptions.
+    """Get available caller types, scenarios, and agent types with descriptions.
 
     Returns:
-        dict: Available caller types with descriptions
+        dict: Available caller types, scenarios, and agent types with descriptions
     """
     caller_types = {}
     for caller_type in get_available_caller_types():
         caller_types[caller_type] = get_caller_description(caller_type)
+    
+    scenarios = {}
+    for scenario in get_available_scenarios():
+        scenarios[scenario] = get_scenario_description(scenario)
 
     return {
         "available_caller_types": caller_types,
-        "usage": "Use ?caller_type=<type> query parameter with /agent-conversation endpoint",
-        "example": "/agent-conversation?caller_type=frustrated",
+        "available_scenarios": scenarios,
+        "available_agents": {
+            "banking": "Banking customer service agent with card replacement and account services",
+            "insurance": "Insurance customer service agent with claims filing and policy management"
+        },
+        "usage": "Use ?caller_type=<type>&scenario=<scenario>&agent_type=<agent> query parameters with /agent-conversation endpoint",
+        "example": "/agent-conversation?caller_type=frustrated&scenario=insurance_file_claim&agent_type=insurance",
     }
 
 
