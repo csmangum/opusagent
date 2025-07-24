@@ -16,6 +16,7 @@ from opusagent.models.tool_models import (
     ToolParameter,
     ToolParameters,
 )
+from opusagent.callers.constants import FailureConditions
 
 logger = configure_logging("insurance_caller")
 
@@ -148,7 +149,10 @@ goal = InsuranceCallerGoal(
     primary_goal="File a claim for my car accident",
     secondary_goals=["Understand the claims process", "Get timeline for resolution"],
     success_criteria=["claim filed successfully", "claim number received", "next steps explained"],
-    failure_conditions=["transferred to human", "call terminated"],
+    failure_conditions=[
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
+    ],
     max_conversation_turns=15,
 )
 

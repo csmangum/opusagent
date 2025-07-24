@@ -9,9 +9,10 @@ from opusagent.agents.caller_agent import (
     ScenarioType,
     SessionConfig,
     get_caller_tools,
-    register_caller_functions,
     func_hang_up,
 )
+from opusagent.callers.caller_factory import register_caller_functions
+from opusagent.callers.constants import FailureConditions
 
 # ==============================
 # Typical Caller Configuration
@@ -46,9 +47,9 @@ goal = CallerGoal(
         "security concerns addressed"
     ],
     failure_conditions=[
-        "transferred to human",
-        "call terminated",
-        "unable to verify identity"
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
+        FailureConditions.UNABLE_TO_VERIFY_IDENTITY.value,
     ],
     max_conversation_turns=15,
 )
@@ -123,4 +124,4 @@ def get_typical_caller_config() -> SessionConfig:
 
 def register_typical_caller_functions(function_handler) -> None:
     """Register typical caller functions with the function handler."""
-    register_caller_functions(function_handler) 
+    register_caller_functions("typical", "banking_card_replacement", function_handler) 

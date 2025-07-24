@@ -9,9 +9,10 @@ from opusagent.agents.caller_agent import (
     ScenarioType,
     SessionConfig,
     get_caller_tools,
-    register_caller_functions,
     func_hang_up,
 )
+from opusagent.callers.caller_factory import register_caller_functions
+from opusagent.callers.constants import FailureConditions
 
 # ==============================
 # Frustrated Caller Configuration
@@ -47,8 +48,8 @@ goal = CallerGoal(
         "apology received for inconvenience"
     ],
     failure_conditions=[
-        "transferred to human",
-        "call terminated",
+        FailureConditions.TRANSFERRED_TO_HUMAN.value,
+        FailureConditions.CALL_TERMINATED.value,
         "no expedited service offered",
         "agent doesn't acknowledge frustration"
     ],
@@ -128,4 +129,4 @@ def get_frustrated_caller_config() -> SessionConfig:
 
 def register_frustrated_caller_functions(function_handler) -> None:
     """Register frustrated caller functions with the function handler."""
-    register_caller_functions(function_handler) 
+    register_caller_functions("frustrated", "banking_card_replacement", function_handler) 
