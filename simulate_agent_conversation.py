@@ -63,12 +63,28 @@ async def get_available_options():
             async with session.get("http://localhost:8000/caller-types") as response:
                 if response.status == 200:
                     data = await response.json()
+                    # Validate that the response contains the expected fields
+                    expected_fields = ['available_caller_types', 'available_scenarios', 'available_agents']
+                    missing_fields = [field for field in expected_fields if field not in data]
+                    if missing_fields:
+                        print(f"❌ Server response missing expected fields: {missing_fields}")
+                        print(f"   Response keys: {list(data.keys())}")
+                        return None
                     return data
                 else:
-                    print(f"❌ Error getting caller types: {response.status}")
+                    print(f"❌ Error getting caller types: HTTP {response.status}")
+                    try:
+                        error_text = await response.text()
+                        print(f"   Response: {error_text}")
+                    except:
+                        pass
                     return None
+    except aiohttp.ClientConnectorError as e:
+        print(f"❌ Could not connect to server: {e}")
+        print("   Make sure the server is running: python run_opus_server.py --mock")
+        return None
     except Exception as e:
-        print(f"❌ Error connecting to server: {e}")
+        print(f"❌ Unexpected error connecting to server: {e}")
         return None
 
 
@@ -82,9 +98,13 @@ async def main():
     options_data = await get_available_options()
     if options_data:
         print("📋 Available Options:")
-        print(f"  Caller Types: {list(options_data['available_caller_types'].keys())}")
-        print(f"  Scenarios: {list(options_data['available_scenarios'].keys())}")
-        print(f"  Agents: {list(options_data['available_agents'].keys())}")
+        print(f"  Caller Types: {list(options_data.get('available_caller_types', {}).keys())}")
+        print(f"  Scenarios: {list(options_data.get('available_scenarios', {}).keys())}")
+        print(f"  Agents: {list(options_data.get('available_agents', {}).keys())}")
+        print()
+    else:
+        print("⚠️  Could not retrieve available options from server")
+        print("   Using default test combinations...")
         print()
 
     # Define comprehensive test combinations to validate PR #171
