@@ -40,6 +40,7 @@ class ScenarioType(Enum):
     LOAN_APPLICATION = "loan_application"
     COMPLAINT = "complaint"
     GENERAL_INQUIRY = "general_inquiry"
+    CLAIM_FILING = "claim_filing"
 
 
 @dataclass

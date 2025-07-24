@@ -10,7 +10,9 @@ from .caller_factory import (
     get_caller_config,
     register_caller_functions,
     get_available_caller_types,
+    get_available_scenarios,
     get_caller_description,
+    get_scenario_description,
 )
 
 # Individual caller configurations
@@ -25,7 +27,9 @@ __all__ = [
     "get_caller_config",
     "register_caller_functions",
     "get_available_caller_types",
+    "get_available_scenarios",
     "get_caller_description",
+    "get_scenario_description",
     
     # Individual caller configurations
     "get_typical_caller_config",
