@@ -375,7 +375,8 @@ class TestLocalRealtimeClient:
         # Mock websockets.connect
         mock_ws = AsyncMock()
         mock_connect = AsyncMock(return_value=mock_ws)
-        with patch('opusagent.local.realtime.client.websockets.connect', mock_connect):
+        with patch('opusagent.local.realtime.client.websockets.connect', mock_connect), \
+             patch('opusagent.utils.websocket_utils.WebSocketUtils.safe_send_event', new=AsyncMock(return_value=True)):
             await client.connect("ws://localhost:8080")
         
         assert client.connected is True

@@ -35,6 +35,7 @@ from opusagent.vad.vad_config import load_vad_config
 from opusagent.vad.vad_factory import VADFactory
 from opusagent.vad.audio_processor import to_float32_mono
 from tui.utils.audio_utils import AudioUtils
+from opusagent.utils.websocket_utils import WebSocketUtils
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -269,6 +270,9 @@ class AudioStreamHandler:
             logger.debug(
                 f"Sending audio to realtime-websocket (size: {len(audio_chunk_b64)} bytes base64)"
             )
+            if WebSocketUtils.is_websocket_closed(self.realtime_websocket):
+                logger.warning("Attempted to send audio to realtime-websocket after close; message not sent.")
+                return
             await self.realtime_websocket.send(audio_append.model_dump_json())
 
         except Exception as e:
@@ -295,7 +299,7 @@ class AudioStreamHandler:
                 return
 
             # Check if platform websocket is available and not closed
-            if not self.platform_websocket or self._is_websocket_closed():
+            if not self.platform_websocket or self._is_websocket_closed() or WebSocketUtils.is_websocket_closed(self.platform_websocket):
                 logger.debug(
                     "Skipping audio delta - platform websocket is closed or unavailable"
                 )

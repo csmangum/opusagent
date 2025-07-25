@@ -152,7 +152,7 @@ class SessionManager:
         """
         # Generate conversation ID if not provided
         if conversation_id is None:
-            conversation_id = f"conv_{uuid.uuid4().hex[:8]}"
+            conversation_id = f"conv_{str(uuid.uuid4())}"
 
         # Initialize session state
         self.session_state.conversation_id = conversation_id

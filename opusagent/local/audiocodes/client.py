@@ -19,6 +19,7 @@ import queue
 
 import websockets
 
+from opusagent.utils.websocket_utils import WebSocketUtils
 from .audio_manager import AudioManager
 from .audio_playback import AudioPlaybackManager, AudioPlaybackConfig
 from .conversation_manager import ConversationManager
@@ -208,6 +209,10 @@ class LocalAudioCodesClient:
         if not self._ws or not self.connected:
             return
 
+        if WebSocketUtils.is_websocket_closed(self._ws):
+            self.logger.warning("Attempted to send audio chunk on closed WebSocket; message not sent.")
+            return
+
         try:
             message = {
                 "type": "userStream.chunk",
@@ -224,6 +229,10 @@ class LocalAudioCodesClient:
     async def _send_vad_event(self, vad_event: Dict[str, Any]) -> None:
         """Send VAD event to bridge server."""
         if not self._ws or not self.connected:
+            return
+
+        if WebSocketUtils.is_websocket_closed(self._ws):
+            self.logger.warning("Attempted to send VAD event on closed WebSocket; message not sent.")
             return
 
         try:
@@ -252,6 +261,10 @@ class LocalAudioCodesClient:
         if self._ws is None:
             return
 
+        if WebSocketUtils.is_websocket_closed(self._ws):
+            self.logger.warning("Attempted to send VAD event on closed WebSocket; message not sent.")
+            return
+
         try:
             # Create message for the bridge
             message = {
@@ -271,8 +284,11 @@ class LocalAudioCodesClient:
                     message["speech_duration_ms"] = event["data"].get("speech_duration_ms", 0)
 
             # Send to bridge
-            asyncio.create_task(self._ws.send(json.dumps(message)))
-            self.logger.debug(f"[CLIENT] Sent VAD event: {event['type']}")
+            if not WebSocketUtils.is_websocket_closed(self._ws):
+                asyncio.create_task(self._ws.send(json.dumps(message)))
+                self.logger.debug(f"[CLIENT] Sent VAD event: {event['type']}")
+            else:
+                self.logger.warning("Attempted to send VAD event on closed WebSocket; message not sent.")
 
         except Exception as e:
             self.logger.error(f"[CLIENT] Error sending VAD event: {e}")
@@ -439,6 +455,10 @@ class LocalAudioCodesClient:
             self.logger.error("[CLIENT] WebSocket connection is None")
             return False
 
+        if WebSocketUtils.is_websocket_closed(self._ws):
+            self.logger.warning("Attempted to send hangup event on closed WebSocket; message not sent.")
+            return False
+
         try:
             message = self.session_manager.send_hangup_event()
             await self._ws.send(json.dumps(message))
@@ -459,6 +479,10 @@ class LocalAudioCodesClient:
         """
         if self._ws is None:
             self.logger.error("[CLIENT] WebSocket connection is None")
+            return False
+
+        if WebSocketUtils.is_websocket_closed(self._ws):
+            self.logger.warning("Attempted to send custom activity on closed WebSocket; message not sent.")
             return False
 
         try:
@@ -485,6 +509,10 @@ class LocalAudioCodesClient:
         """
         if self._ws is None:
             self.logger.error("[CLIENT] WebSocket connection is None")
+            return False
+
+        if WebSocketUtils.is_websocket_closed(self._ws):
+            self.logger.warning("Attempted to send user audio on closed WebSocket; message not sent.")
             return False
 
         try:
@@ -520,6 +548,9 @@ class LocalAudioCodesClient:
                     "conversationId": self.session_manager.get_conversation_id(),
                     "audioChunk": chunk,
                 }
+                if WebSocketUtils.is_websocket_closed(self._ws):
+                    self.logger.warning("Attempted to send audio chunk on closed WebSocket; message not sent.")
+                    return False
                 await self._ws.send(json.dumps(audio_chunk_msg))
 
                 # Process VAD if enabled
@@ -544,6 +575,9 @@ class LocalAudioCodesClient:
                 "type": "userStream.stop",
                 "conversationId": self.session_manager.get_conversation_id(),
             }
+            if WebSocketUtils.is_websocket_closed(self._ws):
+                self.logger.warning("Attempted to send user stream stop on closed WebSocket; message not sent.")
+                return False
             await self._ws.send(json.dumps(user_stream_stop))
 
             self.logger.info("[CLIENT] User audio sent successfully")
