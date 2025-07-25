@@ -39,6 +39,9 @@ class TestLocalAudioCodesClient:
         mock_ws = AsyncMock()
         mock_ws.send = AsyncMock()
         mock_ws.close = AsyncMock()
+        # Ensure the websocket is seen as open by the new logic
+        mock_ws.closed = False
+        mock_ws.close_code = None
         
         # Create a proper async iterator for the websocket
         async def mock_iter():

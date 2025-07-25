@@ -52,6 +52,9 @@ class TestLocalRealtimeClient(unittest.TestCase):
         # Create a mock WebSocket
         self.mock_ws = AsyncMock()
         self.mock_ws.__aiter__.return_value = []
+        # Ensure the websocket is seen as open by the new logic
+        self.mock_ws.closed = False
+        self.mock_ws.close_code = None
 
         # Create an async mock for websockets.connect that returns our mock WebSocket
         self.mock_connect = AsyncMock(return_value=self.mock_ws)
