@@ -105,6 +105,8 @@ class BridgeValidationResults:
 class AudioCodesBridgeValidator:
     """Comprehensive AudioCodes bridge validation."""
 
+    DEFAULT_TARGET_TURNS = 8
+
     def __init__(
         self,
         bridge_url: str = "ws://localhost:8000/ws/telephony",
@@ -261,7 +263,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Basic connectivity failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_session_lifecycle(self):
         """Test session initiation, acceptance, and termination."""
@@ -310,7 +312,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Session lifecycle failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_connection_validation(self):
         """Test connection validation functionality."""
@@ -341,7 +343,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Connection validation failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_basic_audio_streaming(self):
         """Test basic audio streaming functionality."""
@@ -403,7 +405,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Audio streaming failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_multi_turn_conversation(self):
         """Test multi-turn conversation functionality."""
@@ -484,7 +486,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Multi-turn conversation failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_vad_functionality(self):
         """Test Voice Activity Detection functionality."""
@@ -532,7 +534,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ VAD functionality failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_session_resumption(self):
         """Test session resumption functionality."""
@@ -580,7 +582,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Session resumption failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_dtmf_events(self):
         """Test DTMF event functionality."""
@@ -624,7 +626,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ DTMF events failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_custom_activities(self):
         """Test custom activity functionality."""
@@ -674,7 +676,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Custom activities failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_concurrent_sessions(self):
         """Test concurrent session handling."""
@@ -741,7 +743,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Concurrent sessions failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _create_concurrent_session(self, bot_name: str, caller: str) -> bool:
         """Create a single concurrent session for testing."""
@@ -845,7 +847,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Performance metrics failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_error_handling(self):
         """Test error handling and recovery."""
@@ -908,7 +910,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Error handling test failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     async def _test_long_conversation(self):
         """Test long conversation with multiple turns."""
@@ -930,7 +932,7 @@ class AudioCodesBridgeValidator:
 
             # Create extended conversation (repeat files if needed)
             extended_files = []
-            target_turns = 8
+            target_turns = self.DEFAULT_TARGET_TURNS
             while len(extended_files) < target_turns:
                 extended_files.extend(self.test_audio_files)
             extended_files = extended_files[:target_turns]
@@ -980,7 +982,7 @@ class AudioCodesBridgeValidator:
 
         except Exception as e:
             self.logger.error(f"❌ Long conversation failed: {e}")
-            self.results.add_test_result(test_name, False, {"error": str(e)}, str(e))
+            self.results.add_test_result(test_name, False, {"error": str(e)}, None)
 
     def print_results(self):
         """Print validation results to console."""

@@ -32,7 +32,8 @@ class WebSocketUtils:
         Returns:
             bool: True if sent successfully, False otherwise
         """
-        if not websocket or WebSocketUtils.is_websocket_closed(websocket):
+        is_closed = WebSocketUtils.is_websocket_closed(websocket) if websocket else True
+        if is_closed:
             if logger_instance:
                 logger_instance.warning(
                     "Attempted to send on closed WebSocket; event not sent."
@@ -66,7 +67,8 @@ class WebSocketUtils:
         Returns:
             bool: True if sent successfully, False otherwise
         """
-        if not websocket or WebSocketUtils.is_websocket_closed(websocket):
+        is_closed = WebSocketUtils.is_websocket_closed(websocket) if websocket else True
+        if is_closed:
             if logger_instance:
                 logger_instance.warning(
                     "Attempted to send on closed WebSocket; message not sent."
