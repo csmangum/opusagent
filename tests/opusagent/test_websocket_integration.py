@@ -383,14 +383,14 @@ class TestWebSocketManagerErrorScenarios:
     @pytest.mark.asyncio
     async def test_connection_failure_handling(self):
         """Test handling of connection failures."""
-        with patch('opusagent.websocket_manager.websockets.connect') as mock_connect:
+        with patch('opusagent.handlers.websocket_manager.websockets.connect') as mock_connect:
             mock_connect.side_effect = Exception("Connection failed")
             
             # Create a new manager for testing
             from opusagent.handlers.websocket_manager import WebSocketManager
             
             # Mock the centralized config to return appropriate values
-            with patch('opusagent.websocket_manager.get_config') as mock_get_config:
+            with patch('opusagent.handlers.websocket_manager.get_config') as mock_get_config:
                 mock_config = Mock()
                 mock_config.websocket.max_connections = 5
                 mock_config.websocket.max_connection_age = 3600
@@ -412,7 +412,7 @@ class TestWebSocketManagerErrorScenarios:
         from opusagent.handlers.websocket_manager import WebSocketManager
         
         # Mock the centralized config to return appropriate values
-        with patch('opusagent.websocket_manager.get_config') as mock_get_config:
+        with patch('opusagent.handlers.websocket_manager.get_config') as mock_get_config:
             mock_config = Mock()
             mock_config.websocket.max_connections = 5
             mock_config.websocket.max_connection_age = 3600

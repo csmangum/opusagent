@@ -133,7 +133,7 @@ class TestWebSocketManager:
     @pytest.fixture
     def mock_websockets_connect(self, event_loop):
         """Mock websockets.connect function."""
-        with patch("opusagent.websocket_manager.websockets.connect") as mock_connect:
+        with patch("opusagent.handlers.websocket_manager.websockets.connect") as mock_connect:
             mock_websocket = AsyncMock()
             mock_websocket.open = True
             mock_websocket.closed = False
@@ -148,7 +148,7 @@ class TestWebSocketManager:
     @pytest.fixture
     def mock_config(self):
         """Mock WebSocketConfig for testing."""
-        with patch("opusagent.websocket_manager.WebSocketConfig") as mock_config:
+        with patch("opusagent.config.models.WebSocketConfig") as mock_config:
             mock_config.validate.return_value = None
             mock_config.MAX_CONNECTIONS = 5
             mock_config.MAX_CONNECTION_AGE = 3600
