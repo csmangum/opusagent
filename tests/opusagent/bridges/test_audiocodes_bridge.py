@@ -751,10 +751,10 @@ async def test_handle_outgoing_audio_audiocodes_success(bridge, mock_websocket):
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     # Test response data
     response_data = {
         "type": "response_audio_delta",
@@ -762,81 +762,99 @@ async def test_handle_outgoing_audio_audiocodes_success(bridge, mock_websocket):
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"  # base64 encoded test audio
+        "delta": "dGVzdCBhdWRpbyBkYXRh",  # base64 encoded test audio
     }
-    
+
     await bridge.handle_outgoing_audio_audiocodes(response_data)
-    
+
     # Verify call recorder was called
-    bridge.call_recorder.record_bot_audio.assert_called_once_with(response_data["delta"])
-    
-    # Verify websocket send was called
-    mock_websocket.send_json.assert_called_once()
-    
-    # Verify the sent message structure
-    sent_payload = mock_websocket.send_json.call_args[0][0]
-    assert sent_payload["type"] == "playStream.chunk"
-    assert sent_payload["conversationId"] == "test-conv-123"
+    bridge.call_recorder.record_bot_audio.assert_called_once_with(
+        response_data["delta"]
+    )
+
+    # Verify websocket send was called twice (start + chunk)
+    assert mock_websocket.send_json.call_count == 2
+
+    # Verify the sent messages structure
+    calls = mock_websocket.send_json.call_args_list
+
+    # First call should be playStream.start
+    start_payload = calls[0][0][0]
+    assert start_payload["type"] == "playStream.start"
+    assert start_payload["conversationId"] == "test-conv-123"
+    assert start_payload["mediaFormat"] == "raw/lpcm16"
+    assert start_payload["participant"] == "caller"
+    assert "streamId" in start_payload
+
+    # Second call should be playStream.chunk
+    chunk_payload = calls[1][0][0]
+    assert chunk_payload["type"] == "playStream.chunk"
+    assert chunk_payload["conversationId"] == "test-conv-123"
     # The audioChunk should be the original base64 audio (no resampling)
-    assert sent_payload["audioChunk"] == response_data["delta"]
-    assert sent_payload["participant"] == "caller"
+    assert chunk_payload["audioChunk"] == response_data["delta"]
+    assert chunk_payload["participant"] == "caller"
+    assert chunk_payload["streamId"] == start_payload["streamId"]
 
 
 @pytest.mark.asyncio
-async def test_handle_outgoing_audio_audiocodes_with_existing_stream(bridge, mock_websocket):
+async def test_handle_outgoing_audio_audiocodes_with_existing_stream(
+    bridge, mock_websocket
+):
     """Test outgoing audio handling when stream already exists."""
     # Set up bridge state
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
     bridge.audio_handler.active_stream_id = "existing-stream-123"
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     await bridge.handle_outgoing_audio_audiocodes(response_data)
-    
+
     # Verify the existing stream ID was used
     sent_payload = mock_websocket.send_json.call_args[0][0]
     assert sent_payload["streamId"] == "existing-stream-123"
 
 
 @pytest.mark.asyncio
-async def test_handle_outgoing_audio_audiocodes_creates_new_stream(bridge, mock_websocket):
+async def test_handle_outgoing_audio_audiocodes_creates_new_stream(
+    bridge, mock_websocket
+):
     """Test outgoing audio handling creates new stream when none exists."""
     # Set up bridge state
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
     bridge.audio_handler.active_stream_id = None  # No existing stream
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     await bridge.handle_outgoing_audio_audiocodes(response_data)
-    
+
     # Verify a new stream ID was created
     assert bridge.audio_handler.active_stream_id is not None
     assert isinstance(bridge.audio_handler.active_stream_id, str)
-    
+
     # Verify the new stream ID was used
     sent_payload = mock_websocket.send_json.call_args[0][0]
     assert sent_payload["streamId"] == bridge.audio_handler.active_stream_id
@@ -848,16 +866,16 @@ async def test_handle_outgoing_audio_audiocodes_connection_closed(bridge):
     # Set up bridge state with closed connection
     bridge.conversation_id = "test-conv-123"
     bridge._closed = True
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     # Should not raise an exception, just return early
     await bridge.handle_outgoing_audio_audiocodes(response_data)
 
@@ -868,16 +886,16 @@ async def test_handle_outgoing_audio_audiocodes_no_conversation_id(bridge):
     # Set up bridge state without conversation ID
     bridge.conversation_id = None
     bridge._closed = False
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     # Should not raise an exception, just return early
     await bridge.handle_outgoing_audio_audiocodes(response_data)
 
@@ -889,16 +907,16 @@ async def test_handle_outgoing_audio_audiocodes_no_websocket(bridge):
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = None
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     # Should not raise an exception, just return early
     await bridge.handle_outgoing_audio_audiocodes(response_data)
 
@@ -910,25 +928,25 @@ async def test_handle_outgoing_audio_audiocodes_websocket_error(bridge, mock_web
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     # Mock websocket to raise an exception
     mock_websocket.send_json.side_effect = Exception("WebSocket error")
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     # Should not raise an exception, just log the error
     await bridge.handle_outgoing_audio_audiocodes(response_data)
-    
+
     # Verify call recorder was still called
     bridge.call_recorder.record_bot_audio.assert_called_once()
 
@@ -939,13 +957,13 @@ async def test_handle_outgoing_audio_audiocodes_invalid_response_data(bridge):
     # Set up bridge state
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
-    
+
     # Test with invalid response data (missing required fields)
     invalid_response_data = {
         "type": "response_audio_delta"
         # Missing 'delta' field
     }
-    
+
     # Should not raise an exception, just log the error
     await bridge.handle_outgoing_audio_audiocodes(invalid_response_data)
 
@@ -957,65 +975,78 @@ async def test_handle_outgoing_audio_audiocodes_empty_audio(bridge, mock_websock
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": ""  # Empty base64 audio
+        "delta": "",  # Empty base64 audio
     }
-    
+
     await bridge.handle_outgoing_audio_audiocodes(response_data)
-    
+
     # Verify call recorder was called
     bridge.call_recorder.record_bot_audio.assert_called_once_with("")
-    
-    # For empty audio, the websocket send should not be called due to validation error
-    # The method should handle the error gracefully and not send anything
-    mock_websocket.send_json.assert_not_called()
+
+    # For empty audio, only the playStream.start should be called
+    # The playStream.chunk will fail validation and not be sent
+    assert mock_websocket.send_json.call_count == 1
+
+    # Verify the sent message is playStream.start
+    sent_payload = mock_websocket.send_json.call_args[0][0]
+    assert sent_payload["type"] == "playStream.start"
+    assert sent_payload["conversationId"] == "test-conv-123"
+    assert sent_payload["mediaFormat"] == "raw/lpcm16"
+    assert sent_payload["participant"] == "caller"
+    assert "streamId" in sent_payload
 
 
 @pytest.mark.asyncio
 async def test_handle_outgoing_audio_audiocodes_audio_handler_override(bridge):
     """Test that the audio handler's outgoing audio method is overridden."""
     # Verify that the audio handler's handle_outgoing_audio method is overridden
-    assert bridge.audio_handler.handle_outgoing_audio == bridge.handle_outgoing_audio_audiocodes
+    assert (
+        bridge.audio_handler.handle_outgoing_audio
+        == bridge.handle_outgoing_audio_audiocodes
+    )
 
 
 @pytest.mark.asyncio
-async def test_handle_outgoing_audio_audiocodes_stream_id_persistence(bridge, mock_websocket):
+async def test_handle_outgoing_audio_audiocodes_stream_id_persistence(
+    bridge, mock_websocket
+):
     """Test that stream ID persists across multiple audio chunks."""
     # Set up bridge state
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
     bridge.audio_handler.active_stream_id = None
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": "dGVzdCBhdWRpbyBkYXRh"
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
     }
-    
+
     # Send first audio chunk
     await bridge.handle_outgoing_audio_audiocodes(response_data)
     first_stream_id = bridge.audio_handler.active_stream_id
-    
+
     # Send second audio chunk
     await bridge.handle_outgoing_audio_audiocodes(response_data)
     second_stream_id = bridge.audio_handler.active_stream_id
-    
+
     # Stream ID should be the same for both chunks
     assert first_stream_id == second_stream_id
     assert first_stream_id is not None
@@ -1028,24 +1059,24 @@ async def test_handle_outgoing_audio_audiocodes_base64_encoding(bridge, mock_web
     bridge.conversation_id = "test-conv-123"
     bridge._closed = False
     bridge.platform_websocket = mock_websocket
-    
+
     # Mock the call recorder
     bridge.call_recorder = AsyncMock()
-    
+
     # Test with specific base64 audio data
     test_audio_base64 = "dGVzdCBhdWRpbyBkYXRh"  # base64 encoding of "test audio data"
-    
+
     response_data = {
         "type": "response_audio_delta",
         "response_id": "resp_123",
         "item_id": "item_123",
         "output_index": 0,
         "content_index": 0,
-        "delta": test_audio_base64
+        "delta": test_audio_base64,
     }
-    
+
     await bridge.handle_outgoing_audio_audiocodes(response_data)
-    
+
     # Verify the sent payload contains the original base64 encoded audio
     sent_payload = mock_websocket.send_json.call_args[0][0]
     assert sent_payload["audioChunk"] == test_audio_base64

@@ -96,12 +96,12 @@ class MessageHandler:
             session_manager (SessionManager): Session manager instance for state updates
             logger (Optional[logging.Logger]): Logger instance for debugging and monitoring.
                                              If None, creates a default logger for this module.
-        
+
         Example:
             # Create MessageHandler with session manager
             session_manager = SessionManager(config)
             message_handler = MessageHandler(session_manager)
-            
+
             # Create with custom logger
             custom_logger = logging.getLogger("custom_messages")
             message_handler = MessageHandler(session_manager, logger=custom_logger)
@@ -152,14 +152,12 @@ class MessageHandler:
             MessageType.CONNECTION_VALIDATED: [
                 self.session_manager.handle_connection_validated
             ],
-            
             # Stream control handlers
             MessageType.USER_STREAM_STARTED: [self._handle_user_stream_started],
             MessageType.USER_STREAM_STOPPED: [self._handle_user_stream_stopped],
             MessageType.PLAY_STREAM_START: [self._handle_play_stream_start],
             MessageType.PLAY_STREAM_CHUNK: [self._handle_play_stream_chunk],
             MessageType.PLAY_STREAM_STOP: [self._handle_play_stream_stop],
-            
             # Activity and speech handlers
             MessageType.ACTIVITIES: [self._handle_activities],
             MessageType.USER_STREAM_SPEECH_STARTED: [self._handle_speech_started],
@@ -208,13 +206,13 @@ class MessageHandler:
             def custom_session_handler(data):
                 print(f"Custom session handling: {data}")
                 # Custom processing logic here
-            
+
             message_handler.register_event_handler("session.accepted", custom_session_handler)
-            
+
             # Register multiple handlers for same message type
             def logging_handler(data):
                 logger.info(f"Received message: {data}")
-            
+
             message_handler.register_event_handler("session.accepted", logging_handler)
         """
         if event_type not in self.event_handlers:
@@ -287,9 +285,7 @@ class MessageHandler:
 
             # Create structured message event
             event = MessageEvent(
-                type=msg_type, 
-                conversation_id=data.get("conversationId"), 
-                data=data
+                type=msg_type, conversation_id=data.get("conversationId"), data=data
             )
 
             # Trigger all registered handlers for this message type
@@ -339,9 +335,7 @@ class MessageHandler:
                 try:
                     handler(data)
                 except Exception as e:
-                    self.logger.error(
-                        f"[MESSAGE] Handler error for {msg_type}: {e}"
-                    )
+                    self.logger.error(f"[MESSAGE] Handler error for {msg_type}: {e}")
 
     def _handle_user_stream_started(self, data: Dict[str, Any]) -> None:
         """
@@ -364,6 +358,7 @@ class MessageHandler:
             # Internal handler - called automatically by process_message()
         """
         from .models import StreamStatus
+
         self.session_manager.stream_state.user_stream = StreamStatus.ACTIVE
         self.logger.info("[MESSAGE] User stream started")
 
@@ -388,6 +383,7 @@ class MessageHandler:
             # Internal handler - called automatically by process_message()
         """
         from .models import StreamStatus
+
         self.session_manager.stream_state.user_stream = StreamStatus.STOPPED
         self.logger.info("[MESSAGE] User stream stopped")
 
@@ -417,23 +413,31 @@ class MessageHandler:
             # Internal handler - called automatically by process_message()
         """
         from .models import StreamStatus
+
         self.session_manager.stream_state.play_stream = StreamStatus.ACTIVE
-        
+
         # Set current stream ID if provided
         stream_id = data.get("streamId")
         if stream_id:
             self.session_manager.stream_state.current_stream_id = stream_id
-        
+
         # Update conversation state for audio collection
         if self.session_manager.conversation_state:
-            if not self.session_manager.conversation_state.greeting_chunks:
+            # Check if we already have greeting chunks to determine if this is a response
+            has_greeting = (
+                len(self.session_manager.conversation_state.greeting_chunks) > 0
+            )
+
+            if not has_greeting:
                 # First audio - likely greeting
                 self.session_manager.conversation_state.collecting_greeting = True
                 self.session_manager.conversation_state.collecting_response = False
+                self.logger.info("[MESSAGE] Starting greeting collection")
             else:
                 # Subsequent audio - likely response
                 self.session_manager.conversation_state.collecting_response = True
                 self.session_manager.conversation_state.collecting_greeting = False
+                self.logger.info("[MESSAGE] Starting response collection")
 
         self.logger.info("[MESSAGE] Play stream started")
 
@@ -465,9 +469,13 @@ class MessageHandler:
         audio_chunk = data.get("audioChunk")
         if audio_chunk and self.session_manager.conversation_state:
             if self.session_manager.conversation_state.collecting_greeting:
-                self.session_manager.conversation_state.greeting_chunks.append(audio_chunk)
+                self.session_manager.conversation_state.greeting_chunks.append(
+                    audio_chunk
+                )
             elif self.session_manager.conversation_state.collecting_response:
-                self.session_manager.conversation_state.response_chunks.append(audio_chunk)
+                self.session_manager.conversation_state.response_chunks.append(
+                    audio_chunk
+                )
 
         self.logger.debug("[MESSAGE] Play stream chunk received")
 
@@ -498,7 +506,7 @@ class MessageHandler:
             # Internal handler - called automatically by process_message()
         """
         from .models import StreamStatus
-        
+
         # Finalize audio collection
         if self.session_manager.conversation_state:
             if self.session_manager.conversation_state.collecting_greeting:
@@ -516,6 +524,10 @@ class MessageHandler:
                 # Set to STOPPED for response completion and clear stream ID
                 self.session_manager.stream_state.play_stream = StreamStatus.STOPPED
                 self.session_manager.stream_state.current_stream_id = None
+            else:
+                self.logger.warning(
+                    "[MESSAGE] Play stream stopped but no collection was active"
+                )
 
         self.logger.info("[MESSAGE] Play stream stopped")
 
@@ -546,7 +558,9 @@ class MessageHandler:
         """
         activities = data.get("activities", [])
         if activities and self.session_manager.conversation_state:
-            self.session_manager.conversation_state.activities_received.extend(activities)
+            self.session_manager.conversation_state.activities_received.extend(
+                activities
+            )
             self.session_manager.conversation_state.last_activity = activities[-1]
 
         self.logger.info(f"[MESSAGE] Received {len(activities)} activities")
@@ -664,7 +678,7 @@ class MessageHandler:
             # Get message history
             messages = message_handler.get_received_messages()
             print(f"Received {len(messages)} messages")
-            
+
             # Analyze message types
             for msg in messages:
                 print(f"Message type: {msg.get('type')}")
@@ -768,7 +782,7 @@ class MessageHandler:
             # Get all session messages
             session_messages = message_handler.get_messages_by_type("session.accepted")
             print(f"Found {len(session_messages)} session acceptance messages")
-            
+
             # Get all audio chunks
             audio_messages = message_handler.get_messages_by_type("playStream.chunk")
             print(f"Received {len(audio_messages)} audio chunks")
