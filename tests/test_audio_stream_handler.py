@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from starlette.websockets import WebSocketState
 
-from opusagent.audio_stream_handler import AudioStreamHandler
+from opusagent.handlers.audio_stream_handler import AudioStreamHandler
 from opusagent.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,

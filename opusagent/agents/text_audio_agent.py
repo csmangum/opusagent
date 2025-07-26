@@ -51,13 +51,13 @@ from opusagent.models.tool_models import (
     ToolParameter,
     ToolParameters,
 )
-from opusagent.websocket_manager import get_websocket_manager
-from opusagent.function_handler import FunctionHandler
-from opusagent.realtime_handler import RealtimeHandler
-from opusagent.audio_stream_handler import AudioStreamHandler
-from opusagent.session_manager import SessionManager
-from opusagent.event_router import EventRouter
-from opusagent.transcript_manager import TranscriptManager
+from opusagent.handlers.websocket_manager import get_websocket_manager
+from opusagent.handlers.function_handler import FunctionHandler
+from opusagent.handlers.realtime_handler import RealtimeHandler
+from opusagent.handlers.audio_stream_handler import AudioStreamHandler
+from opusagent.handlers.session_manager import SessionManager
+from opusagent.handlers.event_router import EventRouter
+from opusagent.handlers.transcript_manager import TranscriptManager
 
 logger = configure_logging("text_audio_agent")
 

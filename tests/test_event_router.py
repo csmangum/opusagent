@@ -9,7 +9,7 @@ import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from opusagent.event_router import EventRouter
+from opusagent.handlers.event_router import EventRouter
 from opusagent.models.audiocodes_api import TelephonyEventType
 from opusagent.models.openai_api import LogEventType, ServerEventType
 

@@ -9,13 +9,13 @@ from typing import Any, Dict, Optional
 
 import websockets
 
-from opusagent.audio_stream_handler import AudioStreamHandler
+from opusagent.handlers.audio_stream_handler import AudioStreamHandler
 from opusagent.config.logging_config import configure_logging
-from opusagent.event_router import EventRouter
-from opusagent.function_handler import FunctionHandler
+from opusagent.handlers.event_router import EventRouter
+from opusagent.handlers.function_handler import FunctionHandler
 from opusagent.models.openai_api import ResponseDoneEvent, ServerEventType
-from opusagent.session_manager import SessionManager
-from opusagent.transcript_manager import TranscriptManager
+from opusagent.handlers.session_manager import SessionManager
+from opusagent.handlers.transcript_manager import TranscriptManager
 
 # Configure logging
 logger = configure_logging("realtime_handler")

@@ -25,7 +25,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 import numpy as np
 import pytest
 
-from opusagent.call_recorder import (AudioChannel, CallMetadata,
+from opusagent.utils.call_recorder import (AudioChannel, CallMetadata,
                                             CallRecorder, TranscriptEntry,
                                             TranscriptType)
 

@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from opusagent.websocket_manager import get_websocket_manager
+from opusagent.handlers.websocket_manager import get_websocket_manager
 
 
 class TestWebSocketManagerIntegration:
@@ -338,7 +338,7 @@ class TestWebSocketManagerConfiguration:
         """Test that configuration is properly loaded on module import."""
         # Re-import to test configuration loading
         import importlib
-        from opusagent import websocket_manager as ws_manager_module
+        from opusagent.handlers import websocket_manager as ws_manager_module
         
         # This should not raise any exceptions
         importlib.reload(ws_manager_module)
@@ -383,14 +383,14 @@ class TestWebSocketManagerErrorScenarios:
     @pytest.mark.asyncio
     async def test_connection_failure_handling(self):
         """Test handling of connection failures."""
-        with patch('opusagent.websocket_manager.websockets.connect') as mock_connect:
+        with patch('opusagent.handlers.websocket_manager.websockets.connect') as mock_connect:
             mock_connect.side_effect = Exception("Connection failed")
             
             # Create a new manager for testing
-            from opusagent.websocket_manager import WebSocketManager
+            from opusagent.handlers.websocket_manager import WebSocketManager
             
             # Mock the centralized config to return appropriate values
-            with patch('opusagent.websocket_manager.get_config') as mock_get_config:
+            with patch('opusagent.handlers.websocket_manager.get_config') as mock_get_config:
                 mock_config = Mock()
                 mock_config.websocket.max_connections = 5
                 mock_config.websocket.max_connection_age = 3600
@@ -409,10 +409,10 @@ class TestWebSocketManagerErrorScenarios:
     @pytest.mark.asyncio
     async def test_health_check_error_recovery(self):
         """Test health check error recovery."""
-        from opusagent.websocket_manager import WebSocketManager
+        from opusagent.handlers.websocket_manager import WebSocketManager
         
         # Mock the centralized config to return appropriate values
-        with patch('opusagent.websocket_manager.get_config') as mock_get_config:
+        with patch('opusagent.handlers.websocket_manager.get_config') as mock_get_config:
             mock_config = Mock()
             mock_config.websocket.max_connections = 5
             mock_config.websocket.max_connection_age = 3600

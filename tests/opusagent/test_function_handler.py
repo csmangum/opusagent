@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from opusagent.function_handler import FunctionHandler
+from opusagent.handlers.function_handler import FunctionHandler
 
 
 @pytest.fixture

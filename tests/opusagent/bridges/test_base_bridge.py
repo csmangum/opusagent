@@ -6,12 +6,12 @@ from fastapi import WebSocket
 from starlette.websockets import WebSocketState
 
 from opusagent.bridges.base_bridge import BaseRealtimeBridge
-from opusagent.event_router import EventRouter
-from opusagent.audio_stream_handler import AudioStreamHandler
-from opusagent.function_handler import FunctionHandler
-from opusagent.session_manager import SessionManager
-from opusagent.transcript_manager import TranscriptManager
-from opusagent.realtime_handler import RealtimeHandler
+from opusagent.handlers.event_router import EventRouter
+from opusagent.handlers.audio_stream_handler import AudioStreamHandler
+from opusagent.handlers.function_handler import FunctionHandler
+from opusagent.handlers.session_manager import SessionManager
+from opusagent.handlers.transcript_manager import TranscriptManager
+from opusagent.handlers.realtime_handler import RealtimeHandler
 from opusagent.models.audiocodes_api import TelephonyEventType
 from opusagent.models.openai_api import SessionConfig
 

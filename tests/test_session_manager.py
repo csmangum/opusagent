@@ -8,7 +8,7 @@ import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from opusagent.session_manager import SessionManager
+from opusagent.handlers.session_manager import SessionManager
 from opusagent.models.openai_api import SessionConfig, SessionUpdateEvent
 
 # Test constants

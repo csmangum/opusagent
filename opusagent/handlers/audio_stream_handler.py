@@ -14,8 +14,8 @@ from typing import Any, Dict, Optional
 import websockets
 from fastapi import WebSocket
 
-from opusagent.audio_quality_monitor import AudioQualityMonitor, QualityThresholds
-from opusagent.call_recorder import CallRecorder
+from opusagent.utils.audio_quality_monitor import AudioQualityMonitor, QualityThresholds
+from opusagent.utils.call_recorder import CallRecorder
 from opusagent.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
