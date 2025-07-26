@@ -24,6 +24,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from opusagent.config.constants import NO_NEW_CHUNKS_THRESHOLD
+
 from .audio_manager import AudioManager
 from .models import ConversationResult, ConversationState
 from .session_manager import SessionManager
@@ -146,7 +148,7 @@ class ConversationManager:
                 if current_chunk_count == last_chunk_count:
                     no_new_chunks_count += 1
                     # If no new chunks for 2 seconds, assume greeting is complete
-                    if no_new_chunks_count >= 20:  # 20 * 0.1s = 2s
+                    if no_new_chunks_count >= NO_NEW_CHUNKS_THRESHOLD:
                         self.logger.info(
                             f"[CONVERSATION] Greeting appears complete (no new chunks for 2s): {current_chunk_count} chunks"
                         )
@@ -220,7 +222,7 @@ class ConversationManager:
                 if current_chunk_count == last_chunk_count:
                     no_new_chunks_count += 1
                     # If no new chunks for 2 seconds, assume response is complete
-                    if no_new_chunks_count >= 20:  # 20 * 0.1s = 2s
+                    if no_new_chunks_count >= NO_NEW_CHUNKS_THRESHOLD:
                         self.logger.info(
                             f"[CONVERSATION] Response appears complete (no new chunks for 2s): {current_chunk_count} chunks"
                         )
