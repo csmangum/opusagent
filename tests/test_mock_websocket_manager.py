@@ -12,7 +12,7 @@ import pytest
 from unittest.mock import patch
 import sys
 
-from opusagent.websocket_manager import (
+from opusagent.handlers.websocket_manager import (
     WebSocketManager,
     create_mock_websocket_manager,
     create_websocket_manager,
@@ -132,19 +132,19 @@ class TestMockWebSocketManager:
     async def test_environment_variable_configuration(self):
         """Test that environment variables control mock mode."""
         # Clear the cached websocket manager
-        from opusagent.websocket_manager import _websocket_manager_instance
+        from opusagent.handlers.websocket_manager import _websocket_manager_instance
         
         # Store original manager
         original_manager = _websocket_manager_instance
         
         try:
             # Clear cached manager instance
-            import opusagent.websocket_manager
-            opusagent.websocket_manager._websocket_manager_instance = None
+            import opusagent.handlers.websocket_manager
+            opusagent.handlers.websocket_manager._websocket_manager_instance = None
             
             # Clear the cached config in websocket_manager module
-            if hasattr(opusagent.websocket_manager, 'config'):
-                delattr(opusagent.websocket_manager, 'config')
+            if hasattr(opusagent.handlers.websocket_manager, 'config'):
+                delattr(opusagent.handlers.websocket_manager, 'config')
             
             with patch.dict('os.environ', {
                 'OPUSAGENT_USE_MOCK': 'true',
@@ -152,7 +152,7 @@ class TestMockWebSocketManager:
             }):
                 # Reload configuration and get manager
                 from opusagent.config.settings import reload_config
-                from opusagent.websocket_manager import get_websocket_manager
+                from opusagent.handlers.websocket_manager import get_websocket_manager
                 
                 reload_config()
                 manager = get_websocket_manager()
@@ -163,8 +163,8 @@ class TestMockWebSocketManager:
                 await manager.shutdown()
         finally:
             # Restore original manager
-            import opusagent.websocket_manager
-            opusagent.websocket_manager._websocket_manager_instance = original_manager
+            import opusagent.handlers.websocket_manager
+            opusagent.handlers.websocket_manager._websocket_manager_instance = original_manager
 
     @pytest.mark.asyncio
     async def test_mock_connection_logging(self):

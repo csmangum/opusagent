@@ -30,11 +30,11 @@ from opusagent.config.env_loader import load_env_file
 from opusagent.config.logging_config import configure_logging
 from opusagent.config.models import WebSocketConfig
 from opusagent.agents.banking_agent import session_config
-from opusagent.session_manager import SessionManager
-from opusagent.websocket_manager import get_websocket_manager, WebSocketManager
+from opusagent.handlers.session_manager import SessionManager
+from opusagent.handlers.websocket_manager import get_websocket_manager, WebSocketManager
 from opusagent.callers import get_available_caller_types, get_caller_description, get_available_scenarios, get_scenario_description
 from opusagent.local.realtime import create_mock_websocket_connection
-from opusagent.websocket_manager import get_websocket_manager
+from opusagent.handlers.websocket_manager import get_websocket_manager
 
 # Load environment variables before accessing configuration
 load_env_file()

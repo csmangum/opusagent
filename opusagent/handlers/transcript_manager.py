@@ -6,7 +6,7 @@ audio streams, including buffering, logging, and recording transcripts.
 
 from typing import List, Optional, Dict, Any
 
-from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
+from opusagent.utils.call_recorder import AudioChannel, CallRecorder, TranscriptType
 from opusagent.config.logging_config import configure_logging
 
 logger = configure_logging("transcript_manager")

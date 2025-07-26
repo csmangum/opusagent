@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from opusagent.websocket_manager import (
+from opusagent.handlers.websocket_manager import (
     RealtimeConnection,
     WebSocketManager,
     get_websocket_manager,

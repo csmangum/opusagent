@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from opusagent.call_recorder import AudioChannel, CallRecorder, TranscriptType
-from opusagent.transcript_manager import TranscriptManager
+from opusagent.utils.call_recorder import AudioChannel, CallRecorder, TranscriptType
+from opusagent.handlers.transcript_manager import TranscriptManager
 
 
 @pytest.fixture

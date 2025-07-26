@@ -19,8 +19,8 @@ import time
 from opusagent.session_storage.memory_storage import MemorySessionStorage
 from opusagent.models.session_state import SessionState, SessionStatus
 from opusagent.services.session_manager_service import SessionManagerService
-from opusagent.transcript_manager import TranscriptManager
-from opusagent.function_handler import FunctionHandler
+from opusagent.handlers.transcript_manager import TranscriptManager
+from opusagent.handlers.function_handler import FunctionHandler
 
 
 class TestSessionState:

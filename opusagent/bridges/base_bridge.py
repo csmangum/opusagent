@@ -13,16 +13,16 @@ from typing import Any, Dict, Optional, Union
 
 from websockets.asyncio.client import ClientConnection
 
-from opusagent.audio_quality_monitor import QualityThresholds
-from opusagent.audio_stream_handler import AudioStreamHandler
-from opusagent.call_recorder import CallRecorder
+from opusagent.utils.audio_quality_monitor import QualityThresholds
+from opusagent.handlers.audio_stream_handler import AudioStreamHandler
+from opusagent.utils.call_recorder import CallRecorder
 from opusagent.config.logging_config import configure_logging
-from opusagent.event_router import EventRouter
-from opusagent.function_handler import FunctionHandler
+from opusagent.handlers.event_router import EventRouter
+from opusagent.handlers.function_handler import FunctionHandler
 from opusagent.models.openai_api import SessionConfig
-from opusagent.realtime_handler import RealtimeHandler
-from opusagent.session_manager import SessionManager
-from opusagent.transcript_manager import TranscriptManager
+from opusagent.handlers.realtime_handler import RealtimeHandler
+from opusagent.handlers.session_manager import SessionManager
+from opusagent.handlers.transcript_manager import TranscriptManager
 from opusagent.services.session_manager_service import SessionManagerService
 from opusagent.models.session_state import SessionState
 from opusagent.session_storage import SessionStorage
