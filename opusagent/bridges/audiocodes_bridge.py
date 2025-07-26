@@ -30,6 +30,7 @@ from opusagent.config.logging_config import configure_logging
 from opusagent.models.audiocodes_api import (
     ConnectionValidatedResponse,
     PlayStreamChunkMessage,
+    PlayStreamStartMessage,
     SessionAcceptedResponse,
     TelephonyEventType,
     UserStreamSpeechCommittedResponse,
@@ -182,7 +183,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         logger.info(f"Session initiate received: {data}")
         conversation_id = data.get("conversationId")
         supported_formats = data.get("supportedMediaFormats", ["raw/lpcm16"])
-        
+
         # Prefer 24kHz format if available (AudioCodes supports it natively)
         if "raw/lpcm16_24" in supported_formats:
             self.media_format = "raw/lpcm16_24"
@@ -304,7 +305,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         logger.info(f"Session resume received: {data}")
         conversation_id = data.get("conversationId")
         supported_formats = data.get("supportedMediaFormats", ["raw/lpcm16"])
-        
+
         # Prefer 24kHz format if available (AudioCodes supports it natively)
         if "raw/lpcm16_24" in supported_formats:
             self.media_format = "raw/lpcm16_24"
@@ -316,7 +317,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         try:
             # Initialize conversation (will attempt resume)
             await self.initialize_conversation(conversation_id)
-            
+
             if self.session_state and self.session_state.resumed_count > 0:
                 # Successfully resumed
                 await self.send_session_resumed()
@@ -324,8 +325,10 @@ class AudioCodesBridge(BaseRealtimeBridge):
             else:
                 # Failed to resume, treat as new session
                 await self.send_session_accepted()
-                logger.info(f"Session resume failed, created new session: {conversation_id}")
-                
+                logger.info(
+                    f"Session resume failed, created new session: {conversation_id}"
+                )
+
         except Exception as e:
             logger.error(f"Error during session resume: {e}")
             # Fall back to new session creation
@@ -652,8 +655,9 @@ class AudioCodesBridge(BaseRealtimeBridge):
             This method:
             1. Parses the audio delta event from OpenAI
             2. Records bot audio if call recording is enabled
-            3. Sends audio directly to AudioCodes without resampling (24kHz PCM16)
-            4. Creates a new stream ID if none exists
+            3. Sends playStream.start if starting a new stream
+            4. Sends audio directly to AudioCodes without resampling (24kHz PCM16)
+            5. Creates a new stream ID if none exists
 
         Raises:
             Exception: Logs errors but doesn't raise to prevent audio pipeline disruption
@@ -678,10 +682,25 @@ class AudioCodesBridge(BaseRealtimeBridge):
             if self.call_recorder:
                 await self.call_recorder.record_bot_audio(audio_delta.delta)
 
-            # Ensure we have an active stream
+            # Start a new audio stream if needed
             if not self.audio_handler.active_stream_id:
                 logger.debug("No active stream, creating new one")
                 self.audio_handler.active_stream_id = str(uuid.uuid4())
+
+                # Send playStream.start message
+                stream_start = PlayStreamStartMessage(
+                    type=TelephonyEventType.PLAY_STREAM_START,
+                    conversationId=self.conversation_id,
+                    streamId=self.audio_handler.active_stream_id,
+                    mediaFormat=self.media_format or "raw/lpcm16",
+                    participant="caller",
+                    altText=None,
+                    activityParams=None,
+                )
+                await self.platform_websocket.send_json(stream_start.model_dump())
+                logger.info(
+                    f"Started play stream: {self.audio_handler.active_stream_id}"
+                )
 
             # Send audio chunk to platform client (no resampling needed - AudioCodes supports 24kHz)
             stream_chunk = PlayStreamChunkMessage(

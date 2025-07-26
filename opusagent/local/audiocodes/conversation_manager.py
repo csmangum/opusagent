@@ -24,6 +24,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from opusagent.config.constants import NO_NEW_CHUNKS_THRESHOLD
+
 from .audio_manager import AudioManager
 from .models import ConversationResult, ConversationState
 from .session_manager import SessionManager
@@ -123,17 +125,38 @@ class ConversationManager:
 
         # Calculate end time for timeout
         end_time = asyncio.get_event_loop().time() + timeout
+        last_chunk_count = 0
+        no_new_chunks_count = 0
 
         # Poll for greeting completion
         while asyncio.get_event_loop().time() < end_time:
+            current_chunk_count = len(self.conversation_state.greeting_chunks)
+
+            # Check if we have greeting chunks and collection is complete
             if (
-                self.conversation_state.greeting_chunks
+                current_chunk_count > 0
                 and not self.conversation_state.collecting_greeting
             ):
                 self.logger.info(
-                    f"[CONVERSATION] Greeting received: {len(self.conversation_state.greeting_chunks)} chunks"
+                    f"[CONVERSATION] Greeting received: {current_chunk_count} chunks"
                 )
                 return self.conversation_state.greeting_chunks.copy()
+
+            # Check if we have greeting chunks but collection flag is still true
+            # This can happen if the play stream stop message hasn't been processed yet
+            if current_chunk_count > 0:
+                if current_chunk_count == last_chunk_count:
+                    no_new_chunks_count += 1
+                    # If no new chunks for 2 seconds, assume greeting is complete
+                    if no_new_chunks_count >= NO_NEW_CHUNKS_THRESHOLD:
+                        self.logger.info(
+                            f"[CONVERSATION] Greeting appears complete (no new chunks for 2s): {current_chunk_count} chunks"
+                        )
+                        return self.conversation_state.greeting_chunks.copy()
+                else:
+                    no_new_chunks_count = 0
+                    last_chunk_count = current_chunk_count
+
             await asyncio.sleep(0.1)
 
         self.logger.error("[CONVERSATION] Timeout waiting for LLM greeting")
@@ -176,17 +199,38 @@ class ConversationManager:
 
         # Calculate end time for timeout
         end_time = asyncio.get_event_loop().time() + timeout
+        last_chunk_count = 0
+        no_new_chunks_count = 0
 
         # Poll for response completion
         while asyncio.get_event_loop().time() < end_time:
+            current_chunk_count = len(self.conversation_state.response_chunks)
+
+            # Check if we have response chunks and collection is complete
             if (
-                self.conversation_state.response_chunks
+                current_chunk_count > 0
                 and not self.conversation_state.collecting_response
             ):
                 self.logger.info(
-                    f"[CONVERSATION] Response received: {len(self.conversation_state.response_chunks)} chunks"
+                    f"[CONVERSATION] Response received: {current_chunk_count} chunks"
                 )
                 return self.conversation_state.response_chunks.copy()
+
+            # Check if we have response chunks but collection flag is still true
+            # This can happen if the play stream stop message hasn't been processed yet
+            if current_chunk_count > 0:
+                if current_chunk_count == last_chunk_count:
+                    no_new_chunks_count += 1
+                    # If no new chunks for 2 seconds, assume response is complete
+                    if no_new_chunks_count >= NO_NEW_CHUNKS_THRESHOLD:
+                        self.logger.info(
+                            f"[CONVERSATION] Response appears complete (no new chunks for 2s): {current_chunk_count} chunks"
+                        )
+                        return self.conversation_state.response_chunks.copy()
+                else:
+                    no_new_chunks_count = 0
+                    last_chunk_count = current_chunk_count
+
             await asyncio.sleep(0.1)
 
         self.logger.error("[CONVERSATION] Timeout waiting for LLM response")

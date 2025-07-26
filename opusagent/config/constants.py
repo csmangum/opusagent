@@ -30,3 +30,7 @@ DEFAULT_TRANSCRIPTION_CHUNK_DURATION = 1.0  # Default chunk duration in seconds
 # VAD threshold constants for speech detection hysteresis
 SPEECH_START_THRESHOLD = 2  # Number of consecutive speech detections to start speech
 SPEECH_STOP_THRESHOLD = 3   # Number of consecutive silence detections to stop speech
+
+# Audio collection timeout constants
+# Polling interval is 0.1 seconds, so 20 iterations = 2 seconds
+NO_NEW_CHUNKS_THRESHOLD = int(2.0 / 0.1)  # 20 iterations for 2-second timeout
