@@ -36,18 +36,30 @@ VOICE = "alloy"  # example voice, override as needed
 class TwilioBridge(BaseRealtimeBridge):
     """Twilio Media Streams implementation of the real-time bridge."""
 
-    def __init__(self, platform_websocket, realtime_websocket, session_config: SessionConfig, **kwargs):
-        super().__init__(platform_websocket, realtime_websocket, session_config, bridge_type='twilio', **kwargs)
+    def __init__(
+        self,
+        platform_websocket,
+        realtime_websocket,
+        session_config: SessionConfig,
+        **kwargs,
+    ):
+        super().__init__(
+            platform_websocket,
+            realtime_websocket,
+            session_config,
+            bridge_type="twilio",
+            **kwargs,
+        )
         # Twilio-specific ids / state
         self.stream_sid: Optional[str] = None
         self.account_sid: Optional[str] = None
         self.call_sid: Optional[str] = None
         self.audio_buffer = []  # small buffer before relaying to OpenAI
         self.mark_counter = 0
-        
+
         # Check audio processing dependencies
         self._check_audio_dependencies()
-        
+
         # Override the audio handler's outgoing audio method to use Twilio-specific sending
         self.audio_handler.handle_outgoing_audio = self.handle_outgoing_audio_twilio
 
@@ -57,10 +69,13 @@ class TwilioBridge(BaseRealtimeBridge):
             # Try to import required libraries
             import librosa
             import numpy as np
+
             logger.info("High-quality audio processing available (librosa + numpy)")
         except ImportError as e:
             logger.warning(f"Audio processing dependencies not available: {e}")
-            logger.warning("Audio quality may be degraded. Install librosa and numpy for best results.")
+            logger.warning(
+                "Audio quality may be degraded. Install librosa and numpy for best results."
+            )
 
     # ------------------------------------------------------------------
     # Platform-specific plumbing
@@ -71,7 +86,7 @@ class TwilioBridge(BaseRealtimeBridge):
 
     def register_platform_event_handlers(self):
         """Register Twilio-specific event handlers.
-        
+
         This method creates a mapping of Twilio event types to their handlers
         """
         # Create event handler mappings for Twilio events
@@ -184,6 +199,7 @@ class TwilioBridge(BaseRealtimeBridge):
         """Convert μ-law to PCM16 using audioop or proper fallback."""
         try:
             import audioop
+
             return audioop.ulaw2lin(mulaw_bytes, 2)
         except Exception as e:
             logger.warning(f"audioop.ulaw2lin failed, using AudioUtils fallback: {e}")
@@ -194,6 +210,7 @@ class TwilioBridge(BaseRealtimeBridge):
         """Convert PCM16 to μ-law using audioop or proper fallback."""
         try:
             import audioop
+
             return audioop.lin2ulaw(pcm16_data, 2)
         except Exception as e:
             logger.warning(f"audioop.lin2ulaw failed, using AudioUtils fallback: {e}")
@@ -202,7 +219,7 @@ class TwilioBridge(BaseRealtimeBridge):
 
     async def send_audio_to_twilio(self, pcm16_data: bytes):
         """Send audio to Twilio with improved quality and error handling.
-        
+
         Key improvements:
         - High-quality resampling using librosa with proper anti-aliasing
         - Correct μ-law conversion using lookup tables
@@ -214,18 +231,18 @@ class TwilioBridge(BaseRealtimeBridge):
         if not self.stream_sid:
             logger.warning("Cannot send audio to Twilio: stream_sid not set")
             return
-            
+
         if not pcm16_data:
             logger.debug("Skipping empty audio data")
             return
-            
+
         logger.debug(f"Sending {len(pcm16_data)} bytes of PCM16 audio to Twilio")
-        
+
         # Calculate audio level for monitoring and quality validation
         try:
             audio_level = AudioUtils.visualize_audio_level(pcm16_data, max_bars=5)
             logger.debug(f"Audio level: {audio_level}")
-            
+
             # Validate audio quality - warn about potential issues
             if audio_level.count("▁") == len(audio_level):
                 logger.warning("Audio appears to be silent or very quiet")
@@ -233,29 +250,33 @@ class TwilioBridge(BaseRealtimeBridge):
                 logger.warning("Audio may be clipping - levels very high")
         except Exception as e:
             logger.debug(f"Could not calculate audio level: {e}")
-        
+
         # Resample from 24kHz to 8kHz if needed
         # OpenAI sends 24kHz PCM16, but Twilio expects 8kHz μ-law
         resampled_pcm16 = self._resample_audio(pcm16_data, 24000, 8000)
-        logger.debug(f"Resampled from 24kHz to 8kHz: {len(pcm16_data)} -> {len(resampled_pcm16)} bytes")
-        
+        logger.debug(
+            f"Resampled from 24kHz to 8kHz: {len(pcm16_data)} -> {len(resampled_pcm16)} bytes"
+        )
+
         # Convert to μ-law
         mulaw = self._convert_pcm16_to_mulaw(resampled_pcm16)
         logger.debug(f"Converted to {len(mulaw)} bytes of μ-law audio")
-        
+
         # Send audio in 20ms chunks (160 bytes at 8kHz)
         chunk_size = 160  # 20ms at 8kHz
         chunks_sent = 0
         start_time = time.time()
-        
+
         for i in range(0, len(mulaw), chunk_size):
             chunk = mulaw[i : i + chunk_size]
             if len(chunk) < chunk_size:
                 # Pad with silence instead of zeros for better audio quality
-                chunk += b"\x80" * (chunk_size - len(chunk))  # μ-law silence is 0x80, not 0x00
-            
+                chunk += b"\x80" * (
+                    chunk_size - len(chunk)
+                )  # μ-law silence is 0x80, not 0x00
+
             payload_b64 = base64.b64encode(chunk).decode()
-            
+
             try:
                 await self.send_platform_json(
                     OutgoingMediaMessage(
@@ -265,45 +286,43 @@ class TwilioBridge(BaseRealtimeBridge):
                     ).model_dump()
                 )
                 chunks_sent += 1
-                
+
                 # Better timing control - maintain consistent 20ms intervals
                 expected_time = start_time + (chunks_sent * 0.02)
                 current_time = time.time()
                 sleep_time = max(0, expected_time - current_time)
                 if sleep_time > 0:
                     await asyncio.sleep(sleep_time)
-                    
+
             except Exception as e:
                 logger.error(f"Error sending audio chunk {chunks_sent}: {e}")
                 break
-        
+
         total_time = time.time() - start_time
         logger.debug(f"Sent {chunks_sent} audio chunks to Twilio in {total_time:.2f}s")
 
-    def _resample_audio(self, audio_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
+    def _resample_audio(
+        self, audio_bytes: bytes, from_rate: int, to_rate: int
+    ) -> bytes:
         """Resample audio using high-quality AudioUtils implementation.
-        
+
         Args:
             audio_bytes: Raw audio bytes (16-bit PCM)
             from_rate: Source sample rate
             to_rate: Target sample rate
-            
+
         Returns:
             Resampled audio bytes
         """
         if from_rate == to_rate:
             return audio_bytes
-            
+
         # Use AudioUtils for high-quality resampling with proper anti-aliasing
         try:
             resampled_audio = AudioUtils.resample_audio(
-                audio_bytes, 
-                from_rate, 
-                to_rate, 
-                channels=1, 
-                sample_width=2
+                audio_bytes, from_rate, to_rate, channels=1, sample_width=2
             )
-            
+
             # Log resampling details for debugging
             original_samples = len(audio_bytes) // 2
             resampled_samples = len(resampled_audio) // 2
@@ -314,11 +333,13 @@ class TwilioBridge(BaseRealtimeBridge):
                 f"{original_samples} -> {resampled_samples} samples, "
                 f"{original_duration_ms:.1f}ms -> {resampled_duration_ms:.1f}ms"
             )
-            
+
             return resampled_audio
-            
+
         except Exception as e:
-            logger.error(f"Error resampling audio from {from_rate}Hz to {to_rate}Hz: {e}")
+            logger.error(
+                f"Error resampling audio from {from_rate}Hz to {to_rate}Hz: {e}"
+            )
             return audio_bytes  # Return original on error
 
     # ------------------------------------------------------------------
@@ -341,7 +362,7 @@ class TwilioBridge(BaseRealtimeBridge):
 
                 data = json.loads(message)
                 event_str = data.get("event")
-                
+
                 if event_str:
                     # Convert string event type to enum
                     try:
@@ -364,12 +385,14 @@ class TwilioBridge(BaseRealtimeBridge):
                     if handler:
                         try:
                             await handler(data)
-                            
+
                             # Break loop on stop event
                             if event_type == TwilioEventType.STOP:
                                 break
                         except Exception as e:
-                            logger.error(f"Error in Twilio event handler for {event_type}: {e}")
+                            logger.error(
+                                f"Error in Twilio event handler for {event_type}: {e}"
+                            )
                     else:
                         logger.warning(f"No handler for Twilio event: {event_type}")
                 else:
@@ -381,22 +404,33 @@ class TwilioBridge(BaseRealtimeBridge):
 
     async def handle_outgoing_audio_twilio(self, response_dict: Dict[str, Any]) -> None:
         """Twilio-specific implementation of handle_outgoing_audio.
-        
+
         This method is used to override the AudioStreamHandler's handle_outgoing_audio
         method to use Twilio-specific message formats instead of AudioCodes formats.
         """
         try:
             # Validate that we have the required fields before parsing
-            required_fields = ["response_id", "item_id", "output_index", "content_index", "delta"]
-            missing_fields = [field for field in required_fields if field not in response_dict]
-            
+            required_fields = [
+                "response_id",
+                "item_id",
+                "output_index",
+                "content_index",
+                "delta",
+            ]
+            missing_fields = [
+                field for field in required_fields if field not in response_dict
+            ]
+
             if missing_fields:
-                logger.warning(f"Incomplete audio delta event - missing fields: {missing_fields}")
+                logger.warning(
+                    f"Incomplete audio delta event - missing fields: {missing_fields}"
+                )
                 logger.debug(f"Received data: {response_dict}")
                 return
-            
+
             # Parse audio delta event
             from opusagent.models.openai_api import ResponseAudioDeltaEvent
+
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
             # Check if connections are still active
@@ -408,19 +442,29 @@ class TwilioBridge(BaseRealtimeBridge):
 
             # Check if platform websocket is available and not closed
             if not self.platform_websocket:
-                logger.debug(
-                    "Skipping audio delta - platform websocket is unavailable"
-                )
+                logger.debug("Skipping audio delta - platform websocket is unavailable")
                 return
 
             # Record bot audio if recorder is available
             if self.call_recorder:
                 await self.call_recorder.record_bot_audio(audio_delta.delta)
 
+            # Validate audio delta before sending
+            if not audio_delta.delta or audio_delta.delta.strip() == "":
+                logger.warning("Empty audio delta received, skipping audio chunk")
+                return
+
+            # Validate base64 encoding
+            try:
+                base64.b64decode(audio_delta.delta)
+            except Exception as e:
+                logger.error(f"Invalid base64 audio delta: {e}")
+                return
+
             # Send audio to Twilio using our Twilio-specific method
             pcm16 = base64.b64decode(audio_delta.delta)
             await self.send_audio_to_twilio(pcm16)
-            
+
         except Exception as e:
             logger.error(f"Error in Twilio audio handler: {e}")
             # Log the problematic data for debugging

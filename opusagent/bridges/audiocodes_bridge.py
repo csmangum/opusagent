@@ -134,16 +134,20 @@ class AudioCodesBridge(BaseRealtimeBridge):
 
         # Register handlers for VAD speech events from AudioCodes platform
         self.event_router.register_platform_handler(
-            TelephonyEventType.USER_STREAM_SPEECH_STARTED, self.handle_platform_speech_started
+            TelephonyEventType.USER_STREAM_SPEECH_STARTED,
+            self.handle_platform_speech_started,
         )
         self.event_router.register_platform_handler(
-            TelephonyEventType.USER_STREAM_SPEECH_STOPPED, self.handle_platform_speech_stopped
+            TelephonyEventType.USER_STREAM_SPEECH_STOPPED,
+            self.handle_platform_speech_stopped,
         )
         self.event_router.register_platform_handler(
-            TelephonyEventType.USER_STREAM_SPEECH_COMMITTED, self.handle_platform_speech_committed
+            TelephonyEventType.USER_STREAM_SPEECH_COMMITTED,
+            self.handle_platform_speech_committed,
         )
         self.event_router.register_platform_handler(
-            TelephonyEventType.USER_STREAM_SPEECH_HYPOTHESIS, self.handle_platform_speech_hypothesis
+            TelephonyEventType.USER_STREAM_SPEECH_HYPOTHESIS,
+            self.handle_platform_speech_hypothesis,
         )
 
         # Register handlers for VAD speech events from OpenAI Realtime API only if VAD is enabled
@@ -179,7 +183,7 @@ class AudioCodesBridge(BaseRealtimeBridge):
         if self._closed or not self.platform_websocket or self._is_websocket_closed():
             logger.debug("Skipping platform message - connection closed or unavailable")
             return
-            
+
         try:
             await self.platform_websocket.send_json(payload)
         except Exception as e:
@@ -562,7 +566,9 @@ class AudioCodesBridge(BaseRealtimeBridge):
         if "participant" in data:
             logger.info(f"Speech hypothesis for participant: {data['participant']}")
         if "participantId" in data:
-            logger.info(f"Speech hypothesis for participant ID: {data['participantId']}")
+            logger.info(
+                f"Speech hypothesis for participant ID: {data['participantId']}"
+            )
         if "alternatives" in data:
             logger.info(f"Speech hypothesis alternatives: {data['alternatives']}")
 
@@ -770,14 +776,24 @@ class AudioCodesBridge(BaseRealtimeBridge):
         """
         try:
             # Validate that we have the required fields before parsing
-            required_fields = ["response_id", "item_id", "output_index", "content_index", "delta"]
-            missing_fields = [field for field in required_fields if field not in response_dict]
-            
+            required_fields = [
+                "response_id",
+                "item_id",
+                "output_index",
+                "content_index",
+                "delta",
+            ]
+            missing_fields = [
+                field for field in required_fields if field not in response_dict
+            ]
+
             if missing_fields:
-                logger.warning(f"Incomplete audio delta event - missing fields: {missing_fields}")
+                logger.warning(
+                    f"Incomplete audio delta event - missing fields: {missing_fields}"
+                )
                 logger.debug(f"Received data: {response_dict}")
                 return
-            
+
             # Parse audio delta event
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
@@ -790,12 +806,26 @@ class AudioCodesBridge(BaseRealtimeBridge):
 
             # Check if platform websocket is available and not closed
             if not self.platform_websocket or self._is_websocket_closed():
-                logger.debug("Skipping audio delta - platform websocket is unavailable or closed")
+                logger.debug(
+                    "Skipping audio delta - platform websocket is unavailable or closed"
+                )
                 return
 
             # Record bot audio if recorder is available
             if self.call_recorder:
                 await self.call_recorder.record_bot_audio(audio_delta.delta)
+
+            # Validate audio delta before sending
+            if not audio_delta.delta or audio_delta.delta.strip() == "":
+                logger.warning("Empty audio delta received, skipping audio chunk")
+                return
+
+            # Validate base64 encoding
+            try:
+                base64.b64decode(audio_delta.delta)
+            except Exception as e:
+                logger.error(f"Invalid base64 audio delta: {e}")
+                return
 
             # Start a new audio stream if needed
             if not self.audio_handler.active_stream_id:

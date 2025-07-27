@@ -14,28 +14,28 @@ from typing import Any, Dict, Optional
 import websockets
 from fastapi import WebSocket
 
-from opusagent.utils.audio_quality_monitor import AudioQualityMonitor, QualityThresholds
-from opusagent.utils.call_recorder import CallRecorder
 from opusagent.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
     PlayStreamStopMessage,
     TelephonyEventType,
-    UserStreamStartedResponse,
-    UserStreamStoppedResponse,
     UserStreamSpeechStartedResponse,
     UserStreamSpeechStoppedResponse,
+    UserStreamStartedResponse,
+    UserStreamStoppedResponse,
 )
 from opusagent.models.openai_api import (
     InputAudioBufferAppendEvent,
     InputAudioBufferCommitEvent,
     ResponseAudioDeltaEvent,
 )
+from opusagent.utils.audio_quality_monitor import AudioQualityMonitor, QualityThresholds
+from opusagent.utils.call_recorder import CallRecorder
+from opusagent.utils.websocket_utils import WebSocketUtils
+from opusagent.vad.audio_processor import to_float32_mono
 from opusagent.vad.vad_config import load_vad_config
 from opusagent.vad.vad_factory import VADFactory
-from opusagent.vad.audio_processor import to_float32_mono
 from tui.utils.audio_utils import AudioUtils
-from opusagent.utils.websocket_utils import WebSocketUtils
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class AudioStreamHandler:
         call_recorder: Optional[CallRecorder] = None,
         enable_quality_monitoring: bool = False,
         quality_thresholds: Optional[QualityThresholds] = None,
-        bridge_type: str = 'unknown',
+        bridge_type: str = "unknown",
     ):
         """Initialize the audio stream handler.
 
@@ -111,7 +111,7 @@ class AudioStreamHandler:
         # VAD integration
         vad_config = load_vad_config()
         self.vad = VADFactory.create_vad(vad_config)
-        self.vad_enabled = vad_config.get('backend', 'silero') is not None
+        self.vad_enabled = vad_config.get("backend", "silero") is not None
         self._speech_active = False  # Track speech state for VAD events
         if self.vad_enabled and self.vad:
             self.vad.sample_rate = self.internal_sample_rate
@@ -120,8 +120,12 @@ class AudioStreamHandler:
             elif self.internal_sample_rate == 8000:
                 self.vad.chunk_size = 256
             else:
-                logger.warning(f"Unsupported internal sample rate for VAD: {self.internal_sample_rate}")
-            logger.debug(f"Set VAD to {self.internal_sample_rate}Hz, chunk_size {self.vad.chunk_size}")
+                logger.warning(
+                    f"Unsupported internal sample rate for VAD: {self.internal_sample_rate}"
+                )
+            logger.debug(
+                f"Set VAD to {self.internal_sample_rate}Hz, chunk_size {self.vad.chunk_size}"
+            )
 
     async def initialize_stream(self, conversation_id: str, media_format: str) -> None:
         """Initialize a new audio stream.
@@ -160,9 +164,9 @@ class AudioStreamHandler:
 
             # Determine original sample rate
             original_rate = {
-                'twilio': 8000,
-                'audiocodes': 16000,
-                'call_agent': 16000,
+                "twilio": 8000,
+                "audiocodes": 16000,
+                "call_agent": 16000,
             }.get(self.bridge_type, 16000)
 
             # Resample to internal rate if necessary
@@ -170,7 +174,9 @@ class AudioStreamHandler:
                 audio_bytes = AudioUtils.resample_audio(
                     audio_bytes, original_rate, self.internal_sample_rate
                 )
-                logger.debug(f"Resampled from {original_rate}Hz to {self.internal_sample_rate}Hz")
+                logger.debug(
+                    f"Resampled from {original_rate}Hz to {self.internal_sample_rate}Hz"
+                )
 
             # Calculate min chunk size for internal rate
             min_chunk_size = int(0.1 * self.internal_sample_rate * 2)  # 100ms
@@ -190,12 +196,16 @@ class AudioStreamHandler:
                 # Convert to float32 mono for VAD
                 try:
                     audio_arr = to_float32_mono(audio_bytes, sample_width=2, channels=1)
-                    logger.debug(f"[VAD] Processing audio chunk: {len(audio_arr)} samples")
+                    logger.debug(
+                        f"[VAD] Processing audio chunk: {len(audio_arr)} samples"
+                    )
                     vad_result = self.vad.process_audio(audio_arr)
-                    is_speech = vad_result.get('is_speech', False)
-                    speech_prob = vad_result.get('speech_prob', 0.0)
-                    logger.debug(f"[VAD] Result: speech={is_speech}, prob={speech_prob:.3f}")
-                    
+                    is_speech = vad_result.get("is_speech", False)
+                    speech_prob = vad_result.get("speech_prob", 0.0)
+                    logger.debug(
+                        f"[VAD] Result: speech={is_speech}, prob={speech_prob:.3f}"
+                    )
+
                     # Emit VAD events on state transitions
                     if is_speech and not self._speech_active:
                         # Speech started
@@ -207,7 +217,9 @@ class AudioStreamHandler:
                         )
                         await self.platform_websocket.send_json(vad_event.model_dump())
                         self._speech_active = True
-                        logger.info(f"[VAD] Speech started event sent (prob: {speech_prob:.3f})")
+                        logger.info(
+                            f"[VAD] Speech started event sent (prob: {speech_prob:.3f})"
+                        )
                     elif not is_speech and self._speech_active:
                         # Speech stopped
                         vad_event = UserStreamSpeechStoppedResponse(
@@ -218,10 +230,13 @@ class AudioStreamHandler:
                         )
                         await self.platform_websocket.send_json(vad_event.model_dump())
                         self._speech_active = False
-                        logger.info(f"[VAD] Speech stopped event sent (prob: {speech_prob:.3f})")
+                        logger.info(
+                            f"[VAD] Speech stopped event sent (prob: {speech_prob:.3f})"
+                        )
                 except Exception as e:
                     logger.warning(f"VAD processing error: {e}")
                     import traceback
+
                     logger.debug(f"VAD error traceback: {traceback.format_exc()}")
 
             # Update tracking counters (moved later for accurate sent bytes)
@@ -271,7 +286,9 @@ class AudioStreamHandler:
                 f"Sending audio to realtime-websocket (size: {len(audio_chunk_b64)} bytes base64)"
             )
             if WebSocketUtils.is_websocket_closed(self.realtime_websocket):
-                logger.warning("Attempted to send audio to realtime-websocket after close; message not sent.")
+                logger.warning(
+                    "Attempted to send audio to realtime-websocket after close; message not sent."
+                )
                 return
             await self.realtime_websocket.send(audio_append.model_dump_json())
 
@@ -289,14 +306,24 @@ class AudioStreamHandler:
         """
         try:
             # Validate that we have the required fields before parsing
-            required_fields = ["response_id", "item_id", "output_index", "content_index", "delta"]
-            missing_fields = [field for field in required_fields if field not in response_dict]
-            
+            required_fields = [
+                "response_id",
+                "item_id",
+                "output_index",
+                "content_index",
+                "delta",
+            ]
+            missing_fields = [
+                field for field in required_fields if field not in response_dict
+            ]
+
             if missing_fields:
-                logger.warning(f"Incomplete audio delta event - missing fields: {missing_fields}")
+                logger.warning(
+                    f"Incomplete audio delta event - missing fields: {missing_fields}"
+                )
                 logger.debug(f"Received data: {response_dict}")
                 return
-            
+
             # Parse audio delta event
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
@@ -308,7 +335,11 @@ class AudioStreamHandler:
                 return
 
             # Check if platform websocket is available and not closed
-            if not self.platform_websocket or self._is_websocket_closed() or WebSocketUtils.is_websocket_closed(self.platform_websocket):
+            if (
+                not self.platform_websocket
+                or self._is_websocket_closed()
+                or WebSocketUtils.is_websocket_closed(self.platform_websocket)
+            ):
                 logger.debug(
                     "Skipping audio delta - platform websocket is closed or unavailable"
                 )
@@ -340,6 +371,18 @@ class AudioStreamHandler:
                 # Record bot audio if recorder is available
                 if self.call_recorder:
                     await self.call_recorder.record_bot_audio(audio_delta.delta)
+
+                # Validate audio delta before sending
+                if not audio_delta.delta or audio_delta.delta.strip() == "":
+                    logger.warning("Empty audio delta received, skipping audio chunk")
+                    return
+
+                # Validate base64 encoding
+                try:
+                    base64.b64decode(audio_delta.delta)
+                except Exception as e:
+                    logger.error(f"Invalid base64 audio delta: {e}")
+                    return
 
                 # Send audio chunk to platform client
                 stream_chunk = PlayStreamChunkMessage(
