@@ -71,7 +71,7 @@ class LiveAudioManager:
             "chunk_delay": 0.02,
             "buffer_size": 32000,  # 2 seconds at 16kHz
         }
-        
+
         if config:
             self._config.update(config)
 
@@ -81,7 +81,7 @@ class LiveAudioManager:
         self._running = False
         self._audio_buffer = []
         self._pyaudio = None
-        
+
         # VAD state
         self._speech_active = False
         self._speech_start_time = None
@@ -101,7 +101,7 @@ class LiveAudioManager:
                 return True
 
             self._pyaudio = pyaudio.PyAudio()
-            
+
             # Get available devices
             device_info = self._get_default_device_info()
             if device_info:
@@ -115,12 +115,12 @@ class LiveAudioManager:
                 input=True,
                 input_device_index=self._config["device_index"],
                 frames_per_buffer=self._config["chunk_size"],
-                stream_callback=self._audio_callback_internal
+                stream_callback=self._audio_callback_internal,
             )
 
             self._running = True
             self._audio_buffer.clear()
-            
+
             # Start capture thread
             self._capture_thread = threading.Thread(target=self._capture_loop)
             self._capture_thread.daemon = True
@@ -137,7 +137,7 @@ class LiveAudioManager:
     def stop_capture(self) -> None:
         """Stop live audio capture."""
         self._running = False
-        
+
         if self._capture_thread:
             self._capture_thread.join(timeout=2.0)
             self._capture_thread = None
@@ -169,14 +169,14 @@ class LiveAudioManager:
         try:
             if self._pyaudio is None:
                 return None
-                
+
             if self._config["device_index"] is not None:
                 device_info = self._pyaudio.get_device_info_by_index(
                     self._config["device_index"]
                 )
             else:
                 device_info = self._pyaudio.get_default_input_device_info()
-            
+
             return {
                 "name": device_info.get("name", "Unknown"),
                 "index": device_info.get("index", -1),
@@ -191,16 +191,16 @@ class LiveAudioManager:
         """Internal PyAudio callback for audio data."""
         if status:
             self.logger.warning(f"[LIVE_AUDIO] Audio callback status: {status}")
-        
+
         if self._running:
             # Convert to numpy array for processing
             audio_data = np.frombuffer(in_data, dtype=np.int16)
             self._audio_buffer.extend(audio_data)
-            
+
             # Process buffer if it's large enough
             if len(self._audio_buffer) >= self._config["buffer_size"]:
                 self._process_audio_buffer()
-        
+
         return (None, pyaudio.paContinue)
 
     def _capture_loop(self) -> None:
@@ -210,9 +210,9 @@ class LiveAudioManager:
                 # Process any remaining audio in buffer
                 if self._audio_buffer:
                     self._process_audio_buffer()
-                
+
                 time.sleep(self._config["chunk_delay"])
-                
+
             except Exception as e:
                 self.logger.error(f"[LIVE_AUDIO] Error in capture loop: {e}")
                 break
@@ -233,7 +233,7 @@ class LiveAudioManager:
         # Convert to base64 and send via callback
         audio_bytes = audio_array.tobytes()
         encoded_chunk = base64.b64encode(audio_bytes).decode("utf-8")
-        
+
         if self.audio_callback:
             self.audio_callback(encoded_chunk)
 
@@ -248,16 +248,18 @@ class LiveAudioManager:
             # Handle empty arrays
             if len(audio_array) == 0:
                 return
-            
+
             # Simple energy-based VAD
             energy = np.mean(np.abs(audio_array))
             normalized_energy = energy / 32768.0  # Normalize to 0-1 range
-            
+
             # Log energy for debugging
-            self.logger.debug(f"[LIVE_AUDIO] Audio energy level: {normalized_energy:.3f}")
-            
+            self.logger.debug(
+                f"[LIVE_AUDIO] Audio energy level: {normalized_energy:.3f}"
+            )
+
             current_time = time.time()
-            
+
             # Determine speech state
             if normalized_energy > self._config["vad_threshold"]:
                 if not self._speech_active:
@@ -265,50 +267,62 @@ class LiveAudioManager:
                     self._speech_active = True
                     self._speech_start_time = current_time
                     self._silence_start_time = None
-                    
+
                     if self.vad_callback:
-                        self.vad_callback({
-                            "type": "userStream.speech.started",
-                            "data": {
-                                "speech_prob": normalized_energy,
-                                "timestamp": current_time
+                        self.vad_callback(
+                            {
+                                "type": "userStream.speech.started",
+                                "data": {
+                                    "speech_prob": normalized_energy,
+                                    "timestamp": current_time,
+                                },
                             }
-                        })
-                        self.logger.debug(f"[LIVE_AUDIO] Speech started (energy: {normalized_energy:.3f})")
-                
+                        )
+                        self.logger.debug(
+                            f"[LIVE_AUDIO] Speech started (energy: {normalized_energy:.3f})"
+                        )
+
                 self._last_vad_time = current_time
-                
+
             elif normalized_energy < self._config["vad_silence_threshold"]:
                 if self._speech_active:
                     # Check if silence duration is long enough
                     silence_duration = (current_time - self._last_vad_time) * 1000
-                    
+
                     if silence_duration >= self._config["min_silence_duration_ms"]:
                         # Check if speech duration meets minimum requirement
                         speech_duration = 0
                         if self._speech_start_time:
-                            speech_duration = (self._last_vad_time - self._speech_start_time) * 1000
-                        
+                            speech_duration = (
+                                self._last_vad_time - self._speech_start_time
+                            ) * 1000
+
                         # Only stop speech if it has met the minimum duration requirement
                         if speech_duration >= self._config["min_speech_duration_ms"]:
                             # Speech stopped
                             self._speech_active = False
                             self._silence_start_time = current_time
-                            
+
                             if self.vad_callback:
-                                self.vad_callback({
-                                    "type": "userStream.speech.stopped",
-                                    "data": {
-                                        "speech_prob": normalized_energy,
-                                        "speech_duration_ms": int(speech_duration),
-                                        "timestamp": current_time
+                                self.vad_callback(
+                                    {
+                                        "type": "userStream.speech.stopped",
+                                        "data": {
+                                            "speech_prob": normalized_energy,
+                                            "speech_duration_ms": int(speech_duration),
+                                            "timestamp": current_time,
+                                        },
                                     }
-                                })
-                                self.logger.debug(f"[LIVE_AUDIO] Speech stopped (duration: {speech_duration:.0f}ms)")
+                                )
+                                self.logger.debug(
+                                    f"[LIVE_AUDIO] Speech stopped (duration: {speech_duration:.0f}ms)"
+                                )
                         else:
                             # Speech duration too short, keep it active
-                            self.logger.debug(f"[LIVE_AUDIO] Speech duration too short ({speech_duration:.0f}ms), keeping active")
-                
+                            self.logger.debug(
+                                f"[LIVE_AUDIO] Speech duration too short ({speech_duration:.0f}ms), keeping active"
+                            )
+
         except Exception as e:
             self.logger.error(f"[LIVE_AUDIO] VAD processing error: {e}")
 
@@ -320,30 +334,39 @@ class LiveAudioManager:
             List[Dict[str, Any]]: List of device information
         """
         devices = []
-        
+
         try:
             if not self._pyaudio:
                 self._pyaudio = pyaudio.PyAudio()
-            
+
             for i in range(self._pyaudio.get_device_count()):
                 try:
                     device_info = self._pyaudio.get_device_info_by_index(i)
                     max_channels = device_info.get("maxInputChannels", 0)
                     if isinstance(max_channels, (int, float)) and max_channels > 0:
-                        devices.append({
-                            "index": i,
-                            "name": device_info.get("name", f"Device {i}"),
-                            "channels": max_channels,
-                            "sample_rate": device_info.get("defaultSampleRate", 16000),
-                            "is_default": device_info.get("index") == self._pyaudio.get_default_input_device_info().get("index")
-                        })
+                        devices.append(
+                            {
+                                "index": i,
+                                "name": device_info.get("name", f"Device {i}"),
+                                "channels": max_channels,
+                                "sample_rate": device_info.get(
+                                    "defaultSampleRate", 16000
+                                ),
+                                "is_default": device_info.get("index")
+                                == self._pyaudio.get_default_input_device_info().get(
+                                    "index"
+                                ),
+                            }
+                        )
                 except Exception as e:
-                    self.logger.debug(f"[LIVE_AUDIO] Error getting device {i} info: {e}")
+                    self.logger.debug(
+                        f"[LIVE_AUDIO] Error getting device {i} info: {e}"
+                    )
                     continue
-                    
+
         except Exception as e:
             self.logger.error(f"[LIVE_AUDIO] Error getting available devices: {e}")
-        
+
         return devices
 
     def set_device(self, device_index: int) -> bool:
@@ -357,12 +380,14 @@ class LiveAudioManager:
             bool: True if device was set successfully, False otherwise
         """
         if self._running:
-            self.logger.warning("[LIVE_AUDIO] Cannot change device while capture is running")
+            self.logger.warning(
+                "[LIVE_AUDIO] Cannot change device while capture is running"
+            )
             return False
 
         devices = self.get_available_devices()
         device_indices = [d["index"] for d in devices]
-        
+
         if device_index in device_indices:
             self._config["device_index"] = device_index
             self.logger.info(f"[LIVE_AUDIO] Set device to index {device_index}")
@@ -379,7 +404,9 @@ class LiveAudioManager:
             config (Dict[str, Any]): New configuration values
         """
         if self._running:
-            self.logger.warning("[LIVE_AUDIO] Cannot update config while capture is running")
+            self.logger.warning(
+                "[LIVE_AUDIO] Cannot update config while capture is running"
+            )
             return
 
         self._config.update(config)
@@ -419,10 +446,10 @@ class LiveAudioManager:
         """
         if not self._audio_buffer:
             return 0.0
-        
+
         try:
             audio_array = np.array(self._audio_buffer, dtype=np.int16)
-            energy = np.mean(np.abs(audio_array))
-            return float(min(energy / 32768.0, 1.0))
+            energy = float(np.mean(np.abs(audio_array)))
+            return min(energy / 32768.0, 1.0)
         except Exception:
-            return 0.0 
+            return 0.0
