@@ -526,7 +526,7 @@ class TestCallRecorder:
     
     @pytest.mark.asyncio
     async def test_stop_recording_success(self, recorder):
-        """Test successful recording stop."""
+        """Test successful recording stop with improved error handling."""
         # Setup active recording
         recorder.recording_active = True
         recorder.caller_wav = Mock()
@@ -564,6 +564,70 @@ class TestCallRecorder:
             mock_log.assert_called_once()
     
     @pytest.mark.asyncio
+    async def test_stop_recording_with_partial_errors(self, recorder):
+        """Test recording stop with some operations failing but others succeeding."""
+        # Setup active recording
+        recorder.recording_active = True
+        recorder.caller_wav = Mock()
+        recorder.bot_wav = Mock()
+        recorder.stereo_wav = Mock()
+        
+        # Mock some operations to fail, others to succeed
+        with patch.object(recorder, '_save_transcript', new_callable=AsyncMock, side_effect=Exception("Transcript error")), \
+             patch.object(recorder, '_save_metadata', new_callable=AsyncMock) as mock_save_metadata, \
+             patch.object(recorder, '_save_session_events', new_callable=AsyncMock, side_effect=Exception("Events error")), \
+             patch.object(recorder, '_create_final_stereo_recording', new_callable=AsyncMock) as mock_create_stereo, \
+             patch.object(recorder, '_log_session_event', new_callable=AsyncMock) as mock_log:
+            
+            result = await recorder.stop_recording()
+            
+            # Should still return True even with some errors
+            assert result is True
+            assert not recorder.recording_active
+            assert recorder.finalized
+            
+            # Check that successful operations were called
+            mock_save_metadata.assert_called_once()
+            mock_create_stereo.assert_called_once()
+            mock_log.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_stop_recording_wav_file_errors(self, recorder):
+        """Test recording stop with WAV file closing errors."""
+        # Setup active recording
+        recorder.recording_active = True
+        recorder.caller_wav = Mock(side_effect=Exception("Caller WAV error"))
+        recorder.bot_wav = Mock()
+        recorder.stereo_wav = Mock(side_effect=Exception("Stereo WAV error"))
+        
+        with patch.object(recorder, '_save_transcript', new_callable=AsyncMock), \
+             patch.object(recorder, '_save_metadata', new_callable=AsyncMock), \
+             patch.object(recorder, '_save_session_events', new_callable=AsyncMock), \
+             patch.object(recorder, '_create_final_stereo_recording', new_callable=AsyncMock), \
+             patch.object(recorder, '_log_session_event', new_callable=AsyncMock):
+            
+            result = await recorder.stop_recording()
+            
+            # Should still succeed despite WAV file errors
+            assert result is True
+            assert not recorder.recording_active
+            assert recorder.finalized
+    
+    @pytest.mark.asyncio
+    async def test_stop_recording_critical_error(self, recorder):
+        """Test recording stop with critical error that should return False."""
+        recorder.recording_active = True
+        
+        # Mock a critical error that should cause the method to return False
+        with patch.object(recorder, '_save_transcript', new_callable=AsyncMock, side_effect=Exception("Critical error")):
+            # Mock the outer try-catch to simulate a critical error
+            with patch.object(recorder, 'metadata', side_effect=Exception("Critical error")):
+                result = await recorder.stop_recording()
+                
+                assert result is False
+                assert recorder.finalized  # Should still be marked as finalized
+    
+    @pytest.mark.asyncio
     async def test_stop_recording_not_active(self, recorder):
         """Test stopping recording when not active."""
         recorder.recording_active = False
@@ -580,7 +644,89 @@ class TestCallRecorder:
         with patch.object(recorder, '_save_transcript', new_callable=AsyncMock, side_effect=Exception("Save error")):
             result = await recorder.stop_recording()
             
-            assert result is False
+            assert result is True  # Should still succeed with improved error handling
+    
+    def test_validate_recording_directory_success(self, recorder):
+        """Test successful directory validation."""
+        # Should not raise any exception
+        recorder._validate_recording_directory()
+    
+    def test_validate_recording_directory_permission_error(self, recorder):
+        """Test directory validation with permission error."""
+        with patch.object(recorder.recording_dir, 'mkdir', side_effect=PermissionError("Permission denied")):
+            with pytest.raises(PermissionError, match="Permission denied"):
+                recorder._validate_recording_directory()
+    
+    def test_validate_recording_directory_write_test_failure(self, recorder):
+        """Test directory validation with write test failure."""
+        with patch.object(recorder.recording_dir, 'write_text', side_effect=Exception("Write test failed")):
+            with pytest.raises(PermissionError, match="Cannot write to recording directory"):
+                recorder._validate_recording_directory()
+    
+    @pytest.mark.asyncio
+    async def test_emergency_cleanup(self, recorder):
+        """Test emergency cleanup functionality."""
+        # Setup recording state
+        recorder.recording_active = True
+        recorder.caller_wav = Mock()
+        recorder.bot_wav = Mock()
+        recorder.stereo_wav = Mock()
+        recorder.caller_audio_buffer = [b"test1", b"test2"]
+        recorder.bot_audio_buffer = [b"test3"]
+        
+        await recorder.emergency_cleanup()
+        
+        # Check that recording state is reset
+        assert not recorder.recording_active
+        assert recorder.finalized
+        
+        # Check that WAV files were closed
+        recorder.caller_wav.close.assert_called_once()
+        recorder.bot_wav.close.assert_called_once()
+        recorder.stereo_wav.close.assert_called_once()
+        
+        # Check that buffers were cleared
+        assert len(recorder.caller_audio_buffer) == 0
+        assert len(recorder.bot_audio_buffer) == 0
+    
+    @pytest.mark.asyncio
+    async def test_emergency_cleanup_with_errors(self, recorder):
+        """Test emergency cleanup with WAV file closing errors."""
+        # Setup recording state with problematic WAV files
+        recorder.recording_active = True
+        recorder.caller_wav = Mock(side_effect=Exception("Caller WAV error"))
+        recorder.bot_wav = Mock()
+        recorder.stereo_wav = Mock(side_effect=Exception("Stereo WAV error"))
+        
+        # Should not raise exception even with WAV file errors
+        await recorder.emergency_cleanup()
+        
+        assert not recorder.recording_active
+        assert recorder.finalized
+    
+    def test_get_recording_status(self, recorder):
+        """Test getting recording status for debugging."""
+        # Setup some recording state
+        recorder.recording_active = True
+        recorder.caller_audio_buffer = [b"test1"]
+        recorder.bot_audio_buffer = [b"test2"]
+        recorder.metadata.caller_audio_chunks = 5
+        recorder.metadata.bot_audio_chunks = 3
+        
+        status = recorder.get_recording_status()
+        
+        assert status["conversation_id"] == recorder.conversation_id
+        assert status["session_id"] == recorder.session_id
+        assert status["recording_active"] is True
+        assert status["finalized"] is False
+        assert status["caller_buffer_chunks"] == 1
+        assert status["bot_buffer_chunks"] == 1
+        assert status["caller_audio_chunks"] == 5
+        assert status["bot_audio_chunks"] == 3
+        assert "wav_files_open" in status
+        assert status["wav_files_open"]["caller_wav"] is False  # Not initialized yet
+        assert status["wav_files_open"]["bot_wav"] is False
+        assert status["wav_files_open"]["stereo_wav"] is False
     
     @pytest.mark.asyncio
     async def test_save_transcript(self, recorder):
@@ -644,45 +790,125 @@ class TestCallRecorder:
     
     @pytest.mark.asyncio
     async def test_create_final_stereo_recording(self, recorder):
-        """Test creating final stereo recording."""
-        # Add some audio data to buffers
-        audio_data1 = np.array([100, -200, 300], dtype=np.int16).tobytes()
-        audio_data2 = np.array([400, -500], dtype=np.int16).tobytes()
+        """Test creating final stereo recording with improved error handling."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
         
-        recorder.caller_audio_buffer = [audio_data1, audio_data2]
-        recorder.bot_audio_buffer = [audio_data1]  # Different length
-        
-        with patch('wave.open', mock_open()) as mock_wave:
-            mock_wav = Mock()
-            mock_wave.return_value.__enter__.return_value = mock_wav
-            
+        with patch('builtins.open', mock_open()) as mock_file:
             await recorder._create_final_stereo_recording()
             
-            # Check that WAV file was configured for stereo
-            mock_wav.setnchannels.assert_called_with(2)
-            mock_wav.setsampwidth.assert_called_with(recorder.sample_width)
-            mock_wav.setframerate.assert_called_with(recorder.target_sample_rate)
-            
-            # Check that audio frames were written
-            mock_wav.writeframes.assert_called_once()
+            # Should create the final stereo file
+            mock_file.assert_called_once()
+            call_args = mock_file.call_args[0]
+            assert "final_stereo_recording.wav" in str(call_args[0])
     
     @pytest.mark.asyncio
     async def test_create_final_stereo_recording_no_audio(self, recorder):
-        """Test creating stereo recording with no audio buffers."""
+        """Test creating final stereo recording with no audio buffers."""
+        # Empty buffers
         recorder.caller_audio_buffer = []
         recorder.bot_audio_buffer = []
         
-        # Should handle gracefully
-        await recorder._create_final_stereo_recording()
+        with patch('builtins.open', mock_open()) as mock_file:
+            await recorder._create_final_stereo_recording()
+            
+            # Should not create file when no audio
+            mock_file.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_create_final_stereo_recording_caller_buffer_error(self, recorder):
+        """Test creating final stereo recording with caller buffer processing error."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
+        
+        # Mock numpy to fail on caller buffer processing
+        with patch('numpy.concatenate', side_effect=Exception("Caller buffer error")):
+            with patch('builtins.open', mock_open()) as mock_file:
+                await recorder._create_final_stereo_recording()
+                
+                # Should still attempt to create file with bot audio only
+                mock_file.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_create_final_stereo_recording_bot_buffer_error(self, recorder):
+        """Test creating final stereo recording with bot buffer processing error."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
+        
+        # Mock numpy to fail on bot buffer processing
+        with patch('numpy.concatenate', side_effect=[np.array([100, -200, 300, -400], dtype=np.int16), Exception("Bot buffer error")]):
+            with patch('builtins.open', mock_open()) as mock_file:
+                await recorder._create_final_stereo_recording()
+                
+                # Should still attempt to create file with caller audio only
+                mock_file.assert_called_once()
+    
+    @pytest.mark.asyncio
+    async def test_create_final_stereo_recording_padding_error(self, recorder):
+        """Test creating final stereo recording with padding error."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
+        
+        # Mock numpy.pad to fail
+        with patch('numpy.pad', side_effect=Exception("Padding error")):
+            with patch('builtins.open', mock_open()) as mock_file:
+                await recorder._create_final_stereo_recording()
+                
+                # Should not create file when padding fails
+                mock_file.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_create_final_stereo_recording_stereo_creation_error(self, recorder):
+        """Test creating final stereo recording with stereo array creation error."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
+        
+        # Mock numpy.column_stack to fail
+        with patch('numpy.column_stack', side_effect=Exception("Stereo creation error")):
+            with patch('builtins.open', mock_open()) as mock_file:
+                await recorder._create_final_stereo_recording()
+                
+                # Should not create file when stereo creation fails
+                mock_file.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_create_final_stereo_recording_file_write_error(self, recorder):
+        """Test creating final stereo recording with file write error."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
+        
+        # Mock file writing to fail
+        with patch('builtins.open', side_effect=Exception("File write error")):
+            # Should not raise exception, just log error
+            await recorder._create_final_stereo_recording()
     
     @pytest.mark.asyncio
     async def test_create_final_stereo_recording_error(self, recorder):
-        """Test stereo recording creation error handling."""
-        recorder.caller_audio_buffer = [b"invalid_audio"]
+        """Test creating final stereo recording with general error."""
+        # Setup audio buffers
+        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
+        recorder.caller_audio_buffer = [audio_data.tobytes()]
+        recorder.bot_audio_buffer = [audio_data.tobytes()]
         
-        with patch('numpy.frombuffer', side_effect=Exception("Test error")):
-            # Should not raise exception
-            await recorder._create_final_stereo_recording()
+        # Mock numpy.frombuffer to fail
+        with patch('numpy.frombuffer', side_effect=Exception("General error")):
+            with patch('builtins.open', mock_open()) as mock_file:
+                await recorder._create_final_stereo_recording()
+                
+                # Should not create file when general error occurs
+                mock_file.assert_not_called()
     
     def test_get_recording_summary(self, recorder):
         """Test getting recording summary."""

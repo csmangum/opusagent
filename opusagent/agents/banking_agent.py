@@ -208,7 +208,6 @@ def func_transfer_funds(arguments: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-
 def func_process_replacement(arguments: Dict[str, Any]) -> Dict[str, Any]:
     """
     Handle card replacement processing.
@@ -225,7 +224,7 @@ def func_process_replacement(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
     # Generate a replacement reference number
     replacement_id = f"CR-{uuid.uuid4().hex[:8].upper()}"
-    
+
     if card_type is None:
         prompt_guidance = "Ask the customer which type of card they need to replace: debit card, credit card, or prepaid card."
         next_action = "ask_card_type"
@@ -233,7 +232,9 @@ def func_process_replacement(arguments: Dict[str, Any]) -> Dict[str, Any]:
         prompt_guidance = "Ask the customer why they need to replace their card."
         next_action = "ask_reason"
     elif delivery_address is None:
-        prompt_guidance = "Ask the customer where they want their replacement card delivered."
+        prompt_guidance = (
+            "Ask the customer where they want their replacement card delivered."
+        )
         next_action = "ask_delivery_address"
     else:
         prompt_guidance = f"Your {card_type} replacement has been processed. Your replacement ID is {replacement_id}. The new card will be delivered to {delivery_address} within 5-7 business days."
@@ -311,6 +312,7 @@ def register_customer_service_functions(function_handler) -> None:
     function_handler.register_function("transfer_funds", func_transfer_funds)
     function_handler.register_function("process_replacement", func_process_replacement)
     function_handler.register_function("transfer_to_human", func_transfer_to_human)
+    function_handler.register_function("human_handoff", func_transfer_to_human)
 
     logger.info("Customer service functions registered successfully")
 

@@ -83,7 +83,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any, Callable, Dict, Optional, List
+from typing import Any, Callable, Dict, List, Optional
 
 from opusagent.config.logging_config import configure_logging
 
@@ -515,7 +515,9 @@ class FunctionHandler:
         if isinstance(context, dict):
             stage = context.get("stage", "")
             if stage in ["call_complete", "human_transfer"]:
-                logger.info(f"Function {function_name} reached completion stage: {stage}")
+                logger.info(
+                    f"Function {function_name} reached completion stage: {stage}"
+                )
                 return True
 
         return False
@@ -558,7 +560,7 @@ class FunctionHandler:
         """
         function_name = result.get("function_name", "unknown")
         context = result.get("context", {})
-        
+
         # Handle case where context might be a string
         if isinstance(context, dict):
             stage = context.get("stage", "")
@@ -589,59 +591,67 @@ class FunctionHandler:
 
     def restore_function_calls(self, function_calls: List[Dict[str, Any]]) -> None:
         """Restore function call state from session state.
-        
+
         Args:
             function_calls: List of function call data from session state
         """
         if not function_calls:
             return
-            
-        logger.info(f"Restoring {len(function_calls)} function calls from session state")
-        
+
+        logger.info(
+            f"Restoring {len(function_calls)} function calls from session state"
+        )
+
         for call_data in function_calls:
             try:
                 call_id = call_data.get("call_id")
                 function_name = call_data.get("function_name")
-                
+
                 # Validate required fields
                 if not call_id or not function_name:
-                    logger.warning(f"Skipping invalid function call: missing call_id or function_name")
+                    logger.warning(
+                        f"Skipping invalid function call: missing call_id or function_name"
+                    )
                     continue
-                    
+
                 # Restore function call state
                 self.active_function_calls[call_id] = {
                     "function_name": function_name,
                     "arguments": call_data.get("arguments", {}),
                     "status": call_data.get("status", "completed"),
                     "result": call_data.get("result", {}),
-                    "timestamp": call_data.get("timestamp")
+                    "timestamp": call_data.get("timestamp"),
                 }
-                
+
                 logger.debug(f"Restored function call: {call_id}")
-                
+
             except Exception as e:
                 logger.error(f"Error restoring function call: {e}")
-                
-        logger.info(f"Successfully restored {len(self.active_function_calls)} function calls")
+
+        logger.info(
+            f"Successfully restored {len(self.active_function_calls)} function calls"
+        )
 
     def get_function_call_history(self) -> List[Dict[str, Any]]:
         """Get function call history for session state storage.
-        
+
         Returns:
             List of function call data representing current state
         """
         function_calls = []
-        
+
         for call_id, call_data in self.active_function_calls.items():
-            function_calls.append({
-                "call_id": call_id,
-                "function_name": call_data.get("function_name", ""),
-                "arguments": call_data.get("arguments", {}),
-                "status": call_data.get("status", "completed"),
-                "result": call_data.get("result", {}),
-                "timestamp": call_data.get("timestamp")
-            })
-            
+            function_calls.append(
+                {
+                    "call_id": call_id,
+                    "function_name": call_data.get("function_name", ""),
+                    "arguments": call_data.get("arguments", {}),
+                    "status": call_data.get("status", "completed"),
+                    "result": call_data.get("result", {}),
+                    "timestamp": call_data.get("timestamp"),
+                }
+            )
+
         return function_calls
 
     def clear_function_call_history(self) -> None:
