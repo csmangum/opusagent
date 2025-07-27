@@ -9,18 +9,20 @@ This module provides real-time audio quality analysis including:
 """
 
 import logging
-import numpy as np
-from typing import Callable, Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from enum import Enum
 import time
 from collections import deque
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, Dict, List, Optional, Tuple
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
 class QualityLevel(Enum):
     """Audio quality levels."""
+
     EXCELLENT = "excellent"
     GOOD = "good"
     FAIR = "fair"
@@ -31,6 +33,7 @@ class QualityLevel(Enum):
 @dataclass
 class QualityThresholds:
     """Configurable quality thresholds."""
+
     min_snr_db: float = 15.0  # Lowered from 20.0 to be more realistic for telephony
     max_thd_percent: float = 1.0
     max_clipping_percent: float = 0.1
@@ -41,6 +44,7 @@ class QualityThresholds:
 @dataclass
 class QualityMetrics:
     """Audio quality metrics for a chunk."""
+
     snr_db: float
     thd_percent: float
     clipping_percent: float
@@ -54,6 +58,7 @@ class QualityMetrics:
 @dataclass
 class QualityAlert:
     """Quality alert information."""
+
     alert_type: str
     severity: str
     message: str
@@ -97,7 +102,9 @@ class AudioQualityMonitor:
         self.on_quality_alert: Optional[Callable[[QualityAlert], None]] = None
         self.on_metrics_update: Optional[Callable[[QualityMetrics], None]] = None
 
-        logger.info(f"AudioQualityMonitor initialized: sample_rate={sample_rate}, chunk_size={chunk_size}")
+        logger.info(
+            f"AudioQualityMonitor initialized: sample_rate={sample_rate}, chunk_size={chunk_size}"
+        )
 
     def analyze_audio_chunk(self, audio_bytes: bytes) -> QualityMetrics:
         """Analyze audio quality for a single chunk.
@@ -110,10 +117,12 @@ class AudioQualityMonitor:
         """
         try:
             # Convert bytes to numpy array
-            audio_array = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+            audio_array = (
+                np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+            )
 
             # Calculate basic metrics
-            rms_level = np.sqrt(np.mean(audio_array ** 2))
+            rms_level = np.sqrt(np.mean(audio_array**2))
             peak_level = np.max(np.abs(audio_array))
 
             # Skip analysis if audio is too quiet
@@ -126,7 +135,7 @@ class AudioQualityMonitor:
                     peak_level=float(peak_level),
                     quality_score=0.0,
                     quality_level=QualityLevel.UNACCEPTABLE,
-                    timestamp=time.time()
+                    timestamp=time.time(),
                 )
 
             # Calculate SNR
@@ -139,7 +148,9 @@ class AudioQualityMonitor:
             clipping_percent = self._calculate_clipping(audio_array)
 
             # Calculate overall quality score
-            quality_score = self._calculate_quality_score(snr_db, thd_percent, clipping_percent, rms_level)
+            quality_score = self._calculate_quality_score(
+                snr_db, thd_percent, clipping_percent, rms_level
+            )
 
             # Determine quality level
             quality_level = self._determine_quality_level(quality_score)
@@ -153,7 +164,7 @@ class AudioQualityMonitor:
                 peak_level=float(peak_level),
                 quality_score=float(quality_score),
                 quality_level=quality_level,
-                timestamp=time.time()
+                timestamp=time.time(),
             )
 
             # Store in history
@@ -179,7 +190,7 @@ class AudioQualityMonitor:
                 peak_level=0.0,
                 quality_score=0.0,
                 quality_level=QualityLevel.UNACCEPTABLE,
-                timestamp=time.time()
+                timestamp=time.time(),
             )
 
     def _calculate_snr(self, audio_array: np.ndarray) -> float:
@@ -195,41 +206,40 @@ class AudioQualityMonitor:
             # Calculate FFT
             fft = np.fft.fft(audio_array)
             magnitude = np.abs(fft)
-            
+
             # Find the fundamental frequency (strongest component)
-            fundamental_idx = np.argmax(magnitude[1:len(magnitude)//2]) + 1
-            
+            fundamental_idx = np.argmax(magnitude[1 : len(magnitude) // 2]) + 1
+
             if fundamental_idx == 0:
                 return 0.0
-            
+
             # Calculate signal power around fundamental frequency
             signal_bandwidth = 50  # Hz
             freq_resolution = self.sample_rate / len(audio_array)  # Hz per bin
             bandwidth_bins = max(1, int(signal_bandwidth / freq_resolution))
-            
-            start_bin = max(0, fundamental_idx - bandwidth_bins)
-            end_bin = min(len(magnitude)//2, fundamental_idx + bandwidth_bins)
-            
+
+            start_bin = max(0, int(fundamental_idx - bandwidth_bins))
+            end_bin = min(len(magnitude) // 2, int(fundamental_idx + bandwidth_bins))
+
             signal_power = np.sum(magnitude[start_bin:end_bin] ** 2)
-            
+
             # Calculate noise power from remaining frequency bins
-            noise_bins = np.concatenate([
-                magnitude[1:start_bin],
-                magnitude[end_bin:len(magnitude)//2]
-            ])
-            
+            noise_bins = np.concatenate(
+                [magnitude[1:start_bin], magnitude[end_bin : len(magnitude) // 2]]
+            )
+
             if len(noise_bins) > 0:
-                noise_power = np.mean(noise_bins ** 2)
+                noise_power = np.mean(noise_bins**2)
             else:
                 # Fallback to fixed noise floor for very clean signals
                 noise_power = 1e-8
-            
+
             if noise_power > 0:
                 snr_db = 10 * np.log10(signal_power / noise_power)
                 return float(max(0.0, snr_db))
             else:
                 return 0.0
-                
+
         except Exception as e:
             logger.debug(f"Error calculating SNR: {e}")
             return 0.0
@@ -247,29 +257,29 @@ class AudioQualityMonitor:
             # Simplified THD calculation using FFT
             fft = np.fft.fft(audio_array)
             magnitude = np.abs(fft)
-            
+
             # Find fundamental frequency (strongest component)
-            fundamental_idx = np.argmax(magnitude[1:len(magnitude)//2]) + 1
-            
+            fundamental_idx = np.argmax(magnitude[1 : len(magnitude) // 2]) + 1
+
             if fundamental_idx == 0:
                 return 0.0
-            
+
             fundamental_magnitude = magnitude[fundamental_idx]
-            
+
             # Calculate harmonics (2nd, 3rd, 4th, 5th)
             harmonic_magnitudes = []
             for i in range(2, 6):
                 harmonic_idx = fundamental_idx * i
                 if harmonic_idx < len(magnitude) // 2:
                     harmonic_magnitudes.append(magnitude[harmonic_idx])
-            
+
             if not harmonic_magnitudes:
                 return 0.0
-            
+
             # Calculate THD
             harmonic_rms = np.sqrt(np.mean(np.array(harmonic_magnitudes) ** 2))
             thd_percent = (harmonic_rms / fundamental_magnitude) * 100
-            
+
             return min(100.0, thd_percent)
         except Exception as e:
             logger.debug(f"Error calculating THD: {e}")
@@ -289,14 +299,19 @@ class AudioQualityMonitor:
             clipping_threshold = 0.95  # 95% of max amplitude
             clipped_samples = np.sum(np.abs(audio_array) >= clipping_threshold)
             clipping_percent = (clipped_samples / len(audio_array)) * 100
-            
+
             return float(clipping_percent)
         except Exception as e:
             logger.debug(f"Error calculating clipping: {e}")
             return 0.0
 
-    def _calculate_quality_score(self, snr_db: float, thd_percent: float, 
-                               clipping_percent: float, rms_level: float) -> float:
+    def _calculate_quality_score(
+        self,
+        snr_db: float,
+        thd_percent: float,
+        clipping_percent: float,
+        rms_level: float,
+    ) -> float:
         """Calculate overall quality score (0-100).
 
         Args:
@@ -311,18 +326,18 @@ class AudioQualityMonitor:
         try:
             # SNR score (0-40 points)
             snr_score = min(40.0, max(0.0, snr_db / 2.0))
-            
+
             # THD score (0-30 points)
             thd_score = max(0.0, 30.0 - (thd_percent * 3.0))
-            
+
             # Clipping score (0-20 points)
             clipping_score = max(0.0, 20.0 - (clipping_percent * 20.0))
-            
+
             # Level score (0-10 points) - penalize very low levels
             level_score = min(10.0, rms_level * 100.0)
-            
+
             total_score = snr_score + thd_score + clipping_score + level_score
-            
+
             return max(0.0, min(100.0, total_score))
         except Exception as e:
             logger.debug(f"Error calculating quality score: {e}")
@@ -358,52 +373,60 @@ class AudioQualityMonitor:
 
         # Check SNR
         if metrics.snr_db < self.thresholds.min_snr_db:
-            alerts.append(QualityAlert(
-                alert_type="low_snr",
-                severity="warning" if metrics.snr_db > 10 else "error",
-                message=f"Low SNR detected: {metrics.snr_db:.1f} dB (threshold: {self.thresholds.min_snr_db} dB)",
-                metrics=metrics,
-                timestamp=time.time()
-            ))
+            alerts.append(
+                QualityAlert(
+                    alert_type="low_snr",
+                    severity="warning" if metrics.snr_db > 10 else "error",
+                    message=f"Low SNR detected: {metrics.snr_db:.1f} dB (threshold: {self.thresholds.min_snr_db} dB)",
+                    metrics=metrics,
+                    timestamp=time.time(),
+                )
+            )
 
         # Check THD
         if metrics.thd_percent > self.thresholds.max_thd_percent:
-            alerts.append(QualityAlert(
-                alert_type="high_thd",
-                severity="warning" if metrics.thd_percent < 5 else "error",
-                message=f"High THD detected: {metrics.thd_percent:.2f}% (threshold: {self.thresholds.max_thd_percent}%)",
-                metrics=metrics,
-                timestamp=time.time()
-            ))
+            alerts.append(
+                QualityAlert(
+                    alert_type="high_thd",
+                    severity="warning" if metrics.thd_percent < 5 else "error",
+                    message=f"High THD detected: {metrics.thd_percent:.2f}% (threshold: {self.thresholds.max_thd_percent}%)",
+                    metrics=metrics,
+                    timestamp=time.time(),
+                )
+            )
 
         # Check clipping
         if metrics.clipping_percent > self.thresholds.max_clipping_percent:
-            alerts.append(QualityAlert(
-                alert_type="clipping",
-                severity="warning" if metrics.clipping_percent < 5 else "error",
-                message=f"Audio clipping detected: {metrics.clipping_percent:.2f}% (threshold: {self.thresholds.max_clipping_percent}%)",
-                metrics=metrics,
-                timestamp=time.time()
-            ))
+            alerts.append(
+                QualityAlert(
+                    alert_type="clipping",
+                    severity="warning" if metrics.clipping_percent < 5 else "error",
+                    message=f"Audio clipping detected: {metrics.clipping_percent:.2f}% (threshold: {self.thresholds.max_clipping_percent}%)",
+                    metrics=metrics,
+                    timestamp=time.time(),
+                )
+            )
 
         # Check overall quality score
         if metrics.quality_score < self.thresholds.min_quality_score:
-            alerts.append(QualityAlert(
-                alert_type="low_quality",
-                severity="warning" if metrics.quality_score > 30 else "error",
-                message=f"Low quality score: {metrics.quality_score:.1f} (threshold: {self.thresholds.min_quality_score})",
-                metrics=metrics,
-                timestamp=time.time()
-            ))
+            alerts.append(
+                QualityAlert(
+                    alert_type="low_quality",
+                    severity="warning" if metrics.quality_score > 30 else "error",
+                    message=f"Low quality score: {metrics.quality_score:.1f} (threshold: {self.thresholds.min_quality_score})",
+                    metrics=metrics,
+                    timestamp=time.time(),
+                )
+            )
 
         # Log and trigger alerts
         for alert in alerts:
             self.alert_history.append(alert)
             self.alerts_triggered += 1
-            
+
             log_level = logging.ERROR if alert.severity == "error" else logging.WARNING
             logger.log(log_level, f"Quality Alert: {alert.message}")
-            
+
             if self.on_quality_alert:
                 self.on_quality_alert(alert)
 
@@ -422,7 +445,7 @@ class AudioQualityMonitor:
                 "average_clipping_percent": 0.0,
                 "alerts_triggered": 0,
                 "quality_distribution": {},
-                "session_duration": 0.0
+                "session_duration": 0.0,
             }
 
         # Calculate averages
@@ -445,7 +468,7 @@ class AudioQualityMonitor:
             "average_clipping_percent": avg_clipping,
             "alerts_triggered": self.alerts_triggered,
             "quality_distribution": quality_dist,
-            "session_duration": time.time() - self.start_time
+            "session_duration": time.time() - self.start_time,
         }
 
     def get_recent_metrics(self, count: int = 10) -> List[QualityMetrics]:
@@ -477,4 +500,4 @@ class AudioQualityMonitor:
         self.total_chunks_analyzed = 0
         self.alerts_triggered = 0
         self.start_time = time.time()
-        logger.info("AudioQualityMonitor reset") 
+        logger.info("AudioQualityMonitor reset")

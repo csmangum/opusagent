@@ -34,7 +34,7 @@ class MockVAD(BaseVAD):
         self.process_count += 1
         
         # Simulate VAD processing based on audio energy
-        energy = np.mean(np.abs(audio_data))
+        energy = float(np.mean(np.abs(audio_data)))
         speech_prob = min(energy * 2.0, 1.0)  # Simple energy-based VAD
         threshold = self.config.get('threshold', 0.5) if self.config else 0.5
         is_speech = speech_prob > threshold

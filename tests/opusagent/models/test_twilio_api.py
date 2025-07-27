@@ -289,7 +289,7 @@ class TestStartMessage:
 
     def test_valid_start_message(self):
         """Test that a valid start message can be created."""
-        message = StartMessage(
+        message: StartMessage = StartMessage(
             event=TwilioEventType.START,
             sequenceNumber="1",
             streamSid=TEST_STREAM_SID,

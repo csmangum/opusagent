@@ -20,21 +20,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse
 
+from opusagent.agents.banking_agent import session_config
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.dual_agent_bridge import DualAgentBridge
 from opusagent.bridges.twilio_bridge import TwilioBridge
-
-from opusagent.config import get_config, server_config, mock_config, vad_config, transcription_config
+from opusagent.callers import (
+    get_available_caller_types,
+    get_available_scenarios,
+    get_caller_description,
+    get_scenario_description,
+)
+from opusagent.config import (
+    get_config,
+    mock_config,
+    server_config,
+    transcription_config,
+    vad_config,
+)
 from opusagent.config.env_loader import load_env_file
 from opusagent.config.logging_config import configure_logging
 from opusagent.config.models import WebSocketConfig
-from opusagent.agents.banking_agent import session_config
 from opusagent.handlers.session_manager import SessionManager
-from opusagent.handlers.websocket_manager import get_websocket_manager, WebSocketManager
-from opusagent.callers import get_available_caller_types, get_caller_description, get_available_scenarios, get_scenario_description
+from opusagent.handlers.websocket_manager import WebSocketManager, get_websocket_manager
 from opusagent.local.realtime import create_mock_websocket_connection
-from opusagent.handlers.websocket_manager import get_websocket_manager
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 # Load environment variables before accessing configuration
 load_env_file()
@@ -67,7 +77,7 @@ LOCAL_REALTIME_CONFIG = {
         "backend": config.transcription.backend,
         "language": config.transcription.language,
         "model_size": config.transcription.model_size,
-    }
+    },
 }
 
 # Log configuration
@@ -92,6 +102,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "WEBSOCKET"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    app.state.voice_recognizer = OpusAgentVoiceRecognizer()
 
 
 @app.websocket("/ws/telephony")
@@ -140,12 +155,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.info(f"Using OpenAI connection: {connection.connection_id}")
 
                 # Create AudioCodes bridge instance
-                bridge = AudioCodesBridge(
-                    websocket,
-                    connection.websocket,
-                    session_config,
-                    vad_enabled=VAD_ENABLED,
-                )
+            bridge = AudioCodesBridge(
+                websocket,
+                connection.websocket,
+                session_config,
+                vad_enabled=VAD_ENABLED,
+            )
 
         # Start receiving from both WebSockets
         await asyncio.gather(
@@ -381,10 +396,10 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
 
 @app.websocket("/agent-conversation")
 async def agent_conversation_endpoint(
-    websocket: WebSocket, 
+    websocket: WebSocket,
     caller_type: str = "typical",
     scenario: str = "banking_card_replacement",
-    agent_type: str = "banking"
+    agent_type: str = "banking",
 ):
     """WebSocket endpoint for caller agent to CS agent conversations.
 
@@ -406,7 +421,9 @@ async def agent_conversation_endpoint(
 
     try:
         # Create and initialize dual agent bridge with specified parameters
-        bridge = DualAgentBridge(caller_type=caller_type, scenario=scenario, agent_type=agent_type)
+        bridge = DualAgentBridge(
+            caller_type=caller_type, scenario=scenario, agent_type=agent_type
+        )
         logger.info(f"Created dual agent bridge: {bridge.conversation_id}")
 
         # Initialize both OpenAI connections and start conversation
@@ -432,7 +449,7 @@ async def agent_conversation_endpoint(
                 await bridge.close()
             except Exception as e:
                 logger.error(f"Error closing agent conversation bridge: {e}")
-        
+
         logger.info("Agent conversation ended")
         try:
             await websocket.close()
@@ -476,7 +493,9 @@ async def root():
         "configuration": {
             "vad_enabled": config.vad.enabled,
             "use_local_realtime": config.mock.use_local_realtime,
-            "local_realtime_config": LOCAL_REALTIME_CONFIG if config.mock.use_local_realtime else None,
+            "local_realtime_config": (
+                LOCAL_REALTIME_CONFIG if config.mock.use_local_realtime else None
+            ),
             "environment": config.server.environment.value,
             "openai_model": config.openai.model,
             "audio_format": config.audio.format,
@@ -632,7 +651,7 @@ async def get_caller_types():
     caller_types = {}
     for caller_type in get_available_caller_types():
         caller_types[caller_type] = get_caller_description(caller_type)
-    
+
     scenarios = {}
     for scenario in get_available_scenarios():
         scenarios[scenario] = get_scenario_description(scenario)
@@ -642,7 +661,7 @@ async def get_caller_types():
         "available_scenarios": scenarios,
         "available_agents": {
             "banking": "Banking customer service agent with card replacement and account services",
-            "insurance": "Insurance customer service agent with claims filing and policy management"
+            "insurance": "Insurance customer service agent with claims filing and policy management",
         },
         "usage": "Use ?caller_type=<type>&scenario=<scenario>&agent_type=<agent> query parameters with /agent-conversation endpoint",
         "example": "/agent-conversation?caller_type=frustrated&scenario=insurance_file_claim&agent_type=insurance",
