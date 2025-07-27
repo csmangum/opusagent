@@ -618,14 +618,16 @@ class TestCallRecorder:
         """Test recording stop with critical error that should return False."""
         recorder.recording_active = True
         
-        # Mock a critical error that should cause the method to return False
-        with patch.object(recorder, '_save_transcript', new_callable=AsyncMock, side_effect=Exception("Critical error")):
-            # Mock the outer try-catch to simulate a critical error
-            with patch.object(recorder, 'metadata', side_effect=Exception("Critical error")):
-                result = await recorder.stop_recording()
-                
-                assert result is False
-                assert recorder.finalized  # Should still be marked as finalized
+        # Mock datetime.now to fail - this happens early in the outer try block
+        # and is not wrapped in individual try-catch blocks
+        with patch('opusagent.utils.call_recorder.datetime') as mock_datetime:
+            mock_datetime.now.side_effect = Exception("Critical error")
+            
+            result = await recorder.stop_recording()
+            
+            assert result is False
+            # The recording should be marked as not active due to the exception
+            assert not recorder.recording_active
     
     @pytest.mark.asyncio
     async def test_stop_recording_not_active(self, recorder):
@@ -653,13 +655,13 @@ class TestCallRecorder:
     
     def test_validate_recording_directory_permission_error(self, recorder):
         """Test directory validation with permission error."""
-        with patch.object(recorder.recording_dir, 'mkdir', side_effect=PermissionError("Permission denied")):
+        with patch('pathlib.Path.mkdir', side_effect=PermissionError("Permission denied")):
             with pytest.raises(PermissionError, match="Permission denied"):
                 recorder._validate_recording_directory()
     
     def test_validate_recording_directory_write_test_failure(self, recorder):
         """Test directory validation with write test failure."""
-        with patch.object(recorder.recording_dir, 'write_text', side_effect=Exception("Write test failed")):
+        with patch('pathlib.Path.write_text', side_effect=Exception("Write test failed")):
             with pytest.raises(PermissionError, match="Cannot write to recording directory"):
                 recorder._validate_recording_directory()
     
@@ -825,8 +827,17 @@ class TestCallRecorder:
         recorder.caller_audio_buffer = [audio_data.tobytes()]
         recorder.bot_audio_buffer = [audio_data.tobytes()]
         
-        # Mock numpy to fail on caller buffer processing
-        with patch('numpy.concatenate', side_effect=Exception("Caller buffer error")):
+        # Mock numpy.concatenate to fail only on first call (caller buffer), succeed on second (bot buffer)
+        original_concatenate = np.concatenate
+        call_count = 0
+        def mock_concatenate(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:  # First call (caller buffer)
+                raise Exception("Caller buffer error")
+            return original_concatenate(*args, **kwargs)  # Second call (bot buffer) succeeds
+        
+        with patch('numpy.concatenate', side_effect=mock_concatenate):
             with patch('builtins.open', mock_open()) as mock_file:
                 await recorder._create_final_stereo_recording()
                 
@@ -852,12 +863,13 @@ class TestCallRecorder:
     @pytest.mark.asyncio
     async def test_create_final_stereo_recording_padding_error(self, recorder):
         """Test creating final stereo recording with padding error."""
-        # Setup audio buffers
-        audio_data = np.array([100, -200, 300, -400], dtype=np.int16)
-        recorder.caller_audio_buffer = [audio_data.tobytes()]
-        recorder.bot_audio_buffer = [audio_data.tobytes()]
+        # Setup audio buffers with different lengths to ensure padding is needed
+        caller_audio_data = np.array([100, -200], dtype=np.int16)  # 2 samples
+        bot_audio_data = np.array([300, -400, 500, -600], dtype=np.int16)  # 4 samples
+        recorder.caller_audio_buffer = [caller_audio_data.tobytes()]
+        recorder.bot_audio_buffer = [bot_audio_data.tobytes()]
         
-        # Mock numpy.pad to fail
+        # Mock numpy.pad to fail - this will be called to pad the shorter caller audio
         with patch('numpy.pad', side_effect=Exception("Padding error")):
             with patch('builtins.open', mock_open()) as mock_file:
                 await recorder._create_final_stereo_recording()

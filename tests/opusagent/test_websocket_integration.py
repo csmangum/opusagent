@@ -182,9 +182,7 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         
-        # Mock the app state voice_recognizer
-        mock_voice_recognizer = Mock()
-        app.state.voice_recognizer = mock_voice_recognizer
+        # Note: voice_recognizer is created internally in the bridge, not passed as parameter
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
@@ -214,7 +212,7 @@ class TestWebSocketManagerWebSocketEndpoints:
                 assert call_args[0][2] is not None  # Third arg: session_config
                 # Check keyword arguments
                 assert call_args[1]['vad_enabled'] == True  # vad_enabled keyword arg
-                assert call_args[1]['voice_recognizer'] == mock_voice_recognizer  # voice_recognizer keyword arg
+                # Note: voice_recognizer is created internally in the bridge, not passed as parameter
 
     @pytest.mark.asyncio
     async def test_twilio_websocket_with_manager(self, mock_connection, mock_bridge_classes):
@@ -225,9 +223,7 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket.accept = AsyncMock()
         mock_websocket.client = "test_client"
         
-        # Mock the app state voice_recognizer
-        mock_voice_recognizer = Mock()
-        app.state.voice_recognizer = mock_voice_recognizer
+        # Note: voice_recognizer is created internally in the bridge, not passed as parameter
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
@@ -255,8 +251,7 @@ class TestWebSocketManagerWebSocketEndpoints:
                 assert call_args[0][0] == mock_websocket  # First arg: websocket
                 assert call_args[0][1] == mock_connection.websocket  # Second arg: managed websocket
                 assert call_args[0][2] is not None  # Third arg: session_config
-                # Check keyword arguments
-                assert call_args[1]['voice_recognizer'] == mock_voice_recognizer  # voice_recognizer keyword arg
+                # Note: voice_recognizer is created internally in the bridge, not passed as parameter
 
     @pytest.mark.asyncio
     async def test_websocket_endpoint_exception_handling(self, mock_connection, mock_bridge_classes):
@@ -266,9 +261,7 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         
-        # Mock the app state voice_recognizer
-        mock_voice_recognizer = Mock()
-        app.state.voice_recognizer = mock_voice_recognizer
+        # Note: voice_recognizer is created internally in the bridge, not passed as parameter
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()
@@ -294,9 +287,7 @@ class TestWebSocketManagerWebSocketEndpoints:
         mock_websocket = AsyncMock()
         mock_websocket.accept = AsyncMock()
         
-        # Mock the app state voice_recognizer
-        mock_voice_recognizer = Mock()
-        app.state.voice_recognizer = mock_voice_recognizer
+        # Note: voice_recognizer is created internally in the bridge, not passed as parameter
         
         with patch('opusagent.main.get_websocket_manager') as mock_get_manager:
             mock_manager = Mock()

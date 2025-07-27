@@ -815,18 +815,6 @@ class AudioCodesBridge(BaseRealtimeBridge):
             if self.call_recorder:
                 await self.call_recorder.record_bot_audio(audio_delta.delta)
 
-            # Validate audio delta before sending
-            if not audio_delta.delta or audio_delta.delta.strip() == "":
-                logger.warning("Empty audio delta received, skipping audio chunk")
-                return
-
-            # Validate base64 encoding
-            try:
-                base64.b64decode(audio_delta.delta)
-            except Exception as e:
-                logger.error(f"Invalid base64 audio delta: {e}")
-                return
-
             # Start a new audio stream if needed
             if not self.audio_handler.active_stream_id:
                 logger.debug("No active stream, creating new one")
@@ -850,6 +838,18 @@ class AudioCodesBridge(BaseRealtimeBridge):
                 except Exception as e:
                     logger.error(f"Failed to send playStream.start: {e}")
                     return
+
+            # Validate audio delta before sending chunk
+            if not audio_delta.delta or audio_delta.delta.strip() == "":
+                logger.warning("Empty audio delta received, skipping audio chunk")
+                return
+
+            # Validate base64 encoding
+            try:
+                base64.b64decode(audio_delta.delta)
+            except Exception as e:
+                logger.error(f"Invalid base64 audio delta: {e}")
+                return
 
             # Send audio chunk to platform client (no resampling needed - AudioCodes supports 24kHz)
             stream_chunk = PlayStreamChunkMessage(

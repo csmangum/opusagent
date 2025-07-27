@@ -1,7 +1,8 @@
 import pytest
 import websockets
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from fastapi import WebSocket
+from starlette.websockets import WebSocketState
 
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
@@ -53,10 +54,12 @@ def test_session_config():
 
 @pytest.fixture
 async def mock_websocket():
-    websocket = AsyncMock(spec=WebSocket)
+    websocket = MagicMock()
     websocket.send_json = AsyncMock()
     websocket.receive_text = AsyncMock()
     websocket.close = AsyncMock()
+    websocket.client_state = WebSocketState.CONNECTED
+    websocket.close_code = None  # Ensure is_websocket_closed returns False
     return websocket
 
 
@@ -76,6 +79,8 @@ async def bridge(mock_websocket, mock_realtime_websocket, test_session_config):
     bridge.session_manager.initialize_session = AsyncMock()
     bridge.session_manager.send_initial_conversation_item = AsyncMock()
     bridge.audio_handler.initialize_stream = AsyncMock()
+    # Ensure the bridge is not closed
+    bridge._closed = False
     return bridge
 
 
@@ -133,6 +138,12 @@ async def test_register_platform_event_handlers_inheritance(bridge):
 @pytest.mark.asyncio
 async def test_send_platform_json_inheritance(bridge, mock_websocket):
     """Test that CallAgentBridge inherits send_platform_json functionality."""
+    # Debug: Check the conditions that prevent sending
+    print(f"bridge._closed: {bridge._closed}")
+    print(f"bridge.platform_websocket: {bridge.platform_websocket}")
+    print(f"bridge._is_websocket_closed(): {bridge._is_websocket_closed()}")
+    print(f"mock_websocket.client_state: {mock_websocket.client_state}")
+    
     test_payload = {"type": "session.accepted", "conversationId": "test-123"}
     await bridge.send_platform_json(test_payload)
     mock_websocket.send_json.assert_called_once_with(test_payload)
