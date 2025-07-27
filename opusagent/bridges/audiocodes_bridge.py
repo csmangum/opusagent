@@ -769,6 +769,15 @@ class AudioCodesBridge(BaseRealtimeBridge):
             Exception: Logs errors but doesn't raise to prevent audio pipeline disruption
         """
         try:
+            # Validate that we have the required fields before parsing
+            required_fields = ["response_id", "item_id", "output_index", "content_index", "delta"]
+            missing_fields = [field for field in required_fields if field not in response_dict]
+            
+            if missing_fields:
+                logger.warning(f"Incomplete audio delta event - missing fields: {missing_fields}")
+                logger.debug(f"Received data: {response_dict}")
+                return
+            
             # Parse audio delta event
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
@@ -828,3 +837,5 @@ class AudioCodesBridge(BaseRealtimeBridge):
 
         except Exception as e:
             logger.error(f"Error in AudioCodes audio handler: {e}")
+            # Log the problematic data for debugging
+            logger.debug(f"Problematic response_dict: {response_dict}")

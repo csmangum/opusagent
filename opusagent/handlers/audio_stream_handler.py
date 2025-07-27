@@ -288,6 +288,15 @@ class AudioStreamHandler:
             response_dict (Dict[str, Any]): Response data containing audio delta
         """
         try:
+            # Validate that we have the required fields before parsing
+            required_fields = ["response_id", "item_id", "output_index", "content_index", "delta"]
+            missing_fields = [field for field in required_fields if field not in response_dict]
+            
+            if missing_fields:
+                logger.warning(f"Incomplete audio delta event - missing fields: {missing_fields}")
+                logger.debug(f"Received data: {response_dict}")
+                return
+            
             # Parse audio delta event
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
@@ -353,6 +362,8 @@ class AudioStreamHandler:
 
         except Exception as e:
             logger.error(f"Error processing audio data: {e}")
+            # Log the problematic data for debugging
+            logger.debug(f"Problematic response_dict: {response_dict}")
 
     async def commit_audio_buffer(self) -> None:
         """Commit the audio buffer to OpenAI Realtime API.
