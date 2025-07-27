@@ -58,6 +58,7 @@ from opusagent.handlers.audio_stream_handler import AudioStreamHandler
 from opusagent.handlers.session_manager import SessionManager
 from opusagent.handlers.event_router import EventRouter
 from opusagent.handlers.transcript_manager import TranscriptManager
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 logger = configure_logging("text_audio_agent")
 
@@ -417,21 +418,19 @@ class TextAudioAgent:
         self.audio_directory = Path(audio_directory)
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
         self.temperature = temperature
-        
-        # Connection state
-        self.connected = False
+        self.available_files = self._scan_audio_files()
         self.connection = None
         self.function_handler = None
         self.realtime_handler = None
-        
-        # Audio management
-        self.available_files = self._scan_audio_files()
+        self.connected = False
+        self.voice_recognizer = OpusAgentVoiceRecognizer()
+        self.caller_memory = {}
+        self.memory_storage: Optional[Any] = None  # Will be initialized if needed
+        self._session_initialized = False
         
         # Update system prompt with available files
         self._update_system_prompt_with_files()
-        
-        logger.info(f"TextAudioAgent initialized with {len(self.available_files)} audio files")
-    
+
     def _scan_audio_files(self) -> List[str]:
         """
         Scan the audio directory for available audio files.
@@ -760,6 +759,41 @@ class TextAudioAgent:
             "available_files": self.available_files,
             "file_count": len(self.available_files)
         }
+
+    async def handle_audio_input(self, audio_buffer, session):
+        if not session.caller_id:
+            match = self.voice_recognizer.match_caller(audio_buffer)
+            if match:
+                caller_id, similarity, metadata = match
+                session.caller_id = caller_id
+                session.caller_metadata = metadata
+                await self.load_caller_memory(caller_id)
+        
+        # For text-audio agent, we don't process audio input directly
+        # Audio is handled through the play_audio function calls
+        return True
+    
+    async def load_caller_memory(self, caller_id):
+        if caller_id not in self.caller_memory:
+            # Initialize empty memory if no storage is available
+            self.caller_memory[caller_id] = {}
+            
+            # Try to load from storage if available
+            if self.memory_storage is not None:
+                try:
+                    memory = await self.memory_storage.get_caller_memory(caller_id)
+                    if memory:
+                        self.caller_memory[caller_id] = memory
+                except Exception as e:
+                    logger.warning(f"Failed to load caller memory: {e}")
+        
+        await self.apply_caller_context(self.caller_memory[caller_id])
+    
+    async def apply_caller_context(self, memory):
+        """Apply caller context to the current session."""
+        # This method can be overridden to apply caller-specific context
+        # For now, it's a placeholder
+        return True
 
 
 # ==============================

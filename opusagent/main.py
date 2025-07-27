@@ -35,6 +35,7 @@ from opusagent.handlers.websocket_manager import get_websocket_manager, WebSocke
 from opusagent.callers import get_available_caller_types, get_caller_description, get_available_scenarios, get_scenario_description
 from opusagent.local.realtime import create_mock_websocket_connection
 from opusagent.handlers.websocket_manager import get_websocket_manager
+from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 # Load environment variables before accessing configuration
 load_env_file()
@@ -94,6 +95,11 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    app.state.voice_recognizer = OpusAgentVoiceRecognizer()
+
+
 @app.websocket("/ws/telephony")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for handling telephony connections.
@@ -133,6 +139,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 mock_connection,  # Use mock connection instead of None
                 session_config,
                 vad_enabled=VAD_ENABLED,
+                voice_recognizer=app.state.voice_recognizer,
             )
         else:
             # Get a managed connection to OpenAI Realtime API
@@ -145,6 +152,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     connection.websocket,
                     session_config,
                     vad_enabled=VAD_ENABLED,
+                    voice_recognizer=app.state.voice_recognizer,
                 )
 
         # Start receiving from both WebSockets
@@ -216,6 +224,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
                 mock_connection,  # Use mock connection instead of None
                 session_config,
                 vad_enabled=VAD_ENABLED,
+                voice_recognizer=app.state.voice_recognizer,
             )
             logger.info("Caller-Realtime bridge created with mock connection")
         else:
@@ -233,6 +242,7 @@ async def handle_caller_call(caller_websocket: WebSocket):
                     connection.websocket,
                     session_config,
                     vad_enabled=VAD_ENABLED,
+                    voice_recognizer=app.state.voice_recognizer,
                 )
                 logger.info("Caller-Realtime bridge created")
 
@@ -317,6 +327,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
                 twilio_websocket,
                 mock_connection,  # Use mock connection instead of None
                 session_config,
+                voice_recognizer=app.state.voice_recognizer,
             )
             logger.info("Twilio-Realtime bridge created with mock connection")
         else:
@@ -328,7 +339,7 @@ async def handle_twilio_call(twilio_websocket: WebSocket):
                     f"OpenAI WebSocket connection established for Twilio: {connection.connection_id}"
                 )
                 bridge = TwilioBridge(
-                    twilio_websocket, connection.websocket, session_config
+                    twilio_websocket, connection.websocket, session_config, voice_recognizer=app.state.voice_recognizer
                 )
                 logger.info("Twilio-Realtime bridge created")
 

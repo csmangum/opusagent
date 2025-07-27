@@ -10,7 +10,7 @@ Cross-session memory provides:
 - **User Identification**: Integrate with caller ID or voice fingerprinting for accurate matching.
 - **Efficiency**: Store concise summaries to avoid data bloat while enabling long-term recall.
 
-This ties into the roadmap's voice fingerprinting feature (see [voice_fingerprinting_implementation.md](voice_fingerprinting_implementation.md)) for robust identification beyond caller ID.
+This ties into the roadmap's voice fingerprinting feature (see [voiceprint_implementation.md](voiceprint_implementation.md)) for robust identification beyond caller ID.
 
 ## Architecture
 
