@@ -540,6 +540,19 @@ class BaseRealtimeBridge(ABC):
             Exception: For any errors during processing
         """
         try:
+            # Check if WebSocket needs to be accepted (for FastAPI WebSocket)
+            if hasattr(self.platform_websocket, 'client_state'):
+                try:
+                    from starlette.websockets import WebSocketState
+                    if self.platform_websocket.client_state != WebSocketState.CONNECTED:
+                        await self.platform_websocket.accept()
+                        logger.info("WebSocket connection accepted")
+                except ImportError:
+                    # Fallback if starlette is not available
+                    pass
+                except Exception as accept_error:
+                    logger.warning(f"WebSocket accept failed: {accept_error}")
+
             async for message in self.platform_websocket.iter_text():
                 if self._closed:
                     break
