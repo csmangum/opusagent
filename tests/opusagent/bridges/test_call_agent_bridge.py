@@ -1,7 +1,8 @@
 import pytest
 import websockets
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from fastapi import WebSocket
+from starlette.websockets import WebSocketState
 
 from opusagent.bridges.call_agent_bridge import CallAgentBridge
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
@@ -53,10 +54,12 @@ def test_session_config():
 
 @pytest.fixture
 async def mock_websocket():
-    websocket = AsyncMock(spec=WebSocket)
+    websocket = MagicMock()
     websocket.send_json = AsyncMock()
     websocket.receive_text = AsyncMock()
     websocket.close = AsyncMock()
+    websocket.client_state = WebSocketState.CONNECTED
+    websocket.close_code = None  # Ensure is_websocket_closed returns False
     return websocket
 
 
@@ -76,6 +79,8 @@ async def bridge(mock_websocket, mock_realtime_websocket, test_session_config):
     bridge.session_manager.initialize_session = AsyncMock()
     bridge.session_manager.send_initial_conversation_item = AsyncMock()
     bridge.audio_handler.initialize_stream = AsyncMock()
+    # Ensure the bridge is not closed
+    bridge._closed = False
     return bridge
 
 

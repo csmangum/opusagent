@@ -132,6 +132,24 @@ class AudioCodesBridge(BaseRealtimeBridge):
             TelephonyEventType.CONNECTION_VALIDATE, self.handle_connection_validate
         )
 
+        # Register handlers for VAD speech events from AudioCodes platform
+        self.event_router.register_platform_handler(
+            TelephonyEventType.USER_STREAM_SPEECH_STARTED,
+            self.handle_platform_speech_started,
+        )
+        self.event_router.register_platform_handler(
+            TelephonyEventType.USER_STREAM_SPEECH_STOPPED,
+            self.handle_platform_speech_stopped,
+        )
+        self.event_router.register_platform_handler(
+            TelephonyEventType.USER_STREAM_SPEECH_COMMITTED,
+            self.handle_platform_speech_committed,
+        )
+        self.event_router.register_platform_handler(
+            TelephonyEventType.USER_STREAM_SPEECH_HYPOTHESIS,
+            self.handle_platform_speech_hypothesis,
+        )
+
         # Register handlers for VAD speech events from OpenAI Realtime API only if VAD is enabled
         if self.vad_enabled:
             logger.info("Registering VAD event handlers for OpenAI Realtime API")
@@ -161,7 +179,16 @@ class AudioCodesBridge(BaseRealtimeBridge):
             This method is used by all AudioCodes-specific response methods to
             send properly formatted messages back to the AudioCodes platform.
         """
-        await self.platform_websocket.send_json(payload)
+        # Check if connection is still active before sending
+        if self._closed or not self.platform_websocket or self._is_websocket_closed():
+            logger.debug("Skipping platform message - connection closed or unavailable")
+            return
+
+        try:
+            await self.platform_websocket.send_json(payload)
+        except Exception as e:
+            logger.error(f"Failed to send platform message: {e}")
+            # Don't raise the exception to prevent cascading failures
 
     async def handle_session_start(self, data: dict):
         """Handle session initiation from AudioCodes.
@@ -460,6 +487,91 @@ class AudioCodesBridge(BaseRealtimeBridge):
         logger.info("Speech committed detected - sending to AudioCodes")
         await self.send_speech_committed()
 
+    async def handle_platform_speech_started(self, data: dict):
+        """Handle speech started event from AudioCodes platform.
+
+        This method processes speech started events that come from AudioCodes
+        itself, indicating that AudioCodes has detected the start of speech.
+
+        Args:
+            data (dict): Speech started event data from AudioCodes platform
+
+        Note:
+            This handler processes VAD events that originate from AudioCodes,
+            as opposed to those that come from the OpenAI Realtime API.
+        """
+        logger.info("Speech started event from AudioCodes platform")
+        # Log the event details for debugging
+        if "participant" in data:
+            logger.info(f"Speech started for participant: {data['participant']}")
+        if "participantId" in data:
+            logger.info(f"Speech started for participant ID: {data['participantId']}")
+
+    async def handle_platform_speech_stopped(self, data: dict):
+        """Handle speech stopped event from AudioCodes platform.
+
+        This method processes speech stopped events that come from AudioCodes
+        itself, indicating that AudioCodes has detected the end of speech.
+
+        Args:
+            data (dict): Speech stopped event data from AudioCodes platform
+
+        Note:
+            This handler processes VAD events that originate from AudioCodes,
+            as opposed to those that come from the OpenAI Realtime API.
+        """
+        logger.info("Speech stopped event from AudioCodes platform")
+        # Log the event details for debugging
+        if "participant" in data:
+            logger.info(f"Speech stopped for participant: {data['participant']}")
+        if "participantId" in data:
+            logger.info(f"Speech stopped for participant ID: {data['participantId']}")
+
+    async def handle_platform_speech_committed(self, data: dict):
+        """Handle speech committed event from AudioCodes platform.
+
+        This method processes speech committed events that come from AudioCodes
+        itself, indicating that AudioCodes has committed speech for processing.
+
+        Args:
+            data (dict): Speech committed event data from AudioCodes platform
+
+        Note:
+            This handler processes VAD events that originate from AudioCodes,
+            as opposed to those that come from the OpenAI Realtime API.
+        """
+        logger.info("Speech committed event from AudioCodes platform")
+        # Log the event details for debugging
+        if "participant" in data:
+            logger.info(f"Speech committed for participant: {data['participant']}")
+        if "participantId" in data:
+            logger.info(f"Speech committed for participant ID: {data['participantId']}")
+
+    async def handle_platform_speech_hypothesis(self, data: dict):
+        """Handle speech hypothesis event from AudioCodes platform.
+
+        This method processes speech hypothesis events that come from AudioCodes
+        itself, indicating that AudioCodes has detected interim speech recognition
+        results.
+
+        Args:
+            data (dict): Speech hypothesis event data from AudioCodes platform
+
+        Note:
+            This handler processes VAD events that originate from AudioCodes,
+            as opposed to those that come from the OpenAI Realtime API.
+        """
+        logger.info("Speech hypothesis event from AudioCodes platform")
+        # Log the event details for debugging
+        if "participant" in data:
+            logger.info(f"Speech hypothesis for participant: {data['participant']}")
+        if "participantId" in data:
+            logger.info(
+                f"Speech hypothesis for participant ID: {data['participantId']}"
+            )
+        if "alternatives" in data:
+            logger.info(f"Speech hypothesis alternatives: {data['alternatives']}")
+
     async def send_session_accepted(self):
         """Send AudioCodes-specific session accepted response.
 
@@ -663,6 +775,25 @@ class AudioCodesBridge(BaseRealtimeBridge):
             Exception: Logs errors but doesn't raise to prevent audio pipeline disruption
         """
         try:
+            # Validate that we have the required fields before parsing
+            required_fields = [
+                "response_id",
+                "item_id",
+                "output_index",
+                "content_index",
+                "delta",
+            ]
+            missing_fields = [
+                field for field in required_fields if field not in response_dict
+            ]
+
+            if missing_fields:
+                logger.warning(
+                    f"Incomplete audio delta event - missing fields: {missing_fields}"
+                )
+                logger.debug(f"Received data: {response_dict}")
+                return
+
             # Parse audio delta event
             audio_delta = ResponseAudioDeltaEvent(**response_dict)
 
@@ -674,8 +805,10 @@ class AudioCodesBridge(BaseRealtimeBridge):
                 return
 
             # Check if platform websocket is available and not closed
-            if not self.platform_websocket:
-                logger.debug("Skipping audio delta - platform websocket is unavailable")
+            if not self.platform_websocket or self._is_websocket_closed():
+                logger.debug(
+                    "Skipping audio delta - platform websocket is unavailable or closed"
+                )
                 return
 
             # Record bot audio if recorder is available
@@ -697,10 +830,26 @@ class AudioCodesBridge(BaseRealtimeBridge):
                     altText=None,
                     activityParams=None,
                 )
-                await self.platform_websocket.send_json(stream_start.model_dump())
-                logger.info(
-                    f"Started play stream: {self.audio_handler.active_stream_id}"
-                )
+                try:
+                    await self.platform_websocket.send_json(stream_start.model_dump())
+                    logger.info(
+                        f"Started play stream: {self.audio_handler.active_stream_id}"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send playStream.start: {e}")
+                    return
+
+            # Validate audio delta before sending chunk
+            if not audio_delta.delta or audio_delta.delta.strip() == "":
+                logger.warning("Empty audio delta received, skipping audio chunk")
+                return
+
+            # Validate base64 encoding
+            try:
+                base64.b64decode(audio_delta.delta)
+            except Exception as e:
+                logger.error(f"Invalid base64 audio delta: {e}")
+                return
 
             # Send audio chunk to platform client (no resampling needed - AudioCodes supports 24kHz)
             stream_chunk = PlayStreamChunkMessage(
@@ -710,7 +859,13 @@ class AudioCodesBridge(BaseRealtimeBridge):
                 audioChunk=audio_delta.delta,  # Send original 24kHz audio directly
                 participant="caller",
             )
-            await self.platform_websocket.send_json(stream_chunk.model_dump())
+            try:
+                await self.platform_websocket.send_json(stream_chunk.model_dump())
+            except Exception as e:
+                logger.error(f"Failed to send audio chunk: {e}")
+                return
 
         except Exception as e:
             logger.error(f"Error in AudioCodes audio handler: {e}")
+            # Log the problematic data for debugging
+            logger.debug(f"Problematic response_dict: {response_dict}")

@@ -13,20 +13,20 @@ from typing import Any, Dict, Optional, Union
 
 from websockets.asyncio.client import ClientConnection
 
-from opusagent.utils.audio_quality_monitor import QualityThresholds
-from opusagent.handlers.audio_stream_handler import AudioStreamHandler
-from opusagent.utils.call_recorder import CallRecorder
 from opusagent.config.logging_config import configure_logging
+from opusagent.handlers.audio_stream_handler import AudioStreamHandler
 from opusagent.handlers.event_router import EventRouter
 from opusagent.handlers.function_handler import FunctionHandler
-from opusagent.models.openai_api import SessionConfig
 from opusagent.handlers.realtime_handler import RealtimeHandler
 from opusagent.handlers.session_manager import SessionManager
 from opusagent.handlers.transcript_manager import TranscriptManager
-from opusagent.services.session_manager_service import SessionManagerService
+from opusagent.models.openai_api import SessionConfig
 from opusagent.models.session_state import SessionState
+from opusagent.services.session_manager_service import SessionManagerService
 from opusagent.session_storage import SessionStorage
 from opusagent.session_storage.memory_storage import MemorySessionStorage
+from opusagent.utils.audio_quality_monitor import QualityThresholds
+from opusagent.utils.call_recorder import CallRecorder
 from opusagent.voiceprint import OpusAgentVoiceRecognizer
 
 # Configure logging
@@ -252,11 +252,47 @@ class BaseRealtimeBridge(ABC):
             # Stop and finalize call recording
             if self.call_recorder:
                 try:
-                    await self.call_recorder.stop_recording()
-                    summary = self.call_recorder.get_recording_summary()
-                    logger.info(f"Call recording finalized: {summary}")
+                    logger.info(
+                        f"Finalizing call recording for conversation: {self.conversation_id}"
+                    )
+                    success = await self.call_recorder.stop_recording()
+                    if success:
+                        summary = self.call_recorder.get_recording_summary()
+                        logger.info(f"Call recording finalized: {summary}")
+                    else:
+                        logger.warning(
+                            "Call recording stop returned False - some operations may have failed"
+                        )
+                        # Still try to get summary for debugging
+                        try:
+                            summary = self.call_recorder.get_recording_summary()
+                            logger.info(
+                                f"Call recording summary (with errors): {summary}"
+                            )
+                        except Exception as summary_error:
+                            logger.error(
+                                f"Error getting recording summary: {summary_error}"
+                            )
                 except Exception as e:
                     logger.error(f"Error finalizing call recording: {e}")
+                    # Log additional context for debugging
+                    logger.error(f"Conversation ID: {self.conversation_id}")
+                    logger.error(
+                        f"Recording active: {getattr(self.call_recorder, 'recording_active', 'Unknown')}"
+                    )
+                    logger.error(
+                        f"Recording finalized: {getattr(self.call_recorder, 'finalized', 'Unknown')}"
+                    )
+                    logger.error(
+                        f"Recording directory: {getattr(self.call_recorder, 'recording_dir', 'Unknown')}"
+                    )
+
+                    # Try emergency cleanup
+                    try:
+                        await self.call_recorder.emergency_cleanup()
+                        logger.info("Emergency cleanup completed")
+                    except Exception as cleanup_error:
+                        logger.error(f"Emergency cleanup also failed: {cleanup_error}")
 
             # Close local realtime client if used
             if self.local_realtime_client:
@@ -540,6 +576,20 @@ class BaseRealtimeBridge(ABC):
             Exception: For any errors during processing
         """
         try:
+            # Check if WebSocket needs to be accepted (for FastAPI WebSocket)
+            if hasattr(self.platform_websocket, "client_state"):
+                try:
+                    from starlette.websockets import WebSocketState
+
+                    if self.platform_websocket.client_state != WebSocketState.CONNECTED:
+                        await self.platform_websocket.accept()
+                        logger.info("WebSocket connection accepted")
+                except ImportError:
+                    # Fallback if starlette is not available
+                    pass
+                except Exception as accept_error:
+                    logger.warning(f"WebSocket accept failed: {accept_error}")
+
             async for message in self.platform_websocket.iter_text():
                 if self._closed:
                     break

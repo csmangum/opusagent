@@ -189,6 +189,7 @@ def test_customer_service_functions_registration(function_handler):
         "transfer_funds",
         "process_replacement",
         "transfer_to_human",
+        "human_handoff",
     ]
 
     for func_name in expected_functions:

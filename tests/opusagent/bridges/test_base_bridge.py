@@ -147,7 +147,7 @@ async def test_close_with_call_recorder(bridge, mock_websocket, mock_realtime_we
     """Test bridge closure with call recorder."""
     # Set up call recorder mock
     mock_call_recorder = AsyncMock()
-    mock_call_recorder.stop_recording = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock(return_value=True)  # Success case
     mock_call_recorder.get_recording_summary = MagicMock(return_value="Test summary")
     bridge.call_recorder = mock_call_recorder
     
@@ -165,6 +165,114 @@ async def test_close_with_call_recorder(bridge, mock_websocket, mock_realtime_we
     mock_call_recorder.get_recording_summary.assert_called_once()
     
     # Verify realtime handler close was called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_with_call_recorder_partial_failure(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure with call recorder that returns False (partial failure)."""
+    # Set up call recorder mock that returns False (partial failure)
+    mock_call_recorder = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock(return_value=False)
+    mock_call_recorder.get_recording_summary = MagicMock(return_value="Test summary with errors")
+    bridge.call_recorder = mock_call_recorder
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge
+    await bridge.close()
+    
+    # Verify the bridge is marked as closed
+    assert bridge._closed is True
+    
+    # Verify call recorder was stopped
+    mock_call_recorder.stop_recording.assert_called_once()
+    mock_call_recorder.get_recording_summary.assert_called_once()
+    
+    # Verify realtime handler close was called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_with_call_recorder_summary_error(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure when call recorder summary throws an error."""
+    # Set up call recorder mock that throws an error on get_recording_summary
+    mock_call_recorder = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock(return_value=True)
+    mock_call_recorder.get_recording_summary = MagicMock(side_effect=Exception("Summary error"))
+    bridge.call_recorder = mock_call_recorder
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge - should not raise an exception
+    await bridge.close()
+    
+    # Verify the bridge is still marked as closed despite the error
+    assert bridge._closed is True
+    
+    # Verify call recorder stop was attempted
+    mock_call_recorder.stop_recording.assert_called_once()
+    mock_call_recorder.get_recording_summary.assert_called_once()
+    
+    # Verify realtime handler close was still called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_with_call_recorder_emergency_cleanup(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure with call recorder that needs emergency cleanup."""
+    # Set up call recorder mock that throws an error on stop_recording
+    mock_call_recorder = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock(side_effect=Exception("Critical recording error"))
+    mock_call_recorder.emergency_cleanup = AsyncMock()
+    bridge.call_recorder = mock_call_recorder
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge - should not raise an exception
+    await bridge.close()
+    
+    # Verify the bridge is still marked as closed despite the error
+    assert bridge._closed is True
+    
+    # Verify call recorder stop was attempted
+    mock_call_recorder.stop_recording.assert_called_once()
+    
+    # Verify emergency cleanup was called
+    mock_call_recorder.emergency_cleanup.assert_called_once()
+    
+    # Verify realtime handler close was still called
+    bridge.realtime_handler.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_with_call_recorder_emergency_cleanup_error(bridge, mock_websocket, mock_realtime_websocket):
+    """Test bridge closure when both call recorder stop and emergency cleanup fail."""
+    # Set up call recorder mock that throws errors on both stop_recording and emergency_cleanup
+    mock_call_recorder = AsyncMock()
+    mock_call_recorder.stop_recording = AsyncMock(side_effect=Exception("Critical recording error"))
+    mock_call_recorder.emergency_cleanup = AsyncMock(side_effect=Exception("Emergency cleanup error"))
+    bridge.call_recorder = mock_call_recorder
+    
+    # Mock dependencies
+    bridge.realtime_handler.close = AsyncMock()
+    
+    # Close the bridge - should not raise an exception
+    await bridge.close()
+    
+    # Verify the bridge is still marked as closed despite the errors
+    assert bridge._closed is True
+    
+    # Verify call recorder stop was attempted
+    mock_call_recorder.stop_recording.assert_called_once()
+    
+    # Verify emergency cleanup was attempted
+    mock_call_recorder.emergency_cleanup.assert_called_once()
+    
+    # Verify realtime handler close was still called
     bridge.realtime_handler.close.assert_called_once()
 
 
@@ -191,6 +299,7 @@ async def test_close_with_call_recorder_error(bridge, mock_websocket, mock_realt
     # Set up call recorder mock that throws an error
     mock_call_recorder = AsyncMock()
     mock_call_recorder.stop_recording = AsyncMock(side_effect=Exception("Recording error"))
+    mock_call_recorder.emergency_cleanup = AsyncMock()  # Add emergency cleanup mock
     bridge.call_recorder = mock_call_recorder
     
     # Mock dependencies
@@ -204,6 +313,9 @@ async def test_close_with_call_recorder_error(bridge, mock_websocket, mock_realt
     
     # Verify call recorder stop was attempted
     mock_call_recorder.stop_recording.assert_called_once()
+    
+    # Verify emergency cleanup was called
+    mock_call_recorder.emergency_cleanup.assert_called_once()
     
     # Verify realtime handler close was still called
     bridge.realtime_handler.close.assert_called_once()
