@@ -27,6 +27,12 @@ Examples:
 
     # Generate test report
     python validate_audiocodes_bridge.py --report-file validation_report.json
+
+    # Run with custom logging
+    python validate_audiocodes_bridge.py --log-level DEBUG --log-file validation.log
+
+    # Run with custom log file path
+    python validate_audiocodes_bridge.py --log-file logs/bridge_validation.log
 """
 
 import argparse
@@ -39,7 +45,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from opusagent.config import get_config
 from opusagent.config.env_loader import load_env_file
+from opusagent.config.logging_config import configure_logging
 from opusagent.local.audiocodes import LocalAudioCodesClient
 
 
@@ -120,13 +128,8 @@ class AudioCodesBridgeValidator:
         self.verbose = verbose
         self.results = BridgeValidationResults()
 
-        # Configure logging
-        log_level = logging.DEBUG if verbose else logging.INFO
-        logging.basicConfig(
-            level=log_level,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        )
-        self.logger = logging.getLogger("bridge_validator")
+        # Configure logging using centralized configuration
+        self.logger = configure_logging("bridge_validator")
 
         # Test audio files
         self.test_audio_files = self._discover_audio_files()
@@ -1061,6 +1064,12 @@ class AudioCodesBridgeValidator:
 
 async def main():
     """Main function for command-line usage."""
+    # Load environment variables first
+    load_env_file()
+
+    # Get centralized configuration
+    config = get_config()
+
     parser = argparse.ArgumentParser(
         description="Validate AudioCodes Bridge Server",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1070,6 +1079,8 @@ Examples:
   python validate_audiocodes_bridge.py --bridge-url ws://localhost:8080
   python validate_audiocodes_bridge.py --extended --verbose
   python validate_audiocodes_bridge.py --quick --report-file results.json
+  python validate_audiocodes_bridge.py --log-level DEBUG --log-file validation.log
+  python validate_audiocodes_bridge.py --log-file logs/bridge_validation.log
         """,
     )
 
@@ -1093,8 +1104,38 @@ Examples:
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument("--report-file", help="Save detailed report to JSON file")
+    parser.add_argument(
+        "--log-level",
+        default=config.logging.level.value,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help=f"Logging level (default: {config.logging.level.value} from config)",
+    )
+    parser.add_argument(
+        "--log-file",
+        help="Custom log file path (default: logs/opusagent.log)",
+    )
 
     args = parser.parse_args()
+
+    # Configure logging
+    if args.log_file:
+        # Use custom log file path
+        log_file_path = Path(args.log_file)
+        log_dir = log_file_path.parent
+        log_filename = log_file_path.name
+        logger = configure_logging("validation_script", str(log_dir), log_filename)
+    else:
+        # Use default logging configuration
+        logger = configure_logging("validation_script")
+
+    # Log validation configuration
+    logger.info("=== Bridge Validation Configuration ===")
+    logger.info(f"Bridge URL: {args.bridge_url}")
+    logger.info(f"Audio Directory: {args.audio_dir or 'Auto-discover'}")
+    logger.info(f"Timeout: {args.timeout}s")
+    logger.info(f"Log Level: {args.log_level}")
+    logger.info(f"Verbose: {args.verbose}")
+    logger.info("=====================================")
 
     # Determine test suite
     if args.quick:
@@ -1114,6 +1155,7 @@ Examples:
 
     # Run validation
     try:
+        logger.info("🚀 Starting bridge validation...")
         results = await validator.validate_bridge(test_suite)
 
         # Print results
@@ -1123,17 +1165,28 @@ Examples:
         if args.report_file:
             validator.save_report(args.report_file)
 
+        # Log final results
+        if results.overall_success:
+            logger.info(
+                f"✅ Validation completed successfully ({results.success_rate:.1f}% success rate)"
+            )
+        else:
+            logger.error(
+                f"❌ Validation completed with failures ({results.success_rate:.1f}% success rate)"
+            )
+
         # Exit with appropriate code
         sys.exit(0 if results.overall_success else 1)
 
     except KeyboardInterrupt:
+        logger.warning("⚠️ Validation interrupted by user")
         print("\n⚠️ Validation interrupted by user")
         sys.exit(1)
     except Exception as e:
+        logger.error(f"❌ Validation failed with error: {e}")
         print(f"\n❌ Validation failed with error: {e}")
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    load_env_file()  # Add this line to load environment variables
     asyncio.run(main())
