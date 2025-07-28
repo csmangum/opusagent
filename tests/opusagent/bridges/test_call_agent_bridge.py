@@ -138,12 +138,6 @@ async def test_register_platform_event_handlers_inheritance(bridge):
 @pytest.mark.asyncio
 async def test_send_platform_json_inheritance(bridge, mock_websocket):
     """Test that CallAgentBridge inherits send_platform_json functionality."""
-    # Debug: Check the conditions that prevent sending
-    print(f"bridge._closed: {bridge._closed}")
-    print(f"bridge.platform_websocket: {bridge.platform_websocket}")
-    print(f"bridge._is_websocket_closed(): {bridge._is_websocket_closed()}")
-    print(f"mock_websocket.client_state: {mock_websocket.client_state}")
-    
     test_payload = {"type": "session.accepted", "conversationId": "test-123"}
     await bridge.send_platform_json(test_payload)
     mock_websocket.send_json.assert_called_once_with(test_payload)
