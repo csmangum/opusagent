@@ -129,7 +129,7 @@ class AudioCodesBridgeValidator:
         self.results = BridgeValidationResults()
 
         # Configure logging using centralized configuration
-        self.logger = configure_logging("bridge_validator")
+        self.logger = configure_logging("bridge_validator", log_filename="bridge_validation.log")
 
         # Test audio files
         self.test_audio_files = self._discover_audio_files()
