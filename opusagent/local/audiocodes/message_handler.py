@@ -516,6 +516,17 @@ class MessageHandler:
                 )
                 # Set to INACTIVE for greeting completion
                 self.session_manager.stream_state.play_stream = StreamStatus.INACTIVE
+
+                # Notify conversation manager if it has a callback registered
+                if (
+                    hasattr(self.session_manager, "conversation_manager")
+                    and self.session_manager.conversation_manager is not None
+                ):
+                    try:
+                        self.session_manager.conversation_manager._notify_greeting_complete()
+                    except Exception as e:
+                        self.logger.error(f"[MESSAGE] Error notifying greeting complete: {e}")
+
             elif self.session_manager.conversation_state.collecting_response:
                 self.session_manager.conversation_state.collecting_response = False
                 self.logger.info(
@@ -524,6 +535,17 @@ class MessageHandler:
                 # Set to STOPPED for response completion and clear stream ID
                 self.session_manager.stream_state.play_stream = StreamStatus.STOPPED
                 self.session_manager.stream_state.current_stream_id = None
+
+                # Notify conversation manager if it has a callback registered
+                if (
+                    hasattr(self.session_manager, "conversation_manager")
+                    and self.session_manager.conversation_manager is not None
+                ):
+                    try:
+                        self.session_manager.conversation_manager._notify_response_complete()
+                    except Exception as e:
+                        self.logger.error(f"[MESSAGE] Error notifying response complete: {e}")
+
             else:
                 self.logger.warning(
                     "[MESSAGE] Play stream stopped but no collection was active"

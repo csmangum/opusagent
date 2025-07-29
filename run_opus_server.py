@@ -44,6 +44,7 @@ from opusagent.config import get_config
 from opusagent.config.env_loader import load_env_file
 from opusagent.config.logging_config import configure_logging
 
+#TODO: Remove this once we have a proper way to load the environment variables
 # Load environment variables first
 load_env_file()
 

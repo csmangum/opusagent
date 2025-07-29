@@ -22,7 +22,7 @@ import asyncio
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 from opusagent.config.constants import NO_NEW_CHUNKS_THRESHOLD
 
@@ -74,6 +74,48 @@ class ConversationManager:
         self.session_manager = session_manager
         self.audio_manager = audio_manager
         self.conversation_state: Optional[ConversationState] = None
+        
+        # Callback functions for collection completion
+        self._greeting_complete_callback: Optional[Callable] = None
+        self._response_complete_callback: Optional[Callable] = None
+
+    def register_greeting_complete_callback(self, callback: Optional[Callable]) -> None:
+        """
+        Register a callback function to be called when greeting collection completes.
+        
+        Args:
+            callback (Optional[Callable]): Function to call when greeting collection is complete, or None to clear
+        """
+        self._greeting_complete_callback = callback
+
+    def register_response_complete_callback(self, callback: Optional[Callable]) -> None:
+        """
+        Register a callback function to be called when response collection completes.
+        
+        Args:
+            callback (Optional[Callable]): Function to call when response collection is complete, or None to clear
+        """
+        self._response_complete_callback = callback
+
+    def _notify_greeting_complete(self) -> None:
+        """
+        Notify that greeting collection is complete.
+        """
+        if self._greeting_complete_callback:
+            try:
+                self._greeting_complete_callback()
+            except Exception as e:
+                self.logger.error(f"Error in greeting complete callback: {e}")
+
+    def _notify_response_complete(self) -> None:
+        """
+        Notify that response collection is complete.
+        """
+        if self._response_complete_callback:
+            try:
+                self._response_complete_callback()
+            except Exception as e:
+                self.logger.error(f"Error in response complete callback: {e}")
 
     def start_conversation(self, conversation_id: str) -> None:
         """
@@ -123,44 +165,30 @@ class ConversationManager:
 
         self.logger.info("[CONVERSATION] Waiting for LLM greeting...")
 
-        # Calculate end time for timeout
-        end_time = asyncio.get_event_loop().time() + timeout
-        last_chunk_count = 0
-        no_new_chunks_count = 0
+        # Create event for greeting completion
+        greeting_complete_event = asyncio.Event()
+        
+        # Register callback to set the event when greeting completes
+        def on_greeting_complete():
+            greeting_complete_event.set()
+        
+        self.register_greeting_complete_callback(on_greeting_complete)
 
-        # Poll for greeting completion
-        while asyncio.get_event_loop().time() < end_time:
-            current_chunk_count = len(self.conversation_state.greeting_chunks)
-
-            # Check if we have greeting chunks and collection is complete
-            if (
-                current_chunk_count > 0
-                and not self.conversation_state.collecting_greeting
-            ):
-                self.logger.info(
-                    f"[CONVERSATION] Greeting received: {current_chunk_count} chunks"
-                )
-                return self.conversation_state.greeting_chunks.copy()
-
-            # Check if we have greeting chunks but collection flag is still true
-            # This can happen if the play stream stop message hasn't been processed yet
-            if current_chunk_count > 0:
-                if current_chunk_count == last_chunk_count:
-                    no_new_chunks_count += 1
-                    # If no new chunks for 2 seconds, assume greeting is complete
-                    if no_new_chunks_count >= NO_NEW_CHUNKS_THRESHOLD:
-                        self.logger.info(
-                            f"[CONVERSATION] Greeting appears complete (no new chunks for 2s): {current_chunk_count} chunks"
-                        )
-                        return self.conversation_state.greeting_chunks.copy()
-                else:
-                    no_new_chunks_count = 0
-                    last_chunk_count = current_chunk_count
-
-            await asyncio.sleep(0.1)
-
-        self.logger.error("[CONVERSATION] Timeout waiting for LLM greeting")
-        return []
+        try:
+            # Wait for greeting completion with timeout
+            await asyncio.wait_for(greeting_complete_event.wait(), timeout=timeout)
+            
+            # Return collected greeting chunks
+            greeting_chunks = self.conversation_state.greeting_chunks.copy()
+            self.logger.info(f"[CONVERSATION] Greeting received: {len(greeting_chunks)} chunks")
+            return greeting_chunks
+            
+        except asyncio.TimeoutError:
+            self.logger.error("[CONVERSATION] Timeout waiting for LLM greeting")
+            return []
+        finally:
+            # Clear the callback
+            self.register_greeting_complete_callback(None)
 
     async def wait_for_response(self, timeout: float = 45.0) -> List[str]:
         """
@@ -197,44 +225,30 @@ class ConversationManager:
 
         self.logger.info("[CONVERSATION] Waiting for LLM response...")
 
-        # Calculate end time for timeout
-        end_time = asyncio.get_event_loop().time() + timeout
-        last_chunk_count = 0
-        no_new_chunks_count = 0
+        # Create event for response completion
+        response_complete_event = asyncio.Event()
+        
+        # Register callback to set the event when response completes
+        def on_response_complete():
+            response_complete_event.set()
+        
+        self.register_response_complete_callback(on_response_complete)
 
-        # Poll for response completion
-        while asyncio.get_event_loop().time() < end_time:
-            current_chunk_count = len(self.conversation_state.response_chunks)
-
-            # Check if we have response chunks and collection is complete
-            if (
-                current_chunk_count > 0
-                and not self.conversation_state.collecting_response
-            ):
-                self.logger.info(
-                    f"[CONVERSATION] Response received: {current_chunk_count} chunks"
-                )
-                return self.conversation_state.response_chunks.copy()
-
-            # Check if we have response chunks but collection flag is still true
-            # This can happen if the play stream stop message hasn't been processed yet
-            if current_chunk_count > 0:
-                if current_chunk_count == last_chunk_count:
-                    no_new_chunks_count += 1
-                    # If no new chunks for 2 seconds, assume response is complete
-                    if no_new_chunks_count >= NO_NEW_CHUNKS_THRESHOLD:
-                        self.logger.info(
-                            f"[CONVERSATION] Response appears complete (no new chunks for 2s): {current_chunk_count} chunks"
-                        )
-                        return self.conversation_state.response_chunks.copy()
-                else:
-                    no_new_chunks_count = 0
-                    last_chunk_count = current_chunk_count
-
-            await asyncio.sleep(0.1)
-
-        self.logger.error("[CONVERSATION] Timeout waiting for LLM response")
-        return []
+        try:
+            # Wait for response completion with timeout
+            await asyncio.wait_for(response_complete_event.wait(), timeout=timeout)
+            
+            # Return collected response chunks
+            response_chunks = self.conversation_state.response_chunks.copy()
+            self.logger.info(f"[CONVERSATION] Response received: {len(response_chunks)} chunks")
+            return response_chunks
+            
+        except asyncio.TimeoutError:
+            self.logger.error("[CONVERSATION] Timeout waiting for LLM response")
+            return []
+        finally:
+            # Clear the callback
+            self.register_response_complete_callback(None)
 
     async def multi_turn_conversation(
         self,
