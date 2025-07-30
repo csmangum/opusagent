@@ -60,6 +60,9 @@ class TwilioBridge(BaseRealtimeBridge):
         # Participant tracking for multi-party calls (future-proofing)
         self.current_participant: str = "caller"  # Default participant for single-party calls
 
+        # Initialize session start time for accurate duration tracking
+        self._session_start_time = time.time()
+
         # Check audio processing dependencies
         self._check_audio_dependencies()
 
@@ -739,7 +742,7 @@ class TwilioBridge(BaseRealtimeBridge):
                 "account_sid": self.account_sid,
                 "media_format": self.media_format,
                 "current_participant": self.current_participant,
-                "session_duration": time.time() - getattr(self, '_session_start_time', time.time()),
+                "session_duration": time.time() - self._session_start_time,
             },
             "audio": {
                 "chunks_sent": self.audio_chunks_sent,
