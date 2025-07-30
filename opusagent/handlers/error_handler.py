@@ -1,28 +1,16 @@
 """
-Centralized error handling system with callback support.
+Simplified error handling system with callback support.
 
-This module provides a comprehensive error handling system that supports
-registering multiple error handlers for different error types and contexts.
-It reduces code duplication and provides consistent error handling across
-the OpusAgent codebase.
+This module provides a lightweight error handling system that reduces
+boilerplate try-except blocks while maintaining essential functionality.
 """
 
 import asyncio
 import logging
-import traceback
-from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
-
-
-class ErrorSeverity(Enum):
-    """Error severity levels for prioritizing error handling."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
 
 
 class ErrorContext(Enum):
@@ -31,47 +19,36 @@ class ErrorContext(Enum):
     AUDIO = "audio"
     SESSION = "session"
     API = "api"
-    VALIDATION = "validation"
-    SYSTEM = "system"
     NETWORK = "network"
+    SYSTEM = "system"
     UNKNOWN = "unknown"
+
+
+class ErrorSeverity(Enum):
+    """Error severity levels."""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 @dataclass
 class ErrorInfo:
-    """Structured error information for context-aware handling."""
+    """Simple error information structure."""
     error: Exception
     context: ErrorContext
     severity: ErrorSeverity
     operation: str
     metadata: Dict[str, Any]
     timestamp: datetime
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert error info to dictionary for logging/storage."""
-        return {
-            "error_type": type(self.error).__name__,
-            "error_message": str(self.error),
-            "context": self.context.value,
-            "severity": self.severity.value,
-            "operation": self.operation,
-            "metadata": self.metadata,
-            "timestamp": self.timestamp.isoformat(),
-            "traceback": traceback.format_exception(type(self.error), self.error, self.error.__traceback__)
-        }
 
 
 class ErrorHandler:
     """
-    Centralized error handling system with callback support.
+    Simplified error handling system with callback support.
     
-    This class provides a comprehensive error handling system that supports:
-    - Multiple error handlers for different error types and contexts
-    - Priority-based handler execution
-    - Async and sync callback support
-    - Context-aware error processing
-    - Automatic logging and metrics collection
-    - Error recovery strategies
+    Provides centralized error handling to reduce try-except boilerplate
+    while maintaining error categorization and custom handler support.
     """
     
     def __init__(self, logger: Optional[logging.Logger] = None):
@@ -80,13 +57,11 @@ class ErrorHandler:
         self._handlers: Dict[ErrorContext, List[Callable]] = {context: [] for context in ErrorContext}
         self._global_handlers: List[Callable] = []
         self._error_count: Dict[ErrorContext, int] = {context: 0 for context in ErrorContext}
-        self._last_errors: Dict[ErrorContext, ErrorInfo] = {}
         
     def register_handler(
         self, 
         handler: Callable[[ErrorInfo], Any],
-        context: Optional[ErrorContext] = None,
-        priority: int = 0
+        context: Optional[ErrorContext] = None
     ) -> None:
         """
         Register an error handler for a specific context or globally.
@@ -94,18 +69,13 @@ class ErrorHandler:
         Args:
             handler: Error handler function that takes ErrorInfo as parameter
             context: Error context to handle (None for global handlers)
-            priority: Handler priority (higher numbers execute first)
         """
-        handler_wrapper = (priority, handler)
-        
         if context is None:
-            self._global_handlers.append(handler_wrapper)
-            self._global_handlers.sort(key=lambda x: x[0], reverse=True)
-            self.logger.debug(f"Registered global error handler with priority {priority}")
+            self._global_handlers.append(handler)
+            self.logger.debug("Registered global error handler")
         else:
-            self._handlers[context].append(handler_wrapper)
-            self._handlers[context].sort(key=lambda x: x[0], reverse=True)
-            self.logger.debug(f"Registered error handler for {context.value} with priority {priority}")
+            self._handlers[context].append(handler)
+            self.logger.debug(f"Registered error handler for {context.value}")
     
     def unregister_handler(
         self, 
@@ -124,11 +94,10 @@ class ErrorHandler:
         """
         target_list = self._global_handlers if context is None else self._handlers[context]
         
-        for i, (priority, h) in enumerate(target_list):
-            if h == handler:
-                target_list.pop(i)
-                self.logger.debug(f"Unregistered error handler for {context.value if context else 'global'}")
-                return True
+        if handler in target_list:
+            target_list.remove(handler)
+            self.logger.debug(f"Unregistered error handler for {context.value if context else 'global'}")
+            return True
         return False
     
     async def handle_error(
@@ -160,7 +129,6 @@ class ErrorHandler:
         
         # Update error statistics
         self._error_count[context] += 1
-        self._last_errors[context] = error_info
         
         # Log the error
         log_level = {
@@ -170,11 +138,7 @@ class ErrorHandler:
             ErrorSeverity.CRITICAL: logging.CRITICAL
         }[severity]
         
-        self.logger.log(
-            log_level,
-            f"Error in {context.value} ({operation}): {error}",
-            extra={"error_info": error_info.to_dict()}
-        )
+        self.logger.log(log_level, f"Error in {context.value} ({operation}): {error}")
         
         # Execute context-specific handlers
         await self._execute_handlers(self._handlers[context], error_info)
@@ -182,57 +146,22 @@ class ErrorHandler:
         # Execute global handlers
         await self._execute_handlers(self._global_handlers, error_info)
     
-    async def _execute_handlers(self, handlers: List[tuple], error_info: ErrorInfo) -> None:
+    async def _execute_handlers(self, handlers: List[Callable], error_info: ErrorInfo) -> None:
         """Execute error handlers with proper error isolation."""
-        for priority, handler in handlers:
+        for handler in handlers:
             try:
                 if asyncio.iscoroutinefunction(handler):
                     await handler(error_info)
                 else:
                     handler(error_info)
             except Exception as handler_error:
-                self.logger.error(
-                    f"Error in error handler: {handler_error}",
-                    exc_info=True
-                )
-    
-    @asynccontextmanager
-    async def error_context(
-        self,
-        context: ErrorContext,
-        operation: str,
-        severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        **metadata
-    ):
-        """
-        Context manager for automatic error handling.
-        
-        Usage:
-            async with error_handler.error_context(ErrorContext.WEBSOCKET, "connect"):
-                # WebSocket connection code
-                pass
-        """
-        try:
-            yield
-        except Exception as e:
-            await self.handle_error(
-                error=e,
-                context=context,
-                severity=severity,
-                operation=operation,
-                **metadata
-            )
-            raise
+                self.logger.error(f"Error in error handler: {handler_error}")
     
     def get_error_stats(self) -> Dict[str, Any]:
-        """Get error statistics for monitoring and debugging."""
+        """Get simple error statistics."""
         return {
             "error_counts": {ctx.value: count for ctx, count in self._error_count.items()},
             "total_errors": sum(self._error_count.values()),
-            "last_errors": {
-                ctx.value: info.to_dict() if info else None 
-                for ctx, info in self._last_errors.items()
-            },
             "registered_handlers": {
                 ctx.value: len(handlers) for ctx, handlers in self._handlers.items()
             },
@@ -242,7 +171,6 @@ class ErrorHandler:
     def reset_stats(self) -> None:
         """Reset error statistics."""
         self._error_count = {context: 0 for context in ErrorContext}
-        self._last_errors = {}
 
 
 # Global error handler instance
@@ -259,11 +187,10 @@ def get_error_handler() -> ErrorHandler:
 
 def register_error_handler(
     handler: Callable[[ErrorInfo], Any],
-    context: Optional[ErrorContext] = None,
-    priority: int = 0
+    context: Optional[ErrorContext] = None
 ) -> None:
     """Register an error handler on the global error handler."""
-    get_error_handler().register_handler(handler, context, priority)
+    get_error_handler().register_handler(handler, context)
 
 
 async def handle_error(
@@ -275,30 +202,3 @@ async def handle_error(
 ) -> None:
     """Handle an error using the global error handler."""
     await get_error_handler().handle_error(error, context, severity, operation, **metadata)
-
-
-# Convenience decorators for common error handling patterns
-def error_context(
-    context: ErrorContext,
-    operation: str,
-    severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-    **metadata
-):
-    """Decorator for automatic error handling."""
-    def decorator(func):
-        if asyncio.iscoroutinefunction(func):
-            async def async_wrapper(*args, **kwargs):
-                async with get_error_handler().error_context(context, operation, severity, **metadata):
-                    return await func(*args, **kwargs)
-            return async_wrapper
-        else:
-            def sync_wrapper(*args, **kwargs):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    asyncio.create_task(
-                        get_error_handler().handle_error(e, context, severity, operation, **metadata)
-                    )
-                    raise
-            return sync_wrapper
-    return decorator

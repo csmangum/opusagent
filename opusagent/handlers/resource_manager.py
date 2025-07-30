@@ -1,22 +1,18 @@
 """
-Resource cleanup management system with callback support.
+Simplified resource cleanup management system.
 
-This module provides a comprehensive resource management system that supports
-registering cleanup callbacks for various resource types. It ensures proper
-LIFO (Last In, First Out) cleanup order and handles cleanup during shutdown,
-errors, or explicit cleanup requests.
+This module provides a lightweight resource management system that ensures
+proper LIFO cleanup of resources like WebSocket connections and audio streams.
 """
 
 import asyncio
 import atexit
 import logging
 import signal
-import weakref
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Union
-from contextlib import asynccontextmanager
+from typing import Any, Callable, Dict, List, Optional
 
 
 class ResourceType(Enum):
@@ -26,9 +22,6 @@ class ResourceType(Enum):
     SESSION = "session"
     FILE = "file"
     NETWORK = "network"
-    DATABASE = "database"
-    CACHE = "cache"
-    THREAD = "thread"
     OTHER = "other"
 
 
@@ -47,36 +40,22 @@ class CleanupCallback:
     resource_type: ResourceType
     priority: CleanupPriority
     description: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
     registered_at: datetime = field(default_factory=datetime.now)
-    is_async: bool = field(init=False)
-    
-    def __post_init__(self):
-        self.is_async = asyncio.iscoroutinefunction(self.callback)
 
 
 class ResourceManager:
     """
-    Centralized resource management system with cleanup callbacks.
+    Simplified resource management system with cleanup callbacks.
     
-    This class provides a comprehensive resource management system that supports:
-    - LIFO (Last In, First Out) cleanup order for proper resource deallocation
-    - Priority-based cleanup for critical resources
-    - Async and sync callback support
-    - Resource categorization and grouping
-    - Automatic cleanup on shutdown and error conditions
-    - Idempotent cleanup operations
-    - Weak references to prevent memory leaks
+    Provides LIFO cleanup with priority support for proper resource deallocation.
     """
     
     def __init__(self, logger: Optional[logging.Logger] = None):
         """Initialize the resource manager."""
         self.logger = logger or logging.getLogger(__name__)
         self._cleanup_callbacks: List[CleanupCallback] = []
-        self._resource_registry: Dict[str, Set[str]] = {rt.value: set() for rt in ResourceType}
         self._cleanup_in_progress = False
         self._shutdown_registered = False
-        self._signal_handlers_registered = False
         
         # Register shutdown cleanup
         self._register_shutdown_cleanup()
@@ -86,9 +65,7 @@ class ResourceManager:
         callback: Callable,
         resource_type: ResourceType = ResourceType.OTHER,
         priority: CleanupPriority = CleanupPriority.NORMAL,
-        description: str = "Unknown resource",
-        resource_id: Optional[str] = None,
-        **metadata
+        description: str = "Unknown resource"
     ) -> str:
         """
         Register a cleanup callback for a resource.
@@ -98,161 +75,43 @@ class ResourceManager:
             resource_type: Type of resource being managed
             priority: Cleanup priority level
             description: Human-readable description of the resource
-            resource_id: Optional unique identifier for the resource
-            **metadata: Additional metadata for the resource
             
         Returns:
             str: Unique identifier for the registered cleanup callback
-            
-        Example:
-            ```python
-            # Register WebSocket cleanup
-            def cleanup_websocket(ws):
-                ws.close()
-            
-            cleanup_id = resource_manager.register_cleanup(
-                callback=lambda: cleanup_websocket(my_websocket),
-                resource_type=ResourceType.WEBSOCKET,
-                priority=CleanupPriority.HIGH,
-                description="Main WebSocket connection",
-                connection_id="ws_123"
-            )
-            ```
         """
         cleanup_callback = CleanupCallback(
             callback=callback,
             resource_type=resource_type,
             priority=priority,
-            description=description,
-            metadata=metadata
-        )
-        
-        # Add to callbacks list (will be sorted by priority during cleanup)
-        self._cleanup_callbacks.append(cleanup_callback)
-        
-        # Generate unique ID
-        cleanup_id = f"{resource_type.value}_{len(self._cleanup_callbacks)}_{id(callback)}"
-        
-        # Register in resource registry
-        if resource_id:
-            self._resource_registry[resource_type.value].add(resource_id)
-            cleanup_callback.metadata['resource_id'] = resource_id
-        
-        cleanup_callback.metadata['cleanup_id'] = cleanup_id
-        
-        self.logger.debug(
-            f"Registered cleanup callback: {description} ({resource_type.value}, priority: {priority.name})"
-        )
-        
-        return cleanup_id
-    
-    def unregister_cleanup(self, cleanup_id: str) -> bool:
-        """
-        Unregister a cleanup callback.
-        
-        Args:
-            cleanup_id: ID returned from register_cleanup
-            
-        Returns:
-            bool: True if callback was found and removed
-        """
-        for i, callback in enumerate(self._cleanup_callbacks):
-            if callback.metadata.get('cleanup_id') == cleanup_id:
-                removed_callback = self._cleanup_callbacks.pop(i)
-                
-                # Remove from resource registry
-                resource_id = removed_callback.metadata.get('resource_id')
-                if resource_id:
-                    self._resource_registry[removed_callback.resource_type.value].discard(resource_id)
-                
-                self.logger.debug(f"Unregistered cleanup callback: {removed_callback.description}")
-                return True
-        
-        return False
-    
-    @asynccontextmanager
-    async def managed_resource(
-        self,
-        resource: Any,
-        cleanup_func: Callable,
-        resource_type: ResourceType = ResourceType.OTHER,
-        priority: CleanupPriority = CleanupPriority.NORMAL,
-        description: str = "Managed resource"
-    ):
-        """
-        Context manager for automatic resource cleanup.
-        
-        Args:
-            resource: The resource to manage
-            cleanup_func: Function to clean up the resource
-            resource_type: Type of resource
-            priority: Cleanup priority
-            description: Description of the resource
-            
-        Example:
-            ```python
-            async with resource_manager.managed_resource(
-                websocket, 
-                lambda: websocket.close(),
-                ResourceType.WEBSOCKET,
-                CleanupPriority.HIGH,
-                "API WebSocket"
-            ) as ws:
-                # Use websocket
-                await ws.send("Hello")
-            # Websocket is automatically cleaned up here
-            ```
-        """
-        cleanup_id = self.register_cleanup(
-            callback=cleanup_func,
-            resource_type=resource_type,
-            priority=priority,
             description=description
         )
         
-        try:
-            yield resource
-        finally:
-            # Execute cleanup immediately
-            await self._execute_single_cleanup(cleanup_id)
-            # Remove from registry
-            self.unregister_cleanup(cleanup_id)
+        self._cleanup_callbacks.append(cleanup_callback)
+        cleanup_id = f"{resource_type.value}_{len(self._cleanup_callbacks)}_{id(callback)}"
+        
+        self.logger.debug(f"Registered cleanup: {description} ({resource_type.value}, priority: {priority.name})")
+        return cleanup_id
     
-    async def cleanup_by_type(
-        self, 
-        resource_type: ResourceType,
-        max_age_seconds: Optional[float] = None
-    ) -> int:
+    async def cleanup_by_type(self, resource_type: ResourceType) -> int:
         """
         Clean up all resources of a specific type.
         
         Args:
             resource_type: Type of resources to clean up
-            max_age_seconds: Only clean up resources older than this age
             
         Returns:
             int: Number of resources cleaned up
         """
-        callbacks_to_cleanup = []
-        current_time = datetime.now()
+        callbacks_to_cleanup = [cb for cb in self._cleanup_callbacks if cb.resource_type == resource_type]
         
-        for callback in self._cleanup_callbacks:
-            if callback.resource_type == resource_type:
-                if max_age_seconds is None:
-                    callbacks_to_cleanup.append(callback)
-                else:
-                    age = (current_time - callback.registered_at).total_seconds()
-                    if age >= max_age_seconds:
-                        callbacks_to_cleanup.append(callback)
-        
-        # Sort by priority (highest first)
-        callbacks_to_cleanup.sort(key=lambda x: x.priority.value, reverse=True)
+        # Sort by priority (highest first) and reverse order (LIFO)
+        callbacks_to_cleanup.sort(key=lambda x: (x.priority.value, x.registered_at), reverse=True)
         
         cleaned_count = 0
         for callback in callbacks_to_cleanup:
             try:
                 await self._execute_callback(callback)
-                self.unregister_cleanup(callback.metadata.get('cleanup_id', ''))
+                self._cleanup_callbacks.remove(callback)
                 cleaned_count += 1
             except Exception as e:
                 self.logger.error(f"Error cleaning up {callback.description}: {e}")
@@ -299,44 +158,23 @@ class ResourceManager:
             
             # Clear all callbacks after cleanup
             self._cleanup_callbacks.clear()
-            for resource_set in self._resource_registry.values():
-                resource_set.clear()
             
-            self.logger.info(
-                f"Cleanup complete: {cleaned_count} successful, {failed_count} failed"
-            )
-            
+            self.logger.info(f"Cleanup complete: {cleaned_count} successful, {failed_count} failed")
             return cleaned_count
             
         finally:
             self._cleanup_in_progress = False
     
-    async def _execute_single_cleanup(self, cleanup_id: str) -> bool:
-        """Execute cleanup for a single callback by ID."""
-        for callback in self._cleanup_callbacks:
-            if callback.metadata.get('cleanup_id') == cleanup_id:
-                try:
-                    await self._execute_callback(callback)
-                    return True
-                except Exception as e:
-                    self.logger.error(f"Error executing cleanup {cleanup_id}: {e}")
-                    return False
-        return False
-    
     async def _execute_callback(self, callback: CleanupCallback) -> None:
         """Execute a single cleanup callback."""
         self.logger.debug(f"Executing cleanup: {callback.description}")
         
-        try:
-            if callback.is_async:
-                await callback.callback()
-            else:
-                callback.callback()
-        except Exception as e:
-            self.logger.error(f"Cleanup callback failed for {callback.description}: {e}")
-            raise
+        if asyncio.iscoroutinefunction(callback.callback):
+            await callback.callback()
+        else:
+            callback.callback()
     
-    def get_resource_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> Dict[str, Any]:
         """Get statistics about registered resources."""
         stats = {
             "total_callbacks": len(self._cleanup_callbacks),
@@ -345,14 +183,11 @@ class ResourceManager:
             "cleanup_in_progress": self._cleanup_in_progress
         }
         
-        # Count by type
+        # Count by type and priority
         for callback in self._cleanup_callbacks:
             resource_type = callback.resource_type.value
-            stats["by_type"][resource_type] = stats["by_type"].get(resource_type, 0) + 1
-        
-        # Count by priority
-        for callback in self._cleanup_callbacks:
             priority = callback.priority.name
+            stats["by_type"][resource_type] = stats["by_type"].get(resource_type, 0) + 1
             stats["by_priority"][priority] = stats["by_priority"].get(priority, 0) + 1
         
         return stats
@@ -366,33 +201,36 @@ class ResourceManager:
         atexit.register(self._sync_cleanup_all)
         
         # Register signal handlers for graceful shutdown
-        if not self._signal_handlers_registered:
-            try:
-                for sig in [signal.SIGTERM, signal.SIGINT]:
-                    signal.signal(sig, self._signal_handler)
-                self._signal_handlers_registered = True
-            except (AttributeError, ValueError):
-                # Signal handling not available (e.g., on Windows or in threads)
-                pass
+        try:
+            for sig in [signal.SIGTERM, signal.SIGINT]:
+                signal.signal(sig, self._signal_handler)
+        except (AttributeError, ValueError):
+            # Signal handling not available (e.g., on Windows or in threads)
+            pass
         
         self._shutdown_registered = True
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals."""
         self.logger.info(f"Received signal {signum}, initiating cleanup")
-        asyncio.create_task(self.cleanup_all(force=True))
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.cleanup_all(force=True))
+        except RuntimeError:
+            # No event loop running
+            self._sync_cleanup_all()
     
     def _sync_cleanup_all(self) -> None:
         """Synchronous cleanup for atexit handler."""
         try:
-            # Try to get running event loop
+            # Try to use running event loop
             loop = asyncio.get_running_loop()
             if loop and not loop.is_closed():
                 loop.create_task(self.cleanup_all(force=True))
         except RuntimeError:
             # No event loop running, execute sync callbacks only
             for callback in reversed(self._cleanup_callbacks):
-                if not callback.is_async:
+                if not asyncio.iscoroutinefunction(callback.callback):
                     try:
                         callback.callback()
                     except Exception as e:
@@ -415,14 +253,10 @@ def register_cleanup(
     callback: Callable,
     resource_type: ResourceType = ResourceType.OTHER,
     priority: CleanupPriority = CleanupPriority.NORMAL,
-    description: str = "Unknown resource",
-    resource_id: Optional[str] = None,
-    **metadata
+    description: str = "Unknown resource"
 ) -> str:
     """Register a cleanup callback on the global resource manager."""
-    return get_resource_manager().register_cleanup(
-        callback, resource_type, priority, description, resource_id, **metadata
-    )
+    return get_resource_manager().register_cleanup(callback, resource_type, priority, description)
 
 
 async def cleanup_all() -> int:

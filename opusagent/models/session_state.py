@@ -40,10 +40,8 @@ Example:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Optional
 from enum import Enum
-import asyncio
-import logging
 
 
 class SessionStatus(Enum):
@@ -80,11 +78,6 @@ class SessionState:
     both the conversation history and the current processing state to
     enable seamless session recovery.
     
-    State Transition Callbacks:
-    The SessionState supports registering callbacks that are triggered when
-    the session status changes. This enables reactive programming patterns
-    and allows components to respond to state changes without tight coupling.
-    
     Attributes:
         conversation_id: Unique identifier for the conversation session
         session_id: Optional internal session identifier
@@ -107,7 +100,6 @@ class SessionState:
         error_count: Number of errors encountered in this session
         last_error: Description of the last error encountered
         metadata: Custom metadata dictionary for extensibility
-        _status_callbacks: Internal list of status change callbacks
     
     Example:
         ```python
@@ -119,20 +111,14 @@ class SessionState:
             bridge_type="audiocodes"
         )
         
-        # Register status change callback
-        def on_status_change(old_status, new_status, session):
-            print(f"Session {session.conversation_id} changed from {old_status} to {new_status}")
-        
-        session.register_status_callback(on_status_change)
-        
         # Add conversation history
         session.add_conversation_item({
             "role": "user",
             "content": "I need help with my account"
         })
         
-        # Update session status (triggers callbacks)
-        session.update_status(SessionStatus.ACTIVE)
+        # Update session status
+        session.status = SessionStatus.ACTIVE
         
         # Check session validity
         if session.can_resume():
@@ -176,9 +162,6 @@ class SessionState:
     
     # Custom metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    # State transition callbacks (not serialized)
-    _status_callbacks: List[Callable] = field(default_factory=list, init=False, repr=False)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert session state to dictionary for storage serialization.
@@ -345,7 +328,8 @@ class SessionState:
             ```
         """
         self.resumed_count += 1
-        self.update_status(SessionStatus.ACTIVE)
+        self.status = SessionStatus.ACTIVE
+        self.update_activity()
     
     def add_conversation_item(self, item: Dict[str, Any]) -> None:
         """Add a conversation item to the session history.
@@ -444,7 +428,8 @@ class SessionState:
         """
         self.last_error = error_message
         self.error_count += 1
-        self.update_status(SessionStatus.ERROR)
+        self.status = SessionStatus.ERROR
+        self.update_activity()
     
     def is_expired(self, max_age_seconds: int = 3600) -> bool:
         """Check if the session has expired based on last activity.
@@ -510,82 +495,4 @@ class SessionState:
         if max_age_seconds is not None and self.is_expired(max_age_seconds):
             return False
             
-        return True
-    
-    def register_status_callback(
-        self, 
-        callback: Callable[[SessionStatus, SessionStatus, 'SessionState'], Any],
-        priority: int = 0
-    ) -> None:
-        """
-        Register a callback to be called when session status changes.
-        
-        Args:
-            callback: Function to call with (old_status, new_status, session) parameters
-            priority: Callback priority (higher numbers execute first)
-            
-        Example:
-            ```python
-            def on_status_change(old_status, new_status, session):
-                print(f"Session status changed from {old_status} to {new_status}")
-            
-            session.register_status_callback(on_status_change)
-            ```
-        """
-        self._status_callbacks.append((priority, callback))
-        self._status_callbacks.sort(key=lambda x: x[0], reverse=True)
-    
-    def unregister_status_callback(self, callback: Callable) -> bool:
-        """
-        Unregister a status change callback.
-        
-        Args:
-            callback: The callback function to remove
-            
-        Returns:
-            bool: True if callback was found and removed
-        """
-        for i, (priority, cb) in enumerate(self._status_callbacks):
-            if cb == callback:
-                self._status_callbacks.pop(i)
-                return True
-        return False
-    
-    def update_status(self, new_status: SessionStatus) -> None:
-        """
-        Update session status and trigger registered callbacks.
-        
-        Args:
-            new_status: The new session status
-            
-        Example:
-            ```python
-            # This will trigger any registered status callbacks
-            session.update_status(SessionStatus.ACTIVE)
-            ```
-        """
-        if self.status != new_status:
-            old_status = self.status
-            self.status = new_status
-            self.update_activity()
-            
-            # Execute status change callbacks
-            self._execute_status_callbacks(old_status, new_status)
-    
-    def _execute_status_callbacks(self, old_status: SessionStatus, new_status: SessionStatus) -> None:
-        """Execute status change callbacks with error isolation."""
-        logger = logging.getLogger(__name__)
-        
-        for priority, callback in self._status_callbacks:
-            try:
-                if asyncio.iscoroutinefunction(callback):
-                    # For async callbacks, create a task if there's a running event loop
-                    try:
-                        asyncio.create_task(callback(old_status, new_status, self))
-                    except RuntimeError:
-                        # No event loop running, skip async callback
-                        logger.warning(f"Skipping async status callback due to no event loop")
-                else:
-                    callback(old_status, new_status, self)
-            except Exception as e:
-                logger.error(f"Error in status callback: {e}", exc_info=True) 
+        return True 
