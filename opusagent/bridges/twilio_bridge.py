@@ -60,10 +60,6 @@ class TwilioBridge(BaseRealtimeBridge):
         # Participant tracking for multi-party calls (future-proofing)
         self.current_participant: str = "caller"  # Default participant for single-party calls
 
-        # Initialize audio metrics tracking
-        self.audio_chunks_sent: int = 0
-        self.total_audio_bytes_sent: int = 0
-
         # Check audio processing dependencies
         self._check_audio_dependencies()
 
@@ -98,7 +94,14 @@ class TwilioBridge(BaseRealtimeBridge):
             WebSocket connections, which can cause ASGI errors.
         """
         # Check if connection is still active before sending
-        if self._closed or not self.platform_websocket or self._is_websocket_closed():
+        websocket_closed = False
+        try:
+            websocket_closed = self._is_websocket_closed()
+        except AttributeError:
+            # Method not available yet, assume websocket is not closed
+            websocket_closed = False
+            
+        if self._closed or not self.platform_websocket or websocket_closed:
             logger.debug("Skipping platform message - connection closed or unavailable")
             return
 
@@ -565,7 +568,14 @@ class TwilioBridge(BaseRealtimeBridge):
                 logger.debug("Connection validation failed: platform websocket is None")
                 return False
                 
-            if self._is_websocket_closed():
+            websocket_closed = False
+            try:
+                websocket_closed = self._is_websocket_closed()
+            except AttributeError:
+                # Method not available yet, assume websocket is not closed
+                websocket_closed = False
+                
+            if websocket_closed:
                 logger.debug("Connection validation failed: platform websocket is closed")
                 return False
                 
