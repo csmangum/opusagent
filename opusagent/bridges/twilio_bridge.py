@@ -60,6 +60,10 @@ class TwilioBridge(BaseRealtimeBridge):
         # Participant tracking for multi-party calls (future-proofing)
         self.current_participant: str = "caller"  # Default participant for single-party calls
 
+        # Initialize audio metrics tracking
+        self.audio_chunks_sent: int = 0
+        self.total_audio_bytes_sent: int = 0
+
         # Check audio processing dependencies
         self._check_audio_dependencies()
 
