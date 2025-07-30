@@ -215,7 +215,22 @@ class ResourceManager:
         self.logger.info(f"Received signal {signum}, initiating cleanup")
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(self.cleanup_all(force=True))
+            
+            # Use run_coroutine_threadsafe which properly handles cross-thread execution
+            import concurrent.futures
+            future = asyncio.run_coroutine_threadsafe(self.cleanup_all(force=True), loop)
+            
+            try:
+                # Wait for completion with a reasonable timeout
+                # This blocks the signal handler until cleanup is complete
+                future.result(timeout=10.0)
+                self.logger.info("Signal cleanup completed successfully")
+            except concurrent.futures.TimeoutError:
+                self.logger.warning("Cleanup task timed out during signal handling")
+                future.cancel()
+            except Exception as e:
+                self.logger.error(f"Error during signal cleanup: {e}")
+                
         except RuntimeError:
             # No event loop running
             self._sync_cleanup_all()
@@ -226,7 +241,17 @@ class ResourceManager:
             # Try to use running event loop
             loop = asyncio.get_running_loop()
             if loop and not loop.is_closed():
-                loop.create_task(self.cleanup_all(force=True))
+                # Use run_coroutine_threadsafe to properly wait for completion
+                import concurrent.futures
+                future = asyncio.run_coroutine_threadsafe(self.cleanup_all(force=True), loop)
+                try:
+                    # Wait for completion with timeout
+                    future.result(timeout=10.0)
+                except concurrent.futures.TimeoutError:
+                    self.logger.warning("Cleanup task timed out during atexit")
+                    future.cancel()
+                except Exception as e:
+                    self.logger.error(f"Error during atexit cleanup: {e}")
         except RuntimeError:
             # No event loop running, execute sync callbacks only
             for callback in reversed(self._cleanup_callbacks):
