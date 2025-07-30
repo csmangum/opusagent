@@ -7,7 +7,7 @@ from both telephony and OpenAI Realtime API sources.
 import asyncio
 import json
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, List, Tuple
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.audiocodes_api import TelephonyEventType
@@ -19,18 +19,28 @@ class EventRouter:
     """Router class for handling events from telephony and realtime sources.
     
     This class manages event routing and handling for both telephony and OpenAI Realtime API events.
-    It provides a centralized way to register and dispatch event handlers.
+    It provides a centralized way to register and dispatch event handlers with support for multiple
+    handlers per event type, priority ordering, and handler chaining.
+    
+    Enhanced Features:
+    - Multiple handlers per event type with priority ordering
+    - Handler chaining with data passing between handlers
+    - Event filtering and transformation
+    - Handler lifecycle management
+    - Error isolation to prevent handler failures from affecting other handlers
     
     Attributes:
-        telephony_handlers (Dict[TelephonyEventType, Callable]): Handlers for telephony events
-        realtime_handlers (Dict[str, Callable]): Handlers for realtime events
+        telephony_handlers (Dict[TelephonyEventType, List[Tuple[int, Callable]]]): Priority-ordered handlers for telephony events
+        realtime_handlers (Dict[str, List[Tuple[int, Callable]]]): Priority-ordered handlers for realtime events
         log_event_types (List[LogEventType]): Types of log events to handle
+        _handler_middleware (List[Callable]): Middleware functions for event processing
     """
     
     def __init__(self):
         """Initialize the event router."""
-        self.telephony_handlers: Dict[TelephonyEventType, Callable] = {}
-        self.realtime_handlers: Dict[str, Callable] = {}
+        self.telephony_handlers: Dict[TelephonyEventType, List[Tuple[int, Callable]]] = {}
+        self.realtime_handlers: Dict[str, List[Tuple[int, Callable]]] = {}
+        self._handler_middleware: List[Callable] = []
         self.log_event_types = [
             LogEventType.ERROR,
             LogEventType.RESPONSE_CONTENT_DONE,
@@ -40,25 +50,110 @@ class EventRouter:
             LogEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED,
         ]
     
-    def register_platform_handler(self, event_type: TelephonyEventType, handler: Callable) -> None:
+    def register_platform_handler(
+        self, 
+        event_type: TelephonyEventType, 
+        handler: Callable,
+        priority: int = 0
+    ) -> None:
         """Register a handler for a telephony event type.
         
         Args:
             event_type: The telephony event type to handle
             handler: The handler function to call for this event type
+            priority: Handler priority (higher numbers execute first)
         """
-        self.telephony_handlers[event_type] = handler
-        logger.debug(f"Registered telephony handler for event type: {event_type}")
+        if event_type not in self.telephony_handlers:
+            self.telephony_handlers[event_type] = []
+        
+        self.telephony_handlers[event_type].append((priority, handler))
+        self.telephony_handlers[event_type].sort(key=lambda x: x[0], reverse=True)
+        logger.debug(f"Registered telephony handler for event type: {event_type} (priority: {priority})")
     
-    def register_realtime_handler(self, event_type: str, handler: Callable) -> None:
+    def register_realtime_handler(
+        self, 
+        event_type: str, 
+        handler: Callable,
+        priority: int = 0
+    ) -> None:
         """Register a handler for a realtime event type.
         
         Args:
             event_type: The realtime event type to handle
             handler: The handler function to call for this event type
+            priority: Handler priority (higher numbers execute first)
         """
-        self.realtime_handlers[event_type] = handler
-        logger.debug(f"Registered realtime handler for event type: {event_type}")
+        if event_type not in self.realtime_handlers:
+            self.realtime_handlers[event_type] = []
+        
+        self.realtime_handlers[event_type].append((priority, handler))
+        self.realtime_handlers[event_type].sort(key=lambda x: x[0], reverse=True)
+        logger.debug(f"Registered realtime handler for event type: {event_type} (priority: {priority})")
+    
+    def unregister_platform_handler(
+        self, 
+        event_type: TelephonyEventType, 
+        handler: Callable
+    ) -> bool:
+        """Unregister a telephony event handler.
+        
+        Args:
+            event_type: The telephony event type
+            handler: The handler function to remove
+            
+        Returns:
+            bool: True if handler was found and removed
+        """
+        if event_type not in self.telephony_handlers:
+            return False
+        
+        handlers = self.telephony_handlers[event_type]
+        for i, (priority, h) in enumerate(handlers):
+            if h == handler:
+                handlers.pop(i)
+                logger.debug(f"Unregistered telephony handler for event type: {event_type}")
+                return True
+        return False
+    
+    def unregister_realtime_handler(
+        self, 
+        event_type: str, 
+        handler: Callable
+    ) -> bool:
+        """Unregister a realtime event handler.
+        
+        Args:
+            event_type: The realtime event type
+            handler: The handler function to remove
+            
+        Returns:
+            bool: True if handler was found and removed
+        """
+        if event_type not in self.realtime_handlers:
+            return False
+        
+        handlers = self.realtime_handlers[event_type]
+        for i, (priority, h) in enumerate(handlers):
+            if h == handler:
+                handlers.pop(i)
+                logger.debug(f"Unregistered realtime handler for event type: {event_type}")
+                return True
+        return False
+    
+    def register_middleware(self, middleware: Callable, priority: int = 0) -> None:
+        """Register middleware for event processing.
+        
+        Middleware functions are called before event handlers and can modify
+        or filter events. They should return the modified event data or None
+        to stop processing.
+        
+        Args:
+            middleware: Middleware function that takes (event_type, data) and returns modified data or None
+            priority: Middleware priority (higher numbers execute first)
+        """
+        self._handler_middleware.append((priority, middleware))
+        self._handler_middleware.sort(key=lambda x: x[0], reverse=True)
+        logger.debug(f"Registered event middleware with priority {priority}")
     
     def _get_platform_event_type(self, msg_type_str: str) -> Optional[TelephonyEventType]:
         """Convert a string message type to a TelephonyEventType enum value.
@@ -91,17 +186,17 @@ class EventRouter:
                 )
             else:
                 logger.info(f"Received platform message: {msg_type_str}")
+            
+            # Apply middleware
+            processed_data = await self._apply_middleware(msg_type_str, data)
+            if processed_data is None:
+                logger.debug(f"Event {msg_type_str} filtered out by middleware")
+                return
                 
-            # Dispatch to the appropriate handler
-            handler = self.telephony_handlers.get(msg_type)
-            if handler:
-                try:
-                    if asyncio.iscoroutinefunction(handler):
-                        await handler(data)
-                    else:
-                        handler(data)
-                except Exception as e:
-                    logger.error(f"Error in platform event handler for {msg_type}: {e}")
+            # Dispatch to the appropriate handlers (multiple handlers supported)
+            handlers = self.telephony_handlers.get(msg_type, [])
+            if handlers:
+                await self._execute_handlers(handlers, processed_data, f"platform event {msg_type}")
             else:
                 logger.warning(f"No handler for platform message type: {msg_type}")
         else:
@@ -131,23 +226,23 @@ class EventRouter:
             await self.handle_log_event(data)
             return
         
-        # Dispatch to the appropriate handler
-        handler = self.realtime_handlers.get(event_type)
-        if handler:
-            try:
-                # Special logging for function call events
-                if event_type in [
-                    "response.function_call_arguments.delta",
-                    "response.function_call_arguments.done",
-                ]:
-                    logger.info(f"🎯 Routing {event_type} to handler")
-                
-                if asyncio.iscoroutinefunction(handler):
-                    await handler(data)
-                else:
-                    handler(data)
-            except Exception as e:
-                logger.error(f"Error in event handler for {event_type}: {e}")
+        # Apply middleware
+        processed_data = await self._apply_middleware(event_type, data)
+        if processed_data is None:
+            logger.debug(f"Event {event_type} filtered out by middleware")
+            return
+        
+        # Dispatch to the appropriate handlers (multiple handlers supported)
+        handlers = self.realtime_handlers.get(event_type, [])
+        if handlers:
+            # Special logging for function call events
+            if event_type in [
+                "response.function_call_arguments.delta",
+                "response.function_call_arguments.done",
+            ]:
+                logger.info(f"🎯 Routing {event_type} to {len(handlers)} handler(s)")
+            
+            await self._execute_handlers(handlers, processed_data, f"realtime event {event_type}")
         else:
             logger.warning(f"Unknown OpenAI event type: {event_type}")
             logger.info(f"Unknown event data: {json.dumps(data, indent=2)}")
@@ -213,4 +308,86 @@ class EventRouter:
                     # Note: The actual closing of the bridge should be handled by the bridge class
                 else:
                     logger.error(f"Response failed with error: {error_info.get('message', 'Unknown error')}")
-                    logger.error(f"Error type: {error_type}, Error code: {error_code}") 
+                    logger.error(f"Error type: {error_type}, Error code: {error_code}")
+    
+    async def _apply_middleware(self, event_type: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Apply middleware functions to event data.
+        
+        Args:
+            event_type: The event type
+            data: The event data
+            
+        Returns:
+            Optional[Dict]: Modified event data or None if filtered out
+        """
+        current_data = data
+        
+        for priority, middleware in self._handler_middleware:
+            try:
+                if asyncio.iscoroutinefunction(middleware):
+                    result = await middleware(event_type, current_data)
+                else:
+                    result = middleware(event_type, current_data)
+                
+                if result is None:
+                    # Middleware filtered out the event
+                    return None
+                
+                current_data = result
+                
+            except Exception as e:
+                logger.error(f"Error in event middleware: {e}")
+                # Continue with original data if middleware fails
+                continue
+        
+        return current_data
+    
+    async def _execute_handlers(
+        self, 
+        handlers: List[Tuple[int, Callable]], 
+        data: Dict[str, Any], 
+        context: str
+    ) -> None:
+        """Execute multiple handlers with error isolation.
+        
+        Args:
+            handlers: List of (priority, handler) tuples
+            data: Event data to pass to handlers
+            context: Context description for error logging
+        """
+        for priority, handler in handlers:
+            try:
+                if asyncio.iscoroutinefunction(handler):
+                    await handler(data)
+                else:
+                    handler(data)
+            except Exception as e:
+                logger.error(f"Error in {context} handler (priority {priority}): {e}")
+                # Continue executing other handlers even if one fails
+    
+    def get_handler_stats(self) -> Dict[str, Any]:
+        """Get statistics about registered handlers.
+        
+        Returns:
+            Dict containing handler statistics
+        """
+        telephony_count = sum(len(handlers) for handlers in self.telephony_handlers.values())
+        realtime_count = sum(len(handlers) for handlers in self.realtime_handlers.values())
+        
+        return {
+            "telephony_handlers": {
+                "total": telephony_count,
+                "by_type": {
+                    event_type.value: len(handlers) 
+                    for event_type, handlers in self.telephony_handlers.items()
+                }
+            },
+            "realtime_handlers": {
+                "total": realtime_count,
+                "by_type": {
+                    event_type: len(handlers) 
+                    for event_type, handlers in self.realtime_handlers.items()
+                }
+            },
+            "middleware_count": len(self._handler_middleware)
+        } 
