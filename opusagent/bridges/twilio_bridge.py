@@ -60,6 +60,9 @@ class TwilioBridge(BaseRealtimeBridge):
         # Participant tracking for multi-party calls (future-proofing)
         self.current_participant: str = "caller"  # Default participant for single-party calls
 
+        # Initialize session start time for accurate duration tracking
+        self._session_start_time = time.time()
+
         # Check audio processing dependencies
         self._check_audio_dependencies()
 
@@ -94,7 +97,14 @@ class TwilioBridge(BaseRealtimeBridge):
             WebSocket connections, which can cause ASGI errors.
         """
         # Check if connection is still active before sending
-        if self._closed or not self.platform_websocket or self._is_websocket_closed():
+        websocket_closed = False
+        try:
+            websocket_closed = self._is_websocket_closed()
+        except AttributeError:
+            # Method not available yet, assume websocket is not closed
+            websocket_closed = False
+            
+        if self._closed or not self.platform_websocket or websocket_closed:
             logger.debug("Skipping platform message - connection closed or unavailable")
             return
 
@@ -561,7 +571,14 @@ class TwilioBridge(BaseRealtimeBridge):
                 logger.debug("Connection validation failed: platform websocket is None")
                 return False
                 
-            if self._is_websocket_closed():
+            websocket_closed = False
+            try:
+                websocket_closed = self._is_websocket_closed()
+            except AttributeError:
+                # Method not available yet, assume websocket is not closed
+                websocket_closed = False
+                
+            if websocket_closed:
                 logger.debug("Connection validation failed: platform websocket is closed")
                 return False
                 
@@ -675,8 +692,8 @@ class TwilioBridge(BaseRealtimeBridge):
                     
                     # Calculate performance metrics
                     if time_since_last_check > 0:
-                        audio_rate = self.audio_chunks_sent / time_since_last_check if time_since_last_check > 0 else 0
-                        data_rate = self.total_audio_bytes_sent / time_since_last_check if time_since_last_check > 0 else 0
+                        audio_rate = self.audio_chunks_sent / time_since_last_check
+                        data_rate = self.total_audio_bytes_sent / time_since_last_check
                         
                         logger.debug(f"Performance metrics: session duration: {session_duration:.1f}s, "
                                    f"audio rate: {audio_rate:.1f} chunks/s, "
@@ -725,7 +742,7 @@ class TwilioBridge(BaseRealtimeBridge):
                 "account_sid": self.account_sid,
                 "media_format": self.media_format,
                 "current_participant": self.current_participant,
-                "session_duration": time.time() - getattr(self, '_session_start_time', time.time()),
+                "session_duration": time.time() - self._session_start_time,
             },
             "audio": {
                 "chunks_sent": self.audio_chunks_sent,
