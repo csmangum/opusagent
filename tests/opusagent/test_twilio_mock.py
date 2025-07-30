@@ -25,7 +25,7 @@ async def test_single_turn():
     logger = logging.getLogger(__name__)
 
     # Test audio file (create or use existing)
-    test_audio = "demo/user_audio/hello.wav"
+    test_audio = "opusagent/local/audio/user_audio/hello.wav"
     
     logger.info("Starting single turn Twilio mock test...")
     

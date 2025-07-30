@@ -675,8 +675,8 @@ class TwilioBridge(BaseRealtimeBridge):
                     
                     # Calculate performance metrics
                     if time_since_last_check > 0:
-                        audio_rate = self.audio_chunks_sent / time_since_last_check if time_since_last_check > 0 else 0
-                        data_rate = self.total_audio_bytes_sent / time_since_last_check if time_since_last_check > 0 else 0
+                        audio_rate = self.audio_chunks_sent / time_since_last_check
+                        data_rate = self.total_audio_bytes_sent / time_since_last_check
                         
                         logger.debug(f"Performance metrics: session duration: {session_duration:.1f}s, "
                                    f"audio rate: {audio_rate:.1f} chunks/s, "

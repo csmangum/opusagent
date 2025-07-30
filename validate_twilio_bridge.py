@@ -61,7 +61,11 @@ class BridgeValidationResults:
         self.success = True
 
     def add_test_result(
-        self, test_name: str, passed: bool, details: Optional[Dict[str, Any]] = None, error: Optional[str] = None
+        self,
+        test_name: str,
+        passed: bool,
+        details: Optional[Dict[str, Any]] = None,
+        error: Optional[str] = None,
     ):
         """Add a test result to the collection."""
         self.tests[test_name] = {
@@ -105,7 +109,9 @@ class BridgeValidationResults:
         """Convert results to dictionary for reporting."""
         return {
             "start_time": datetime.fromtimestamp(self.start_time).isoformat(),
-            "end_time": datetime.fromtimestamp(self.end_time or time.time()).isoformat(),
+            "end_time": datetime.fromtimestamp(
+                self.end_time or time.time()
+            ).isoformat(),
             "duration": self.duration,
             "total_tests": self.total_tests,
             "passed_tests": self.passed_tests,
@@ -134,7 +140,9 @@ class TwilioBridgeValidator:
         self.results = BridgeValidationResults()
 
         # Configure logging using centralized configuration
-        self.logger = configure_logging("bridge_validator", log_filename="bridge_validation.log")
+        self.logger = configure_logging(
+            "bridge_validator", log_filename="bridge_validation.log"
+        )
 
         # Test audio files
         self.test_audio_files = self._discover_audio_files()
@@ -296,7 +304,9 @@ class TwilioBridgeValidator:
 
         if not self.test_audio_files:
             self.logger.warning("No audio files found, skipping audio streaming test")
-            self.results.add_test_result("basic_audio_streaming", False, error="No audio files available")
+            self.results.add_test_result(
+                "basic_audio_streaming", False, error="No audio files available"
+            )
             return
 
         test_file = self.test_audio_files[0]
@@ -336,7 +346,9 @@ class TwilioBridgeValidator:
 
         target_turns = target_turns or self.DEFAULT_TARGET_TURNS
         if len(self.test_audio_files) < target_turns:
-            self.logger.warning(f"Insufficient audio files for {target_turns} turns, using {len(self.test_audio_files)}")
+            self.logger.warning(
+                f"Insufficient audio files for {target_turns} turns, using {len(self.test_audio_files)}"
+            )
             target_turns = len(self.test_audio_files)
 
         audio_files = self.test_audio_files[:target_turns]
@@ -351,7 +363,11 @@ class TwilioBridgeValidator:
                     "duration": duration,
                     "target_turns": target_turns,
                     "completed_turns": result["completed_turns"],
-                    "success_rate": (result["completed_turns"] / target_turns) * 100 if target_turns > 0 else 0,
+                    "success_rate": (
+                        (result["completed_turns"] / target_turns) * 100
+                        if target_turns > 0
+                        else 0
+                    ),
                     "greeting_received": result["greeting_received"],
                     "turns": result["turns"],
                 }
@@ -396,13 +412,18 @@ class TwilioBridgeValidator:
                 }
 
                 # For now, just check if we received any marks or media after DTMF
-                passed = len(client.received_marks) > 0 or len(client.received_media_chunks) > 0
+                passed = (
+                    len(client.received_marks) > 0
+                    or len(client.received_media_chunks) > 0
+                )
                 self.results.add_test_result("dtmf_handling", passed, details)
 
                 if passed:
                     self.logger.info("✅ DTMF handling test passed")
                 else:
-                    self.logger.warning("❌ DTMF handling test failed - no response detected")
+                    self.logger.warning(
+                        "❌ DTMF handling test failed - no response detected"
+                    )
 
         except Exception as e:
             self.results.add_test_result("dtmf_handling", False, error=str(e))
@@ -436,7 +457,9 @@ class TwilioBridgeValidator:
                 if passed:
                     self.logger.info("✅ Mark handling test passed")
                 else:
-                    self.logger.warning("❌ Mark handling test failed - no marks received")
+                    self.logger.warning(
+                        "❌ Mark handling test failed - no marks received"
+                    )
 
         except Exception as e:
             self.results.add_test_result("mark_handling", False, error=str(e))
@@ -448,7 +471,9 @@ class TwilioBridgeValidator:
 
         if not self.test_audio_files:
             self.logger.warning("No audio files found, skipping audio quality test")
-            self.results.add_test_result("audio_quality", False, error="No audio files available")
+            self.results.add_test_result(
+                "audio_quality", False, error="No audio files available"
+            )
             return
 
         test_file = self.test_audio_files[0]
@@ -499,7 +524,13 @@ class TwilioBridgeValidator:
             async with MockTwilioClient(self.bridge_url) as client:
                 await client.send_connected()
                 # Don't send start, try to send audio
-                success = await client.send_user_audio(self.test_audio_files[0] if self.test_audio_files else "nonexistent.wav")
+                # Note: This intentionally uses a potentially non-existent file to test error handling
+                # The test expects this to fail, so using "nonexistent.wav" when no test files are available
+                success = await client.send_user_audio(
+                    self.test_audio_files[0]
+                    if self.test_audio_files
+                    else "nonexistent.wav"
+                )
                 passed = passed and not success  # Should fail
 
             duration = time.time() - start_time
@@ -522,7 +553,9 @@ class TwilioBridgeValidator:
         self.logger.info(f"Testing performance with {num_turns} turns...")
 
         if len(self.test_audio_files) < num_turns:
-            self.logger.warning(f"Insufficient audio files, reducing to {len(self.test_audio_files)} turns")
+            self.logger.warning(
+                f"Insufficient audio files, reducing to {len(self.test_audio_files)} turns"
+            )
             num_turns = len(self.test_audio_files)
 
         audio_files = self.test_audio_files[:num_turns]
@@ -530,10 +563,16 @@ class TwilioBridgeValidator:
 
         try:
             async with MockTwilioClient(self.bridge_url) as client:
-                result = await client.multi_turn_conversation(audio_files, turn_delay=0.5)
+                result = await client.multi_turn_conversation(
+                    audio_files, turn_delay=0.5
+                )
 
                 duration = time.time() - start_time
-                avg_turn_time = duration / result["completed_turns"] if result["completed_turns"] > 0 else 0
+                avg_turn_time = (
+                    duration / result["completed_turns"]
+                    if result["completed_turns"] > 0
+                    else 0
+                )
 
                 details = {
                     "duration": duration,
@@ -542,7 +581,9 @@ class TwilioBridgeValidator:
                     "success_rate": (result["completed_turns"] / num_turns) * 100,
                 }
 
-                passed = result["completed_turns"] == num_turns and avg_turn_time < 10  # Arbitrary threshold
+                passed = (
+                    result["completed_turns"] == num_turns and avg_turn_time < 10
+                )  # Arbitrary threshold
                 self.results.add_test_result("performance", passed, details)
 
                 if passed:
@@ -695,4 +736,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())
