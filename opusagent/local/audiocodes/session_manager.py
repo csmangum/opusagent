@@ -98,21 +98,22 @@ class SessionManager:
                                   for session establishment and management
             logger (Optional[logging.Logger]): Logger instance for debugging and monitoring.
                                              If None, creates a default logger for this module.
-
-        Example:
-            # Create SessionManager with configuration
-            config = SessionConfig(
-                bridge_url="ws://localhost:8080",
-                bot_name="TestBot",
-                caller="+15551234567"
-            )
-            session_manager = SessionManager(config)
         """
         self.logger = logger or logging.getLogger(__name__)
         self.config = config
         self.session_state = SessionState()
         self.stream_state = StreamState()
         self.conversation_state: Optional[ConversationState] = None
+        self.conversation_manager: Optional[Any] = None  # Will be set by client
+
+    def set_conversation_manager(self, conversation_manager: Any) -> None:
+        """
+        Set the conversation manager reference for notification callbacks.
+        
+        Args:
+            conversation_manager: The conversation manager instance
+        """
+        self.conversation_manager = conversation_manager
 
     def create_session(self, conversation_id: Optional[str] = None) -> str:
         """

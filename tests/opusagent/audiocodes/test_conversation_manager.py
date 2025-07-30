@@ -103,7 +103,19 @@ class TestConversationManager:
         conversation_manager.conversation_state.greeting_chunks = ["chunk1", "chunk2"]
         conversation_manager.conversation_state.collecting_greeting = False
         
-        greeting = await conversation_manager.wait_for_greeting(timeout=1.0)
+        # Start waiting for greeting in background
+        greeting_task = asyncio.create_task(
+            conversation_manager.wait_for_greeting(timeout=1.0)
+        )
+        
+        # Wait a bit to ensure the task is running
+        await asyncio.sleep(0.1)
+        
+        # Simulate greeting completion by calling the notification
+        conversation_manager._notify_greeting_complete()
+        
+        # Wait for the task to complete
+        greeting = await greeting_task
         
         assert greeting == ["chunk1", "chunk2"]
 
@@ -459,4 +471,179 @@ class TestConversationManager:
         assert result.success is True  # At least one turn completed
         assert result.completed_turns == 1
         assert result.total_turns == 3
-        assert abs(result.success_rate - 33.3) < 0.1  # 1/3 * 100 with tolerance for floating point 
+        assert abs(result.success_rate - 33.3) < 0.1  # 1/3 * 100 with tolerance for floating point
+
+    def test_register_greeting_complete_callback(self, conversation_manager):
+        """Test registering greeting complete callback."""
+        callback_called = False
+        
+        def test_callback():
+            nonlocal callback_called
+            callback_called = True
+        
+        conversation_manager.register_greeting_complete_callback(test_callback)
+        
+        # Call the notification method
+        conversation_manager._notify_greeting_complete()
+        
+        assert callback_called is True
+
+    def test_register_response_complete_callback(self, conversation_manager):
+        """Test registering response complete callback."""
+        callback_called = False
+        
+        def test_callback():
+            nonlocal callback_called
+            callback_called = True
+        
+        conversation_manager.register_response_complete_callback(test_callback)
+        
+        # Call the notification method
+        conversation_manager._notify_response_complete()
+        
+        assert callback_called is True
+
+    def test_register_callback_with_none(self, conversation_manager):
+        """Test registering callback with None to clear it."""
+        callback_called = False
+        
+        def test_callback():
+            nonlocal callback_called
+            callback_called = True
+        
+        # Register callback
+        conversation_manager.register_greeting_complete_callback(test_callback)
+        
+        # Clear callback
+        conversation_manager.register_greeting_complete_callback(None)
+        
+        # Call the notification method
+        conversation_manager._notify_greeting_complete()
+        
+        assert callback_called is False
+
+    def test_notify_greeting_complete_no_callback(self, conversation_manager):
+        """Test notification when no callback is registered."""
+        # Should not raise exception
+        conversation_manager._notify_greeting_complete()
+
+    def test_notify_response_complete_no_callback(self, conversation_manager):
+        """Test notification when no callback is registered."""
+        # Should not raise exception
+        conversation_manager._notify_response_complete()
+
+    def test_notify_greeting_complete_callback_exception(self, conversation_manager):
+        """Test notification when callback raises exception."""
+        def failing_callback():
+            raise ValueError("Test exception")
+        
+        conversation_manager.register_greeting_complete_callback(failing_callback)
+        
+        # Should not raise exception, just log error
+        conversation_manager._notify_greeting_complete()
+
+    def test_notify_response_complete_callback_exception(self, conversation_manager):
+        """Test notification when callback raises exception."""
+        def failing_callback():
+            raise ValueError("Test exception")
+        
+        conversation_manager.register_response_complete_callback(failing_callback)
+        
+        # Should not raise exception, just log error
+        conversation_manager._notify_response_complete()
+
+    @pytest.mark.asyncio
+    async def test_wait_for_greeting_with_callback(self, conversation_manager):
+        """Test wait_for_greeting with callback-based completion."""
+        conversation_manager.start_conversation("test-123")
+        
+        # Add some greeting chunks
+        conversation_manager.conversation_state.greeting_chunks = ["chunk1", "chunk2"]
+        conversation_manager.conversation_state.collecting_greeting = True
+        
+        # Start waiting for greeting in background
+        greeting_task = asyncio.create_task(
+            conversation_manager.wait_for_greeting(timeout=5.0)
+        )
+        
+        # Wait a bit to ensure the task is running
+        await asyncio.sleep(0.1)
+        
+        # Simulate greeting completion by calling the notification
+        conversation_manager._notify_greeting_complete()
+        
+        # Wait for the task to complete
+        result = await greeting_task
+        
+        assert result == ["chunk1", "chunk2"]
+
+    @pytest.mark.asyncio
+    async def test_wait_for_response_with_callback(self, conversation_manager):
+        """Test wait_for_response with callback-based completion."""
+        conversation_manager.start_conversation("test-123")
+        
+        # Start waiting for response in background
+        response_task = asyncio.create_task(
+            conversation_manager.wait_for_response(timeout=5.0)
+        )
+        
+        # Wait a bit to ensure the task is running and chunks are cleared
+        await asyncio.sleep(0.1)
+        
+        # Add response chunks after the method has started (simulating chunks being collected)
+        conversation_manager.conversation_state.response_chunks = ["resp1", "resp2", "resp3"]
+        conversation_manager.conversation_state.collecting_response = True
+        
+        # Simulate response completion by calling the notification
+        conversation_manager._notify_response_complete()
+        
+        # Wait for the task to complete
+        result = await response_task
+        
+        assert result == ["resp1", "resp2", "resp3"]
+
+    @pytest.mark.asyncio
+    async def test_wait_for_greeting_timeout_with_callback(self, conversation_manager):
+        """Test wait_for_greeting timeout with callback-based waiting."""
+        conversation_manager.start_conversation("test-123")
+        
+        # Start waiting for greeting with short timeout
+        result = await conversation_manager.wait_for_greeting(timeout=0.1)
+        
+        # Should timeout and return empty list
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_wait_for_response_timeout_with_callback(self, conversation_manager):
+        """Test wait_for_response timeout with callback-based waiting."""
+        conversation_manager.start_conversation("test-123")
+        
+        # Start waiting for response with short timeout
+        result = await conversation_manager.wait_for_response(timeout=0.1)
+        
+        # Should timeout and return empty list
+        assert result == []
+
+    def test_conversation_manager_callback_attributes(self, conversation_manager):
+        """Test that callback attributes are properly initialized."""
+        assert conversation_manager._greeting_complete_callback is None
+        assert conversation_manager._response_complete_callback is None
+
+    def test_callback_registration_and_clearing(self, conversation_manager):
+        """Test callback registration and clearing."""
+        def test_callback():
+            pass
+        
+        # Register callbacks
+        conversation_manager.register_greeting_complete_callback(test_callback)
+        conversation_manager.register_response_complete_callback(test_callback)
+        
+        assert conversation_manager._greeting_complete_callback == test_callback
+        assert conversation_manager._response_complete_callback == test_callback
+        
+        # Clear callbacks
+        conversation_manager.register_greeting_complete_callback(None)
+        conversation_manager.register_response_complete_callback(None)
+        
+        assert conversation_manager._greeting_complete_callback is None
+        assert conversation_manager._response_complete_callback is None 

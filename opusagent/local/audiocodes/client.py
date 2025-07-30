@@ -88,6 +88,9 @@ class LocalAudioCodesClient:
         self.conversation_manager = ConversationManager(
             self.session_manager, self.audio_manager, self.logger
         )
+        
+        # Set conversation manager reference in session manager for callbacks
+        self.session_manager.set_conversation_manager(self.conversation_manager)
 
         # Initialize VAD manager
         self.vad_manager = VADManager(

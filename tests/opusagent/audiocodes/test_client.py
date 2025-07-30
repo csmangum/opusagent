@@ -365,9 +365,21 @@ class TestLocalAudioCodesClient:
                 greeting_chunks = ["greeting1", "greeting2"]
                 assert client.conversation_manager.conversation_state is not None
                 client.conversation_manager.conversation_state.greeting_chunks = greeting_chunks
-                client.conversation_manager.conversation_state.collecting_greeting = False
+                client.conversation_manager.conversation_state.collecting_greeting = True
                 
-                greeting = await client.wait_for_llm_greeting(timeout=1.0)
+                # Start waiting for greeting in background
+                greeting_task = asyncio.create_task(
+                    client.wait_for_llm_greeting(timeout=1.0)
+                )
+                
+                # Wait a bit to ensure the task is running
+                await asyncio.sleep(0.1)
+                
+                # Simulate greeting completion by calling the notification
+                client.conversation_manager._notify_greeting_complete()
+                
+                # Wait for the task to complete
+                greeting = await greeting_task
                 
                 assert greeting == greeting_chunks
 
@@ -383,9 +395,21 @@ class TestLocalAudioCodesClient:
                 response_chunks = ["response1", "response2", "response3"]
                 assert client.conversation_manager.conversation_state is not None
                 client.conversation_manager.conversation_state.response_chunks = response_chunks
-                client.conversation_manager.conversation_state.collecting_response = False
+                client.conversation_manager.conversation_state.collecting_response = True
                 
-                response = await client.wait_for_llm_response(timeout=1.0)
+                # Start waiting for response in background
+                response_task = asyncio.create_task(
+                    client.wait_for_llm_response(timeout=1.0)
+                )
+                
+                # Wait a bit to ensure the task is running
+                await asyncio.sleep(0.1)
+                
+                # Simulate response completion by calling the notification
+                client.conversation_manager._notify_response_complete()
+                
+                # Wait for the task to complete
+                response = await response_task
                 
                 assert response == response_chunks
 
