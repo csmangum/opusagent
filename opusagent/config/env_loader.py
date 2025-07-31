@@ -9,29 +9,29 @@ accessing any configuration functions.
 """
 
 import os
-import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast, get_origin
+from typing import Any, Dict, List, Optional, Type, TypeVar, cast, get_origin
+
 from dotenv import load_dotenv
 
 from .models import (
     ApplicationConfig,
-    ServerConfig,
-    OpenAIConfig,
     AudioConfig,
-    VADConfig,
-    TranscriptionConfig,
-    WebSocketConfig,
-    QualityMonitoringConfig,
-    LoggingConfig,
-    MockConfig,
-    TUIConfig,
-    StaticDataConfig,
-    SecurityConfig,
+    AudioStreamHandlerConfig,
     Environment,
+    LoggingConfig,
     LogLevel,
+    MockConfig,
+    OpenAIConfig,
+    QualityMonitoringConfig,
+    SecurityConfig,
+    ServerConfig,
+    StaticDataConfig,
+    TranscriptionConfig,
+    TUIConfig,
+    VADConfig,
+    WebSocketConfig,
 )
-
 
 # Track if environment variables have been loaded
 _env_loaded = False
@@ -39,9 +39,9 @@ _env_loaded = False
 
 def load_env_file(env_file: Optional[str] = None) -> None:
     """Load environment variables from a .env file.
-    
+
     This function must be called before accessing any configuration functions.
-    
+
     Args:
         env_file: Path to the .env file. If None, uses default behavior.
     """
@@ -108,7 +108,7 @@ def safe_string_or_none(value: Optional[str]) -> Optional[str]:
 def load_server_config() -> ServerConfig:
     """Load server configuration from environment variables."""
     _check_env_loaded()
-    
+
     env_str = os.getenv("ENV", "production").lower()
     environment = (
         Environment.DEVELOPMENT if env_str == "development" else Environment.PRODUCTION
@@ -135,7 +135,7 @@ def load_server_config() -> ServerConfig:
 def load_openai_config() -> OpenAIConfig:
     """Load OpenAI configuration from environment variables."""
     _check_env_loaded()
-    
+
     return OpenAIConfig(
         api_key=os.getenv("OPENAI_API_KEY"),
         model=os.getenv("OPENAI_MODEL", "gpt-4o-realtime-preview-2024-12-17"),
@@ -148,13 +148,29 @@ def load_openai_config() -> OpenAIConfig:
 def load_audio_config() -> AudioConfig:
     """Load audio configuration from environment variables."""
     _check_env_loaded()
-    
+
+    from opusagent.config.constants import (
+        DEFAULT_AUDIO_CHUNK_SIZE,
+        DEFAULT_AUDIO_CHUNK_SIZE_LARGE,
+        DEFAULT_BITS_PER_SAMPLE,
+        DEFAULT_CHANNELS,
+        DEFAULT_SAMPLE_RATE,
+    )
+
     return AudioConfig(
-        sample_rate=safe_convert(os.getenv("AUDIO_SAMPLE_RATE"), int, 16000),
-        channels=safe_convert(os.getenv("AUDIO_CHANNELS"), int, 1),
-        bits_per_sample=safe_convert(os.getenv("AUDIO_BITS_PER_SAMPLE"), int, 16),
-        chunk_size=safe_convert(os.getenv("AUDIO_CHUNK_SIZE"), int, 3200),
-        chunk_size_large=safe_convert(os.getenv("AUDIO_CHUNK_SIZE_LARGE"), int, 32000),
+        sample_rate=safe_convert(
+            os.getenv("AUDIO_SAMPLE_RATE"), int, DEFAULT_SAMPLE_RATE
+        ),
+        channels=safe_convert(os.getenv("AUDIO_CHANNELS"), int, DEFAULT_CHANNELS),
+        bits_per_sample=safe_convert(
+            os.getenv("AUDIO_BITS_PER_SAMPLE"), int, DEFAULT_BITS_PER_SAMPLE
+        ),
+        chunk_size=safe_convert(
+            os.getenv("AUDIO_CHUNK_SIZE"), int, DEFAULT_AUDIO_CHUNK_SIZE
+        ),
+        chunk_size_large=safe_convert(
+            os.getenv("AUDIO_CHUNK_SIZE_LARGE"), int, DEFAULT_AUDIO_CHUNK_SIZE_LARGE
+        ),
         format=os.getenv("AUDIO_FORMAT", "raw/lpcm16"),
         supported_formats=safe_convert(
             os.getenv("AUDIO_SUPPORTED_FORMATS"),
@@ -167,7 +183,14 @@ def load_audio_config() -> AudioConfig:
 def load_vad_config() -> VADConfig:
     """Load VAD configuration from environment variables."""
     _check_env_loaded()
-    
+
+    from opusagent.config.constants import (
+        DEFAULT_VAD_SAMPLE_RATE,
+        DEFAULT_VAD_CHUNK_SIZE_16KHZ,
+        SPEECH_START_THRESHOLD,
+        SPEECH_STOP_THRESHOLD,
+    )
+
     return VADConfig(
         enabled=safe_convert(os.getenv("VAD_ENABLED"), bool, True),
         backend=os.getenv("VAD_BACKEND", "silero"),
@@ -179,39 +202,58 @@ def load_vad_config() -> VADConfig:
             os.getenv("VAD_MIN_SPEECH_DURATION_MS"), int, 500
         ),
         speech_start_threshold=safe_convert(
-            os.getenv("VAD_SPEECH_START_THRESHOLD"), int, 2
+            os.getenv("VAD_SPEECH_START_THRESHOLD"), int, SPEECH_START_THRESHOLD
         ),
         speech_stop_threshold=safe_convert(
-            os.getenv("VAD_SPEECH_STOP_THRESHOLD"), int, 3
+            os.getenv("VAD_SPEECH_STOP_THRESHOLD"), int, SPEECH_STOP_THRESHOLD
         ),
         device=os.getenv("VAD_DEVICE", "cpu"),
-        chunk_size=safe_convert(os.getenv("VAD_CHUNK_SIZE"), int, 512),
+        chunk_size=safe_convert(
+            os.getenv("VAD_CHUNK_SIZE"), int, DEFAULT_VAD_CHUNK_SIZE_16KHZ
+        ),
         confidence_history_size=safe_convert(
             os.getenv("VAD_CONFIDENCE_HISTORY_SIZE"), int, 5
         ),
         force_stop_timeout_ms=safe_convert(
             os.getenv("VAD_FORCE_STOP_TIMEOUT_MS"), int, 2000
         ),
-        sample_rate=safe_convert(os.getenv("VAD_SAMPLE_RATE"), int, 16000),
+        sample_rate=safe_convert(
+            os.getenv("VAD_SAMPLE_RATE"), int, DEFAULT_VAD_SAMPLE_RATE
+        ),
     )
 
 
 def load_transcription_config() -> TranscriptionConfig:
     """Load transcription configuration from environment variables."""
     _check_env_loaded()
-    
+
+    from opusagent.config.constants import (
+        DEFAULT_SAMPLE_RATE,
+        DEFAULT_TRANSCRIPTION_BACKEND,
+        DEFAULT_TRANSCRIPTION_CHUNK_DURATION,
+        DEFAULT_TRANSCRIPTION_CONFIDENCE_THRESHOLD,
+        DEFAULT_TRANSCRIPTION_LANGUAGE,
+        DEFAULT_WHISPER_MODEL_SIZE,
+    )
+
     return TranscriptionConfig(
         enabled=safe_convert(os.getenv("TRANSCRIPTION_ENABLED"), bool, True),
-        backend=os.getenv("TRANSCRIPTION_BACKEND", "pocketsphinx"),
-        language=os.getenv("TRANSCRIPTION_LANGUAGE", "en"),
-        model_size=os.getenv("WHISPER_MODEL_SIZE", "base"),
+        backend=os.getenv("TRANSCRIPTION_BACKEND", DEFAULT_TRANSCRIPTION_BACKEND),
+        language=os.getenv("TRANSCRIPTION_LANGUAGE", DEFAULT_TRANSCRIPTION_LANGUAGE),
+        model_size=os.getenv("WHISPER_MODEL_SIZE", DEFAULT_WHISPER_MODEL_SIZE),
         chunk_duration=safe_convert(
-            os.getenv("TRANSCRIPTION_CHUNK_DURATION"), float, 1.0
+            os.getenv("TRANSCRIPTION_CHUNK_DURATION"),
+            float,
+            DEFAULT_TRANSCRIPTION_CHUNK_DURATION,
         ),
         confidence_threshold=safe_convert(
-            os.getenv("TRANSCRIPTION_CONFIDENCE_THRESHOLD"), float, 0.5
+            os.getenv("TRANSCRIPTION_CONFIDENCE_THRESHOLD"),
+            float,
+            DEFAULT_TRANSCRIPTION_CONFIDENCE_THRESHOLD,
         ),
-        sample_rate=safe_convert(os.getenv("TRANSCRIPTION_SAMPLE_RATE"), int, 16000),
+        sample_rate=safe_convert(
+            os.getenv("TRANSCRIPTION_SAMPLE_RATE"), int, DEFAULT_SAMPLE_RATE
+        ),
         enable_vad=safe_convert(os.getenv("TRANSCRIPTION_ENABLE_VAD"), bool, True),
         device=os.getenv("WHISPER_DEVICE", "cpu"),
         pocketsphinx_hmm=safe_string_or_none(os.getenv("POCKETSPHINX_HMM")),
@@ -237,7 +279,7 @@ def load_transcription_config() -> TranscriptionConfig:
 def load_websocket_config() -> WebSocketConfig:
     """Load WebSocket configuration from environment variables."""
     _check_env_loaded()
-    
+
     return WebSocketConfig(
         max_connections=safe_convert(os.getenv("WEBSOCKET_MAX_CONNECTIONS"), int, 10),
         max_connection_age=safe_convert(
@@ -259,7 +301,9 @@ def load_websocket_config() -> WebSocketConfig:
 def load_quality_config() -> QualityMonitoringConfig:
     """Load quality monitoring configuration from environment variables."""
     _check_env_loaded()
-    
+
+    from opusagent.config.constants import DEFAULT_SAMPLE_RATE
+
     return QualityMonitoringConfig(
         enabled=safe_convert(os.getenv("QUALITY_MONITORING_ENABLED"), bool, True),
         min_snr_db=safe_convert(os.getenv("QUALITY_MIN_SNR_DB"), float, 15.0),
@@ -269,7 +313,9 @@ def load_quality_config() -> QualityMonitoringConfig:
         ),
         min_quality_score=safe_convert(os.getenv("QUALITY_MIN_SCORE"), float, 60.0),
         min_audio_level=safe_convert(os.getenv("QUALITY_MIN_AUDIO_LEVEL"), float, 0.01),
-        sample_rate=safe_convert(os.getenv("QUALITY_SAMPLE_RATE"), int, 16000),
+        sample_rate=safe_convert(
+            os.getenv("QUALITY_SAMPLE_RATE"), int, DEFAULT_SAMPLE_RATE
+        ),
         chunk_size=safe_convert(os.getenv("QUALITY_CHUNK_SIZE"), int, 1024),
         history_size=safe_convert(os.getenv("QUALITY_HISTORY_SIZE"), int, 100),
         enable_alerts=safe_convert(os.getenv("QUALITY_ENABLE_ALERTS"), bool, True),
@@ -286,10 +332,46 @@ def load_quality_config() -> QualityMonitoringConfig:
     )
 
 
+def load_audio_stream_handler_config() -> AudioStreamHandlerConfig:
+    """Load audio stream handler configuration from environment variables."""
+    _check_env_loaded()
+
+    from opusagent.config.constants import (
+        DEFAULT_INTERNAL_SAMPLE_RATE,
+        DEFAULT_MIN_AUDIO_BYTES,
+        DEFAULT_OPENAI_SAMPLE_RATE,
+    )
+
+    return AudioStreamHandlerConfig(
+        internal_sample_rate=safe_convert(
+            os.getenv("AUDIO_STREAM_HANDLER_INTERNAL_SAMPLE_RATE"),
+            int,
+            DEFAULT_INTERNAL_SAMPLE_RATE,
+        ),
+        min_audio_bytes=safe_convert(
+            os.getenv("AUDIO_STREAM_HANDLER_MIN_AUDIO_BYTES"),
+            int,
+            DEFAULT_MIN_AUDIO_BYTES,
+        ),
+        openai_sample_rate=safe_convert(
+            os.getenv("AUDIO_STREAM_HANDLER_OPENAI_SAMPLE_RATE"),
+            int,
+            DEFAULT_OPENAI_SAMPLE_RATE,
+        ),
+        enable_quality_monitoring=safe_convert(
+            os.getenv("AUDIO_STREAM_HANDLER_ENABLE_QUALITY_MONITORING"), bool, False
+        ),
+        vad_enabled=safe_convert(
+            os.getenv("AUDIO_STREAM_HANDLER_VAD_ENABLED"), bool, True
+        ),
+        bridge_type=os.getenv("AUDIO_STREAM_HANDLER_BRIDGE_TYPE", "unknown"),
+    )
+
+
 def load_logging_config() -> LoggingConfig:
     """Load logging configuration from environment variables."""
     _check_env_loaded()
-    
+
     log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
     log_level = LogLevel.INFO
     try:
@@ -314,7 +396,7 @@ def load_logging_config() -> LoggingConfig:
 def load_mock_config() -> MockConfig:
     """Load mock/testing configuration from environment variables."""
     _check_env_loaded()
-    
+
     return MockConfig(
         enabled=safe_convert(os.getenv("OPUSAGENT_USE_MOCK"), bool, False),
         server_url=os.getenv("OPUSAGENT_MOCK_SERVER_URL", "ws://localhost:8080"),
@@ -331,7 +413,7 @@ def load_mock_config() -> MockConfig:
 def load_tui_config() -> TUIConfig:
     """Load TUI configuration from environment variables."""
     _check_env_loaded()
-    
+
     return TUIConfig(
         host=os.getenv("TUI_HOST", "localhost"),
         port=safe_convert(os.getenv("TUI_PORT"), int, 8000),
@@ -380,7 +462,7 @@ def load_tui_config() -> TUIConfig:
 def load_static_data_config() -> StaticDataConfig:
     """Load static data configuration from environment variables."""
     _check_env_loaded()
-    
+
     return StaticDataConfig(
         scenarios_file=Path(os.getenv("SCENARIOS_FILE", "scenarios.json")),
         phrases_mapping_file=Path(
@@ -395,7 +477,7 @@ def load_static_data_config() -> StaticDataConfig:
 def load_security_config() -> SecurityConfig:
     """Load security configuration from environment variables."""
     _check_env_loaded()
-    
+
     allowed_origins = os.getenv("ALLOWED_ORIGINS", "*")
     origins_list = [origin.strip() for origin in allowed_origins.split(",")]
 
@@ -415,7 +497,7 @@ def load_security_config() -> SecurityConfig:
 def load_application_config() -> ApplicationConfig:
     """Load complete application configuration from environment variables."""
     _check_env_loaded()
-    
+
     config = ApplicationConfig(
         server=load_server_config(),
         openai=load_openai_config(),
@@ -424,27 +506,30 @@ def load_application_config() -> ApplicationConfig:
         transcription=load_transcription_config(),
         websocket=load_websocket_config(),
         quality=load_quality_config(),
+        audio_stream_handler=load_audio_stream_handler_config(),
         logging=load_logging_config(),
         mock=load_mock_config(),
         tui=load_tui_config(),
         static_data=load_static_data_config(),
         security=load_security_config(),
     )
-    
+
     # Validate configuration and raise exceptions for critical errors
     validation_errors = config.validate()
     if validation_errors:
         # Format error message
-        error_msg = "Configuration validation failed:\n" + "\n".join(f"  - {error}" for error in validation_errors)
+        error_msg = "Configuration validation failed:\n" + "\n".join(
+            f"  - {error}" for error in validation_errors
+        )
         raise ValueError(error_msg)
-    
+
     return config
 
 
 def get_environment_info() -> Dict[str, Any]:
     """Get information about current environment variables for debugging."""
     _check_env_loaded()
-    
+
     return {
         "environment_variables_loaded": len(
             [

@@ -116,10 +116,10 @@ async def test_handle_incoming_audio_success(audio_handler):
         len(base64.b64decode(sent_data["audio"])) == 4800
     )  # Verify size after decoding (24kHz for OpenAI)
 
-    # Verify the audio was recorded - should be the padded version
+    # Verify the audio was recorded - should be the resampled and padded version
     audio_handler.call_recorder.record_caller_audio.assert_called_once()
     recorded_audio = audio_handler.call_recorder.record_caller_audio.call_args[0][0]
-    assert len(base64.b64decode(recorded_audio)) == 3200  # Verify size after decoding (16kHz internal)
+    assert len(base64.b64decode(recorded_audio)) == 4800  # Verify size after decoding (24kHz internal)
 
 
 @pytest.mark.asyncio

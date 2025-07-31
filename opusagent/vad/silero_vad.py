@@ -9,6 +9,7 @@ The model supports both 8kHz and 16kHz sample rates and automatically
 handles audio chunking for variable-length inputs.
 """
 
+import logging
 import time
 from typing import Any, Dict, Optional
 
@@ -16,7 +17,9 @@ import numpy as np
 import torch
 
 from .base_vad import BaseVAD
-from opusagent.config.constants import DEFAULT_SAMPLE_RATE, DEFAULT_VAD_CHUNK_SIZE
+from opusagent.config.constants import DEFAULT_VAD_SAMPLE_RATE, DEFAULT_VAD_CHUNK_SIZE_16KHZ
+
+logger = logging.getLogger(__name__)
 
 
 class SileroVAD(BaseVAD):
@@ -52,13 +55,13 @@ class SileroVAD(BaseVAD):
         The model is not loaded until initialize() is called with a config.
         """
         self.model: Optional[Any] = None
-        self.sample_rate: int = DEFAULT_SAMPLE_RATE
+        self.sample_rate: int = DEFAULT_VAD_SAMPLE_RATE
         self.threshold: float = 0.5
         self.silence_threshold: float = 0.6
         self.min_speech_duration_ms: int = 500
         self.force_stop_timeout_ms: int = 2000
         self.device: str = "cpu"
-        self.chunk_size: int = DEFAULT_VAD_CHUNK_SIZE  # Default chunk size for 16kHz
+        self.chunk_size: int = DEFAULT_VAD_CHUNK_SIZE_16KHZ  # Default chunk size for 16kHz
         
         # State tracking for enhanced detection
         self._speech_start_time: Optional[float] = None
@@ -88,20 +91,32 @@ class SileroVAD(BaseVAD):
             The chunk_size will be automatically adjusted based on sample_rate:
             - 8kHz: chunk_size = 256
             - 16kHz: chunk_size = 512
+            - 24kHz: Will be resampled to 16kHz for VAD processing
         """
-        self.sample_rate = config.get("sample_rate", DEFAULT_SAMPLE_RATE)
+        self.sample_rate = config.get("sample_rate", DEFAULT_VAD_SAMPLE_RATE)
         self.threshold = config.get("threshold", 0.5)
         self.silence_threshold = config.get("silence_threshold", 0.6)
         self.min_speech_duration_ms = config.get("min_speech_duration_ms", 500)
         self.force_stop_timeout_ms = config.get("force_stop_timeout_ms", 2000)
         self.device = config.get("device", "cpu")
-        self.chunk_size = config.get("chunk_size", DEFAULT_VAD_CHUNK_SIZE)
+        self.chunk_size = config.get("chunk_size", DEFAULT_VAD_CHUNK_SIZE_16KHZ)
 
         # Validate configuration parameters
         if self.sample_rate not in [8000, 16000]:
-            raise ValueError(
-                f"Unsupported sample rate: {self.sample_rate}. Must be 8000 or 16000 Hz"
-            )
+            if self.sample_rate == 24000:
+                # For 24kHz, we'll resample to 16kHz for VAD processing
+                logger.info("24kHz sample rate detected - will resample to 16kHz for VAD processing")
+                self.vad_sample_rate = 16000
+                self.original_sample_rate = 24000
+                self.needs_resampling = True
+            else:
+                raise ValueError(
+                    f"Unsupported sample rate: {self.sample_rate}. Must be 8000, 16000, or 24000 Hz"
+                )
+        else:
+            self.vad_sample_rate = self.sample_rate
+            self.original_sample_rate = self.sample_rate
+            self.needs_resampling = False
 
         if not 0.0 <= self.threshold <= 1.0:
             raise ValueError(
@@ -118,10 +133,10 @@ class SileroVAD(BaseVAD):
                 f"Minimum speech duration must be non-negative, got: {self.min_speech_duration_ms}"
             )
 
-        # Automatically adjust chunk size based on sample rate
-        if self.sample_rate == 16000 and self.chunk_size != 512:
+        # Automatically adjust chunk size based on VAD sample rate
+        if self.vad_sample_rate == 16000 and self.chunk_size != 512:
             self.chunk_size = 512
-        elif self.sample_rate == 8000 and self.chunk_size != 256:
+        elif self.vad_sample_rate == 8000 and self.chunk_size != 256:
             self.chunk_size = 256
 
         try:
@@ -168,6 +183,20 @@ class SileroVAD(BaseVAD):
         if audio_data.dtype != np.float32:
             audio_data = audio_data.astype(np.float32)
 
+        # Handle resampling if needed (24kHz -> 16kHz)
+        if hasattr(self, 'needs_resampling') and self.needs_resampling:
+            try:
+                from scipy import signal
+                # Resample from original_sample_rate to vad_sample_rate
+                target_length = int(len(audio_data) * self.vad_sample_rate / self.original_sample_rate)
+                resampled_audio = signal.resample(audio_data, target_length)
+                audio_data = np.array(resampled_audio, dtype=np.float32)
+                logger.debug(f"Resampled audio from {self.original_sample_rate}Hz to {self.vad_sample_rate}Hz for VAD")
+            except ImportError:
+                logger.warning("scipy not available for resampling - VAD may not work correctly with 24kHz")
+                # Fall back to using original audio (may not work well)
+                pass
+
         # Handle variable-length input by splitting into chunks
         if len(audio_data) != self.chunk_size:
             # Split audio into chunks of the correct size
@@ -187,7 +216,7 @@ class SileroVAD(BaseVAD):
             speech_probs = []
             for chunk in chunks:
                 audio_tensor = torch.from_numpy(chunk).float()
-                speech_prob = self.model(audio_tensor, self.sample_rate).item()
+                speech_prob = self.model(audio_tensor, self.vad_sample_rate).item()
                 speech_probs.append(speech_prob)
 
             # Use the maximum probability as the overall result
@@ -195,7 +224,7 @@ class SileroVAD(BaseVAD):
         else:
             # Audio is already the correct size - process directly
             audio_tensor = torch.from_numpy(audio_data).float()
-            max_speech_prob = self.model(audio_tensor, self.sample_rate).item()
+            max_speech_prob = self.model(audio_tensor, self.vad_sample_rate).item()
 
         # Enhanced speech detection with improved state management
         is_speech = max_speech_prob > self.threshold

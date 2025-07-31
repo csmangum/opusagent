@@ -193,9 +193,9 @@ class TestCallRecorder:
         assert recorder.conversation_id == "conv_123"
         assert recorder.session_id == "sess_456"
         assert recorder.base_output_dir == Path(temp_dir)
-        assert recorder.caller_sample_rate == 16000
+        assert recorder.caller_sample_rate == 24000
         assert recorder.bot_sample_rate == 22050
-        assert recorder.target_sample_rate == 16000
+        assert recorder.target_sample_rate == 24000
         assert recorder.channels == 1
         assert recorder.sample_width == 2
         assert not recorder.recording_active
@@ -373,7 +373,7 @@ class TestCallRecorder:
             
             assert result is True
             mock_resample.assert_called_once_with(
-                audio_data.tobytes(), 8000, 16000
+                audio_data.tobytes(), 8000, 24000
             )
     
     @pytest.mark.asyncio
@@ -396,9 +396,9 @@ class TestCallRecorder:
             assert recorder.metadata.bot_audio_chunks == 1
             assert recorder.metadata.bot_audio_bytes > 0
             
-            # Check resampling was called
+            # Check resampling was called (no resampling needed since both rates are 24000)
             mock_resample.assert_called_once_with(
-                audio_data.tobytes(), 24000, 16000
+                audio_data.tobytes(), 24000, 24000
             )
             
             # Check that audio was written

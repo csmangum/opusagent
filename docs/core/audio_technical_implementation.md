@@ -4,7 +4,7 @@ This document provides comprehensive technical implementation diagrams, flow ana
 
 ## Overview
 
-The audio flow involves multiple format conversions, sample rate changes, and encoding/decoding operations across different components. The current implementation has resolved critical sample rate mismatch issues and provides high-quality audio processing with proper resampling.
+The audio flow involves multiple format conversions, sample rate changes, and encoding/decoding operations across different components. The current implementation has resolved critical sample rate mismatch issues and provides high-quality audio processing with proper resampling. **All default values are now centralized in the configuration system** for consistency and maintainability.
 
 ## Key Audio Flow Components
 
@@ -49,11 +49,12 @@ graph TD
 
 **Key Optimizations Implemented:**
 - ✅ **Sample Rate Detection**: Automatic detection based on bridge type
-- ✅ **Internal Resampling**: All audio normalized to 16kHz internal rate
+- ✅ **Internal Resampling**: All audio normalized to 24kHz internal rate (updated from 16kHz)
 - ✅ **OpenAI Resampling**: All input resampled to 24kHz before sending to OpenAI
 - ✅ **Dynamic Chunk Sizing**: Padding calculated based on actual sample rate
 - ✅ **Quality Monitoring**: Real-time audio quality analysis
 - ✅ **VAD Integration**: Local voice activity detection
+- ✅ **Centralized Configuration**: All defaults defined in `opusagent/config/constants.py`
 
 ### 2. OpenAI Processing Flow
 
@@ -177,11 +178,11 @@ sequenceDiagram
     Note over ASH: handle_incoming_audio()
     ASH->>ASH: Decode Base64 → PCM16 bytes
     ASH->>ASH: Detect bridge_type: 'twilio' → 8kHz
-    ASH->>ASH: Resample 8kHz → 16kHz (internal rate)
-    ASH->>ASH: Calculate min_chunk_size (3200 bytes for 16kHz)
-    ASH->>ASH: Pad if needed to 3200 bytes
+    ASH->>ASH: Resample 8kHz → 24kHz (internal rate)
+    ASH->>ASH: Calculate min_chunk_size (4800 bytes for 24kHz)
+    ASH->>ASH: Pad if needed to 4800 bytes
     ASH->>ASH: Quality monitoring & VAD processing
-    ASH->>ASH: Resample 16kHz → 24kHz for OpenAI
+    ASH->>ASH: Already at 24kHz for OpenAI (no additional resampling)
     Note over ASH: ✅ RESOLVED: Proper 24kHz resampling
     ASH->>OAI: input_audio_buffer.append (24kHz PCM16)
     
@@ -193,9 +194,9 @@ sequenceDiagram
 ```
 
 **Key Optimizations Implemented:**
-- **Line 15**: ✅ Proper resampling from 8kHz to 16kHz internal rate
+- **Line 15**: ✅ Proper resampling from 8kHz to 24kHz internal rate
 - **Line 18**: ✅ Dynamic chunk size calculation based on sample rate
-- **Line 22**: ✅ Final resampling to 24kHz for OpenAI - no more distortion
+- **Line 22**: ✅ Already at 24kHz for OpenAI - no additional resampling needed
 
 ### 2. AudioCodes Bridge Audio Processing Flow
 
@@ -215,11 +216,11 @@ sequenceDiagram
     Note over ASH: handle_incoming_audio()
     ASH->>ASH: Decode Base64 → PCM16 bytes
     ASH->>ASH: Detect bridge_type: 'audiocodes' → 16kHz
-    ASH->>ASH: Already at internal rate (16kHz)
-    ASH->>ASH: Calculate min_chunk_size (3200 bytes for 16kHz)
-    ASH->>ASH: Pad if needed to 3200 bytes
+    ASH->>ASH: Resample 16kHz → 24kHz (internal rate)
+    ASH->>ASH: Calculate min_chunk_size (4800 bytes for 24kHz)
+    ASH->>ASH: Pad if needed to 4800 bytes
     ASH->>ASH: Quality monitoring & VAD processing
-    ASH->>ASH: Resample 16kHz → 24kHz for OpenAI
+    ASH->>ASH: Already at 24kHz for OpenAI (no additional resampling)
     Note over ASH: ✅ RESOLVED: Proper 24kHz resampling
     ASH->>OAI: input_audio_buffer.append (24kHz PCM16)
     
@@ -233,7 +234,7 @@ sequenceDiagram
 **Key Optimizations Implemented:**
 - **Line 12**: ✅ Proper sample rate detection and handling
 - **Line 15**: ✅ Dynamic chunk size calculation
-- **Line 19**: ✅ Final resampling to 24kHz for OpenAI - no more distortion
+- **Line 19**: ✅ Resampling to 24kHz internal rate - no additional resampling needed
 
 ### 3. OpenAI Output Processing Flow (Twilio)
 
@@ -320,24 +321,24 @@ sequenceDiagram
     end
     
     ASH->>VAD: Process audio for speech detection
-    VAD->>VAD: Silero VAD at internal sample rate (16kHz)
+    VAD->>VAD: Silero VAD at internal sample rate (24kHz)
     VAD->>ASH: Speech start/stop events
     
     ASH->>CR: record_caller_audio()
     CR->>CR: Decode Base64
-    CR->>CR: Assume caller_sample_rate (16kHz)
+    CR->>CR: Assume caller_sample_rate (24kHz)
     alt Sample rate mismatch
-        CR->>CR: Resample to target_sample_rate (16kHz)
+        CR->>CR: Resample to target_sample_rate (16kHz for recording)
     end
     CR->>CR: Write to caller_audio.wav
     CR->>CR: Add to stereo buffer (left channel)
     
-    Note over CR: Bot audio handled separately<br/>24kHz → 16kHz resampling
+    Note over CR: Bot audio handled separately<br/>24kHz → 16kHz resampling for recording
 ```
 
 **Recording Details:**
-- **Line 15**: ✅ Quality monitoring at consistent internal rate (16kHz)
-- **Line 20**: ✅ VAD processes at internal rate (16kHz)
+- **Line 15**: ✅ Quality monitoring at consistent internal rate (24kHz)
+- **Line 20**: ✅ VAD processes at internal rate (24kHz)
 - **Line 25**: ✅ Caller audio resampling if needed
 - **Line 30**: ✅ Stereo recording with proper channel assignment
 
@@ -356,7 +357,7 @@ sequenceDiagram
 | Stage | Format | Sample Rate | Key Operations |
 |-------|--------|-------------|----------------|
 | Bridge Input | μ-law/PCM16 | 8kHz/16kHz | Decode base64, convert μ-law→PCM16 |
-| Handler | PCM16 | 16kHz (internal) | Resample to internal rate, quality monitoring |
+| Handler | PCM16 | 24kHz (internal) | Resample to internal rate, quality monitoring |
 | OpenAI Input | PCM16 | 24kHz | **RESOLVED: Properly resampled to 24kHz** |
 | OpenAI Output | PCM16 | 24kHz | Audio synthesis |
 | Bridge Output | PCM16/μ-law | 8kHz/24kHz | Resample 24kHz→8kHz (Twilio), direct pass (AudioCodes) |
@@ -376,9 +377,9 @@ sequenceDiagram
 
 | Source | Original Format | Bridge Processing | Handler Input | Internal Rate | OpenAI Input | Status |
 |--------|----------------|------------------|---------------|---------------|--------------|---------|
-| Twilio | 8kHz μ-law Base64 | μ-law→PCM16, 8kHz | 8kHz PCM16 | 16kHz PCM16 | 24kHz PCM16 | ✅ **RESOLVED** |
-| AudioCodes | 16kHz PCM16 Base64 | Direct pass | 16kHz PCM16 | 16kHz PCM16 | 24kHz PCM16 | ✅ **RESOLVED** |
-| TUI/Mock | 16kHz PCM16 Base64 | Direct pass | 16kHz PCM16 | 16kHz PCM16 | 24kHz PCM16 | ✅ **RESOLVED** |
+| Twilio | 8kHz μ-law Base64 | μ-law→PCM16, 8kHz | 8kHz PCM16 | 24kHz PCM16 | 24kHz PCM16 | ✅ **RESOLVED** |
+| AudioCodes | 16kHz PCM16 Base64 | Direct pass | 16kHz PCM16 | 24kHz PCM16 | 24kHz PCM16 | ✅ **RESOLVED** |
+| TUI/Mock | 16kHz PCM16 Base64 | Direct pass | 16kHz PCM16 | 24kHz PCM16 | 24kHz PCM16 | ✅ **RESOLVED** |
 
 ### Output Audio Transformations
 
@@ -386,6 +387,67 @@ sequenceDiagram
 |---------------|------------------|-----------------|---------|
 | 24kHz PCM16 Base64 | 24kHz→8kHz resample, PCM16→μ-law | 8kHz μ-law Base64 | ✅ **Excellent** |
 | 24kHz PCM16 Base64 | Direct pass (no resampling) | 24kHz PCM16 Base64 | ✅ **Excellent** |
+
+## Configuration System Integration
+
+### Centralized Default Values
+
+All audio-related default values are now centralized in `opusagent/config/constants.py` to ensure consistency across the entire system:
+
+```python
+# Audio Stream Handler Configuration
+DEFAULT_INTERNAL_SAMPLE_RATE = 24000  # Internal processing sample rate
+DEFAULT_MIN_AUDIO_BYTES = 4800  # 100ms at 24kHz 16-bit mono
+DEFAULT_OPENAI_SAMPLE_RATE = 24000  # OpenAI Realtime API sample rate
+
+# Audio Configuration
+DEFAULT_SAMPLE_RATE = 24000  # 24kHz (updated for OpenAI Realtime API)
+DEFAULT_AUDIO_CHUNK_SIZE = 4800  # 200ms at 24kHz 16-bit
+DEFAULT_AUDIO_CHUNK_SIZE_LARGE = 48000  # 2 seconds at 24kHz 16-bit
+DEFAULT_VAD_CHUNK_SIZE = 768  # VAD processing chunk size (32ms at 24kHz)
+```
+
+### Configuration Models
+
+The system uses dataclass models for type-safe configuration management:
+
+```python
+@dataclass
+class AudioStreamHandlerConfig:
+    internal_sample_rate: int = DEFAULT_INTERNAL_SAMPLE_RATE
+    min_audio_bytes: int = DEFAULT_MIN_AUDIO_BYTES
+    openai_sample_rate: int = DEFAULT_OPENAI_SAMPLE_RATE
+    enable_quality_monitoring: bool = False
+    vad_enabled: bool = True
+    bridge_type: str = "unknown"
+
+@dataclass
+class AudioConfig:
+    sample_rate: int = DEFAULT_SAMPLE_RATE
+    channels: int = DEFAULT_CHANNELS
+    bits_per_sample: int = DEFAULT_BITS_PER_SAMPLE
+    chunk_size: int = DEFAULT_AUDIO_CHUNK_SIZE
+    chunk_size_large: int = DEFAULT_AUDIO_CHUNK_SIZE_LARGE
+```
+
+### Environment Variable Support
+
+All configuration values can be overridden via environment variables:
+
+```bash
+# Audio Stream Handler Configuration
+AUDIO_STREAM_HANDLER_INTERNAL_SAMPLE_RATE=24000
+AUDIO_STREAM_HANDLER_MIN_AUDIO_BYTES=4800
+AUDIO_STREAM_HANDLER_OPENAI_SAMPLE_RATE=24000
+AUDIO_STREAM_HANDLER_ENABLE_QUALITY_MONITORING=false
+AUDIO_STREAM_HANDLER_VAD_ENABLED=true
+
+# Audio Configuration
+AUDIO_SAMPLE_RATE=24000
+AUDIO_CHUNK_SIZE=4800
+AUDIO_CHUNK_SIZE_LARGE=48000
+AUDIO_VAD_CHUNK_SIZE=768
+```
 
 ## Conclusion
 
@@ -396,6 +458,7 @@ The technical implementation analysis reveals that the critical sample rate mism
 3. **✅ High-Quality Processing**: Anti-aliasing filters and proper format conversions
 4. **✅ Comprehensive Monitoring**: Quality analysis and VAD integration
 5. **✅ Robust Testing**: All validation tests pass
+6. **✅ Centralized Configuration**: All defaults defined in `opusagent/config/constants.py`
 
 The outgoing audio flow is well-optimized with proper resampling and format conversions. The recording system provides comprehensive logging and quality monitoring capabilities.
 

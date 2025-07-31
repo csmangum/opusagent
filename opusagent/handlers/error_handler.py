@@ -37,6 +37,12 @@ Usage:
 
 This system reduces boilerplate try-except blocks while providing
 structured error handling suitable for production audio applications.
+
+# TODO: Add callback usage:
+- Sending alerts on critical errors
+- Automatic retry mechanisms
+- Error reporting to external services
+- Custom error recovery logic
 """
 
 import asyncio
