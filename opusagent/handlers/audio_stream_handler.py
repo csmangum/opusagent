@@ -263,12 +263,22 @@ class AudioStreamHandler:
                 except Exception as e:
                     logger.warning(f"Error analyzing audio quality: {e}")
 
-            # Record caller audio if recorder is available
+            # Record caller audio if recorder is available (use resampled audio)
             if self.call_recorder:
-                await self.call_recorder.record_caller_audio(audio_chunk_b64)
+                resampled_audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+                await self.call_recorder.record_caller_audio(resampled_audio_b64)
 
-            # Audio is already at internal rate (24kHz), no additional resampling needed
-            openai_audio = audio_bytes
+            # Ensure audio is at OpenAI's required 24kHz sample rate
+            if self.internal_sample_rate != DEFAULT_OPENAI_SAMPLE_RATE:
+                openai_audio = AudioUtils.resample_audio(
+                    audio_bytes, self.internal_sample_rate, DEFAULT_OPENAI_SAMPLE_RATE
+                )
+                logger.debug(
+                    f"Resampled from {self.internal_sample_rate}Hz to {DEFAULT_OPENAI_SAMPLE_RATE}Hz for OpenAI"
+                )
+            else:
+                openai_audio = audio_bytes
+
             audio_chunk_b64 = base64.b64encode(openai_audio).decode("utf-8")
 
             # Update total bytes with actual sent bytes
