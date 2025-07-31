@@ -135,7 +135,19 @@ class TestAudioManager:
         
         # Should return silence
         assert len(result) > 0
-        assert all(b == 0 for b in result)
+        # The result should be silence, but it might be a WAV file structure from AudioUtils
+        # or raw PCM silence from the fallback path, so we check for either case
+        if result.startswith(b'RIFF'):
+            # AudioUtils returned a WAV file structure - check that it contains silence
+            # The WAV file should have silence data (zeros) after the headers
+            assert len(result) > 44  # WAV header is 44 bytes
+            # Check that the audio data portion contains zeros
+            audio_data_start = 44  # Skip WAV header
+            audio_data = result[audio_data_start:]
+            assert all(b == 0 for b in audio_data)
+        else:
+            # Fallback path returned raw PCM silence
+            assert all(b == 0 for b in result)
         # The error is logged by AudioUtils, not AudioManager in this case
         # since we're in fallback mode and the exception occurs during file reading
 
