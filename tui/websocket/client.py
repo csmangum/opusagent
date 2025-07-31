@@ -6,6 +6,7 @@ from typing import Optional, Callable, AsyncGenerator, Dict, Any
 import websockets
 from websockets.exceptions import ConnectionClosed, ConnectionClosedOK, ConnectionClosedError
 from opusagent.utils.websocket_utils import WebSocketUtils
+from opusagent.handlers.error_handler import handle_error, ErrorContext, ErrorSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -87,14 +88,27 @@ class WebSocketClient:
             return True
             
         except asyncio.TimeoutError:
-            logger.error(f"Connection timeout after {self.connection_timeout}s")
+            await handle_error(
+                error=TimeoutError("Connection timeout"),
+                context=ErrorContext.WEBSOCKET,
+                severity=ErrorSeverity.HIGH,
+                operation="websocket_connect",
+                url=url,
+                timeout=self.connection_timeout
+            )
             self.connecting = False
             if self.on_error:
                 await self._safe_call_handler(self.on_error, TimeoutError("Connection timeout"))
             return False
             
         except Exception as e:
-            logger.error(f"Connection failed: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.WEBSOCKET,
+                severity=ErrorSeverity.HIGH,
+                operation="websocket_connect",
+                url=url
+            )
             self.connecting = False
             if self.on_error:
                 await self._safe_call_handler(self.on_error, e)
@@ -125,7 +139,12 @@ class WebSocketClient:
             try:
                 await self.websocket.close()
             except Exception as e:
-                logger.error(f"Error closing WebSocket: {e}")
+                await handle_error(
+                    error=e,
+                    context=ErrorContext.WEBSOCKET,
+                    severity=ErrorSeverity.MEDIUM,
+                    operation="websocket_close"
+                )
         
         self.connected = False
         self.connecting = False
@@ -148,7 +167,13 @@ class WebSocketClient:
             logger.debug(f"Sent message: {message.get('type', 'unknown')}")
             return True
         except Exception as e:
-            logger.error(f"Error sending message: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.WEBSOCKET,
+                severity=ErrorSeverity.HIGH,
+                operation="websocket_send",
+                message_type=message.get('type', 'unknown')
+            )
             return False
 
     async def _receive_loop(self) -> None:
@@ -174,7 +199,13 @@ class WebSocketClient:
                             await self._safe_call_handler(self.on_message, message)
                             
                     except json.JSONDecodeError as e:
-                        logger.error(f"Invalid JSON received: {e}")
+                        await handle_error(
+                            error=e,
+                            context=ErrorContext.WEBSOCKET,
+                            severity=ErrorSeverity.MEDIUM,
+                            operation="message_parse",
+                            message_str=message_str[:100]  # First 100 chars for debugging
+                        )
                         
                 except asyncio.TimeoutError:
                     # Timeout is expected, continue loop
@@ -185,15 +216,30 @@ class WebSocketClient:
                     break
                     
                 except ConnectionClosedError as e:
-                    logger.warning(f"WebSocket connection closed unexpectedly: {e}")
+                    await handle_error(
+                        error=e,
+                        context=ErrorContext.WEBSOCKET,
+                        severity=ErrorSeverity.MEDIUM,
+                        operation="connection_closed"
+                    )
                     break
                     
                 except Exception as e:
-                    logger.error(f"Error in receive loop: {e}")
+                    await handle_error(
+                        error=e,
+                        context=ErrorContext.WEBSOCKET,
+                        severity=ErrorSeverity.HIGH,
+                        operation="receive_loop"
+                    )
                     await asyncio.sleep(0.1)
                     
         except Exception as e:
-            logger.error(f"Fatal error in receive loop: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.WEBSOCKET,
+                severity=ErrorSeverity.CRITICAL,
+                operation="receive_loop_fatal"
+            )
             
         finally:
             self.connected = False
@@ -216,11 +262,21 @@ class WebSocketClient:
                         await self.websocket.ping()
                         logger.debug("Ping sent")
                     except Exception as e:
-                        logger.warning(f"Ping failed: {e}")
+                        await handle_error(
+                            error=e,
+                            context=ErrorContext.WEBSOCKET,
+                            severity=ErrorSeverity.MEDIUM,
+                            operation="heartbeat_ping"
+                        )
                         break
                         
         except Exception as e:
-            logger.error(f"Error in heartbeat loop: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.WEBSOCKET,
+                severity=ErrorSeverity.HIGH,
+                operation="heartbeat_loop"
+            )
         finally:
             logger.debug("Heartbeat loop exited")
 
