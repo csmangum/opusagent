@@ -11,6 +11,11 @@ from typing import Any, Dict, Optional
 
 from fastapi import WebSocket
 
+from opusagent.config.constants import (
+    DEFAULT_INTERNAL_SAMPLE_RATE,
+    DEFAULT_MIN_AUDIO_BYTES,
+    DEFAULT_OPENAI_SAMPLE_RATE,
+)
 from opusagent.models.audiocodes_api import (
     PlayStreamChunkMessage,
     PlayStreamStartMessage,
@@ -66,6 +71,7 @@ class AudioStreamHandler:
         enable_quality_monitoring: bool = False,
         quality_thresholds: Optional[QualityThresholds] = None,
         bridge_type: str = "unknown",
+        internal_sample_rate: int = DEFAULT_INTERNAL_SAMPLE_RATE,
     ):
         """Initialize the audio stream handler.
 
@@ -75,6 +81,8 @@ class AudioStreamHandler:
             call_recorder (Optional[CallRecorder]): Call recorder for logging audio
             enable_quality_monitoring (bool): Enable real-time audio quality monitoring
             quality_thresholds (Optional[QualityThresholds]): Quality monitoring thresholds
+            bridge_type (str): Type of bridge being used (twilio, audiocodes, etc.)
+            internal_sample_rate (int): Internal sample rate for processing (default: 24000)
         """
         self.platform_websocket = platform_websocket
         self.realtime_websocket = realtime_websocket
@@ -88,12 +96,12 @@ class AudioStreamHandler:
         self.total_audio_bytes_sent = 0
         self._closed = False
         self.bridge_type = bridge_type
-        self.internal_sample_rate = 16000
+        self.internal_sample_rate = internal_sample_rate
 
         # Quality monitoring
         if self.enable_quality_monitoring:
             self.quality_monitor = AudioQualityMonitor(
-                sample_rate=16000,
+                sample_rate=self.internal_sample_rate,  # Use internal sample rate
                 chunk_size=1024,
                 thresholds=quality_thresholds or QualityThresholds(),
                 history_size=100,
@@ -110,10 +118,13 @@ class AudioStreamHandler:
         self._speech_active = False  # Track speech state for VAD events
         if self.vad_enabled and self.vad:
             self.vad.sample_rate = self.internal_sample_rate
-            if self.internal_sample_rate == 16000:
-                self.vad.chunk_size = 512
+            # Updated VAD chunk sizes to support 24kHz
+            if self.internal_sample_rate == 24000:
+                self.vad.chunk_size = 768  # 32ms at 24kHz
+            elif self.internal_sample_rate == 16000:
+                self.vad.chunk_size = 512  # 32ms at 16kHz
             elif self.internal_sample_rate == 8000:
-                self.vad.chunk_size = 256
+                self.vad.chunk_size = 256  # 32ms at 8kHz
             else:
                 logger.warning(
                     f"Unsupported internal sample rate for VAD: {self.internal_sample_rate}"
@@ -164,7 +175,7 @@ class AudioStreamHandler:
                 "call_agent": 16000,
             }.get(self.bridge_type, 16000)
 
-            # Resample to internal rate if necessary
+            # Resample directly to internal rate (24kHz) if necessary
             if original_rate != self.internal_sample_rate:
                 audio_bytes = AudioUtils.resample_audio(
                     audio_bytes, original_rate, self.internal_sample_rate
@@ -252,15 +263,22 @@ class AudioStreamHandler:
                 except Exception as e:
                     logger.warning(f"Error analyzing audio quality: {e}")
 
-            # Record caller audio if recorder is available
+            # Record caller audio if recorder is available (use resampled audio)
             if self.call_recorder:
-                await self.call_recorder.record_caller_audio(audio_chunk_b64)
+                resampled_audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+                await self.call_recorder.record_caller_audio(resampled_audio_b64)
 
-            # Resample to OpenAI 24kHz
-            openai_rate = 24000
-            openai_audio = AudioUtils.resample_audio(
-                audio_bytes, self.internal_sample_rate, openai_rate
-            )
+            # Ensure audio is at OpenAI's required 24kHz sample rate
+            if self.internal_sample_rate != DEFAULT_OPENAI_SAMPLE_RATE:
+                openai_audio = AudioUtils.resample_audio(
+                    audio_bytes, self.internal_sample_rate, DEFAULT_OPENAI_SAMPLE_RATE
+                )
+                logger.debug(
+                    f"Resampled from {self.internal_sample_rate}Hz to {DEFAULT_OPENAI_SAMPLE_RATE}Hz for OpenAI"
+                )
+            else:
+                openai_audio = audio_bytes
+
             audio_chunk_b64 = base64.b64encode(openai_audio).decode("utf-8")
 
             # Update total bytes with actual sent bytes
@@ -269,7 +287,7 @@ class AudioStreamHandler:
             # Log audio chunk details
             duration_ms = (len(audio_bytes) / (self.internal_sample_rate * 2)) * 1000
             logger.debug(
-                f"Processing audio chunk #{self.audio_chunks_sent}: {original_size} -> {len(audio_bytes)} bytes internal "
+                f"Processing audio chunk #{self.audio_chunks_sent}: {original_size} -> {len(audio_bytes)} bytes at {self.internal_sample_rate}Hz "
                 f"(~{duration_ms:.1f}ms), {len(openai_audio)} bytes to OpenAI. Total sent: {self.total_audio_bytes_sent} bytes"
             )
 
@@ -411,7 +429,7 @@ class AudioStreamHandler:
         if not self._closed and self.realtime_websocket.close_code is None:
             # Log buffer state before committing
             total_duration_ms = (
-                (self.total_audio_bytes_sent / (16000 * 2)) * 1000
+                (self.total_audio_bytes_sent / (self.internal_sample_rate * 2)) * 1000
                 if self.total_audio_bytes_sent > 0
                 else 0
             )
@@ -420,8 +438,8 @@ class AudioStreamHandler:
                 f"{self.total_audio_bytes_sent} bytes (~{total_duration_ms:.1f}ms of audio)"
             )
 
-            # OpenAI requires at least 100ms of audio (3200 bytes for 16kHz 16-bit mono)
-            min_audio_bytes = 3200  # 100ms of 16kHz 16-bit mono audio
+            # OpenAI requires at least 100ms of audio
+            min_audio_bytes = DEFAULT_MIN_AUDIO_BYTES
 
             if self.total_audio_bytes_sent >= min_audio_bytes:
                 buffer_commit = InputAudioBufferCommitEvent(
@@ -438,7 +456,7 @@ class AudioStreamHandler:
                 logger.info(
                     f"Skipping audio buffer commit - insufficient audio data: "
                     f"{self.total_audio_bytes_sent} bytes ({total_duration_ms:.1f}ms) "
-                    f"< {min_audio_bytes} bytes (100ms minimum required by OpenAI)"
+                    f"< {min_audio_bytes} bytes (100ms minimum at {self.internal_sample_rate}Hz required by OpenAI)"
                 )
 
     async def stop_stream(self) -> None:
@@ -467,8 +485,8 @@ class AudioStreamHandler:
         Returns:
             Dict[str, Any]: Dictionary containing audio statistics
         """
-        # Calculate duration based on 24kHz since total_audio_bytes_sent represents bytes sent to OpenAI
-        openai_sample_rate = 24000
+        # Calculate duration based on OpenAI sample rate since total_audio_bytes_sent represents bytes sent to OpenAI
+        openai_sample_rate = DEFAULT_OPENAI_SAMPLE_RATE
         stats = {
             "audio_chunks_sent": self.audio_chunks_sent,
             "total_audio_bytes_sent": self.total_audio_bytes_sent,

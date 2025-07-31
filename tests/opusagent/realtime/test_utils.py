@@ -317,7 +317,7 @@ class TestConstants:
     def test_audio_constants_values(self):
         """Test specific values of audio constants."""
         # These should match the values from opusagent.config.constants
-        assert DEFAULT_SAMPLE_RATE == 16000
+        assert DEFAULT_SAMPLE_RATE == 24000
         assert DEFAULT_CHANNELS == 1
         assert DEFAULT_BITS_PER_SAMPLE == 16
 

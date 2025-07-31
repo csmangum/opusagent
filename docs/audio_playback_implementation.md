@@ -68,9 +68,9 @@ The AudioPlayback class provides real-time audio playback specifically for the A
 class AudioPlaybackConfig:
     def __init__(
         self,
-        sample_rate: int = 16000,
+        sample_rate: int = DEFAULT_SAMPLE_RATE,  # 24000 (24kHz)
         channels: int = 1,
-        chunk_size: int = 1024,
+        chunk_size: int = DEFAULT_AUDIO_CHUNK_SIZE,  # 4800 (200ms at 24kHz)
         latency: float = 0.1,
         volume: float = 1.0,
         enable_playback: bool = True
@@ -82,7 +82,7 @@ class AudioPlaybackConfig:
 ```python
 # Create playback manager
 config = AudioPlaybackConfig(
-    sample_rate=16000,
+    sample_rate=24000,  # 24kHz for OpenAI Realtime API compatibility
     channels=1,
     volume=0.8,
     enable_playback=True
@@ -133,9 +133,9 @@ The AudioManager class provides comprehensive audio management for the TUI appli
 ```python
 @dataclass
 class AudioConfig:
-    sample_rate: int = DEFAULT_SAMPLE_RATE  # 16000
+    sample_rate: int = DEFAULT_SAMPLE_RATE  # 24000 (24kHz)
     channels: int = 1
-    chunk_size: int = 1024
+    chunk_size: int = DEFAULT_AUDIO_CHUNK_SIZE  # 4800 (200ms at 24kHz)
     format: AudioFormat = AudioFormat.PCM16
     buffer_size: int = 8192
     latency: float = 0.1
@@ -146,9 +146,9 @@ class AudioConfig:
 ```python
 # Create audio manager
 config = AudioConfig(
-    sample_rate=16000,
+    sample_rate=24000,  # 24kHz for OpenAI Realtime API compatibility
     channels=1,
-    chunk_size=1024,
+    chunk_size=4800,  # 200ms at 24kHz
     format=AudioFormat.PCM16,
     latency=0.1
 )
@@ -200,7 +200,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
     
     # Load audio file
     audio_data, sample_rate, channels = AudioUtils.load_audio_file(
-        str(audio_path), target_sample_rate=16000
+        str(audio_path), target_sample_rate=24000  # 24kHz for OpenAI compatibility
     )
     
     # Chunk and queue for playback
@@ -243,14 +243,61 @@ level = AudioUtils.visualize_audio_level(audio_data[:1000])
 
 ## Configuration Management
 
+### Centralized Configuration System
+
+The audio playback system now uses a centralized configuration system with all defaults defined in `opusagent/config/constants.py`. This ensures consistency across all audio components and makes configuration changes easier to manage.
+
+#### Key Configuration Constants
+
+```python
+# Audio constants used throughout the application
+DEFAULT_SAMPLE_RATE = 24000  # 24kHz (updated for OpenAI Realtime API)
+DEFAULT_CHANNELS = 1  # Mono
+DEFAULT_BITS_PER_SAMPLE = 16  # 16-bit PCM
+DEFAULT_AUDIO_CHUNK_SIZE = 4800  # 200ms at 24kHz 16-bit
+DEFAULT_AUDIO_CHUNK_SIZE_LARGE = 48000  # 2 seconds at 24kHz 16-bit
+DEFAULT_VAD_CHUNK_SIZE = 768  # VAD processing chunk size (32ms at 24kHz)
+
+# Audio Stream Handler constants
+DEFAULT_INTERNAL_SAMPLE_RATE = 24000  # Internal processing sample rate
+DEFAULT_MIN_AUDIO_BYTES = 4800  # 100ms at 24kHz 16-bit mono
+DEFAULT_OPENAI_SAMPLE_RATE = 24000  # OpenAI Realtime API sample rate
+```
+
+#### Configuration Models
+
+The system uses dataclass models for type-safe configuration:
+
+```python
+@dataclass
+class AudioConfig:
+    sample_rate: int = DEFAULT_SAMPLE_RATE  # 24000 (24kHz)
+    channels: int = DEFAULT_CHANNELS
+    bits_per_sample: int = DEFAULT_BITS_PER_SAMPLE
+    chunk_size: int = DEFAULT_AUDIO_CHUNK_SIZE
+    chunk_size_large: int = DEFAULT_AUDIO_CHUNK_SIZE_LARGE
+    format: AudioFormat = AudioFormat.PCM16
+    buffer_size: int = 8192
+    latency: float = 0.1
+
+@dataclass
+class AudioStreamHandlerConfig:
+    internal_sample_rate: int = DEFAULT_INTERNAL_SAMPLE_RATE
+    min_audio_bytes: int = DEFAULT_MIN_AUDIO_BYTES
+    openai_sample_rate: int = DEFAULT_OPENAI_SAMPLE_RATE
+    enable_quality_monitoring: bool = False
+    vad_enabled: bool = True
+    bridge_type: str = "unknown"
+```
+
 ### Environment Variables
 
 ```bash
 # Audio playback settings
 AUDIO_PLAYBACK_ENABLED=true
-AUDIO_SAMPLE_RATE=16000
+AUDIO_SAMPLE_RATE=24000  # 24kHz for OpenAI Realtime API compatibility
 AUDIO_CHANNELS=1
-AUDIO_CHUNK_SIZE=1024
+AUDIO_CHUNK_SIZE=4800  # 200ms at 24kHz
 AUDIO_LATENCY=0.1
 AUDIO_VOLUME=1.0
 
@@ -320,12 +367,12 @@ from opusagent.local.audiocodes.audio_playback import AudioPlayback, AudioPlayba
 
 async def basic_playback_example():
     # Create configuration
-    config = AudioPlaybackConfig(
-        sample_rate=16000,
-        channels=1,
-        volume=0.8,
-        enable_playback=True
-    )
+config = AudioPlaybackConfig(
+    sample_rate=24000,  # 24kHz for OpenAI Realtime API compatibility
+    channels=1,
+    volume=0.8,
+    enable_playback=True
+)
     
     # Create playback manager
     playback = AudioPlayback(config=config)
@@ -356,13 +403,13 @@ from tui.models.audio_manager import AudioManager, AudioConfig, AudioFormat
 
 async def tui_audio_example():
     # Create audio manager
-    config = AudioConfig(
-        sample_rate=16000,
-        channels=1,
-        chunk_size=1024,
-        format=AudioFormat.PCM16,
-        latency=0.1
-    )
+config = AudioConfig(
+    sample_rate=24000,  # 24kHz for OpenAI Realtime API compatibility
+    channels=1,
+    chunk_size=4800,  # 200ms at 24kHz
+    format=AudioFormat.PCM16,
+    latency=0.1
+)
     
     audio_manager = AudioManager(config)
     
@@ -374,7 +421,7 @@ async def tui_audio_example():
         from tui.utils.audio_utils import AudioUtils
         
         audio_data, sample_rate, channels = AudioUtils.load_audio_file(
-            "demo/audio/greeting.wav", target_sample_rate=16000
+            "demo/audio/greeting.wav", target_sample_rate=24000  # 24kHz for OpenAI compatibility
         )
         
         # Chunk and play
@@ -407,7 +454,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
     # Load audio file
     audio_path = Path("demo/audio") / filename
     audio_data, sample_rate, channels = AudioUtils.load_audio_file(
-        str(audio_path), target_sample_rate=16000
+        str(audio_path), target_sample_rate=24000  # 24kHz for OpenAI compatibility
     )
     
     # Stream audio in chunks

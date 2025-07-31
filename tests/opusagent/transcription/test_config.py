@@ -24,7 +24,7 @@ class TestTranscriptionConfig:
         assert config.model_size == "base"
         assert config.chunk_duration == 1.0
         assert config.confidence_threshold == 0.5
-        assert config.sample_rate == 16000
+        assert config.sample_rate == 24000
         assert config.enable_vad == True
         assert config.device == "cpu"
 
@@ -113,7 +113,7 @@ class TestTranscriptionConfig:
         # Check that defaults are still used for unspecified values
         assert config.language == "en"
         assert config.confidence_threshold == 0.5
-        assert config.sample_rate == 16000
+        assert config.sample_rate == 24000
 
     def test_load_config_boolean_parsing(self):
         """Test boolean environment variable parsing."""
@@ -191,7 +191,7 @@ class TestTranscriptionConfig:
         assert config.model_size == "base"
         assert config.chunk_duration == 1.0
         assert config.confidence_threshold == 0.5
-        assert config.sample_rate == 16000
+        assert config.sample_rate == 24000
         assert config.enable_vad == True
         assert config.device == "cpu"
 
