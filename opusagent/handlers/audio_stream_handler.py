@@ -4,14 +4,11 @@ This module provides functionality for handling bidirectional audio streaming,
 including audio format validation, chunk processing, and stream management.
 """
 
-import asyncio
 import base64
-import json
 import logging
 import uuid
 from typing import Any, Dict, Optional
 
-import websockets
 from fastapi import WebSocket
 
 from opusagent.models.audiocodes_api import (
@@ -21,8 +18,6 @@ from opusagent.models.audiocodes_api import (
     TelephonyEventType,
     UserStreamSpeechStartedResponse,
     UserStreamSpeechStoppedResponse,
-    UserStreamStartedResponse,
-    UserStreamStoppedResponse,
 )
 from opusagent.models.openai_api import (
     InputAudioBufferAppendEvent,
@@ -30,12 +25,12 @@ from opusagent.models.openai_api import (
     ResponseAudioDeltaEvent,
 )
 from opusagent.utils.audio_quality_monitor import AudioQualityMonitor, QualityThresholds
+from opusagent.utils.audio_utils import AudioUtils
 from opusagent.utils.call_recorder import CallRecorder
 from opusagent.utils.websocket_utils import WebSocketUtils
 from opusagent.vad.audio_processor import to_float32_mono
 from opusagent.vad.vad_config import load_vad_config
 from opusagent.vad.vad_factory import VADFactory
-from tui.utils.audio_utils import AudioUtils
 
 # Configure logging
 logger = logging.getLogger(__name__)
