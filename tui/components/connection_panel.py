@@ -7,11 +7,15 @@ to the TelephonyRealtimeBridge server with enhanced error handling and session m
 
 import uuid
 import asyncio
+import json
 import logging
+from typing import Any, Dict, Optional
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static, Button, Input, Label
 from textual.widget import Widget
+from textual.reactive import reactive
+from opusagent.handlers.error_handler import handle_error, ErrorContext, ErrorSeverity
 
 from tui.websocket.client import WebSocketClient
 from tui.websocket.message_handler import MessageHandler, SessionMessageBuilder
@@ -444,7 +448,13 @@ class ConnectionPanel(Widget):
                 self.parent_app.status_bar.increment_message_count()
                 
         except Exception as e:
-            logger.error(f"Error handling message: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.WEBSOCKET,
+                severity=ErrorSeverity.MEDIUM,
+                operation="message_handling",
+                message_type=message.get("type", "unknown")
+            )
             self.event_logger.log_error_event(
                 "message_processing_error",
                 f"Error processing message: {e}",
@@ -453,7 +463,12 @@ class ConnectionPanel(Widget):
     
     async def _on_websocket_error(self, error: Exception) -> None:
         """Handle WebSocket error event."""
-        logger.error(f"WebSocket error: {error}")
+        await handle_error(
+            error=error,
+            context=ErrorContext.WEBSOCKET,
+            severity=ErrorSeverity.HIGH,
+            operation="websocket_error"
+        )
         self.last_error = str(error)
         self._update_status("Error")
         
@@ -517,7 +532,13 @@ class ConnectionPanel(Widget):
                     if hasattr(audio_panel, 'handle_bot_audio_chunk'):
                         await audio_panel.handle_bot_audio_chunk(audio_bytes)  # type: ignore
                 except Exception as e:
-                    logger.error(f"Error routing audio chunk to audio panel: {e}")
+                    await handle_error(
+                        error=e,
+                        context=ErrorContext.AUDIO,
+                        severity=ErrorSeverity.MEDIUM,
+                        operation="audio_chunk_routing",
+                        message_type=message_type
+                    )
         
         self.event_logger.log_audio_event(
             message_type,
