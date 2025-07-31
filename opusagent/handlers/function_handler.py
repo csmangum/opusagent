@@ -86,6 +86,7 @@ import uuid
 from typing import Any, Callable, Dict, List, Optional
 
 from opusagent.config.logging_config import configure_logging
+from opusagent.handlers.error_handler import ErrorContext, ErrorSeverity, handle_error
 
 logger = configure_logging("function_handler")
 
@@ -208,7 +209,13 @@ class FunctionHandler:
                 )
             )
         except Exception as e:
-            logger.error(f"Error parsing function call: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.API,
+                severity=ErrorSeverity.HIGH,
+                operation="function_call_parse",
+                response_dict=response_dict,
+            )
 
     async def handle_function_call_arguments_delta(
         self, response_dict: Dict[str, Any]
@@ -416,13 +423,23 @@ class FunctionHandler:
                         call_id=call_id,
                     )
                 except Exception as e:
-                    logger.error(f"Error logging function call to recorder: {e}")
+                    await handle_error(
+                        error=e,
+                        context=ErrorContext.API,
+                        severity=ErrorSeverity.MEDIUM,
+                        operation="function_call_logging",
+                        function_name=function_name,
+                    )
 
         except Exception as e:
-            logger.error(f"🚨 Function execution failed: {e}")
-            import traceback
-
-            logger.error(f"🚨 Function execution traceback: {traceback.format_exc()}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.API,
+                severity=ErrorSeverity.HIGH,
+                operation="function_execution",
+                function_name=function_name,
+                arguments=arguments,
+            )
             result = {"error": str(e)}
 
             # Log failed function call to call recorder if available
@@ -435,7 +452,13 @@ class FunctionHandler:
                         call_id=call_id,
                     )
                 except Exception as e:
-                    logger.error(f"Error logging failed function call to recorder: {e}")
+                    await handle_error(
+                        error=e,
+                        context=ErrorContext.API,
+                        severity=ErrorSeverity.MEDIUM,
+                        operation="failed_function_logging",
+                        function_name=function_name,
+                    )
 
         # Send result back to OpenAI as a conversation item
         function_result_event = {
@@ -482,7 +505,13 @@ class FunctionHandler:
                 logger.info("✅ Response generation triggered successfully")
 
         except Exception as e:
-            logger.error(f"❌ Error sending function result: {e}")
+            await handle_error(
+                error=e,
+                context=ErrorContext.API,
+                severity=ErrorSeverity.HIGH,
+                operation="function_result_send",
+                function_name=function_name,
+            )
             raise
 
     def _should_trigger_hang_up(
