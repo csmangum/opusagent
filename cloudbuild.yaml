@@ -1,55 +1,62 @@
-# Google Cloud Build configuration for Opus Agent
-# This file defines the build steps for deploying to Cloud Run
+# Google Cloud Build configuration for Opus Agent (Updated 2024)
+# This file defines the build steps for deploying to Cloud Run with WebSocket optimization
 
 steps:
-  # Build the Docker image
+  # Build the Docker image with multi-platform support
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'build'
       - '-t' 
-      - 'gcr.io/$PROJECT_ID/opus-agent:$COMMIT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:$COMMIT_SHA'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/opus-agent:latest'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:latest'
       - '.'
 
-  # Push the Docker image to Container Registry
+  # Push the Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'push'
-      - 'gcr.io/$PROJECT_ID/opus-agent:$COMMIT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:$COMMIT_SHA'
 
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'push'
-      - 'gcr.io/$PROJECT_ID/opus-agent:latest'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:latest'
 
-  # Deploy to Cloud Run
+  # Deploy to Cloud Run with WebSocket optimization
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'run'
       - 'deploy'
       - 'opus-agent'
-      - '--image=gcr.io/$PROJECT_ID/opus-agent:$COMMIT_SHA'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:$COMMIT_SHA'
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--port=8000'
-      - '--memory=2Gi'
+      - '--memory=4Gi'
       - '--cpu=2'
       - '--timeout=3600'
-      - '--concurrency=1000'
-      - '--max-instances=10'
+      - '--concurrency=100'
+      - '--max-instances=20'
+      - '--min-instances=1'
+      - '--cpu-boost'
+      - '--execution-environment=gen2'
       - '--set-env-vars=ENV=production,PORT=8000,HOST=0.0.0.0'
 
-# Store images in Container Registry
+# Store images in Artifact Registry (replacing deprecated Container Registry)
 images:
-  - 'gcr.io/$PROJECT_ID/opus-agent:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/opus-agent:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/opus-agent:latest'
 
 # Timeout for the entire build
-timeout: '1200s'
+timeout: '1800s'
 
-# Options for the build
+# Options for the build with faster machine type
 options:
   machineType: 'E2_HIGHCPU_8'
-  logging: CLOUD_LOGGING_ONLY 
+  logging: CLOUD_LOGGING_ONLY
+  
+# Set environment variables for Cloud Build
+substitutions:
+  _REGION: 'us-central1' 

@@ -1,21 +1,27 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Special case for opencv in slim images
+# Install system dependencies for audio processing and WebSocket support
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    libasound2-dev \
+    portaudio19-dev \
+    libffi-dev \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy application code (will include .env if it exists)
+WORKDIR /app
+
+# Copy requirements first for better Docker layer caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
 
 # Expose the port
 EXPOSE 8000
 
-# Command to run the application
-CMD ["python", "run.py"] 
+# Use the correct entry point for your server
+CMD ["python", "run_opus_server.py", "--host", "0.0.0.0", "--port", "8000"] 
