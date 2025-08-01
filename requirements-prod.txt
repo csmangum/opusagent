@@ -1,0 +1,25 @@
+# Core application dependencies
+asyncio-mqtt==0.16.1
+fastapi==0.109.1
+jinja2==3.1.6
+openai==1.54.0
+pydantic==2.8.2
+python-dotenv==1.0.1
+python-multipart==0.0.18
+requests==2.32.4
+uvicorn==0.27.0
+websockets==12.0
+
+# Audio processing (minimal)
+numpy>=1.24.0
+soundfile>=0.12.1
+
+# Function calling and AI integration
+anthropic>=0.35.0
+
+# Speech Recognition and Transcription
+openai-whisper>=20231117
+
+# Additional utilities
+redis
+cryptography 

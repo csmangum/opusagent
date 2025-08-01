@@ -2,7 +2,6 @@
 asyncio-mqtt==0.16.1
 beautifulsoup4==4.12.3
 fastapi==0.109.1
-fastapi-websocket==0.1.7
 jinja2==3.1.6
 openai==1.54.0
 pydantic==2.8.2
@@ -37,13 +36,8 @@ soundfile>=0.12.1  # For advanced audio file format support
 anthropic>=0.35.0  # For Claude integration if needed 
 
 # Speech Recognition and Transcription
-pocketsphinx==0.1.18
 openai-whisper>=20231117  # Local Whisper for transcription
 
-resemblyzer
-scipy
-numpy
-pydantic
+# Additional utilities
 redis
 cryptography
-faiss-cpu
