@@ -51,4 +51,8 @@ docker-compose.yml
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Audio files (large, not needed for production)
+opusagent/local/audio/
+demo/audio/ 
