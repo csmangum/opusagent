@@ -40,7 +40,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import websockets
-from websockets.asyncio.client import ClientConnection
+from websockets.client import WebSocketClientProtocol
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.models.openai_api import (
@@ -287,7 +287,7 @@ class LocalRealtimeClient:
 
         # Connection state
         self.connected = False
-        self._ws: Optional[ClientConnection] = None
+        self._ws: Optional[WebSocketClientProtocol] = None
         self._message_task: Optional[asyncio.Task] = None
         self._response_timings: List[Dict[str, Any]] = (
             []

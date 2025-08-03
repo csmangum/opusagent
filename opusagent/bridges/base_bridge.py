@@ -11,7 +11,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 
-from websockets.asyncio.client import ClientConnection
+from websockets.client import WebSocketClientProtocol
 
 from opusagent.config.logging_config import configure_logging
 from opusagent.handlers.audio_stream_handler import AudioStreamHandler
@@ -64,7 +64,7 @@ class BaseRealtimeBridge(ABC):
     def __init__(
         self,
         platform_websocket,
-        realtime_websocket: Union[ClientConnection, Any],
+        realtime_websocket: Union[WebSocketClientProtocol, Any],
         session_config: SessionConfig,
         vad_enabled: bool = True,  # Enable VAD by default
         bridge_type: str = "unknown",

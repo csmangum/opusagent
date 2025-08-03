@@ -65,7 +65,7 @@ async def mock_websocket():
 
 @pytest.fixture
 async def mock_realtime_websocket():
-    websocket = AsyncMock(spec=websockets.ClientConnection)
+    websocket = AsyncMock(spec=websockets.WebSocketClientProtocol)
     websocket.send = AsyncMock()
     websocket.recv = AsyncMock()
     websocket.close = AsyncMock()
