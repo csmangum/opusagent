@@ -37,7 +37,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
-from websockets.asyncio.client import ClientConnection
+from websockets.client import WebSocketClientProtocol
 
 from opusagent.config.constants import (
     DEFAULT_AUDIO_CHUNK_SIZE,
@@ -87,7 +87,7 @@ class EventHandlerManager:
         """
         self.logger = logger or logging.getLogger(__name__)
         self._event_handlers: Dict[str, List[Callable]] = {}
-        self._ws: Optional[ClientConnection] = None
+        self._ws: Optional[WebSocketClientProtocol] = None
         self._session_config = session_config
         self._vad = vad
         self._transcriber = transcriber
@@ -143,7 +143,7 @@ class EventHandlerManager:
         self._event_handlers[event_type].append(handler)
         self.logger.debug(f"Registered handler for event type: {event_type}")
 
-    def set_websocket_connection(self, ws: ClientConnection) -> None:
+    def set_websocket_connection(self, ws: WebSocketClientProtocol) -> None:
         """
         Set the WebSocket connection for sending events.
 

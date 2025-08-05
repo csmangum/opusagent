@@ -2,23 +2,57 @@
 .git
 .gitignore
 
-# Python
+# Documentation
+docs/
+*.md
+PITCH.md
+QUICK_DEPLOY_GUIDE.md
+
+# Tests
+tests/
+pytest.ini
+
+# Logs
+logs/
+*.log
+
+# Development files
+scripts/
+*.bat
+*.sh
+
+# Validation and testing
+validation_output/
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyo
+*.pyd
 .Python
-venv/
-ENV/
 env/
-.env
-.pytest_cache/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Docker
 Dockerfile
+.dockerignore
 docker-compose.yml
-.dockerignore 
+
+# Temporary files
+*.tmp
+*.temp
+
+# Audio files (large, not needed for production)
+opusagent/local/audio/
+demo/audio/ 
