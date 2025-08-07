@@ -297,7 +297,7 @@ import asyncio
 import websockets
 
 async def test_agent_conversation(caller_type: str = "typical", duration: int = 30):
-    uri = f"ws://localhost:8000/agent-conversation?caller_type={caller_type}"
+    uri = f"ws://localhost:8080/agent-conversation?caller_type={caller_type}"
     
     async with websockets.connect(uri) as websocket:
         print(f"Testing {caller_type} caller for {duration} seconds...")
@@ -440,7 +440,7 @@ python scripts/compare_caller_types.py --output-dir comparison_results
 export OPENAI_API_KEY="your-api-key-here"
 
 # Verify server is running
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 
 # Check logs for errors
 tail -f logs/opusagent.log

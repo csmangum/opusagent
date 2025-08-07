@@ -53,7 +53,7 @@ class ServerConfig:
     """Server configuration settings."""
 
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 8080
     environment: Environment = Environment.PRODUCTION
     debug: bool = False
     reload: bool = False
@@ -229,7 +229,7 @@ class TUIConfig:
     """TUI application configuration."""
 
     host: str = "localhost"
-    port: int = 8000
+    port: int = 8080
     ws_path: str = "/voice-bot"
     timeout_seconds: int = 15
     ping_interval: int = 5

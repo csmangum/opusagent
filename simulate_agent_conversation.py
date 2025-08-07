@@ -29,7 +29,7 @@ async def test_agent_conversation(
         agent_type: CS agent type (banking, insurance)
         duration: Duration to run the conversation in seconds
     """
-    uri = f"ws://localhost:8000/agent-conversation?caller_type={caller_type}&scenario={scenario}&agent_type={agent_type}"
+    uri = f"ws://localhost:8080/agent-conversation?caller_type={caller_type}&scenario={scenario}&agent_type={agent_type}"
 
     print(f"Connecting to agent conversation:")
     print(f"  - Caller: {caller_type}")
@@ -60,7 +60,7 @@ async def get_available_options():
 
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("http://localhost:8000/caller-types") as response:
+            async with session.get("http://localhost:8080/caller-types") as response:
                 if response.status == 200:
                     data = await response.json()
                     # Validate that the response contains the expected fields

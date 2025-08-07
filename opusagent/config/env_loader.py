@@ -118,7 +118,7 @@ def load_server_config() -> ServerConfig:
 
     return ServerConfig(
         host=os.getenv("HOST", "0.0.0.0"),
-        port=safe_convert(os.getenv("PORT"), int, 8000),
+        port=safe_convert(os.getenv("PORT"), int, 8080),
         environment=environment,
         debug=safe_convert(os.getenv("DEBUG"), bool, False),
         reload=safe_convert(os.getenv("RELOAD"), bool, False),

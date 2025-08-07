@@ -38,8 +38,8 @@ COPY opusagent/ ./opusagent/
 COPY run_opus_server.py .
 COPY interface.py .
 
-# Expose the port
-EXPOSE 8000
+# Expose the port expected by Cloud Run
+EXPOSE 8080
 
-# Use the correct entry point for your server
-CMD ["python", "run_opus_server.py", "--host", "0.0.0.0", "--port", "8000"] 
+# Start the server; it will read HOST/PORT from environment (Cloud Run sets PORT)
+CMD ["python", "run_opus_server.py"]

@@ -11,7 +11,7 @@ import pytest
 from opusagent.local.mock_twilio_client import MockTwilioClient
 
 # Bridge server URL (adjust based on your setup)
-BRIDGE_URL = "ws://localhost:8000/twilio-agent"
+BRIDGE_URL = "ws://localhost:8080/twilio-agent"
 
 
 @pytest.mark.asyncio

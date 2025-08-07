@@ -12,7 +12,7 @@ Environment Variables:
     OPUSAGENT_USE_MOCK=true          - Enable mock mode (default: false)
     OPUSAGENT_MOCK_SERVER_URL=URL    - Mock server URL (default: ws://localhost:8080)
     OPENAI_API_KEY=key               - OpenAI API key (required for real mode)
-    PORT=port                        - Server port (default: 8000)
+    PORT=port                        - Server port (default: 8080)
     HOST=host                        - Server host (default: 0.0.0.0)
     LOG_LEVEL=level                  - Logging level (default: INFO)
 
@@ -24,7 +24,7 @@ Examples:
     OPUSAGENT_USE_MOCK=true python run_opus_server.py
 
     # Run with custom mock server
-    OPUSAGENT_USE_MOCK=true OPUSAGENT_MOCK_SERVER_URL=ws://localhost:8000 python run_opus_server.py
+    OPUSAGENT_USE_MOCK=true OPUSAGENT_MOCK_SERVER_URL=ws://localhost:8080 python run_opus_server.py
 
     # Run with command line flags
     python run_opus_server.py --mock --port 9000

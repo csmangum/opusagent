@@ -481,7 +481,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Local VAD Client for Bridge Testing")
     parser.add_argument(
         "--bridge-url",
-        default="ws://localhost:8000/caller-agent",
+        default="ws://localhost:8080/caller-agent",
         help="Bridge WebSocket URL",
     )
     parser.add_argument(

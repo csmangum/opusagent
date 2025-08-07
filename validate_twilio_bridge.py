@@ -128,7 +128,7 @@ class TwilioBridgeValidator:
 
     def __init__(
         self,
-        bridge_url: str = "ws://localhost:8000/twilio-agent",
+        bridge_url: str = "ws://localhost:8080/twilio-agent",
         audio_dir: Optional[str] = None,
         timeout: float = 30.0,
         verbose: bool = False,
@@ -636,8 +636,8 @@ async def main():
     )
     parser.add_argument(
         "--bridge-url",
-        default="ws://localhost:8000/twilio-agent",
-        help="Bridge server WebSocket URL (default: ws://localhost:8000/twilio-agent)",
+        default="ws://localhost:8080/twilio-agent",
+        help="Bridge server WebSocket URL (default: ws://localhost:8080/twilio-agent)",
     )
     parser.add_argument(
         "--audio-dir",

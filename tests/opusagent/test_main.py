@@ -27,7 +27,7 @@ def mock_config():
         # Create a mock config with security settings
         mock_config.security.allowed_origins = ["https://test.com", "https://api.test.com"]
         mock_config.server.host = "0.0.0.0"
-        mock_config.server.port = 8000
+        mock_config.server.port = 8080
         mock_config.server.environment.value = "testing"
         mock_config.vad.enabled = True
         mock_config.mock.use_local_realtime = False
