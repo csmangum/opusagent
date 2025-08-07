@@ -54,10 +54,6 @@ config = get_config()
 # Configure logging
 logger = configure_logging("run")
 
-# Set the environment variable to use the local realtime client
-os.environ["USE_LOCAL_REALTIME"] = "false"
-os.environ["OPUSAGENT_USE_MOCK"] = "false"
-
 
 def validate_mock_setup():
     """Validate mock mode setup and provide helpful information."""

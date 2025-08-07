@@ -8,5 +8,10 @@ services:
     volumes:
       - ./app:/app/app
     restart: unless-stopped
-    env_file:
-      - .env 
+    environment:
+      - OPUSAGENT_USE_MOCK=false
+      - OPUSAGENT_MOCK_SERVER_URL=ws://localhost:8080
+      - USE_LOCAL_REALTIME=false
+      - PORT=8000
+      - HOST=0.0.0.0
+      - LOG_LEVEL=INFO 
