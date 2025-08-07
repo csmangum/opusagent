@@ -1,5 +1,7 @@
 # OpusAgent
 
+![Project Status](https://img.shields.io/badge/status-in%20development-orange)
+
 OpusAgent is an open-source Python framework for building real-time voice agents. It provides a FastAPI-based server that bridges telephony platforms like AudioCodes VoiceAI Connect and Twilio with AI backends such as OpenAI's Realtime API. The package enables developers to create intelligent, conversational AI systems for voice interactions, with support for audio streaming, voice activity detection, transcription, and function calling.
 
 Key components include bridges for different platforms, models for API schemas, utilities for audio and WebSocket handling, and tools for testing and simulation.
