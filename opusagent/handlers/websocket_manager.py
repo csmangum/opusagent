@@ -268,7 +268,7 @@ class WebSocketManager:
                 websocket = await websockets.connect(
                     self._url,
                     subprotocols=[Subprotocol("realtime")],
-                    additional_headers=self._headers,
+                    extra_headers=self._headers,
                     ping_interval=config.websocket.ping_interval,
                     ping_timeout=config.websocket.ping_timeout,
                     close_timeout=config.websocket.close_timeout,

@@ -467,13 +467,21 @@ async def twilio_voice(request: Request):
     logger.info(f"------ Incoming Twilio voice call ------")
     # Create a TwiML response
     response = VoiceResponse()
-    logger.info(f" Response: {response}")
-    # Connect the call to our WebSocket endpoint using the public URL
     connect = response.connect()
-    logger.info(f"------ Connecting call to WebSocket endpoint ------")
-    logger.info(f"------ {SERVER_URL} ------")
-    connect.stream(url=SERVER_URL)  # type: ignore
-    logger.info(f"------ Connected call to WebSocket endpoint ------")
+
+    # Derive the public WebSocket URL for Twilio Media Streams.
+    # Use the request host and convert scheme https->wss (http->ws) and append the Twilio WS path.
+    try:
+        host = request.headers.get("host") or request.url.hostname or ""
+        scheme = "wss" if (request.url.scheme or "").lower() == "https" else "ws"
+        ws_url = f"{scheme}://{host}/twilio-agent"
+    except Exception:
+        # Fallback to server host/port if we can't parse request URL (useful for local testing)
+        ws_url = f"ws://{HOST}:{PORT}/twilio-agent"
+
+    logger.info(f"Connecting Twilio stream to: {ws_url}")
+    connect.stream(url=ws_url)  # type: ignore
+    logger.info("Twilio stream connected")
 
     # Return XML response with proper Content-Type header
     return Response(content=str(response), media_type="application/xml")

@@ -39,7 +39,7 @@ The system supports four caller personality types:
 Connect a caller to the system via WebSocket:
 ```bash
 # Connect to the caller-agent endpoint
-ws://localhost:8000/caller-agent
+ws://localhost:8080/caller-agent
 ```
 
 ## System Architecture
@@ -200,7 +200,7 @@ import websockets
 import asyncio
 
 async def connect_caller():
-    uri = "ws://localhost:8000/caller-agent"
+    uri = "ws://localhost:8080/caller-agent"
     async with websockets.connect(uri) as websocket:
         # Send caller audio and receive agent responses
         await websocket.send(audio_data)
@@ -286,7 +286,7 @@ The system includes comprehensive validation tools:
 ### Common Issues
 
 1. **Connection Failures**
-   - Verify server is running on port 8000
+   - Verify server is running on port 8080
    - Ensure `/caller-agent` endpoint is available
    - Check OpenAI API key is set
 

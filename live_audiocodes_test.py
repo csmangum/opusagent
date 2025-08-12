@@ -11,7 +11,7 @@ logger = configure_logging("live_audiocodes_test", log_filename="live_audiocodes
 async def main():
     
     # Default bridge URL - adjust if server is running on different host/port
-    bridge_url = "ws://localhost:8000/ws/telephony"
+    bridge_url = "ws://localhost:8080/ws/telephony"
     
     # Create client instance without connecting
     client = LocalAudioCodesClient(bridge_url, logger=logger)

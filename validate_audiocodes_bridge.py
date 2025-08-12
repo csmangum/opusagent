@@ -117,7 +117,7 @@ class AudioCodesBridgeValidator:
 
     def __init__(
         self,
-        bridge_url: str = "ws://localhost:8000/ws/telephony",
+        bridge_url: str = "ws://localhost:8080/ws/telephony",
         audio_dir: Optional[str] = None,
         timeout: float = 30.0,
         verbose: bool = False,
@@ -1086,8 +1086,8 @@ Examples:
 
     parser.add_argument(
         "--bridge-url",
-        default="ws://localhost:8000/ws/telephony",
-        help="Bridge WebSocket URL (default: ws://localhost:8000/ws/telephony)",
+        default="ws://localhost:8080/ws/telephony",
+        help="Bridge WebSocket URL (default: ws://localhost:8080/ws/telephony)",
     )
     parser.add_argument("--audio-dir", help="Directory containing test audio files")
     parser.add_argument(
