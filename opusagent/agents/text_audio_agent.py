@@ -193,6 +193,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "status": "error",
             "error": "No filename provided",
             "function_name": "play_audio",
+            "context": context,
         }
 
     if not AUDIO_PLAYBACK_AVAILABLE:
@@ -202,6 +203,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "error": "Audio playback not available - install sounddevice and related dependencies",
             "function_name": "play_audio",
             "filename": filename,
+            "context": context,
         }
 
     logger.info(f"Audio playback requested: {filename} (context: {context})")
@@ -215,6 +217,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 "error": "Failed to initialize audio manager",
                 "function_name": "play_audio",
                 "filename": filename,
+                "context": context,
             }
 
         # Get the audio directory from the global context (will be set by TextAudioAgent)
@@ -228,6 +231,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 "error": f"Audio file not found: {filename}",
                 "function_name": "play_audio",
                 "filename": filename,
+                "context": context,
             }
 
         # Load the audio file using the AudioManager's load_audio_chunks method
@@ -243,6 +247,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 "error": f"Failed to load audio file: {str(e)}",
                 "function_name": "play_audio",
                 "filename": filename,
+                "context": context,
             }
 
         # For now, just log that we would play the audio
@@ -266,6 +271,7 @@ async def func_play_audio(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "error": f"Error playing audio file: {str(e)}",
             "function_name": "play_audio",
             "filename": filename,
+            "context": context,
         }
 
 
@@ -381,7 +387,7 @@ class TextAudioAgent:
             file_list_text = "\n".join(file_list)
 
             self.system_prompt = self.system_prompt.replace(
-                "Available audio files are organized in categories:",
+                "Available audio files are organized in categories with numbered files:",
                 f"Available audio files are organized in categories:\n\n{file_list_text}\n",
             )
         else:

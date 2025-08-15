@@ -92,12 +92,16 @@ class TestTextAudioAgentFunctions:
     @pytest.mark.asyncio
     @patch('opusagent.agents.text_audio_agent.AUDIO_PLAYBACK_AVAILABLE', True)
     @patch('opusagent.agents.text_audio_agent._get_audio_manager')
-    async def test_func_play_audio_success(self, mock_get_audio_manager):
+    @patch('pathlib.Path.exists')
+    async def test_func_play_audio_success(self, mock_exists, mock_get_audio_manager):
         """Test func_play_audio with valid arguments."""
         # Mock the audio manager
         mock_audio_manager = Mock()
         mock_audio_manager.load_audio_chunks.return_value = [b"chunk1", b"chunk2"]
         mock_get_audio_manager.return_value = mock_audio_manager
+        
+        # Mock file existence
+        mock_exists.return_value = True
         
         # Mock the audio directory
         func_play_audio._audio_directory = "test/audio/"
@@ -109,8 +113,8 @@ class TestTextAudioAgentFunctions:
         
         result = await func_play_audio(arguments)
         
-        # The function might return error if audio manager is not properly mocked
-        assert result["status"] in ["success", "error"]
+        # Verify the function returned success
+        assert result["status"] == "success"
         assert result["filename"] == "greetings/greetings_01.wav"
         assert result["context"] == "Greeting the user"
         assert result["function_name"] == "play_audio"
@@ -280,7 +284,7 @@ class TestTextAudioAgent:
         assert "greetings_01.wav" in agent.system_prompt
         assert "greetings_02.wav" in agent.system_prompt
         assert "farewells_01.wav" in agent.system_prompt
-        assert "and 4 more files" in agent.system_prompt  # For default category
+        assert "and 1 more files" in agent.system_prompt  # For default category (6 files total, show 5, so 1 more)
 
     def test_update_system_prompt_no_files(self):
         """Test _update_system_prompt_with_files when no files are available."""
