@@ -120,7 +120,7 @@ class OpusAgentVoiceRecognizer:
 
         matches: List[Tuple[str, float, Dict[str, Any]]] = []
         for voiceprint in self.storage.get_all():
-            similarity = 1 - cosine(new_embedding, voiceprint.embedding)
+            similarity = float(1 - cosine(new_embedding, voiceprint.embedding))
             if similarity > self.config.similarity_threshold:
                 matches.append((voiceprint.caller_id, similarity, voiceprint.metadata))
 
