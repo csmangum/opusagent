@@ -14,7 +14,7 @@ Examples:
     python validate_audiocodes_bridge.py
 
     # Validate specific bridge URL
-    python validate_audiocodes_bridge.py --bridge-url ws://localhost:8080
+    python validate_audiocodes_bridge.py --bridge-url ws://localhost:8000
 
     # Run with custom audio files
     python validate_audiocodes_bridge.py --audio-dir ./test_audio
@@ -117,7 +117,7 @@ class AudioCodesBridgeValidator:
 
     def __init__(
         self,
-        bridge_url: str = "ws://localhost:8080/ws/telephony",
+        bridge_url: str = "ws://localhost:8000/ws/telephony",
         audio_dir: Optional[str] = None,
         timeout: float = 30.0,
         verbose: bool = False,
@@ -1076,7 +1076,7 @@ async def main():
         epilog="""
 Examples:
   python validate_audiocodes_bridge.py
-  python validate_audiocodes_bridge.py --bridge-url ws://localhost:8080
+  python validate_audiocodes_bridge.py --bridge-url ws://localhost:8000
   python validate_audiocodes_bridge.py --extended --verbose
   python validate_audiocodes_bridge.py --quick --report-file results.json
   python validate_audiocodes_bridge.py --log-level DEBUG --log-file validation.log
@@ -1086,8 +1086,8 @@ Examples:
 
     parser.add_argument(
         "--bridge-url",
-        default="ws://localhost:8080/ws/telephony",
-        help="Bridge WebSocket URL (default: ws://localhost:8080/ws/telephony)",
+        default="ws://localhost:8000/ws/telephony",
+        help="Bridge WebSocket URL (default: ws://localhost:8000/ws/telephony)",
     )
     parser.add_argument("--audio-dir", help="Directory containing test audio files")
     parser.add_argument(
