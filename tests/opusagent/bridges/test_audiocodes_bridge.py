@@ -8,6 +8,7 @@ from fastapi import WebSocket
 
 from opusagent.bridges.audiocodes_bridge import AudioCodesBridge
 from opusagent.models.audiocodes_api import (
+    ConnectionValidatedResponse,
     SessionAcceptedResponse,
     TelephonyEventType,
     UserStreamSpeechCommittedResponse,
@@ -1080,3 +1081,550 @@ async def test_handle_outgoing_audio_audiocodes_base64_encoding(bridge, mock_web
     # Verify the sent payload contains the original base64 encoded audio
     sent_payload = mock_websocket.send_json.call_args[0][0]
     assert sent_payload["audioChunk"] == test_audio_base64
+
+
+# Additional test coverage for missing methods
+
+@pytest.mark.asyncio
+async def test_handle_session_resume_success(bridge):
+    """Test successful session resume handling."""
+    test_data = {
+        "type": "session.resume",
+        "conversationId": "test-conv-123",
+        "supportedMediaFormats": ["raw/lpcm16_24", "raw/lpcm16"],
+    }
+
+    # Mock dependencies
+    bridge.initialize_conversation = AsyncMock()
+    bridge.send_session_resumed = AsyncMock()
+    bridge.session_state = MagicMock()
+    bridge.session_state.resumed_count = 1  # Indicates successful resume
+
+    await bridge.handle_session_resume(test_data)
+
+    # Verify conversation initialization
+    bridge.initialize_conversation.assert_called_once_with("test-conv-123")
+
+    # Verify session resumed response
+    bridge.send_session_resumed.assert_called_once()
+
+    # Verify 24kHz format is preferred
+    assert bridge.media_format == "raw/lpcm16_24"
+
+
+@pytest.mark.asyncio
+async def test_handle_session_resume_fallback(bridge):
+    """Test session resume handling when resume fails."""
+    test_data = {
+        "type": "session.resume",
+        "conversationId": "test-conv-123",
+        "supportedMediaFormats": ["raw/lpcm16"],
+    }
+
+    # Mock dependencies
+    bridge.initialize_conversation = AsyncMock()
+    bridge.send_session_accepted = AsyncMock()
+    bridge.session_state = MagicMock()
+    bridge.session_state.resumed_count = 0  # Indicates failed resume
+
+    await bridge.handle_session_resume(test_data)
+
+    # Verify conversation initialization
+    bridge.initialize_conversation.assert_called_once_with("test-conv-123")
+
+    # Verify session accepted response (fallback)
+    bridge.send_session_accepted.assert_called_once()
+
+    # Verify default format is used
+    assert bridge.media_format == "raw/lpcm16"
+
+
+@pytest.mark.asyncio
+async def test_handle_session_resume_exception(bridge):
+    """Test session resume handling when exception occurs."""
+    test_data = {
+        "type": "session.resume",
+        "conversationId": "test-conv-123",
+        "supportedMediaFormats": ["raw/lpcm16"],
+    }
+
+    # Mock dependencies to raise exception
+    bridge.initialize_conversation = AsyncMock(side_effect=Exception("Resume failed"))
+    bridge.send_session_accepted = AsyncMock()
+
+    await bridge.handle_session_resume(test_data)
+
+    # Verify session accepted response (fallback)
+    bridge.send_session_accepted.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_handle_activities_dtmf(bridge):
+    """Test handling DTMF activities."""
+    test_data = {
+        "type": "activities",
+        "activities": [
+            {"type": "dtmf", "name": "dtmf", "value": "1"}
+        ]
+    }
+
+    # Mock the hang_up method
+    bridge.hang_up = AsyncMock()
+
+    await bridge.handle_activities(test_data)
+
+    # Verify hang_up was not called for DTMF
+    bridge.hang_up.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_activities_hangup(bridge):
+    """Test handling hangup activities."""
+    test_data = {
+        "type": "activities",
+        "activities": [
+            {"type": "hangup", "name": "hangup", "value": None}
+        ]
+    }
+
+    # Mock the hang_up method
+    bridge.hang_up = AsyncMock()
+
+    await bridge.handle_activities(test_data)
+
+    # Verify hang_up was called
+    bridge.hang_up.assert_called_once_with("User requested hangup")
+
+
+@pytest.mark.asyncio
+async def test_handle_activities_start(bridge):
+    """Test handling call start activities."""
+    test_data = {
+        "type": "activities",
+        "activities": [
+            {"type": "start", "name": "start", "value": None}
+        ]
+    }
+
+    # Mock the hang_up method
+    bridge.hang_up = AsyncMock()
+
+    await bridge.handle_activities(test_data)
+
+    # Verify hang_up was not called for start
+    bridge.hang_up.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_activities_unknown(bridge):
+    """Test handling unknown activities."""
+    test_data = {
+        "type": "activities",
+        "activities": [
+            {"type": "unknown", "name": "unknown", "value": "test"}
+        ]
+    }
+
+    # Mock the hang_up method
+    bridge.hang_up = AsyncMock()
+
+    await bridge.handle_activities(test_data)
+
+    # Verify hang_up was not called for unknown activity
+    bridge.hang_up.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_activities_multiple(bridge):
+    """Test handling multiple activities in one message."""
+    test_data = {
+        "type": "activities",
+        "activities": [
+            {"type": "dtmf", "name": "dtmf", "value": "1"},
+            {"type": "start", "name": "start", "value": None},
+            {"type": "unknown", "name": "unknown", "value": "test"}
+        ]
+    }
+
+    # Mock the hang_up method
+    bridge.hang_up = AsyncMock()
+
+    await bridge.handle_activities(test_data)
+
+    # Verify hang_up was not called
+    bridge.hang_up.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_connection_validate(bridge, mock_websocket):
+    """Test handling connection validation."""
+    test_data = {"type": "connection.validate"}
+
+    # Mock the send method
+    bridge.send_connection_validated = AsyncMock()
+
+    await bridge.handle_connection_validate(test_data)
+
+    # Verify connection validated response was sent
+    bridge.send_connection_validated.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_send_session_resumed(bridge, mock_websocket):
+    """Test sending session resumed response."""
+    bridge.conversation_id = "test-conv-123"
+    bridge.media_format = "raw/lpcm16_24"
+    bridge.current_participant = "caller"
+
+    await bridge.send_session_resumed()
+
+    # Verify the correct message is sent
+    expected_payload = SessionAcceptedResponse(
+        type=TelephonyEventType.SESSION_ACCEPTED,
+        conversationId="test-conv-123",
+        mediaFormat="raw/lpcm16_24",
+        participant="caller",
+    ).model_dump(exclude_none=True)
+
+    mock_websocket.send_json.assert_called_once_with(expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_send_connection_validated(bridge, mock_websocket):
+    """Test sending connection validated response."""
+    # Set up bridge state
+    bridge.conversation_id = "test-conv-123"
+    bridge._closed = False
+    bridge.platform_websocket = mock_websocket
+
+    await bridge.send_connection_validated()
+
+    expected_payload = {
+        "type": TelephonyEventType.CONNECTION_VALIDATED,
+        "conversationId": "test-conv-123",
+        "success": True,
+    }
+
+    mock_websocket.send_json.assert_called_once_with(expected_payload)
+
+
+@pytest.mark.asyncio
+async def test_handle_platform_speech_started(bridge):
+    """Test handling speech started event from AudioCodes platform."""
+    test_data = {
+        "type": "userStream.speechStarted",
+        "participant": "agent",
+        "participantId": "agent_123"
+    }
+
+    # Should not raise any exceptions
+    await bridge.handle_platform_speech_started(test_data)
+
+
+@pytest.mark.asyncio
+async def test_handle_platform_speech_stopped(bridge):
+    """Test handling speech stopped event from AudioCodes platform."""
+    test_data = {
+        "type": "userStream.speechStopped",
+        "participant": "agent",
+        "participantId": "agent_123"
+    }
+
+    # Should not raise any exceptions
+    await bridge.handle_platform_speech_stopped(test_data)
+
+
+@pytest.mark.asyncio
+async def test_handle_platform_speech_committed(bridge):
+    """Test handling speech committed event from AudioCodes platform."""
+    test_data = {
+        "type": "userStream.speechCommitted",
+        "participant": "agent",
+        "participantId": "agent_123"
+    }
+
+    # Should not raise any exceptions
+    await bridge.handle_platform_speech_committed(test_data)
+
+
+@pytest.mark.asyncio
+async def test_handle_platform_speech_hypothesis(bridge):
+    """Test handling speech hypothesis event from AudioCodes platform."""
+    test_data = {
+        "type": "userStream.speechHypothesis",
+        "participant": "agent",
+        "participantId": "agent_123",
+        "alternatives": ["hello", "help"]
+    }
+
+    # Should not raise any exceptions
+    await bridge.handle_platform_speech_hypothesis(test_data)
+
+
+@pytest.mark.asyncio
+async def test_handle_outgoing_audio_audiocodes_invalid_base64(bridge, mock_websocket):
+    """Test outgoing audio handling with invalid base64 data."""
+    # Set up bridge state
+    bridge.conversation_id = "test-conv-123"
+    bridge._closed = False
+    bridge.platform_websocket = mock_websocket
+
+    # Mock the call recorder
+    bridge.call_recorder = AsyncMock()
+
+    response_data = {
+        "type": "response_audio_delta",
+        "response_id": "resp_123",
+        "item_id": "item_123",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "invalid_base64_data!",  # Invalid base64
+    }
+
+    await bridge.handle_outgoing_audio_audiocodes(response_data)
+
+    # Verify call recorder was called
+    bridge.call_recorder.record_bot_audio.assert_called_once_with("invalid_base64_data!")
+
+    # Verify only playStream.start was sent (chunk was skipped due to invalid base64)
+    assert mock_websocket.send_json.call_count == 1
+
+    # Verify the sent message is playStream.start
+    sent_payload = mock_websocket.send_json.call_args[0][0]
+    assert sent_payload["type"] == "playStream.start"
+
+
+@pytest.mark.asyncio
+async def test_handle_outgoing_audio_audiocodes_missing_fields(bridge):
+    """Test outgoing audio handling with missing required fields."""
+    # Set up bridge state
+    bridge.conversation_id = "test-conv-123"
+    bridge._closed = False
+
+    # Test with missing required fields
+    invalid_response_data = {
+        "type": "response_audio_delta",
+        "response_id": "resp_123",
+        # Missing item_id, output_index, content_index, delta
+    }
+
+    # Should not raise an exception, just log the error
+    await bridge.handle_outgoing_audio_audiocodes(invalid_response_data)
+
+
+@pytest.mark.asyncio
+async def test_handle_outgoing_audio_audiocodes_websocket_closed(bridge, mock_websocket):
+    """Test outgoing audio handling when websocket is closed."""
+    # Set up bridge state
+    bridge.conversation_id = "test-conv-123"
+    bridge._closed = False
+    bridge.platform_websocket = mock_websocket
+
+    # Mock websocket to appear closed
+    mock_websocket.closed = True
+
+    # Mock the call recorder
+    bridge.call_recorder = AsyncMock()
+
+    response_data = {
+        "type": "response_audio_delta",
+        "response_id": "resp_123",
+        "item_id": "item_123",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
+    }
+
+    await bridge.handle_outgoing_audio_audiocodes(response_data)
+
+    # Verify call recorder was called
+    bridge.call_recorder.record_bot_audio.assert_called_once()
+
+    # Verify no websocket messages were sent
+    mock_websocket.send_json.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_handle_outgoing_audio_audiocodes_playstream_start_error(bridge, mock_websocket):
+    """Test outgoing audio handling when playStream.start fails."""
+    # Set up bridge state
+    bridge.conversation_id = "test-conv-123"
+    bridge._closed = False
+    bridge.platform_websocket = mock_websocket
+    bridge.audio_handler.active_stream_id = None
+
+    # Mock the call recorder
+    bridge.call_recorder = AsyncMock()
+
+    # Mock websocket to fail on first send (playStream.start)
+    mock_websocket.send_json.side_effect = [Exception("WebSocket error"), None]
+
+    response_data = {
+        "type": "response_audio_delta",
+        "response_id": "resp_123",
+        "item_id": "item_123",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
+    }
+
+    await bridge.handle_outgoing_audio_audiocodes(response_data)
+
+    # Verify call recorder was called
+    bridge.call_recorder.record_bot_audio.assert_called_once()
+
+    # Verify playStream.start was attempted but failed
+    assert mock_websocket.send_json.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_handle_outgoing_audio_audiocodes_playstream_chunk_error(bridge, mock_websocket):
+    """Test outgoing audio handling when playStream.chunk fails."""
+    # Set up bridge state
+    bridge.conversation_id = "test-conv-123"
+    bridge._closed = False
+    bridge.platform_websocket = mock_websocket
+    bridge.audio_handler.active_stream_id = "existing-stream-123"
+
+    # Mock the call recorder
+    bridge.call_recorder = AsyncMock()
+
+    # Mock websocket to fail on the send (playStream.chunk)
+    mock_websocket.send_json.side_effect = Exception("WebSocket error")
+
+    response_data = {
+        "type": "response_audio_delta",
+        "response_id": "resp_123",
+        "item_id": "item_123",
+        "output_index": 0,
+        "content_index": 0,
+        "delta": "dGVzdCBhdWRpbyBkYXRh",
+    }
+
+    await bridge.handle_outgoing_audio_audiocodes(response_data)
+
+    # Verify call recorder was called
+    bridge.call_recorder.record_bot_audio.assert_called_once()
+
+    # Verify the message was attempted (but failed)
+    assert mock_websocket.send_json.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_register_platform_event_handlers_complete(bridge):
+    """Test that all AudioCodes event handlers are registered."""
+    bridge.register_platform_event_handlers()
+
+    # Verify all AudioCodes event types are registered
+    expected_handlers = {
+        TelephonyEventType.SESSION_INITIATE: bridge.handle_session_start,
+        TelephonyEventType.SESSION_RESUME: bridge.handle_session_resume,
+        TelephonyEventType.USER_STREAM_START: bridge.handle_audio_start,
+        TelephonyEventType.USER_STREAM_CHUNK: bridge.handle_audio_data,
+        TelephonyEventType.USER_STREAM_STOP: bridge.handle_audio_end,
+        TelephonyEventType.SESSION_END: bridge.handle_session_end,
+        TelephonyEventType.ACTIVITIES: bridge.handle_activities,
+        TelephonyEventType.CONNECTION_VALIDATE: bridge.handle_connection_validate,
+        TelephonyEventType.USER_STREAM_SPEECH_STARTED: bridge.handle_platform_speech_started,
+        TelephonyEventType.USER_STREAM_SPEECH_STOPPED: bridge.handle_platform_speech_stopped,
+        TelephonyEventType.USER_STREAM_SPEECH_COMMITTED: bridge.handle_platform_speech_committed,
+        TelephonyEventType.USER_STREAM_SPEECH_HYPOTHESIS: bridge.handle_platform_speech_hypothesis,
+    }
+
+    for event_type, handler in expected_handlers.items():
+        assert event_type in bridge.event_router.telephony_handlers
+        assert bridge.event_router.telephony_handlers[event_type] == handler
+
+
+@pytest.mark.asyncio
+async def test_bridge_initialization_with_participant_tracking(bridge):
+    """Test that bridge initializes with participant tracking."""
+    assert bridge.current_participant == "caller"
+    assert bridge.bridge_type == "audiocodes"
+
+
+@pytest.mark.asyncio
+async def test_media_format_preference_24khz(bridge):
+    """Test that 24kHz format is preferred when available."""
+    test_data = {
+        "type": "session.initiate",
+        "conversationId": "test-conv-123",
+        "supportedMediaFormats": ["raw/lpcm16", "raw/lpcm16_24"],
+    }
+
+    # Mock the dependencies
+    bridge.initialize_conversation = AsyncMock()
+    bridge.send_session_accepted = AsyncMock()
+
+    await bridge.handle_session_start(test_data)
+
+    # Verify 24kHz format is selected
+    assert bridge.media_format == "raw/lpcm16_24"
+
+
+@pytest.mark.asyncio
+async def test_media_format_fallback_16khz(bridge):
+    """Test that 16kHz format is used when 24kHz is not available."""
+    test_data = {
+        "type": "session.initiate",
+        "conversationId": "test-conv-123",
+        "supportedMediaFormats": ["raw/lpcm16"],
+    }
+
+    # Mock the dependencies
+    bridge.initialize_conversation = AsyncMock()
+    bridge.send_session_accepted = AsyncMock()
+
+    await bridge.handle_session_start(test_data)
+
+    # Verify 16kHz format is selected
+    assert bridge.media_format == "raw/lpcm16"
+
+
+@pytest.mark.asyncio
+async def test_audio_handler_override(bridge):
+    """Test that audio handler's outgoing audio method is overridden."""
+    # Verify that the audio handler's handle_outgoing_audio method is overridden
+    assert (
+        bridge.audio_handler.handle_outgoing_audio
+        == bridge.handle_outgoing_audio_audiocodes
+    )
+
+
+@pytest.mark.asyncio
+async def test_send_platform_json_connection_closed(bridge):
+    """Test send_platform_json when connection is closed."""
+    # Set bridge as closed
+    bridge._closed = True
+
+    test_payload = {"type": "test.message"}
+
+    # Should not raise an exception
+    await bridge.send_platform_json(test_payload)
+
+
+@pytest.mark.asyncio
+async def test_send_platform_json_websocket_error(bridge, mock_websocket):
+    """Test send_platform_json when websocket send fails."""
+    bridge._closed = False
+    bridge.platform_websocket = mock_websocket
+
+    # Mock websocket to raise an exception
+    mock_websocket.send_json.side_effect = Exception("Connection error")
+
+    test_payload = {"type": "test.message"}
+
+    # Should not raise an exception
+    await bridge.send_platform_json(test_payload)
+
+
+@pytest.mark.asyncio
+async def test_send_platform_json_websocket_none(bridge):
+    """Test send_platform_json when websocket is None."""
+    bridge._closed = False
+    bridge.platform_websocket = None
+
+    test_payload = {"type": "test.message"}
+
+    # Should not raise an exception
+    await bridge.send_platform_json(test_payload)

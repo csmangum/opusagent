@@ -36,7 +36,9 @@ class QualityMonitoringConfig:
     
     def __post_init__(self):
         """Initialize default thresholds if not provided."""
-        if self.thresholds is None:
+        # Only create default thresholds if enabled and thresholds is None
+        # Note: This will only happen when thresholds is not explicitly set to None
+        if self.enabled and self.thresholds is None:
             self.thresholds = QualityThresholds(
                 min_snr_db=15.0,           # Minimum signal-to-noise ratio (lowered for telephony)
                 max_thd_percent=1.0,       # Maximum total harmonic distortion  
@@ -89,6 +91,7 @@ QUALITY_CONFIGS = {
     
     "disabled": QualityMonitoringConfig(
         enabled=False,
+        thresholds=None,
     ),
 }
 
