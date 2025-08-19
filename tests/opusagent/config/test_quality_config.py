@@ -61,7 +61,7 @@ class TestQualityMonitoringConfig:
 
     def test_quality_monitoring_config_post_init(self):
         """Test that __post_init__ creates default thresholds."""
-        config = QualityMonitoringConfig(thresholds=None)
+        config = QualityMonitoringConfig()
         
         assert config.thresholds is not None
         assert hasattr(config.thresholds, 'min_snr_db')
@@ -79,7 +79,8 @@ class TestQualityMonitoringConfig:
         mock_thresholds.min_quality_score = 75.0
         mock_thresholds.min_audio_level = 0.02
         
-        config = QualityMonitoringConfig(thresholds=mock_thresholds)
+        config = QualityMonitoringConfig()
+        config.thresholds = mock_thresholds
         
         assert config.thresholds == mock_thresholds
         assert config.thresholds is not None  # Type guard for the linter
